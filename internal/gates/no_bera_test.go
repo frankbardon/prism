@@ -26,16 +26,16 @@ func TestPrismNoBeraReferences(t *testing.T) {
 		".planning":    true,
 	}
 	skipExt := map[string]bool{
-		".png": true,
-		".jpg": true,
-		".jpeg": true,
-		".gif": true,
-		".pdf": true,
+		".png":   true,
+		".jpg":   true,
+		".jpeg":  true,
+		".gif":   true,
+		".pdf":   true,
 		".pulse": true,
-		".woff": true,
+		".woff":  true,
 		".woff2": true,
-		".ttf": true,
-		".ico": true,
+		".ttf":   true,
+		".ico":   true,
 	}
 
 	root, err := os.Getwd()
