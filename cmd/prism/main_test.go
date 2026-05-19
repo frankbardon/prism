@@ -3,6 +3,7 @@ package main
 import (
 	"bytes"
 	"context"
+	"encoding/json"
 	"errors"
 	"io"
 	"os"
@@ -126,6 +127,79 @@ func TestValidateCLISmoke(t *testing.T) {
 	t.Run("plan-bad-format", func(t *testing.T) {
 		fixture := repoFile(t, "testdata", "specs", "bar_basic.json")
 		_, exit := runCLI(t, "prism", "plan", fixture, "--format", "yaml")
+		if exit != 2 {
+			t.Fatalf("expected exit 2 for bad format, got %d", exit)
+		}
+	})
+
+	t.Run("execute-json", func(t *testing.T) {
+		fixture := repoFile(t, "testdata", "specs", "bar_basic.json")
+		out, exit := runCLI(t, "prism", "execute", fixture, "--format", "json")
+		if exit != 0 {
+			t.Fatalf("expected exit 0, got %d (stdout=%q)", exit, out)
+		}
+		var rows []map[string]any
+		if err := json.Unmarshal([]byte(out), &rows); err != nil {
+			t.Fatalf("execute json parse: %v\n%s", err, out)
+		}
+		if len(rows) != 3 {
+			t.Errorf("expected 3 rows, got %d (%v)", len(rows), rows)
+		}
+		// Sanity-check column presence.
+		if _, ok := rows[0]["brand_id"]; !ok {
+			t.Errorf("missing brand_id column in %v", rows[0])
+		}
+	})
+
+	t.Run("execute-table", func(t *testing.T) {
+		fixture := repoFile(t, "testdata", "specs", "bar_basic.json")
+		out, exit := runCLI(t, "prism", "execute", fixture, "--format", "table")
+		if exit != 0 {
+			t.Fatalf("expected exit 0, got %d (stdout=%q)", exit, out)
+		}
+		if !strings.Contains(out, "brand_id") {
+			t.Errorf("expected table output to contain header brand_id, got: %q", out)
+		}
+		if !strings.Contains(out, "alpha") {
+			t.Errorf("expected table output to contain alpha row, got: %q", out)
+		}
+	})
+
+	t.Run("execute-pulse-backed", func(t *testing.T) {
+		root := repoFile(t, "")
+		originalCwd, _ := os.Getwd()
+		if err := os.Chdir(root); err != nil {
+			t.Fatalf("chdir(%s): %v", root, err)
+		}
+		t.Cleanup(func() { _ = os.Chdir(originalCwd) })
+
+		fixture := filepath.Join("testdata", "specs", "bar_pulse_backed.json")
+		out, exit := runCLI(t, "prism", "execute", fixture, "--format", "json")
+		if exit != 0 {
+			t.Fatalf("expected exit 0, got %d (stdout=%q)", exit, out)
+		}
+		var rows []map[string]any
+		if err := json.Unmarshal([]byte(out), &rows); err != nil {
+			t.Fatalf("execute json parse: %v\n%s", err, out)
+		}
+		if len(rows) != 4 {
+			t.Errorf("expected 4 brand rows, got %d (%v)", len(rows), rows)
+		}
+		for _, row := range rows {
+			score, ok := row["score"].(float64)
+			if !ok {
+				t.Errorf("expected float score in row, got %T (%v)", row["score"], row)
+				continue
+			}
+			if score < 0 || score > 1 {
+				t.Errorf("score %v out of [0,1] for row %v", score, row)
+			}
+		}
+	})
+
+	t.Run("execute-bad-format", func(t *testing.T) {
+		fixture := repoFile(t, "testdata", "specs", "bar_basic.json")
+		_, exit := runCLI(t, "prism", "execute", fixture, "--format", "yaml")
 		if exit != 2 {
 			t.Fatalf("expected exit 2 for bad format, got %d", exit)
 		}
