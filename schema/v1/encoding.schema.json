@@ -1,0 +1,206 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:prism:schema:v1:encoding",
+  "title": "Prism Encoding Channels",
+  "description": "Channel-to-field bindings driving how data is encoded onto a mark.",
+  "$defs": {
+    "channel_base": {
+      "type": "object",
+      "description": "Common channel properties shared by every encoding channel class.",
+      "properties": {
+        "field":     {"$ref": "shared.schema.json#/$defs/field_ref", "description": "Field name from the active dataset."},
+        "type":      {"$ref": "shared.schema.json#/$defs/measure_type", "description": "Logical measure type."},
+        "aggregate": {"$ref": "transform.schema.json#/$defs/aggregate_op", "description": "Optional inline aggregate over the field."},
+        "scale":     {"$ref": "scale.schema.json#/$defs/scale", "description": "Optional scale override."},
+        "title":     {"type": "string", "description": "Axis or legend title override."},
+        "format":    {"type": "string", "description": "Numeric or date format string."},
+        "bin":       {"type": ["boolean", "object"], "description": "Inline bin configuration; true for defaults."},
+        "sort":      {
+          "oneOf": [
+            {"type": "string", "description": "Sort token: \"ascending\", \"descending\", or channel reference like \"-y\"."},
+            {"type": "array", "items": {"type": ["string", "number"]}, "description": "Explicit ordered value list."},
+            {"type": "null", "description": "Disable sorting."}
+          ],
+          "description": "Sort spec for the channel domain."
+        },
+        "value":     {"description": "Constant literal value; alternative to field for a constant encoding."},
+        "condition": {"type": "object", "description": "Reserved for future conditional encoding (v2)."}
+      }
+    },
+    "position_channel": {
+      "type": "object",
+      "description": "Spatial position channel (x, y, x2, y2).",
+      "additionalProperties": false,
+      "properties": {
+        "field":     {"$ref": "shared.schema.json#/$defs/field_ref"},
+        "type":      {"$ref": "shared.schema.json#/$defs/measure_type"},
+        "aggregate": {"$ref": "transform.schema.json#/$defs/aggregate_op"},
+        "scale":     {"$ref": "scale.schema.json#/$defs/scale"},
+        "axis":      {"$ref": "axis.schema.json#/$defs/axis", "description": "Axis configuration for the position channel."},
+        "title":     {"type": "string"},
+        "format":    {"type": "string"},
+        "bin":       {"type": ["boolean", "object"]},
+        "sort":      {
+          "oneOf": [
+            {"type": "string"},
+            {"type": "array", "items": {"type": ["string", "number"]}},
+            {"type": "null"}
+          ]
+        },
+        "stack":     {"type": ["string", "null", "boolean"], "enum": ["zero", "normalize", "center", null, false, true], "description": "Stacking behavior for the position channel."},
+        "value":     {}
+      }
+    },
+    "mark_channel": {
+      "type": "object",
+      "description": "Mark-property channel (color, fill, stroke, opacity, size, shape).",
+      "additionalProperties": false,
+      "properties": {
+        "field":     {"$ref": "shared.schema.json#/$defs/field_ref"},
+        "type":      {"$ref": "shared.schema.json#/$defs/measure_type"},
+        "aggregate": {"$ref": "transform.schema.json#/$defs/aggregate_op"},
+        "scale":     {"$ref": "scale.schema.json#/$defs/scale"},
+        "legend":    {"$ref": "legend.schema.json#/$defs/legend", "description": "Legend configuration."},
+        "title":     {"type": "string"},
+        "format":    {"type": "string"},
+        "bin":       {"type": ["boolean", "object"]},
+        "sort":      {
+          "oneOf": [
+            {"type": "string"},
+            {"type": "array", "items": {"type": ["string", "number"]}},
+            {"type": "null"}
+          ]
+        },
+        "value":     {}
+      }
+    },
+    "text_channel": {
+      "type": "object",
+      "description": "Text channel for text marks and tooltip text.",
+      "additionalProperties": false,
+      "properties": {
+        "field":     {"$ref": "shared.schema.json#/$defs/field_ref"},
+        "type":      {"$ref": "shared.schema.json#/$defs/measure_type"},
+        "aggregate": {"$ref": "transform.schema.json#/$defs/aggregate_op"},
+        "format":    {"type": "string"},
+        "title":     {"type": "string"},
+        "value":     {}
+      }
+    },
+    "tooltip_channel": {
+      "oneOf": [
+        {"$ref": "encoding.schema.json#/$defs/text_channel"},
+        {
+          "type": "array",
+          "items": {"$ref": "encoding.schema.json#/$defs/text_channel"},
+          "description": "Multi-field tooltip."
+        }
+      ],
+      "description": "Single tooltip channel or array of channels."
+    },
+    "order_channel": {
+      "oneOf": [
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "field":     {"$ref": "shared.schema.json#/$defs/field_ref"},
+            "type":      {"$ref": "shared.schema.json#/$defs/measure_type"},
+            "aggregate": {"$ref": "transform.schema.json#/$defs/aggregate_op"},
+            "sort":      {"type": "string", "enum": ["ascending", "descending"]}
+          }
+        },
+        {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+              "field":     {"$ref": "shared.schema.json#/$defs/field_ref"},
+              "type":      {"$ref": "shared.schema.json#/$defs/measure_type"},
+              "aggregate": {"$ref": "transform.schema.json#/$defs/aggregate_op"},
+              "sort":      {"type": "string", "enum": ["ascending", "descending"]}
+            }
+          }
+        }
+      ],
+      "description": "Drawing order channel; single field or array."
+    },
+    "detail_channel": {
+      "oneOf": [
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "field":     {"$ref": "shared.schema.json#/$defs/field_ref"},
+            "type":      {"$ref": "shared.schema.json#/$defs/measure_type"},
+            "aggregate": {"$ref": "transform.schema.json#/$defs/aggregate_op"}
+          }
+        },
+        {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+              "field":     {"$ref": "shared.schema.json#/$defs/field_ref"},
+              "type":      {"$ref": "shared.schema.json#/$defs/measure_type"},
+              "aggregate": {"$ref": "transform.schema.json#/$defs/aggregate_op"}
+            }
+          }
+        }
+      ],
+      "description": "Detail channel for grouping marks without visual encoding."
+    },
+    "facet_channel": {
+      "type": "object",
+      "description": "Facet channel for row/column small multiples.",
+      "additionalProperties": false,
+      "properties": {
+        "field":  {"$ref": "shared.schema.json#/$defs/field_ref"},
+        "type":   {"$ref": "shared.schema.json#/$defs/measure_type"},
+        "sort":   {
+          "oneOf": [
+            {"type": "string"},
+            {"type": "array", "items": {"type": ["string", "number"]}},
+            {"type": "null"}
+          ]
+        },
+        "header": {
+          "type": "object",
+          "additionalProperties": false,
+          "description": "Facet header configuration.",
+          "properties": {
+            "title":  {"type": "string", "description": "Header title."},
+            "labels": {"type": "boolean", "description": "Show per-facet labels."}
+          }
+        }
+      }
+    },
+    "encoding": {
+      "type": "object",
+      "description": "All channel bindings keyed by channel name.",
+      "additionalProperties": false,
+      "properties": {
+        "x":       {"$ref": "encoding.schema.json#/$defs/position_channel", "description": "Primary horizontal position channel."},
+        "y":       {"$ref": "encoding.schema.json#/$defs/position_channel", "description": "Primary vertical position channel."},
+        "x2":      {"$ref": "encoding.schema.json#/$defs/position_channel", "description": "Secondary horizontal position (for ranged marks)."},
+        "y2":      {"$ref": "encoding.schema.json#/$defs/position_channel", "description": "Secondary vertical position (for ranged marks)."},
+        "theta":   {"$ref": "encoding.schema.json#/$defs/position_channel", "description": "Angle position for arc/pie/donut."},
+        "radius":  {"$ref": "encoding.schema.json#/$defs/position_channel", "description": "Radial position for arc/pie/donut."},
+        "color":   {"$ref": "encoding.schema.json#/$defs/mark_channel", "description": "Color encoding."},
+        "fill":    {"$ref": "encoding.schema.json#/$defs/mark_channel", "description": "Explicit fill encoding."},
+        "stroke":  {"$ref": "encoding.schema.json#/$defs/mark_channel", "description": "Explicit stroke encoding."},
+        "opacity": {"$ref": "encoding.schema.json#/$defs/mark_channel", "description": "Opacity encoding."},
+        "size":    {"$ref": "encoding.schema.json#/$defs/mark_channel", "description": "Size encoding for point-like marks."},
+        "shape":   {"$ref": "encoding.schema.json#/$defs/mark_channel", "description": "Point shape encoding."},
+        "text":    {"$ref": "encoding.schema.json#/$defs/text_channel", "description": "Text encoding for text marks."},
+        "tooltip": {"$ref": "encoding.schema.json#/$defs/tooltip_channel", "description": "Tooltip encoding."},
+        "order":   {"$ref": "encoding.schema.json#/$defs/order_channel", "description": "Drawing order encoding."},
+        "detail":  {"$ref": "encoding.schema.json#/$defs/detail_channel", "description": "Detail (grouping) encoding."},
+        "row":     {"$ref": "encoding.schema.json#/$defs/facet_channel", "description": "Row facet channel."},
+        "column":  {"$ref": "encoding.schema.json#/$defs/facet_channel", "description": "Column facet channel."}
+      }
+    }
+  }
+}
