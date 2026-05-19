@@ -48,4 +48,3 @@ func executeSample(_ context.Context, n *nodes.SampleNode, ins []*table.Table) (
 	hash := hashChain(in.Hash(), n.Fingerprint())
 	return table.NewTable(in.Schema(), cols, target, hash)
 }
-
