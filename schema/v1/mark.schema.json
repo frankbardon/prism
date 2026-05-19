@@ -1,0 +1,73 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:prism:schema:v1:mark",
+  "title": "Prism Marks",
+  "description": "Mark type and mark properties for a Prism spec.",
+  "$defs": {
+    "mark_type": {
+      "type": "string",
+      "description": "One of the supported Prism mark types.",
+      "enum": [
+        "bar", "line", "area", "point", "circle", "square", "tick", "rect", "rule", "text",
+        "arc", "pie", "donut",
+        "histogram", "heatmap", "boxplot", "violin",
+        "sankey", "funnel", "sparkline",
+        "image", "path"
+      ]
+    },
+    "mark": {
+      "oneOf": [
+        {
+          "$ref": "mark.schema.json#/$defs/mark_type",
+          "description": "Shorthand: a bare mark type string."
+        },
+        {
+          "$ref": "mark.schema.json#/$defs/mark_def",
+          "description": "Full mark definition with properties."
+        }
+      ],
+      "description": "Either a mark type string shorthand or a full mark_def object."
+    },
+    "mark_def": {
+      "type": "object",
+      "description": "Full mark specification including type and styling properties.",
+      "additionalProperties": false,
+      "required": ["type"],
+      "properties": {
+        "type":          {"$ref": "mark.schema.json#/$defs/mark_type", "description": "Mark type."},
+        "fill":          {"$ref": "shared.schema.json#/$defs/color", "description": "Default fill color."},
+        "stroke":        {"$ref": "shared.schema.json#/$defs/color", "description": "Default stroke color."},
+        "stroke_width":  {"type": "number", "minimum": 0, "description": "Default stroke width in pixels."},
+        "stroke_dash":   {
+          "type": "array",
+          "items": {"type": "number", "minimum": 0},
+          "description": "Dash pattern as an array of on/off pixel lengths."
+        },
+        "opacity":       {"type": "number", "minimum": 0, "maximum": 1, "description": "Default mark opacity."},
+        "fill_opacity":  {"type": "number", "minimum": 0, "maximum": 1, "description": "Default fill opacity."},
+        "stroke_opacity":{"type": "number", "minimum": 0, "maximum": 1, "description": "Default stroke opacity."},
+        "corner_radius": {"type": "number", "minimum": 0, "description": "Corner radius for rectangular marks."},
+        "size":          {"type": "number", "minimum": 0, "description": "Default mark size in pixels^2 for point-like marks."},
+        "shape":         {"type": "string", "description": "Default point shape name.", "minLength": 1},
+        "interpolate":   {"type": "string", "description": "Line/area interpolation method.", "enum": ["linear", "step", "step-before", "step-after", "basis", "cardinal", "catmull-rom", "monotone"]},
+        "tension":       {"type": "number", "minimum": 0, "maximum": 1, "description": "Interpolation tension where supported."},
+        "orient":        {"type": "string", "enum": ["vertical", "horizontal"], "description": "Orientation for bar/area/boxplot/violin."},
+        "align":         {"type": "string", "enum": ["left", "center", "right"], "description": "Horizontal text alignment for text marks."},
+        "baseline":      {"type": "string", "enum": ["top", "middle", "bottom", "alphabetic"], "description": "Vertical text baseline for text marks."},
+        "font":          {"type": "string", "description": "Font family for text marks."},
+        "font_size":     {"type": "number", "minimum": 0, "description": "Font size in pixels for text marks."},
+        "font_weight":   {"type": ["string", "number"], "description": "Font weight for text marks."},
+        "font_style":    {"type": "string", "enum": ["normal", "italic"], "description": "Font style for text marks."},
+        "angle":         {"type": "number", "description": "Rotation angle in degrees."},
+        "dx":            {"type": "number", "description": "X pixel offset."},
+        "dy":            {"type": "number", "description": "Y pixel offset."},
+        "tooltip":       {"type": ["boolean", "object", "string"], "description": "Tooltip behaviour: true to enable defaults, object/string for custom content."},
+        "inner_radius":  {"type": "number", "minimum": 0, "description": "Inner radius for arc/donut marks."},
+        "outer_radius":  {"type": "number", "minimum": 0, "description": "Outer radius for arc marks."},
+        "pad_angle":     {"type": "number", "minimum": 0, "description": "Padding angle in radians between arcs."},
+        "url":           {"type": "string", "description": "Image URL for image marks."},
+        "path":          {"type": "string", "description": "SVG path string for path marks."}
+      }
+    }
+  }
+}
