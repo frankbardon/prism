@@ -397,6 +397,18 @@ var Codes = map[string]CodeMetadata{
 		},
 		SeeAlso: []string{"PRISM_COMPILE_001"},
 	},
+
+	// --- P09 facet / repeat codes.
+	"PRISM_SPEC_012": {
+		Code:    "PRISM_SPEC_012",
+		Message: `Repeat substitution {{.Ref}} references axis {{.Axis}} but the parent repeat block declares only {{.Declared}}.`,
+		Fixups: []string{
+			`Declare the missing axis on the parent repeat block (e.g. "repeat": {"{{.Axis}}": ["field_a", "field_b"]}).`,
+			`If the child spec needs a literal field name, replace the {"repeat": ...} substitution with a bare {"field": "name"}.`,
+			`If you intended a different axis, update the substitution to match: {{.Declared}}.`,
+		},
+		SeeAlso: []string{"PRISM_SPEC_005", "PRISM_PLAN_002"},
+	},
 }
 
 // CodesSorted returns the catalog keys in ascending order.
