@@ -66,13 +66,13 @@ func TestPrismDAGBuildSingleSource(t *testing.T) {
 func TestPrismDAGBuildAllFixtures(t *testing.T) {
 	// Composition + selection fixtures defer to P08/P09/P13.
 	skip := map[string]bool{
-		"concat_h.json":                 true,
-		"concat_v.json":                 true,
-		"facet_by_region.json":          true,
-		"repeat_metrics.json":           true,
+		"concat_h.json":                  true,
+		"concat_v.json":                  true,
+		"facet_by_region.json":           true,
+		"repeat_metrics.json":            true,
 		"layer_actual_vs_benchmark.json": true,
-		"selection_interval.json":       true,
-		"selection_point.json":          true,
+		"selection_interval.json":        true,
+		"selection_point.json":           true,
 	}
 
 	root := repoRoot(t)

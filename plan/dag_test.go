@@ -19,9 +19,9 @@ type fakeNode struct {
 	inputs []plan.NodeID
 }
 
-func (n *fakeNode) ID() plan.NodeID         { return n.id }
-func (n *fakeNode) Inputs() []plan.NodeID   { return n.inputs }
-func (n *fakeNode) Fingerprint() string     { return "fake:" + string(n.id) }
+func (n *fakeNode) ID() plan.NodeID       { return n.id }
+func (n *fakeNode) Inputs() []plan.NodeID { return n.inputs }
+func (n *fakeNode) Fingerprint() string   { return "fake:" + string(n.id) }
 func (n *fakeNode) Schema(_ []*encoding.Schema) (*encoding.Schema, error) {
 	return &encoding.Schema{Fields: []encoding.Field{{Name: "x", Type: encoding.FieldTypeF64}}}, nil
 }
