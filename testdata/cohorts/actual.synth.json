@@ -1,0 +1,22 @@
+{
+  "row_count": 200,
+  "fields": [
+    {
+      "name": "brand_id",
+      "type": "categorical_u8",
+      "description": "Brand identifier across 4 brands.",
+      "distribution": "weighted_categorical",
+      "params": {
+        "values":  ["alpha", "beta", "gamma", "delta"],
+        "weights": [0.30, 0.30, 0.20, 0.20]
+      }
+    },
+    {
+      "name": "score",
+      "type": "f64",
+      "description": "Per-row affinity score; clipped normal centred at 0.55.",
+      "distribution": "normal",
+      "params": { "mean": 0.55, "std": 0.12, "min": 0.0, "max": 1.0 }
+    }
+  ]
+}

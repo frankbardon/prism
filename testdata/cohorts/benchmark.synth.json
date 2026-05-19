@@ -1,0 +1,22 @@
+{
+  "row_count": 80,
+  "fields": [
+    {
+      "name": "brand_id",
+      "type": "categorical_u8",
+      "description": "Brand identifier; uniform across the 4 brands so every brand has benchmark rows.",
+      "distribution": "weighted_categorical",
+      "params": {
+        "values":  ["alpha", "beta", "gamma", "delta"],
+        "weights": [0.25, 0.25, 0.25, 0.25]
+      }
+    },
+    {
+      "name": "median_score",
+      "type": "f64",
+      "description": "Industry-benchmark median score; tight normal around 0.5.",
+      "distribution": "normal",
+      "params": { "mean": 0.5, "std": 0.05, "min": 0.0, "max": 1.0 }
+    }
+  ]
+}
