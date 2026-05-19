@@ -50,8 +50,8 @@ type AggregateOp struct {
 // BinSpec is either a bool (auto) or an object with bin params.
 type BinSpec struct {
 	Auto    *bool
-	Maxbins *int     `json:"maxbins,omitempty"`
-	Step    *float64 `json:"step,omitempty"`
+	Maxbins *int      `json:"maxbins,omitempty"`
+	Step    *float64  `json:"step,omitempty"`
 	Extent  []float64 `json:"extent,omitempty"`
 }
 
@@ -65,19 +65,19 @@ type BinTransform struct {
 
 // WindowTransform: windowed aggregate / rank.
 type WindowTransform struct {
-	Window       []WindowOp     `json:"window"`
-	Partitionby  []string       `json:"partitionby,omitempty"`
-	Sort         []SortFieldDef `json:"sort,omitempty"`
-	Frame        []any          `json:"frame,omitempty"`
-	Data         string         `json:"data,omitempty"`
-	As           string         `json:"as,omitempty"`
+	Window      []WindowOp     `json:"window"`
+	Partitionby []string       `json:"partitionby,omitempty"`
+	Sort        []SortFieldDef `json:"sort,omitempty"`
+	Frame       []any          `json:"frame,omitempty"`
+	Data        string         `json:"data,omitempty"`
+	As          string         `json:"as,omitempty"`
 }
 
 // WindowOp is one window operation.
 type WindowOp struct {
-	Op    string  `json:"op"`
-	Field string  `json:"field,omitempty"`
-	As    string  `json:"as"`
+	Op    string   `json:"op"`
+	Field string   `json:"field,omitempty"`
+	As    string   `json:"as"`
 	Param *float64 `json:"param,omitempty"`
 }
 

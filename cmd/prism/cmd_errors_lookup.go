@@ -31,8 +31,8 @@ func errorsCommand() *cli.Command {
 				Action: runErrorsLookup,
 			},
 			{
-				Name:  "list",
-				Usage: "List every registered PRISM_* error code",
+				Name:   "list",
+				Usage:  "List every registered PRISM_* error code",
 				Action: runErrorsList,
 			},
 		},

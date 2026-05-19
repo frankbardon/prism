@@ -118,15 +118,15 @@ func TestPrismSpecGoldensValidateOffline(t *testing.T) {
 // negativeCodeMap maps fixture filename → expected PRISM_SPEC_* code.
 // Adding a new negative fixture requires adding the mapping here.
 var negativeCodeMap = map[string]string{
-	"unknown_field.json":          "PRISM_SPEC_001",
-	"mean_on_categorical.json":    "PRISM_SPEC_002",
-	"theta_on_bar.json":           "PRISM_SPEC_003",
-	"selection_undefined.json":    "PRISM_SPEC_004",
-	"dataset_undefined.json":      "PRISM_SPEC_005",
-	"bad_expression.json":         "PRISM_SPEC_006",
+	"unknown_field.json":            "PRISM_SPEC_001",
+	"mean_on_categorical.json":      "PRISM_SPEC_002",
+	"theta_on_bar.json":             "PRISM_SPEC_003",
+	"selection_undefined.json":      "PRISM_SPEC_004",
+	"dataset_undefined.json":        "PRISM_SPEC_005",
+	"bad_expression.json":           "PRISM_SPEC_006",
 	"log_scale_on_categorical.json": "PRISM_SPEC_007",
-	"pie_without_theta.json":      "PRISM_SPEC_008",
-	"bad_schema_ref.json":         "PRISM_SPEC_009",
+	"pie_without_theta.json":        "PRISM_SPEC_008",
+	"bad_schema_ref.json":           "PRISM_SPEC_009",
 }
 
 // codesOfShape extracts a stable string slice of shape-error codes.

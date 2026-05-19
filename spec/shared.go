@@ -8,8 +8,8 @@ import (
 // Dimension is either a numeric pixel value or a token string ("container",
 // "step", etc.).
 type Dimension struct {
-	Number  *float64
-	Token   string
+	Number *float64
+	Token  string
 }
 
 // MarshalJSON emits either the number or the token.
@@ -128,14 +128,14 @@ func (t *TextOrTextObj) UnmarshalJSON(data []byte) error {
 // Config is the inline spec-level config block. Values override registered
 // theme defaults but lose to inline spec properties.
 type Config struct {
-	Background string                 `json:"background,omitempty"`
-	Padding    *Padding               `json:"padding,omitempty"`
-	Font       string                 `json:"font,omitempty"`
-	FontSize   float64                `json:"font_size,omitempty"`
-	Color      string                 `json:"color,omitempty"`
-	Mark       map[string]any         `json:"mark,omitempty"`
-	Axis       map[string]any         `json:"axis,omitempty"`
-	Legend     map[string]any         `json:"legend,omitempty"`
-	Scale      map[string]any         `json:"scale,omitempty"`
-	Title      map[string]any         `json:"title,omitempty"`
+	Background string         `json:"background,omitempty"`
+	Padding    *Padding       `json:"padding,omitempty"`
+	Font       string         `json:"font,omitempty"`
+	FontSize   float64        `json:"font_size,omitempty"`
+	Color      string         `json:"color,omitempty"`
+	Mark       map[string]any `json:"mark,omitempty"`
+	Axis       map[string]any `json:"axis,omitempty"`
+	Legend     map[string]any `json:"legend,omitempty"`
+	Scale      map[string]any `json:"scale,omitempty"`
+	Title      map[string]any `json:"title,omitempty"`
 }

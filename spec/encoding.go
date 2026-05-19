@@ -185,10 +185,10 @@ func (c *DetailChannel) UnmarshalJSON(data []byte) error {
 
 // FacetChannel binds a field for row/column facetting.
 type FacetChannel struct {
-	Field  string             `json:"field,omitempty"`
-	Type   string             `json:"type,omitempty"`
-	Sort   any                `json:"sort,omitempty"`
-	Header *FacetChannelHead  `json:"header,omitempty"`
+	Field  string            `json:"field,omitempty"`
+	Type   string            `json:"type,omitempty"`
+	Sort   any               `json:"sort,omitempty"`
+	Header *FacetChannelHead `json:"header,omitempty"`
 }
 
 // FacetChannelHead carries optional header rendering options.

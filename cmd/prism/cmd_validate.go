@@ -76,10 +76,10 @@ func runValidate(_ context.Context, cmd *cli.Command) error {
 				"PRISM_SPEC_009",
 				fmt.Sprintf("Shape violation at %s: %s", se.InstanceLocation, se.Message),
 				map[string]any{
-					"Schema":            "shape",
-					"Instance":          se.InstanceLocation,
-					"KeywordViolation":  se.KeywordLocation,
-					"ViolationMessage":  se.Message,
+					"Schema":           "shape",
+					"Instance":         se.InstanceLocation,
+					"KeywordViolation": se.KeywordLocation,
+					"ViolationMessage": se.Message,
 				},
 			))
 		}
@@ -201,10 +201,10 @@ func pulseStorageToMeasure(storage string) string {
 func reportAndExit(cmd *cli.Command, jsonOut bool, errs []*prismerrors.AppError, srcName string) error {
 	if jsonOut {
 		env := struct {
-			FormatVersion string                    `json:"format_version"`
-			Data          map[string]any            `json:"data,omitempty"`
-			Errors        []*prismerrors.AppError   `json:"errors"`
-			Warnings      []*prismerrors.AppError   `json:"warnings,omitempty"`
+			FormatVersion string                  `json:"format_version"`
+			Data          map[string]any          `json:"data,omitempty"`
+			Errors        []*prismerrors.AppError `json:"errors"`
+			Warnings      []*prismerrors.AppError `json:"warnings,omitempty"`
 		}{
 			FormatVersion: "1.0",
 			Data:          map[string]any{"valid": false, "source": srcName},
