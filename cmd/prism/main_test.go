@@ -227,6 +227,120 @@ func TestValidateCLISmoke(t *testing.T) {
 			t.Errorf("expected stdout to identify the typoed field 'scor', got: %q", out)
 		}
 	})
+
+	t.Run("plot-bar-svg", func(t *testing.T) {
+		fixture := repoFile(t, "testdata", "specs", "bar_basic.json")
+		out, exit := runCLI(t, "prism", "plot", fixture)
+		if exit != 0 {
+			t.Fatalf("expected exit 0, got %d (stdout=%q)", exit, out)
+		}
+		if !strings.HasPrefix(out, "<svg ") {
+			t.Errorf("expected SVG output, got: %s", firstChars(out, 200))
+		}
+		if !strings.Contains(out, `viewBox="0 0 800 600"`) {
+			t.Errorf("missing default viewBox: %s", firstChars(out, 200))
+		}
+		if !strings.Contains(out, "<rect ") {
+			t.Errorf("bar plot missing <rect> elements: %s", firstChars(out, 200))
+		}
+	})
+
+	t.Run("plot-line-svg", func(t *testing.T) {
+		fixture := repoFile(t, "testdata", "specs", "line_basic.json")
+		out, exit := runCLI(t, "prism", "plot", fixture)
+		if exit != 0 {
+			t.Fatalf("expected exit 0, got %d (stdout=%q)", exit, out)
+		}
+		// Line uses <polyline> (or <path> if encoder switches to curves).
+		if !strings.Contains(out, "<polyline ") && !strings.Contains(out, "<path ") {
+			t.Errorf("line plot has neither polyline nor path: %s", firstChars(out, 200))
+		}
+		if !strings.Contains(out, "PRISM_WARN_TIME_SCALE_STUBBED") {
+			t.Errorf("line plot missing time-stub warning on stderr (stderr merged into out)")
+		}
+	})
+
+	t.Run("plot-area-svg", func(t *testing.T) {
+		fixture := repoFile(t, "testdata", "specs", "area_basic.json")
+		out, exit := runCLI(t, "prism", "plot", fixture)
+		if exit != 0 {
+			t.Fatalf("expected exit 0, got %d", exit)
+		}
+		if !strings.Contains(out, "<path ") {
+			t.Errorf("area plot missing <path>: %s", firstChars(out, 200))
+		}
+	})
+
+	t.Run("plot-point-svg", func(t *testing.T) {
+		fixture := repoFile(t, "testdata", "specs", "point_scatter.json")
+		out, exit := runCLI(t, "prism", "plot", fixture)
+		if exit != 0 {
+			t.Fatalf("expected exit 0, got %d", exit)
+		}
+		if strings.Count(out, "<circle ") != 3 {
+			t.Errorf("point plot expected 3 circles, got %d", strings.Count(out, "<circle "))
+		}
+	})
+
+	t.Run("plot-rule-svg", func(t *testing.T) {
+		fixture := repoFile(t, "testdata", "specs", "rule_basic.json")
+		out, exit := runCLI(t, "prism", "plot", fixture)
+		if exit != 0 {
+			t.Fatalf("expected exit 0, got %d", exit)
+		}
+		if strings.Count(out, "<line class=\"prism-mark-rule\"") != 3 {
+			t.Errorf("rule plot expected 3 prism-mark-rule lines, got %d:\n%s",
+				strings.Count(out, "<line class=\"prism-mark-rule\""), firstChars(out, 400))
+		}
+	})
+
+	t.Run("plot-png-unavailable", func(t *testing.T) {
+		fixture := repoFile(t, "testdata", "specs", "bar_basic.json")
+		out, exit := runCLI(t, "prism", "plot", fixture, "--format", "png")
+		if exit != 1 {
+			t.Fatalf("expected exit 1 for unsupported format, got %d", exit)
+		}
+		if !strings.Contains(out, "PRISM_RENDER_FORMAT_UNAVAILABLE") {
+			t.Errorf("expected PRISM_RENDER_FORMAT_UNAVAILABLE in output, got: %s", firstChars(out, 400))
+		}
+	})
+
+	t.Run("plot-out-file", func(t *testing.T) {
+		fixture := repoFile(t, "testdata", "specs", "bar_basic.json")
+		tmpPath := filepath.Join(os.TempDir(), "prism-plot-test.svg")
+		t.Cleanup(func() { _ = os.Remove(tmpPath) })
+		_, exit := runCLI(t, "prism", "plot", fixture, "--out", tmpPath)
+		if exit != 0 {
+			t.Fatalf("expected exit 0, got %d", exit)
+		}
+		body, err := os.ReadFile(tmpPath)
+		if err != nil {
+			t.Fatalf("read %s: %v", tmpPath, err)
+		}
+		if !bytes.HasPrefix(body, []byte("<svg ")) {
+			t.Errorf("written file is not SVG: %s", firstChars(string(body), 200))
+		}
+	})
+
+	t.Run("plot-custom-dimensions", func(t *testing.T) {
+		fixture := repoFile(t, "testdata", "specs", "bar_basic.json")
+		out, exit := runCLI(t, "prism", "plot", fixture, "--width", "1200", "--height", "400")
+		if exit != 0 {
+			t.Fatalf("expected exit 0, got %d", exit)
+		}
+		if !strings.Contains(out, `viewBox="0 0 1200 400"`) {
+			t.Errorf("expected viewBox to reflect --width/--height, got: %s", firstChars(out, 200))
+		}
+	})
+}
+
+// firstChars returns the first n runes of s, with "..." appended if
+// truncated. Helper for failure messages.
+func firstChars(s string, n int) string {
+	if len(s) <= n {
+		return s
+	}
+	return s[:n] + "..."
 }
 
 // runCLI invokes newApp().Run with a captured stdout and returns

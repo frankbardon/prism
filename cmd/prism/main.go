@@ -40,6 +40,7 @@ func newApp() *cli.Command {
 			errorsCommand(),
 			planCommand(),
 			executeCommand(),
+			plotCommand(),
 		},
 		Action: func(_ context.Context, c *cli.Command) error {
 			if c.NArg() == 0 {

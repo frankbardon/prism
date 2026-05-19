@@ -325,16 +325,21 @@ func specMarkToScene(markType string) scene.MarkType {
 	return scene.MarkType(markType)
 }
 
-// titleText extracts a plain-string title from the spec's polymorphic
-// title field. Subtitle / per-language titles are P06.
+// titleText extracts a plain-string title from the spec's
+// polymorphic title field. The TextOrTextObj union exposes both a
+// bare-string Text and a rich-object Obj; we pick whichever is set.
+// Subtitle / per-language titles land in P06.
 func titleText(s *spec.Spec) string {
 	if s.Title == nil {
 		return ""
 	}
-	// spec.TextOrTextObj is a custom union; fall back to fmt.Sprintf
-	// to capture either the Single or Multi variant. P06 owns proper
-	// extraction once we settle the title API.
-	return fmt.Sprintf("%v", s.Title)
+	if s.Title.Text != nil {
+		return *s.Title.Text
+	}
+	if s.Title.Obj != nil {
+		return s.Title.Obj.Text
+	}
+	return ""
 }
 
 // joinNodeIDs renders the executor's table map keys as a
