@@ -1,0 +1,27 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:prism:schema:v1:legend",
+  "title": "Prism Legend",
+  "description": "Legend configuration for a mark-property channel.",
+  "$defs": {
+    "legend": {
+      "type": ["object", "null"],
+      "description": "Legend options; null to suppress the legend entirely.",
+      "additionalProperties": false,
+      "properties": {
+        "type":         {"type": "string", "enum": ["symbol", "gradient"], "description": "Legend representation kind."},
+        "orient":       {"type": "string", "enum": ["left", "right", "top", "bottom", "none"], "description": "Anchor side or none to hide."},
+        "title":        {"type": ["string", "null"], "description": "Legend title; null suppresses."},
+        "direction":    {"type": "string", "enum": ["horizontal", "vertical"], "description": "Layout direction."},
+        "format":       {"type": "string", "description": "Format string for legend tick labels."},
+        "tick_count":   {"type": "integer", "minimum": 0, "description": "Suggested tick count for gradient legends."},
+        "values":       {"type": "array", "description": "Explicit legend values."},
+        "symbol_type":  {"type": "string", "description": "Symbol shape used by symbol legends."},
+        "symbol_size":  {"type": "number", "minimum": 0, "description": "Pixel size of legend symbols."},
+        "padding":      {"type": "number", "minimum": 0, "description": "Padding around the legend in pixels."},
+        "offset":       {"type": "number", "description": "Pixel offset from the chart edge."},
+        "label_limit":  {"type": "number", "minimum": 0, "description": "Maximum label pixel width before truncation."}
+      }
+    }
+  }
+}

@@ -1,0 +1,31 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:prism:schema:v1:axis",
+  "title": "Prism Axis",
+  "description": "Axis configuration for a position channel.",
+  "$defs": {
+    "axis": {
+      "type": "object",
+      "description": "Axis options including title, ticks, grid, and label placement.",
+      "additionalProperties": false,
+      "properties": {
+        "orient":         {"type": "string", "enum": ["top", "bottom", "left", "right"], "description": "Side of the chart on which the axis appears."},
+        "title":          {"type": ["string", "null"], "description": "Axis title; null to suppress."},
+        "format":         {"type": "string", "description": "Format string for tick labels."},
+        "tick_count":     {"type": "integer", "minimum": 0, "description": "Suggested number of ticks."},
+        "tick_min_step":  {"type": "number", "exclusiveMinimum": 0, "description": "Minimum interval between ticks."},
+        "tick_size":      {"type": "number", "minimum": 0, "description": "Tick mark length in pixels."},
+        "values":         {"type": "array", "description": "Explicit tick values."},
+        "grid":           {"type": "boolean", "description": "Whether to draw grid lines."},
+        "labels":         {"type": "boolean", "description": "Whether to draw tick labels."},
+        "label_angle":    {"type": "number", "description": "Rotation angle in degrees for tick labels."},
+        "label_overlap":  {"type": ["boolean", "string"], "enum": [true, false, "parity", "greedy"], "description": "How to handle overlapping labels."},
+        "label_padding":  {"type": "number", "description": "Padding between axis and labels in pixels."},
+        "label_limit":    {"type": "number", "minimum": 0, "description": "Maximum allowed label pixel width before truncation."},
+        "domain":         {"type": "boolean", "description": "Whether to draw the axis domain line."},
+        "ticks":          {"type": "boolean", "description": "Whether to draw tick marks."},
+        "zindex":         {"type": "integer", "description": "Stacking order relative to other chart elements."}
+      }
+    }
+  }
+}
