@@ -1,0 +1,60 @@
+package spec
+
+// MarkDef carries all per-mark visual properties. Fields are pointer-typed
+// where a meaningful zero (e.g. 0 stroke width vs unset) must be preserved.
+type MarkDef struct {
+	Type          string   `json:"type"`
+	Fill          string   `json:"fill,omitempty"`
+	Stroke        string   `json:"stroke,omitempty"`
+	StrokeWidth   *float64 `json:"stroke_width,omitempty"`
+	StrokeDash    []float64 `json:"stroke_dash,omitempty"`
+	Opacity       *float64 `json:"opacity,omitempty"`
+	FillOpacity   *float64 `json:"fill_opacity,omitempty"`
+	StrokeOpacity *float64 `json:"stroke_opacity,omitempty"`
+	CornerRadius  *float64 `json:"corner_radius,omitempty"`
+	Size          *float64 `json:"size,omitempty"`
+	Shape         string   `json:"shape,omitempty"`
+	Interpolate   string   `json:"interpolate,omitempty"`
+	Tension       *float64 `json:"tension,omitempty"`
+	Orient        string   `json:"orient,omitempty"`
+	Align         string   `json:"align,omitempty"`
+	Baseline      string   `json:"baseline,omitempty"`
+	Font          string   `json:"font,omitempty"`
+	FontSize      *float64 `json:"font_size,omitempty"`
+	FontWeight    any      `json:"font_weight,omitempty"`
+	FontStyle     string   `json:"font_style,omitempty"`
+	Angle         *float64 `json:"angle,omitempty"`
+	Dx            *float64 `json:"dx,omitempty"`
+	Dy            *float64 `json:"dy,omitempty"`
+	Tooltip       any      `json:"tooltip,omitempty"`
+	InnerRadius   *float64 `json:"inner_radius,omitempty"`
+	OuterRadius   *float64 `json:"outer_radius,omitempty"`
+	PadAngle      *float64 `json:"pad_angle,omitempty"`
+	URL           string   `json:"url,omitempty"`
+	Path          string   `json:"path,omitempty"`
+}
+
+// Mark is the discriminated mark form: string shorthand or full mark_def
+// object. The discriminator is the JSON type of the input.
+// UnmarshalJSON is implemented in mark_union.go (T01.14).
+type Mark struct {
+	// Shorthand is the bare mark type string ("bar", "line", ...).
+	Shorthand string
+	// Def is the full mark definition. When Shorthand is set, Def is nil
+	// and vice versa.
+	Def *MarkDef
+}
+
+// TypeName returns the effective mark type regardless of input form.
+func (m *Mark) TypeName() string {
+	if m == nil {
+		return ""
+	}
+	if m.Shorthand != "" {
+		return m.Shorthand
+	}
+	if m.Def != nil {
+		return m.Def.Type
+	}
+	return ""
+}
