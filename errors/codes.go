@@ -258,6 +258,35 @@ var Codes = map[string]CodeMetadata{
 			`Inspect the encoding values driving this mark — non-finite or null values often cause this.`,
 		},
 	},
+	"PRISM_RENDER_FORMAT_UNAVAILABLE": {
+		Code:    "PRISM_RENDER_FORMAT_UNAVAILABLE",
+		Message: `Render format {{.Format}} is not available in the current Prism build (lands in {{.Phase}}).`,
+		Fixups: []string{
+			`Use --format svg for now; SVG is the only renderer shipped in P05.`,
+			`PNG support lands in P12 (via resvg-go); PDF lands in P15; canvas-json lands in P12.`,
+			`Track the rollout in .planning/ROADMAP.md.`,
+		},
+		SeeAlso: []string{"PRISM_RENDER_001"},
+	},
+	"PRISM_RENDER_SCENE_EMPTY": {
+		Code:    "PRISM_RENDER_SCENE_EMPTY",
+		Message: `Encoded scene is empty — no marks were produced ({{.Reason}}).`,
+		Fixups: []string{
+			`Check the upstream transform pipeline — a filter may have removed every row.`,
+			`Run ` + "`prism execute <spec>`" + ` to inspect the table the encoder consumed.`,
+			`If the spec intentionally produces no marks, verify axes still render in the SVG output.`,
+		},
+	},
+	"PRISM_ENCODE_001": {
+		Code:    "PRISM_ENCODE_001",
+		Message: `Encode-time mismatch: field {{.Field}} not present in upstream table from source {{.Source}}.`,
+		Fixups: []string{
+			`Available fields in the upstream table: {{.Available}}.`,
+			`Run ` + "`prism validate <spec>`" + ` — most field-existence errors surface as PRISM_SPEC_001 earlier.`,
+			`Check that the transform pipeline does not project away the field before the mark consumes it.`,
+		},
+		SeeAlso: []string{"PRISM_SPEC_001"},
+	},
 }
 
 // CodesSorted returns the catalog keys in ascending order.
