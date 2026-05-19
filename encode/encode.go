@@ -16,11 +16,20 @@ import (
 // and Height default to 800×600 when zero. ThemeName selects a
 // registered theme (light/dark/print + user-loaded); Theme is the
 // resolved scene-IR theme override (wins over ThemeName).
+//
+// OverrideXScale / OverrideYScale (P09) let a composite caller hand
+// the flat Encode path pre-computed shared scales. When non-nil,
+// Encode skips its per-channel resolver for that axis and uses the
+// override verbatim. Drives the shared-axis facet path (D057) and
+// any future composite that wants to share a scale across cells
+// without restating the spec.
 type EncodeOpts struct {
-	Width     float64
-	Height    float64
-	Theme     *scene.Theme
-	ThemeName string
+	Width          float64
+	Height         float64
+	Theme          *scene.Theme
+	ThemeName      string
+	OverrideXScale Scale
+	OverrideYScale Scale
 }
 
 // Encode turns a validated *spec.Spec plus the executor's output
@@ -89,23 +98,39 @@ func Encode(s *spec.Spec, tables map[plan.NodeID]*table.Table, tipID plan.NodeID
 
 	var warnings []scene.Warning
 
-	// Resolve x / y scales.
-	xScale, xWarn, err := resolveChannel(enc.X, tbl, layout.Plot.X, layout.Plot.Right())
-	if err != nil {
-		return nil, err
-	}
-	if xWarn != nil {
-		warnings = append(warnings, *xWarn)
+	// Resolve x / y scales (composite caller may supply pre-computed
+	// shared overrides per P09 / D057; honour them when present so
+	// every cell in a faceted grid lands on the same domain).
+	var (
+		xScale Scale
+		yScale Scale
+		xWarn  *scene.Warning
+		yWarn  *scene.Warning
+	)
+	if opts.OverrideXScale != nil {
+		xScale = opts.OverrideXScale
+	} else {
+		xScale, xWarn, err = resolveChannel(enc.X, tbl, layout.Plot.X, layout.Plot.Right())
+		if err != nil {
+			return nil, err
+		}
+		if xWarn != nil {
+			warnings = append(warnings, *xWarn)
+		}
 	}
 	// Y is inverted: low data → high pixel (the SVG y-axis grows
 	// downward). Pass (rangeMax, rangeMin) so the linear interpolation
 	// flips naturally.
-	yScale, yWarn, err := resolveChannel(enc.Y, tbl, layout.Plot.Bottom(), layout.Plot.Y)
-	if err != nil {
-		return nil, err
-	}
-	if yWarn != nil {
-		warnings = append(warnings, *yWarn)
+	if opts.OverrideYScale != nil {
+		yScale = opts.OverrideYScale
+	} else {
+		yScale, yWarn, err = resolveChannel(enc.Y, tbl, layout.Plot.Bottom(), layout.Plot.Y)
+		if err != nil {
+			return nil, err
+		}
+		if yWarn != nil {
+			warnings = append(warnings, *yWarn)
+		}
 	}
 
 	// Build axes (only when the channel was bound).

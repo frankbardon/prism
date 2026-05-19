@@ -51,6 +51,10 @@ func EncodeComposite(s *spec.Spec, composite *plan.CompositeDAG, childTables []m
 		return encodeLayerComposite(s, composite, childTables, opts)
 	case plan.CompositeHConcat, plan.CompositeVConcat, plan.CompositeConcat:
 		return encodeConcatComposite(s, composite, childTables, opts)
+	case plan.CompositeFacet:
+		return encodeFacetComposite(s, composite, childTables, opts)
+	case plan.CompositeRepeat:
+		return encodeRepeatComposite(s, composite, childTables, opts)
 	}
 	return nil, prismerrors.New(
 		"PRISM_PLAN_002",
