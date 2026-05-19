@@ -108,21 +108,18 @@ func TestPrismEncodeNestingAlwaysFull(t *testing.T) {
 	}
 }
 
-func TestPrismEncodeTimeStubWarning(t *testing.T) {
+// TestPrismEncodeNoTimeStubWarning asserts that T06.04's calendar-aware
+// time ticks supersede the P05 placeholder warning.
+func TestPrismEncodeNoTimeStubWarning(t *testing.T) {
 	s, tables, tipID := runPipeline(t, "line_basic.json")
 	doc, err := encode.Encode(s, tables, tipID, encode.EncodeOpts{})
 	if err != nil {
 		t.Fatalf("Encode: %v", err)
 	}
-	found := false
 	for _, w := range doc.Warnings {
 		if w.Code == scene.WarnTimeScaleStubbed {
-			found = true
-			break
+			t.Errorf("unexpected WarnTimeScaleStubbed in doc.Warnings: %+v", w)
 		}
-	}
-	if !found {
-		t.Errorf("expected WarnTimeScaleStubbed in doc.Warnings, got %+v", doc.Warnings)
 	}
 }
 

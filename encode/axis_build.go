@@ -35,15 +35,54 @@ func BuildAxis(scale Scale, channel scene.Channel, position scene.AxisPosition, 
 			Range:  [2]float64{s.RangeMin, s.RangeMax},
 		}
 	case *TimeScale:
-		ticks := NiceTicks(s.Linear.DomainMin, s.Linear.DomainMax, 5)
-		labelled, err := TicksWithLabels(ticks, s.Linear, "")
-		if err == nil {
-			axis.Ticks = labelled
-		}
+		axis.Ticks = TimeTicks(s, 5)
 		axis.Scale = scene.ScaleSpec{
 			Type:   scene.ScaleTime,
 			Domain: []any{s.Linear.DomainMin, s.Linear.DomainMax},
 			Range:  [2]float64{s.Linear.RangeMin, s.Linear.RangeMax},
+		}
+	case *LogScale:
+		axis.Ticks = LogTicks(s)
+		axis.Scale = scene.ScaleSpec{
+			Type:   scene.ScaleLog,
+			Domain: []any{s.DomainMin, s.DomainMax},
+			Range:  [2]float64{s.RangeMin, s.RangeMax},
+			Base:   s.Base,
+		}
+	case *PowScale:
+		axis.Ticks = PowTicks(s, 5)
+		axis.Scale = scene.ScaleSpec{
+			Type:   scene.ScalePow,
+			Domain: []any{s.DomainMin, s.DomainMax},
+			Range:  [2]float64{s.RangeMin, s.RangeMax},
+			Exp:    s.Exp,
+		}
+	case *SqrtScale:
+		axis.Ticks = SqrtTicks(s, 5)
+		axis.Scale = scene.ScaleSpec{
+			Type:   scene.ScaleSqrt,
+			Domain: []any{s.Inner.DomainMin, s.Inner.DomainMax},
+			Range:  [2]float64{s.Inner.RangeMin, s.Inner.RangeMax},
+			Exp:    0.5,
+		}
+	case *PointScale:
+		ticks := make([]scene.Tick, 0, len(s.Categories))
+		for _, c := range s.Categories {
+			pix, err := s.Apply(c)
+			if err != nil {
+				continue
+			}
+			ticks = append(ticks, scene.Tick{Value: c, Pixel: pix, Label: c})
+		}
+		axis.Ticks = ticks
+		dom := make([]any, len(s.Categories))
+		for i, c := range s.Categories {
+			dom[i] = c
+		}
+		axis.Scale = scene.ScaleSpec{
+			Type:   scene.ScalePoint,
+			Domain: dom,
+			Range:  [2]float64{s.RangeMin, s.RangeMax},
 		}
 	case *BandScale:
 		axis.Ticks = BandTicks(s)

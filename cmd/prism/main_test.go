@@ -255,8 +255,10 @@ func TestValidateCLISmoke(t *testing.T) {
 		if !strings.Contains(out, "<polyline ") && !strings.Contains(out, "<path ") {
 			t.Errorf("line plot has neither polyline nor path: %s", firstChars(out, 200))
 		}
-		if !strings.Contains(out, "PRISM_WARN_TIME_SCALE_STUBBED") {
-			t.Errorf("line plot missing time-stub warning on stderr (stderr merged into out)")
+		// T06.04: time-stub warning dropped now that calendar ticks
+		// land. Assert the inverse — no time-stub warning surfaces.
+		if strings.Contains(out, "PRISM_WARN_TIME_SCALE_STUBBED") {
+			t.Errorf("line plot still emits time-stub warning after calendar ticks (T06.04)")
 		}
 	})
 

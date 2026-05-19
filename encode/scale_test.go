@@ -108,14 +108,15 @@ func TestPrismOrdinalScale(t *testing.T) {
 	}
 }
 
-func TestPrismTimeScaleStub(t *testing.T) {
+func TestPrismTimeScale(t *testing.T) {
 	values := []any{"2026-01-01", "2026-01-03"}
 	scale, warn, err := ResolveScale("temporal", table.KindString, values, 0, 800)
 	if err != nil {
 		t.Fatalf("ResolveScale: %v", err)
 	}
-	if warn == nil || warn.Code != scene.WarnTimeScaleStubbed {
-		t.Fatalf("expected time-stubbed warning, got %+v", warn)
+	// T06.04: warning dropped now that calendar ticks land.
+	if warn != nil {
+		t.Fatalf("expected no warning, got %+v", warn)
 	}
 	if scale.Type() != scene.ScaleTime {
 		t.Errorf("Type() = %q, want %q", scale.Type(), scene.ScaleTime)

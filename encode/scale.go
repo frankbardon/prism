@@ -222,13 +222,9 @@ func resolveTime(values []any, rangeMin, rangeMax float64) (Scale, *scene.Warnin
 		)
 	}
 	lin := &LinearScale{DomainMin: mn, DomainMax: mx, RangeMin: rangeMin, RangeMax: rangeMax}
-	// T06.01 preserves the P05 warning; T06.04 introduces calendar
-	// ticks and drops this warning together.
-	warn := &scene.Warning{
-		Code:    scene.WarnTimeScaleStubbed,
-		Message: "temporal channel rendered as linear over epoch ms; calendar-aware ticks land in P06 T06.04.",
-	}
-	return &TimeScale{Linear: lin}, warn, nil
+	// T06.04: calendar-aware ticks live in encode/ticks_time.go;
+	// drop the stub warning that P05 emitted.
+	return &TimeScale{Linear: lin}, nil, nil
 }
 
 func resolveLog(values []any, rangeMin, rangeMax, base float64) (Scale, *scene.Warning, error) {
