@@ -76,3 +76,56 @@ func TestMustTableMaxRowsTolerates(t *testing.T) {
 		t.Fatalf("MustTableMaxRows: got %d; want default %d", v, DefaultTableMaxRows)
 	}
 }
+
+// TestQueryWorkersDefaultIsSentinel pins the contract that an unset env
+// var yields the sentinel 0 (callers substitute NumCPU) rather than the
+// hardcoded NumCPU itself. This keeps the limits package free of
+// runtime/ knowledge.
+func TestQueryWorkersDefaultIsSentinel(t *testing.T) {
+	t.Setenv(EnvQueryWorkers, "")
+	v, ok := QueryWorkers()
+	if !ok {
+		t.Fatalf("expected ok=true for unset env, got ok=false")
+	}
+	if v != DefaultQueryWorkers {
+		t.Fatalf("expected sentinel %d, got %d", DefaultQueryWorkers, v)
+	}
+}
+
+func TestQueryWorkersHonoursOverride(t *testing.T) {
+	t.Setenv(EnvQueryWorkers, "4")
+	v, ok := QueryWorkers()
+	if !ok || v != 4 {
+		t.Fatalf("got (%d, %v); want (4, true)", v, ok)
+	}
+}
+
+func TestQueryWorkersRejectsNegativeButAllowsZero(t *testing.T) {
+	t.Setenv(EnvQueryWorkers, "0")
+	if v, ok := QueryWorkers(); !ok || v != 0 {
+		t.Fatalf("zero rejected: got (%d, %v); want (0, true)", v, ok)
+	}
+	t.Setenv(EnvQueryWorkers, "-1")
+	if v, ok := QueryWorkers(); ok || v != DefaultQueryWorkers {
+		t.Fatalf("negative accepted: got (%d, %v); want (default, false)", v, ok)
+	}
+	t.Setenv(EnvQueryWorkers, "abc")
+	if v, ok := QueryWorkers(); ok || v != DefaultQueryWorkers {
+		t.Fatalf("garbage accepted: got (%d, %v); want (default, false)", v, ok)
+	}
+}
+
+func TestTableCacheSizeDefaultAndOverride(t *testing.T) {
+	t.Setenv(EnvTableCacheSize, "")
+	if v, ok := TableCacheSize(); !ok || v != DefaultTableCacheSize {
+		t.Fatalf("default: got (%d, %v); want (%d, true)", v, ok, DefaultTableCacheSize)
+	}
+	t.Setenv(EnvTableCacheSize, "512")
+	if v, ok := TableCacheSize(); !ok || v != 512 {
+		t.Fatalf("override: got (%d, %v); want (512, true)", v, ok)
+	}
+	t.Setenv(EnvTableCacheSize, "0")
+	if v, ok := TableCacheSize(); ok || v != DefaultTableCacheSize {
+		t.Fatalf("zero accepted: got (%d, %v); want (default, false)", v, ok)
+	}
+}

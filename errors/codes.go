@@ -315,6 +315,68 @@ var Codes = map[string]CodeMetadata{
 		},
 		SeeAlso: []string{"PRISM_SPEC_001"},
 	},
+
+	// --- P07 multi-source / join / union / optimizer codes.
+	"PRISM_RESOLVE_DUPLICATE_DATASET": {
+		Code: "PRISM_RESOLVE_DUPLICATE_DATASET",
+		Message: `Dataset alias {{.Alias}} is declared more than once ` +
+			`(first at {{.First}}, again at {{.Second}}).`,
+		Fixups: []string{
+			`Rename one of the colliding aliases so each dataset has a unique name in the spec.`,
+			`If the second occurrence is a transform "as" name, pick a name that does not collide with a registered dataset.`,
+			`Run ` + "`prism plan <spec> --format json`" + ` to inspect the alias registry the builder produced.`,
+		},
+		SeeAlso: []string{"PRISM_PLAN_003", "PRISM_RESOLVE_001"},
+	},
+	"PRISM_JOIN_001": {
+		Code:    "PRISM_JOIN_001",
+		Message: `Join key {{.Key}} has incompatible kinds on the two sides (left={{.LeftKind}}, right={{.RightKind}}).`,
+		Fixups: []string{
+			`Cast the column on one side via a calculate transform so both sides share a Pulse Kind.`,
+			`If one side is categorical and the other numeric, decide which storage shape the join semantically requires.`,
+			`Inspect the schemas with ` + "`prism execute <spec>`" + ` to see each side's columns + kinds.`,
+		},
+		SeeAlso: []string{"PRISM_JOIN_002", "PRISM_JOIN_003"},
+	},
+	"PRISM_JOIN_002": {
+		Code:    "PRISM_JOIN_002",
+		Message: `Join key {{.Key}} is missing on the {{.Side}} side (available: {{.Available}}).`,
+		Fixups: []string{
+			`Check the spelling of the join key against the table the {{.Side}} input produces.`,
+			`If the column is produced by a transform, ensure that transform runs before the join.`,
+			`Use ` + "`prism plan <spec> --format dot`" + ` to confirm the DAG wiring matches the spec.`,
+		},
+		SeeAlso: []string{"PRISM_JOIN_001"},
+	},
+	"PRISM_JOIN_003": {
+		Code:    "PRISM_JOIN_003",
+		Message: `Join would produce {{.Actual}} rows (left × right) and exceeds PRISM_JOIN_MAX_ROWS={{.Limit}}.`,
+		Fixups: []string{
+			`Pre-aggregate one or both sides upstream of the join so the cartesian product fits under the cap.`,
+			`Raise the ceiling by setting ` + "`PRISM_JOIN_MAX_ROWS`" + ` in the environment (warning: 5M ≈ 500MB at 20 columns).`,
+			`Push the join down to Pulse once Pulse exposes a relational join (deferred to a future Prism phase).`,
+		},
+		SeeAlso: []string{"PRISM_RESOLVE_007"},
+	},
+	"PRISM_PLAN_004": {
+		Code:    "PRISM_PLAN_004",
+		Message: `Union input schemas disagree: {{.Diff}}.`,
+		Fixups: []string{
+			`Make every union input expose the same column names and Pulse types in the same order.`,
+			`If you need a relational union of differing shapes, project each side first to the shared columns.`,
+			`Inspect each input's schema via ` + "`prism plan <spec> --format json`" + ` and reconcile differences.`,
+		},
+		SeeAlso: []string{"PRISM_PLAN_003"},
+	},
+	"PRISM_WARN_DOWNSAMPLE": {
+		Code:    "PRISM_WARN_DOWNSAMPLE",
+		Message: `Source {{.Source}} exceeds PRISM_RENDER_MAX_MARKS={{.Limit}} ({{.Actual}} rows); injected SampleNode({{.SampleN}}).`,
+		Fixups: []string{
+			`If you need every row plotted, raise the ceiling via PRISM_RENDER_MAX_MARKS or pass --no-downsample (when --no-downsample is wired).`,
+			`If the chart is exploratory, the sample is deterministic for the spec's seed.`,
+			`Pre-aggregate upstream of the encoder to avoid the auto-sample entirely.`,
+		},
+	},
 }
 
 // CodesSorted returns the catalog keys in ascending order.

@@ -29,6 +29,15 @@ const (
 	// DefaultRenderMaxMarks caps the number of marks the renderer
 	// emits before auto-Sample injection. See PRISM_RENDER_MAX_MARKS.
 	DefaultRenderMaxMarks = 100_000
+
+	// DefaultQueryWorkers is the sentinel meaning "use runtime.NumCPU()".
+	// Callers (plan.Execute) substitute NumCPU when QueryWorkers()
+	// returns 0. See PRISM_QUERY_WORKERS.
+	DefaultQueryWorkers = 0
+
+	// DefaultTableCacheSize is the LRU capacity used by plan.NewLRU
+	// when the env var is unset or invalid. See PRISM_TABLE_CACHE_SIZE.
+	DefaultTableCacheSize = 256
 )
 
 // Env var names. Exported so callers (CLI help text, error fixups) can
@@ -37,6 +46,8 @@ const (
 	EnvTableMaxRows   = "PRISM_TABLE_MAX_ROWS"
 	EnvJoinMaxRows    = "PRISM_JOIN_MAX_ROWS"
 	EnvRenderMaxMarks = "PRISM_RENDER_MAX_MARKS"
+	EnvQueryWorkers   = "PRISM_QUERY_WORKERS"
+	EnvTableCacheSize = "PRISM_TABLE_CACHE_SIZE"
 )
 
 // TableMaxRows returns the effective cap for any single Table. The
@@ -77,6 +88,34 @@ func MustRenderMaxMarks() int {
 	return v
 }
 
+// QueryWorkers returns the requested parallel-executor worker count.
+// 0 means "caller substitutes runtime.NumCPU()"; the second return is
+// false when the env var was set but unparseable or non-positive.
+// Unset env yields (0, true).
+func QueryWorkers() (int, bool) {
+	return lookupAllowZero(EnvQueryWorkers, DefaultQueryWorkers)
+}
+
+// MustQueryWorkers mirrors MustTableMaxRows.
+func MustQueryWorkers() int {
+	v, _ := QueryWorkers()
+	return v
+}
+
+// TableCacheSize returns the LRU capacity for plan.TableCache. The
+// second return is false when the env var was set but unparseable or
+// non-positive; callers fall back to the default value (also returned
+// in that case).
+func TableCacheSize() (int, bool) {
+	return lookup(EnvTableCacheSize, DefaultTableCacheSize)
+}
+
+// MustTableCacheSize mirrors MustTableMaxRows.
+func MustTableCacheSize() int {
+	v, _ := TableCacheSize()
+	return v
+}
+
 // lookup resolves an integer env var with a default fallback. Returns
 // (default, true) when the env var is unset; (parsed, true) when set
 // and valid; (default, false) when set but unparseable or non-positive.
@@ -87,6 +126,22 @@ func lookup(name string, def int) (int, bool) {
 	}
 	n, err := strconv.Atoi(raw)
 	if err != nil || n <= 0 {
+		return def, false
+	}
+	return n, true
+}
+
+// lookupAllowZero is identical to lookup but tolerates the sentinel 0
+// (meaning "no override"). Negative values are still rejected because
+// they have no sensible interpretation for the callers (worker counts,
+// cache sizes).
+func lookupAllowZero(name string, def int) (int, bool) {
+	raw, ok := os.LookupEnv(name)
+	if !ok || raw == "" {
+		return def, true
+	}
+	n, err := strconv.Atoi(raw)
+	if err != nil || n < 0 {
 		return def, false
 	}
 	return n, true
