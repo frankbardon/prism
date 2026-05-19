@@ -29,9 +29,20 @@ type MarkDef struct {
 	Tooltip       any       `json:"tooltip,omitempty"`
 	InnerRadius   *float64  `json:"inner_radius,omitempty"`
 	OuterRadius   *float64  `json:"outer_radius,omitempty"`
-	PadAngle      *float64  `json:"pad_angle,omitempty"`
-	URL           string    `json:"url,omitempty"`
-	Path          string    `json:"path,omitempty"`
+	// InnerRadiusRatio (P10) is the donut hole's inner radius as a
+	// fraction of OuterR (0–1). When set, takes precedence over the
+	// default donut ratio (0.55). Ignored when InnerRadius is also
+	// set (InnerRadius is absolute pixels, wins).
+	InnerRadiusRatio *float64 `json:"inner_radius_ratio,omitempty"`
+	PadAngle         *float64 `json:"pad_angle,omitempty"`
+	URL              string   `json:"url,omitempty"`
+	Path             string   `json:"path,omitempty"`
+	// Maxbins (P10) caps the bin count for histogram marks. nil = use
+	// Sturges' rule default (ceil(log2(n) + 1)).
+	Maxbins *int `json:"maxbins,omitempty"`
+	// ViolinResolution (P10) sets the number of KDE sample points per
+	// violin group. nil = 64 (the D061 default).
+	ViolinResolution *int `json:"violin_resolution,omitempty"`
 }
 
 // Mark is the discriminated mark form: string shorthand or full mark_def

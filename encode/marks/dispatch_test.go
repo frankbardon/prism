@@ -7,13 +7,16 @@ import (
 )
 
 func TestPrismEncodeDispatchUnimplementedWarns(t *testing.T) {
+	// P10 implemented arc/pie/donut/histogram/heatmap/boxplot/violin;
+	// the warn-and-skip path now only covers path/image/sankey/
+	// funnel/sparkline. Use "sankey" as the canary.
 	tbl := buildTable(t, map[string]any{
 		"score": []float64{0.4},
 	})
 	plot := plotRect()
-	marks, warn, err := Encode("arc", Inputs{Table: tbl, Layout: plot})
+	marks, warn, err := Encode("sankey", Inputs{Table: tbl, Layout: plot})
 	if err != nil {
-		t.Fatalf("Encode(arc): %v", err)
+		t.Fatalf("Encode(sankey): %v", err)
 	}
 	if len(marks) != 0 {
 		t.Errorf("marks for unsupported type = %d, want 0", len(marks))

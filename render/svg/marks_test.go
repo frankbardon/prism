@@ -92,3 +92,47 @@ func TestPrismSVGRenderAreaEmitsPath(t *testing.T) {
 		t.Errorf("area not self-closed: %s", got)
 	}
 }
+
+func TestPrismRenderArcEmitsPath(t *testing.T) {
+	w := NewWriter()
+	m := scene.Mark{
+		Type: scene.MarkArc,
+		ID:   "pie-0",
+		Arc: &scene.ArcGeom{
+			Cx: 100, Cy: 100,
+			StartAngle: 0, EndAngle: 1.0,
+			OuterR: 50, InnerR: 0,
+		},
+	}
+	renderArc(w, m)
+	got := w.String()
+	if !strings.Contains(got, `<path`) {
+		t.Errorf("arc output not path: %s", got)
+	}
+	if !strings.Contains(got, `class="prism-mark-arc"`) {
+		t.Errorf("arc missing prism-mark-arc class: %s", got)
+	}
+	// Pie sector: one M, one L (to outer start), one A, one Z.
+	if strings.Count(got, " A") != 1 {
+		t.Errorf("pie sector should have exactly 1 A command: %s", got)
+	}
+}
+
+func TestPrismRenderArcDonutHasInnerArc(t *testing.T) {
+	w := NewWriter()
+	m := scene.Mark{
+		Type: scene.MarkArc,
+		ID:   "donut-0",
+		Arc: &scene.ArcGeom{
+			Cx: 100, Cy: 100,
+			StartAngle: 0, EndAngle: 1.0,
+			OuterR: 50, InnerR: 27.5,
+		},
+	}
+	renderArc(w, m)
+	got := w.String()
+	// Donut sector: two A commands (outer + inner arcs).
+	if strings.Count(got, " A") != 2 {
+		t.Errorf("donut sector should have exactly 2 A commands: %s", got)
+	}
+}
