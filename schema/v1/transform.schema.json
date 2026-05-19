@@ -1,0 +1,324 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:prism:schema:v1:transform",
+  "title": "Prism Transforms",
+  "description": "Discriminated transform variants applied to a dataset.",
+  "$defs": {
+    "aggregate_op": {
+      "type": "string",
+      "description": "Friendly aggregate alias mapped to Pulse internals by the compiler.",
+      "enum": [
+        "count", "sum", "mean", "median", "min", "max", "stdev", "variance",
+        "q1", "q3", "ci0", "ci1",
+        "distinct", "mode",
+        "wmean", "ratio", "lift", "share"
+      ]
+    },
+    "transform_base": {
+      "type": "object",
+      "description": "Optional fields available on every transform variant.",
+      "properties": {
+        "data": {
+          "type": "string",
+          "description": "Alias of the input dataset for this transform.",
+          "minLength": 1
+        },
+        "as": {
+          "type": "string",
+          "description": "Alias under which the transform output is registered.",
+          "minLength": 1
+        }
+      }
+    },
+    "transform": {
+      "oneOf": [
+        {"$ref": "transform.schema.json#/$defs/filter_transform"},
+        {"$ref": "transform.schema.json#/$defs/calculate_transform"},
+        {"$ref": "transform.schema.json#/$defs/aggregate_transform"},
+        {"$ref": "transform.schema.json#/$defs/bin_transform"},
+        {"$ref": "transform.schema.json#/$defs/window_transform"},
+        {"$ref": "transform.schema.json#/$defs/join_transform"},
+        {"$ref": "transform.schema.json#/$defs/union_transform"},
+        {"$ref": "transform.schema.json#/$defs/pivot_transform"},
+        {"$ref": "transform.schema.json#/$defs/unpivot_transform"},
+        {"$ref": "transform.schema.json#/$defs/sample_transform"},
+        {"$ref": "transform.schema.json#/$defs/sort_transform"},
+        {"$ref": "transform.schema.json#/$defs/limit_transform"}
+      ],
+      "description": "Single transform step; exactly one of the 12 variants identified by its discriminator key."
+    },
+    "filter_transform": {
+      "type": "object",
+      "description": "Row filter expressed as a Pulse expression predicate.",
+      "additionalProperties": false,
+      "required": ["filter"],
+      "properties": {
+        "filter": {"$ref": "shared.schema.json#/$defs/expression", "description": "Pulse expression evaluated per row; truthy rows pass."},
+        "data":   {"type": "string", "minLength": 1, "description": "Optional input alias."},
+        "as":     {"type": "string", "minLength": 1, "description": "Optional output alias."}
+      }
+    },
+    "calculate_transform": {
+      "type": "object",
+      "description": "Compute a new column from a Pulse expression and bind it to a name.",
+      "additionalProperties": false,
+      "required": ["calculate", "as"],
+      "properties": {
+        "calculate": {"$ref": "shared.schema.json#/$defs/expression", "description": "Pulse expression producing the new column value."},
+        "as":        {"type": "string", "minLength": 1, "description": "Name of the new column."},
+        "data":      {"type": "string", "minLength": 1, "description": "Optional input alias."}
+      }
+    },
+    "aggregate_transform": {
+      "type": "object",
+      "description": "Group-by aggregate; produces one row per groupby key combination.",
+      "additionalProperties": false,
+      "required": ["aggregate"],
+      "properties": {
+        "groupby": {
+          "type": "array",
+          "description": "Field names to group by; omit for global aggregation.",
+          "items": {"$ref": "shared.schema.json#/$defs/field_ref"}
+        },
+        "aggregate": {
+          "type": "array",
+          "description": "List of aggregate operations to compute.",
+          "minItems": 1,
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["op", "as"],
+            "properties": {
+              "op":    {"$ref": "transform.schema.json#/$defs/aggregate_op", "description": "Aggregate operation."},
+              "field": {"$ref": "shared.schema.json#/$defs/field_ref", "description": "Field to aggregate; omitted for count and similar ops."},
+              "as":    {"type": "string", "minLength": 1, "description": "Output column name."}
+            }
+          }
+        },
+        "data": {"type": "string", "minLength": 1, "description": "Optional input alias."},
+        "as":   {"type": "string", "minLength": 1, "description": "Optional output alias."}
+      }
+    },
+    "bin_transform": {
+      "type": "object",
+      "description": "Bin a numeric field into buckets.",
+      "additionalProperties": false,
+      "required": ["bin", "field", "as"],
+      "properties": {
+        "bin": {
+          "oneOf": [
+            {"type": "boolean", "description": "True enables automatic binning."},
+            {
+              "type": "object",
+              "additionalProperties": false,
+              "description": "Manual bin parameters.",
+              "properties": {
+                "maxbins": {"type": "integer", "minimum": 1, "description": "Maximum number of bins."},
+                "step":    {"type": "number", "exclusiveMinimum": 0, "description": "Fixed bin width."},
+                "extent":  {
+                  "type": "array",
+                  "items": {"type": "number"},
+                  "minItems": 2,
+                  "maxItems": 2,
+                  "description": "Lower/upper bound for the binning extent."
+                }
+              }
+            }
+          ],
+          "description": "Bin configuration."
+        },
+        "field": {"$ref": "shared.schema.json#/$defs/field_ref", "description": "Field to bin."},
+        "as":    {"type": "string", "minLength": 1, "description": "Output bin field name."},
+        "data":  {"type": "string", "minLength": 1, "description": "Optional input alias."}
+      }
+    },
+    "window_transform": {
+      "type": "object",
+      "description": "Windowed aggregate or rank within a partition.",
+      "additionalProperties": false,
+      "required": ["window"],
+      "properties": {
+        "window": {
+          "type": "array",
+          "description": "One or more window operations.",
+          "minItems": 1,
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["op", "as"],
+            "properties": {
+              "op":    {"type": "string", "description": "Window operation name.", "enum": ["row_number", "rank", "dense_rank", "lag", "lead", "first_value", "last_value", "sum", "mean", "min", "max", "count"]},
+              "field": {"$ref": "shared.schema.json#/$defs/field_ref", "description": "Field for ops that take one."},
+              "as":    {"type": "string", "minLength": 1, "description": "Output column name."},
+              "param": {"type": "number", "description": "Numeric parameter (e.g. lag offset)."}
+            }
+          }
+        },
+        "partitionby": {
+          "type": "array",
+          "description": "Partition keys.",
+          "items": {"$ref": "shared.schema.json#/$defs/field_ref"}
+        },
+        "sort": {
+          "type": "array",
+          "description": "Sort spec within the partition.",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["field"],
+            "properties": {
+              "field": {"$ref": "shared.schema.json#/$defs/field_ref"},
+              "order": {"type": "string", "enum": ["ascending", "descending"], "description": "Sort direction."}
+            }
+          }
+        },
+        "frame": {
+          "type": "array",
+          "items": {"type": ["integer", "null"]},
+          "minItems": 2,
+          "maxItems": 2,
+          "description": "Window frame as [before, after] row offsets; null for unbounded."
+        },
+        "data": {"type": "string", "minLength": 1, "description": "Optional input alias."},
+        "as":   {"type": "string", "minLength": 1, "description": "Optional output alias."}
+      }
+    },
+    "join_transform": {
+      "type": "object",
+      "description": "Join two datasets on equality of key fields.",
+      "additionalProperties": false,
+      "required": ["join", "with", "on"],
+      "properties": {
+        "join": {"type": "string", "enum": ["inner", "left", "right", "outer", "anti", "semi"], "description": "Join kind."},
+        "with": {"type": "string", "minLength": 1, "description": "Name of the right-hand dataset."},
+        "on": {
+          "oneOf": [
+            {"$ref": "shared.schema.json#/$defs/field_ref"},
+            {
+              "type": "array",
+              "items": {"$ref": "shared.schema.json#/$defs/field_ref"},
+              "minItems": 1,
+              "description": "List of key fields used for both sides."
+            },
+            {
+              "type": "object",
+              "additionalProperties": false,
+              "required": ["left", "right"],
+              "properties": {
+                "left":  {"type": "array", "items": {"$ref": "shared.schema.json#/$defs/field_ref"}, "minItems": 1, "description": "Left-side key fields."},
+                "right": {"type": "array", "items": {"$ref": "shared.schema.json#/$defs/field_ref"}, "minItems": 1, "description": "Right-side key fields."}
+              },
+              "description": "Explicit left/right key mapping."
+            }
+          ],
+          "description": "Join keys."
+        },
+        "data": {"type": "string", "minLength": 1, "description": "Left-hand input alias."},
+        "as":   {"type": "string", "minLength": 1, "description": "Output alias."}
+      }
+    },
+    "union_transform": {
+      "type": "object",
+      "description": "Vertically concatenate datasets that share a schema.",
+      "additionalProperties": false,
+      "required": ["union"],
+      "properties": {
+        "union": {
+          "type": "array",
+          "items": {"type": "string", "minLength": 1},
+          "minItems": 2,
+          "description": "Names of datasets to union."
+        },
+        "data": {"type": "string", "minLength": 1, "description": "Optional first input alias (alternative to including it in union)."},
+        "as":   {"type": "string", "minLength": 1, "description": "Optional output alias."}
+      }
+    },
+    "pivot_transform": {
+      "type": "object",
+      "description": "Wide-form pivot: spread distinct values of a field across columns.",
+      "additionalProperties": false,
+      "required": ["pivot", "value"],
+      "properties": {
+        "pivot": {"$ref": "shared.schema.json#/$defs/field_ref", "description": "Field whose distinct values become new column names."},
+        "value": {"$ref": "shared.schema.json#/$defs/field_ref", "description": "Field providing the cell values."},
+        "groupby": {
+          "type": "array",
+          "items": {"$ref": "shared.schema.json#/$defs/field_ref"},
+          "description": "Group keys preserved as row identifiers."
+        },
+        "op":   {"$ref": "transform.schema.json#/$defs/aggregate_op", "description": "Aggregate op used when multiple rows collapse into one cell."},
+        "data": {"type": "string", "minLength": 1, "description": "Optional input alias."},
+        "as":   {"type": "string", "minLength": 1, "description": "Optional output alias."}
+      }
+    },
+    "unpivot_transform": {
+      "type": "object",
+      "description": "Long-form unpivot: stack wide columns into name/value pairs.",
+      "additionalProperties": false,
+      "required": ["unpivot"],
+      "properties": {
+        "unpivot": {
+          "type": "array",
+          "items": {"$ref": "shared.schema.json#/$defs/field_ref"},
+          "minItems": 1,
+          "description": "Columns to stack."
+        },
+        "as": {
+          "type": "array",
+          "items": {"type": "string"},
+          "minItems": 2,
+          "maxItems": 2,
+          "description": "Output [name_col, value_col] pair."
+        },
+        "data": {"type": "string", "minLength": 1, "description": "Optional input alias."}
+      }
+    },
+    "sample_transform": {
+      "type": "object",
+      "description": "Randomly subsample the dataset.",
+      "additionalProperties": false,
+      "required": ["sample"],
+      "properties": {
+        "sample": {"type": "integer", "minimum": 1, "description": "Maximum number of rows to keep."},
+        "seed":   {"type": "integer", "description": "Optional PRNG seed for deterministic sampling."},
+        "data":   {"type": "string", "minLength": 1, "description": "Optional input alias."},
+        "as":     {"type": "string", "minLength": 1, "description": "Optional output alias."}
+      }
+    },
+    "sort_transform": {
+      "type": "object",
+      "description": "Sort rows by one or more fields.",
+      "additionalProperties": false,
+      "required": ["sort"],
+      "properties": {
+        "sort": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["field"],
+            "properties": {
+              "field": {"$ref": "shared.schema.json#/$defs/field_ref"},
+              "order": {"type": "string", "enum": ["ascending", "descending"], "description": "Sort direction."}
+            }
+          }
+        },
+        "data": {"type": "string", "minLength": 1, "description": "Optional input alias."},
+        "as":   {"type": "string", "minLength": 1, "description": "Optional output alias."}
+      }
+    },
+    "limit_transform": {
+      "type": "object",
+      "description": "Keep the first N rows after any prior transforms.",
+      "additionalProperties": false,
+      "required": ["limit"],
+      "properties": {
+        "limit":  {"type": "integer", "minimum": 1, "description": "Row cap."},
+        "offset": {"type": "integer", "minimum": 0, "description": "Optional starting offset."},
+        "data":   {"type": "string", "minLength": 1, "description": "Optional input alias."},
+        "as":     {"type": "string", "minLength": 1, "description": "Optional output alias."}
+      }
+    }
+  }
+}
