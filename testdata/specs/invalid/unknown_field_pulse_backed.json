@@ -1,0 +1,14 @@
+{
+  "$schema": "urn:prism:schema:v1:spec",
+  "title": "Brand score (Pulse-backed bar with typo) [INVALID]",
+  "description": "Triggers PRISM_SPEC_001 because 'scor' (typo of 'score') is not a field in testdata/cohorts/tiny.pulse.",
+  "data": {
+    "name": "tiny",
+    "source": "testdata/cohorts/tiny.pulse"
+  },
+  "mark": "bar",
+  "encoding": {
+    "x": {"field": "brand_id", "type": "nominal"},
+    "y": {"field": "scor", "type": "quantitative", "aggregate": "mean"}
+  }
+}

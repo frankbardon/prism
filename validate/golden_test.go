@@ -7,6 +7,9 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/spf13/afero"
+
+	"github.com/frankbardon/prism/resolve"
 	"github.com/frankbardon/prism/spec"
 	"github.com/frankbardon/prism/validate"
 	_ "github.com/frankbardon/prism/validate/rules"
@@ -28,8 +31,16 @@ func TestPrismSpecGoldensValidateOffline(t *testing.T) {
 	}
 	sem := validate.NewDefaultSemanticValidator()
 
-	// Resolve testdata path relative to the repo root.
+	// Resolve testdata path relative to the repo root. Switch cwd
+	// there so specs that embed relative `data.source` paths
+	// (e.g. testdata/cohorts/tiny.pulse) resolve through OsFs.
 	root := repoRoot(t)
+	originalCwd, _ := os.Getwd()
+	if err := os.Chdir(root); err != nil {
+		t.Fatalf("chdir(%s): %v", root, err)
+	}
+	t.Cleanup(func() { _ = os.Chdir(originalCwd) })
+
 	positives := filepath.Join(root, "testdata", "specs")
 	negatives := filepath.Join(root, "testdata", "specs", "invalid")
 
@@ -118,15 +129,16 @@ func TestPrismSpecGoldensValidateOffline(t *testing.T) {
 // negativeCodeMap maps fixture filename → expected PRISM_SPEC_* code.
 // Adding a new negative fixture requires adding the mapping here.
 var negativeCodeMap = map[string]string{
-	"unknown_field.json":            "PRISM_SPEC_001",
-	"mean_on_categorical.json":      "PRISM_SPEC_002",
-	"theta_on_bar.json":             "PRISM_SPEC_003",
-	"selection_undefined.json":      "PRISM_SPEC_004",
-	"dataset_undefined.json":        "PRISM_SPEC_005",
-	"bad_expression.json":           "PRISM_SPEC_006",
-	"log_scale_on_categorical.json": "PRISM_SPEC_007",
-	"pie_without_theta.json":        "PRISM_SPEC_008",
-	"bad_schema_ref.json":           "PRISM_SPEC_009",
+	"unknown_field.json":              "PRISM_SPEC_001",
+	"mean_on_categorical.json":        "PRISM_SPEC_002",
+	"theta_on_bar.json":               "PRISM_SPEC_003",
+	"selection_undefined.json":        "PRISM_SPEC_004",
+	"dataset_undefined.json":          "PRISM_SPEC_005",
+	"bad_expression.json":             "PRISM_SPEC_006",
+	"log_scale_on_categorical.json":   "PRISM_SPEC_007",
+	"pie_without_theta.json":          "PRISM_SPEC_008",
+	"bad_schema_ref.json":             "PRISM_SPEC_009",
+	"unknown_field_pulse_backed.json": "PRISM_SPEC_001",
 }
 
 // codesOfShape extracts a stable string slice of shape-error codes.
@@ -166,15 +178,16 @@ func repoRoot(t *testing.T) string {
 	}
 }
 
-// lookupFor mirrors the CLI's inline-dataset lookup builder: anything
-// declared in datasets or in data.values + data.fields registers a
-// minimal schema shim.
+// lookupFor mirrors the CLI's buildLookup: inline datasets register
+// into a StaticLookup; specs that bind data.source add a PulseLookup
+// over the on-disk file system. The two are combined into a
+// CompositeLookup so semantic rules see both surfaces.
 func lookupFor(s *spec.Spec) validate.SchemaLookup {
-	lookup := validate.NewStaticLookup()
-	if s == nil {
-		return lookup
-	}
-	register := func(name string, ds *spec.Data) {
+	staticLookup := validate.NewStaticLookup()
+	pulseLookup := validate.NewPulseLookup(resolve.New(nil), afero.NewOsFs())
+	usedPulse := false
+
+	registerStatic := func(name string, ds *spec.Data) {
 		if ds == nil || name == "" {
 			return
 		}
@@ -199,15 +212,40 @@ func lookupFor(s *spec.Spec) validate.SchemaLookup {
 		if len(shim.Fields) == 0 {
 			return
 		}
-		lookup.Register(name, shim)
+		staticLookup.Register(name, shim)
 	}
-	if s.Data != nil {
-		register(s.Data.Name, s.Data)
+
+	registerPulse := func(name string, ds *spec.Data) {
+		if ds == nil || ds.Source == "" {
+			return
+		}
+		if name != "" {
+			pulseLookup.Register(name, ds.Source)
+			usedPulse = true
+		}
+		base := strings.TrimSuffix(filepath.Base(ds.Source), filepath.Ext(ds.Source))
+		if base != "" && base != name {
+			pulseLookup.Register(base, ds.Source)
+			usedPulse = true
+		}
+		pulseLookup.Register(ds.Source, ds.Source)
+		usedPulse = true
 	}
-	for name, ds := range s.Datasets {
-		register(name, ds)
+
+	if s != nil {
+		if s.Data != nil {
+			registerStatic(s.Data.Name, s.Data)
+			registerPulse(s.Data.Name, s.Data)
+		}
+		for name, ds := range s.Datasets {
+			registerStatic(name, ds)
+			registerPulse(name, ds)
+		}
 	}
-	return lookup
+	if !usedPulse {
+		return staticLookup
+	}
+	return validate.NewCompositeLookup(pulseLookup, staticLookup)
 }
 
 func inferType(v any) string {

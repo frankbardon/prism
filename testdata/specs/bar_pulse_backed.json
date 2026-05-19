@@ -1,0 +1,14 @@
+{
+  "$schema": "urn:prism:schema:v1:spec",
+  "title": "Brand score (Pulse-backed bar)",
+  "description": "Validates field-existence rules against the real schema in testdata/cohorts/tiny.pulse.",
+  "data": {
+    "name": "tiny",
+    "source": "testdata/cohorts/tiny.pulse"
+  },
+  "mark": "bar",
+  "encoding": {
+    "x": {"field": "brand_id", "type": "nominal"},
+    "y": {"field": "score", "type": "quantitative", "aggregate": "mean"}
+  }
+}

@@ -57,6 +57,48 @@ func TestValidateCLISmoke(t *testing.T) {
 			t.Fatalf("expected exit 1 for unknown code, got %d", exit)
 		}
 	})
+
+	// Pulse-backed positive + negative. The negative variant proves the
+	// field-existence rule fires against the real cohort schema (P02
+	// wires PulseLookup behind the existing validator).
+	t.Run("valid-pulse-backed", func(t *testing.T) {
+		root := repoFile(t, "")
+		originalCwd, _ := os.Getwd()
+		if err := os.Chdir(root); err != nil {
+			t.Fatalf("chdir(%s): %v", root, err)
+		}
+		t.Cleanup(func() { _ = os.Chdir(originalCwd) })
+
+		fixture := filepath.Join("testdata", "specs", "bar_pulse_backed.json")
+		out, exit := runCLI(t, "prism", "validate", fixture)
+		if exit != 0 {
+			t.Fatalf("expected exit 0, got %d (stdout=%q)", exit, out)
+		}
+		if !strings.Contains(out, "valid") {
+			t.Errorf("expected stdout to contain \"valid\", got: %q", out)
+		}
+	})
+
+	t.Run("invalid-pulse-backed", func(t *testing.T) {
+		root := repoFile(t, "")
+		originalCwd, _ := os.Getwd()
+		if err := os.Chdir(root); err != nil {
+			t.Fatalf("chdir(%s): %v", root, err)
+		}
+		t.Cleanup(func() { _ = os.Chdir(originalCwd) })
+
+		fixture := filepath.Join("testdata", "specs", "invalid", "unknown_field_pulse_backed.json")
+		out, exit := runCLI(t, "prism", "validate", fixture)
+		if exit != 1 {
+			t.Fatalf("expected exit 1, got %d (stdout=%q)", exit, out)
+		}
+		if !strings.Contains(out, "PRISM_SPEC_001") {
+			t.Errorf("expected stdout to mention PRISM_SPEC_001, got: %q", out)
+		}
+		if !strings.Contains(out, "scor") {
+			t.Errorf("expected stdout to identify the typoed field 'scor', got: %q", out)
+		}
+	})
 }
 
 // runCLI invokes newApp().Run with a captured stdout and returns

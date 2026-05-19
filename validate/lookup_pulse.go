@@ -50,6 +50,20 @@ func (l *PulseLookup) Register(name, ref string) {
 	delete(l.cache, name)
 }
 
+// Names returns every registered dataset name in arbitrary order.
+// Used by the dataset-ref semantic rule to enumerate externally
+// declared datasets without forcing the rule to know about Resolver.
+func (l *PulseLookup) Names() []string {
+	if l == nil {
+		return nil
+	}
+	out := make([]string, 0, len(l.bindings))
+	for k := range l.bindings {
+		out = append(out, k)
+	}
+	return out
+}
+
 // Schema implements SchemaLookup.
 //
 // Resolves the dataset's ref via the Resolver, folds the Pulse schema
@@ -154,4 +168,34 @@ func (c *CompositeLookup) Schema(name string) (*PulseSchemaShim, bool) {
 		}
 	}
 	return nil, false
+}
+
+// Names implements the Namer interface (see Namer below) by unioning
+// every constituent lookup's Names. Lookups that do not implement
+// Names contribute nothing.
+func (c *CompositeLookup) Names() []string {
+	if c == nil {
+		return nil
+	}
+	seen := map[string]bool{}
+	var out []string
+	for _, l := range c.lookups {
+		if n, ok := l.(Namer); ok {
+			for _, name := range n.Names() {
+				if !seen[name] {
+					seen[name] = true
+					out = append(out, name)
+				}
+			}
+		}
+	}
+	return out
+}
+
+// Namer is the optional capability for SchemaLookup impls that can
+// enumerate their registered dataset names. The dataset-reference
+// rule (PRISM_SPEC_005) uses this to know which external datasets
+// to treat as declared, on top of the in-spec `datasets:` block.
+type Namer interface {
+	Names() []string
 }

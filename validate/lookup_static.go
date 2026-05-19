@@ -1,12 +1,10 @@
 package validate
 
-// StaticLookup is a SchemaLookup backed by an in-memory map. It is the
-// P01 testing/CLI default; tests build one with the dataset/field
-// fixtures they expect; the CLI uses it to wire inline datasets without
-// touching Pulse.
-//
-// TODO(P02): swap StaticLookup for a real Pulse-backed implementation
-// driven by the resolver.
+// StaticLookup is a SchemaLookup backed by an in-memory map. Used for
+// inline datasets (`data.values`, `data.fields`) and as a test fixture
+// holder. The Pulse-backed sibling is PulseLookup (lookup_pulse.go);
+// CompositeLookup mixes both when a spec uses both inline and source
+// bindings.
 type StaticLookup struct {
 	Schemas map[string]*PulseSchemaShim
 }
@@ -34,4 +32,17 @@ func (l *StaticLookup) Schema(name string) (*PulseSchemaShim, bool) {
 	}
 	s, ok := l.Schemas[name]
 	return s, ok
+}
+
+// Names implements the Namer interface (see lookup_pulse.go) by
+// returning the registered dataset names in arbitrary order.
+func (l *StaticLookup) Names() []string {
+	if l == nil {
+		return nil
+	}
+	out := make([]string, 0, len(l.Schemas))
+	for k := range l.Schemas {
+		out = append(out, k)
+	}
+	return out
 }
