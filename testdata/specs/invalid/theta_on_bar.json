@@ -1,0 +1,8 @@
+{
+  "$schema": "urn:prism:schema:v1:spec",
+  "data": {"values": [{"v": 1}]},
+  "mark": "bar",
+  "encoding": {
+    "theta": {"field": "v", "type": "quantitative"}
+  }
+}

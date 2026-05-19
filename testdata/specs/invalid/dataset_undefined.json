@@ -1,0 +1,8 @@
+{
+  "$schema": "urn:prism:schema:v1:spec",
+  "data": {"name": "missing_dataset"},
+  "mark": "bar",
+  "encoding": {
+    "x": {"field": "v", "type": "quantitative"}
+  }
+}

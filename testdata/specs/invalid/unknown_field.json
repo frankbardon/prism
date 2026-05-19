@@ -1,0 +1,15 @@
+{
+  "$schema": "urn:prism:schema:v1:spec",
+  "data": {
+    "name": "cohort",
+    "values": [{"x": 1, "y": 2}],
+    "fields": [
+      {"name": "x", "type": "int"},
+      {"name": "y", "type": "int"}
+    ]
+  },
+  "mark": "bar",
+  "encoding": {
+    "x": {"field": "xfield", "type": "nominal"}
+  }
+}

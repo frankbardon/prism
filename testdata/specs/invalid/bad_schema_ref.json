@@ -1,0 +1,8 @@
+{
+  "$schema": "https://example.com/wrong/spec.schema.json",
+  "data": {"values": [{"v": 1}]},
+  "mark": "bar",
+  "encoding": {
+    "x": {"field": "v", "type": "quantitative"}
+  }
+}

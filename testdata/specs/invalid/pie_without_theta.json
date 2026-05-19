@@ -1,0 +1,8 @@
+{
+  "$schema": "urn:prism:schema:v1:spec",
+  "data": {"values": [{"region": "NA", "value": 1}]},
+  "mark": "pie",
+  "encoding": {
+    "color": {"field": "region", "type": "nominal"}
+  }
+}

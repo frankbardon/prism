@@ -1,0 +1,14 @@
+{
+  "$schema": "urn:prism:schema:v1:spec",
+  "data": {
+    "name": "cohort",
+    "values": [{"brand_id": "a"}, {"brand_id": "b"}],
+    "fields": [
+      {"name": "brand_id", "type": "string"}
+    ]
+  },
+  "mark": "bar",
+  "encoding": {
+    "y": {"field": "brand_id", "type": "nominal", "aggregate": "mean"}
+  }
+}

@@ -1,0 +1,8 @@
+{
+  "$schema": "urn:prism:schema:v1:spec",
+  "data": {"values": [{"brand_id": "a"}, {"brand_id": "b"}]},
+  "mark": "bar",
+  "encoding": {
+    "x": {"field": "brand_id", "type": "nominal", "scale": {"type": "log"}}
+  }
+}
