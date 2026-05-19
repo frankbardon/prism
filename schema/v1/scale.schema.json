@@ -1,0 +1,48 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:prism:schema:v1:scale",
+  "title": "Prism Scale",
+  "description": "Scale configuration mapping data domain values to encoded range values.",
+  "$defs": {
+    "scale_type": {
+      "type": "string",
+      "description": "Scale family controlling how domain values map to range values.",
+      "enum": ["linear", "log", "pow", "sqrt", "time", "band", "point", "ordinal"]
+    },
+    "scale": {
+      "type": "object",
+      "description": "Scale configuration object.",
+      "additionalProperties": false,
+      "properties": {
+        "type": {"$ref": "scale.schema.json#/$defs/scale_type", "description": "Scale type."},
+        "domain": {
+          "oneOf": [
+            {"type": "array", "description": "Explicit domain values."},
+            {"type": "string", "minLength": 1, "description": "Named domain reference."}
+          ],
+          "description": "Domain of the scale."
+        },
+        "range": {
+          "oneOf": [
+            {"type": "array", "description": "Explicit range values."},
+            {"type": "string", "minLength": 1, "description": "Named scheme or range reference (e.g. \"viridis\")."}
+          ],
+          "description": "Range of the scale."
+        },
+        "scheme":   {"type": "string", "description": "Categorical or sequential color scheme name."},
+        "padding":  {"type": "number", "minimum": 0, "description": "Inner padding fraction for band/point scales."},
+        "padding_inner": {"type": "number", "minimum": 0, "maximum": 1, "description": "Inner band padding fraction."},
+        "padding_outer": {"type": "number", "minimum": 0, "description": "Outer band padding fraction."},
+        "align":    {"type": "number", "minimum": 0, "maximum": 1, "description": "Alignment for band/point scales (0..1)."},
+        "base":     {"type": "number", "exclusiveMinimum": 0, "description": "Log scale base."},
+        "exponent": {"type": "number", "description": "Pow scale exponent."},
+        "nice":     {"type": ["boolean", "integer", "string"], "description": "Whether to extend the domain to nice round values; integer = tick count hint."},
+        "clamp":    {"type": "boolean", "description": "Clamp values outside the domain to the domain extremes."},
+        "zero":     {"type": "boolean", "description": "Include zero in the domain (numeric scales)."},
+        "reverse":  {"type": "boolean", "description": "Reverse the range."},
+        "round":    {"type": "boolean", "description": "Round output values to integers."},
+        "interpolate": {"type": "string", "description": "Range interpolation method (e.g. \"rgb\", \"hcl\")."}
+      }
+    }
+  }
+}
