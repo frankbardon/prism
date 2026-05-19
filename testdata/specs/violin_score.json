@@ -1,0 +1,24 @@
+{
+  "$schema": "urn:prism:schema:v1:spec",
+  "title": "Score distribution by group (violin)",
+  "data": {
+    "name": "samples",
+    "values": [
+      {"group": "a", "score": 0.10},
+      {"group": "a", "score": 0.18},
+      {"group": "a", "score": 0.25},
+      {"group": "a", "score": 0.32},
+      {"group": "a", "score": 0.40},
+      {"group": "b", "score": 0.50},
+      {"group": "b", "score": 0.58},
+      {"group": "b", "score": 0.65},
+      {"group": "b", "score": 0.74},
+      {"group": "b", "score": 0.92}
+    ]
+  },
+  "mark": "violin",
+  "encoding": {
+    "x": {"field": "group", "type": "nominal"},
+    "y": {"field": "score", "type": "quantitative"}
+  }
+}
