@@ -411,48 +411,54 @@ func buildSharedScaleForFacet(childSpec *spec.Spec, parts *facetPartitions, chan
 		return nil, nil
 	}
 
-	// Union the per-partition values into one big slice; resolve via
-	// the regular per-channel resolver so type inference (band vs
-	// linear vs time) lands consistently with the flat Encode path.
+	// Union the per-partition values into one big slice in a stable
+	// row-major iteration order over (rowIdx, colIdx) so the
+	// resulting shared scale is byte-deterministic across runs (map
+	// iteration order otherwise floats unification + golden SVGs).
 	var allValues []any
-	for _, tbl := range parts.Tables {
-		col, ok := tbl.Column(ch.Field)
-		if !ok {
-			continue
-		}
-		for i := 0; i < col.Len(); i++ {
-			allValues = append(allValues, col.ValueAt(i))
+	var firstCol table.Column
+	rows := len(parts.RowValues)
+	if rows == 0 {
+		rows = 1
+	}
+	cols := len(parts.ColValues)
+	if cols == 0 {
+		cols = 1
+	}
+	for ri := 0; ri < rows; ri++ {
+		for ci := 0; ci < cols; ci++ {
+			tbl, ok := parts.Tables[[2]int{ri, ci}]
+			if !ok || tbl == nil {
+				continue
+			}
+			col, ok := tbl.Column(ch.Field)
+			if !ok {
+				continue
+			}
+			if firstCol == nil {
+				firstCol = col
+			}
+			for i := 0; i < col.Len(); i++ {
+				allValues = append(allValues, col.ValueAt(i))
+			}
 		}
 	}
-	if len(allValues) == 0 {
+	if len(allValues) == 0 || firstCol == nil {
 		return nil, nil
 	}
-	// Synthesise a one-shot table-like wrapper via the per-channel
-	// resolver. We do not have the Table here, only the values, so
-	// pull the column-kind from the first partition + use
-	// ResolveScale directly.
-	for _, tbl := range parts.Tables {
-		col, ok := tbl.Column(ch.Field)
-		if !ok {
-			continue
+	if ch.Scale != nil && ch.Scale.Type != "" {
+		opts := ScaleOpts{}
+		if ch.Scale.Base != nil {
+			opts.Base = *ch.Scale.Base
 		}
-		// All partitions share the same upstream schema (table.Filter
-		// preserves kinds), so the first column's kind is canonical.
-		if ch.Scale != nil && ch.Scale.Type != "" {
-			opts := ScaleOpts{}
-			if ch.Scale.Base != nil {
-				opts.Base = *ch.Scale.Base
-			}
-			if ch.Scale.Exponent != nil {
-				opts.Exp = *ch.Scale.Exponent
-			}
-			sc, _, err := ResolveScaleTyped(scene.ScaleType(ch.Scale.Type), allValues, rmin, rmax, opts)
-			return sc, err
+		if ch.Scale.Exponent != nil {
+			opts.Exp = *ch.Scale.Exponent
 		}
-		sc, _, err := ResolveScale(ch.Type, col.Kind(), allValues, rmin, rmax)
+		sc, _, err := ResolveScaleTyped(scene.ScaleType(ch.Scale.Type), allValues, rmin, rmax, opts)
 		return sc, err
 	}
-	return nil, nil
+	sc, _, err := ResolveScale(ch.Type, firstCol.Kind(), allValues, rmin, rmax)
+	return sc, err
 }
 
 // facetFieldFromChildSpec returns the field bound on the child
