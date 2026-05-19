@@ -6,12 +6,18 @@ package scene
 // render/svg/style.go is derived from this struct so the P06 swap is
 // interface-clean.
 type Theme struct {
+	Name       string `json:"name,omitempty"`
 	ColorAxis  *Color `json:"color_axis,omitempty"`
 	ColorGrid  *Color `json:"color_grid,omitempty"`
 	ColorText  *Color `json:"color_text,omitempty"`
 	Background string `json:"background,omitempty"`
 	FontSans   string `json:"font_sans,omitempty"`
 	FontMono   string `json:"font_mono,omitempty"`
+	// CSS carries the pre-rendered <style> block produced by the
+	// theme package. The renderer emits this verbatim when set, and
+	// falls back to a hardcoded block when empty (back-compat with
+	// scene.Default()).
+	CSS string `json:"-"`
 }
 
 // Default returns the hard-coded P05 theme:

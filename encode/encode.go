@@ -9,15 +9,18 @@ import (
 	"github.com/frankbardon/prism/plan"
 	"github.com/frankbardon/prism/spec"
 	"github.com/frankbardon/prism/table"
+	"github.com/frankbardon/prism/theme"
 )
 
 // EncodeOpts controls the encoder's per-call layout knobs. Width
-// and Height default to 800×600 when zero. Theme defaults to
-// scene.Default() when nil.
+// and Height default to 800×600 when zero. ThemeName selects a
+// registered theme (light/dark/print + user-loaded); Theme is the
+// resolved scene-IR theme override (wins over ThemeName).
 type EncodeOpts struct {
-	Width  float64
-	Height float64
-	Theme  *scene.Theme
+	Width     float64
+	Height    float64
+	Theme     *scene.Theme
+	ThemeName string
 }
 
 // Encode turns a validated *spec.Spec plus the executor's output
@@ -47,9 +50,9 @@ func Encode(s *spec.Spec, tables map[plan.NodeID]*table.Table, tipID plan.NodeID
 	if height == 0 {
 		height = 600
 	}
-	theme := opts.Theme
-	if theme == nil {
-		theme = scene.Default()
+	sceneTheme, err := resolveTheme(opts, s.Theme)
+	if err != nil {
+		return nil, err
 	}
 
 	tbl, ok := tables[tipID]
@@ -207,7 +210,7 @@ func Encode(s *spec.Spec, tables map[plan.NodeID]*table.Table, tipID plan.NodeID
 		}
 	}
 	doc := scene.NewDoc()
-	doc.Theme = theme
+	doc.Theme = sceneTheme
 	doc.Grid = scene.SceneGrid{
 		Layout: scene.GridLayout{Rows: 1, Cols: 1},
 		Cells: []scene.SceneCell{
@@ -370,6 +373,55 @@ func joinNodeIDs(tables map[plan.NodeID]*table.Table) string {
 	out := keys[0]
 	for _, k := range keys[1:] {
 		out += ", " + k
+	}
+	return out
+}
+
+// resolveTheme picks the active theme. Precedence:
+//  1. opts.Theme — explicit scene-IR override (CSS string carried).
+//  2. opts.ThemeName + spec.theme — registry lookup + sparse override.
+//  3. spec.theme alone (uses light as base when name omitted).
+//  4. registered light theme.
+//
+// Returns PRISM_RENDER_THEME_UNKNOWN when ThemeName / spec.theme.name
+// references an unregistered theme.
+func resolveTheme(opts EncodeOpts, override *spec.ThemeOverride) (*scene.Theme, error) {
+	if opts.Theme != nil {
+		return opts.Theme, nil
+	}
+	name := opts.ThemeName
+	if override != nil && override.Name != "" {
+		name = override.Name
+	}
+	if name == "" {
+		name = "light"
+	}
+	base, ok := theme.Get(name)
+	if !ok {
+		return nil, prismerrors.New(
+			"PRISM_RENDER_THEME_UNKNOWN",
+			fmt.Sprintf("Unknown theme %q.", name),
+			map[string]any{"Theme": name, "Available": joinNames(theme.Names())},
+		)
+	}
+	merged := base
+	if override != nil {
+		merged = theme.ApplyOverride(base, override)
+	}
+	scn := merged.ToSceneTheme()
+	scn.Name = merged.Name
+	scn.CSS = merged.CSSVariables()
+	return scn, nil
+}
+
+// joinNames is the tiny comma-joiner used in error contexts.
+func joinNames(xs []string) string {
+	if len(xs) == 0 {
+		return ""
+	}
+	out := xs[0]
+	for _, x := range xs[1:] {
+		out += ", " + x
 	}
 	return out
 }

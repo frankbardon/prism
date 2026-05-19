@@ -7,14 +7,21 @@ import (
 )
 
 // writeStyleBlock emits the <style>...</style> block at the top of
-// the SVG. Carries:
-//   - Theme-driven CSS variables on :root.
-//   - Class selectors for the standard prism-* elements.
-//
-// Output matches design/07-rendering.md § Theming via CSS variables.
+// the SVG. Prefers the theme's pre-rendered CSS string (populated by
+// theme.Theme.CSSVariables in the encoder); falls back to the
+// hardcoded block when the theme carries no CSS (back-compat with
+// scene.Default()).
 func writeStyleBlock(w *Writer, theme *scene.Theme) {
 	if theme == nil {
 		theme = scene.Default()
+	}
+	if theme.CSS != "" {
+		// Indent + emit the prebuilt CSS verbatim. The encoder ensures
+		// the string already includes the <style>...</style> wrapper.
+		w.Raw("  ")
+		w.Raw(theme.CSS)
+		w.Newline()
+		return
 	}
 	w.Raw("  <style>")
 	w.Raw(":root{")
