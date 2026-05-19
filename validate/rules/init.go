@@ -20,4 +20,5 @@ func init() {
 	validate.RegisterDefault(func() validate.SemanticRule { return FormatStringValid{} })
 	validate.RegisterDefault(func() validate.SemanticRule { return ResolveScaleCompat{} })
 	validate.RegisterDefault(func() validate.SemanticRule { return RepeatSubstitution{} })
+	validate.RegisterDefault(func() validate.SemanticRule { return CompositeMarkEncoding{} })
 }
