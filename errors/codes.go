@@ -251,6 +251,25 @@ var Codes = map[string]CodeMetadata{
 		},
 		SeeAlso: []string{"PRISM_SPEC_001"},
 	},
+	"PRISM_SPEC_010": {
+		Code:    "PRISM_SPEC_010",
+		Message: `Log scale on channel {{.Channel}} requires a strictly positive domain (got {{.Value}}).`,
+		Fixups: []string{
+			`Filter out zero and negative values upstream of the encoded field.`,
+			`Switch to scale type "linear" or "sqrt" if the domain naturally includes zero.`,
+			`If the value comes from a calculate transform, guard with a clamp expression (e.g. ` + "`max(field, 1e-9)`" + `).`,
+		},
+		SeeAlso: []string{"PRISM_SPEC_007"},
+	},
+	"PRISM_SPEC_011": {
+		Code:    "PRISM_SPEC_011",
+		Message: `Format string {{.Spec}} on {{.Where}} is not a recognised d3-format specifier ({{.Reason}}).`,
+		Fixups: []string{
+			`Supported specifiers: ,.Nf | .N% | % | ,d | .Ne | .Ns | %Y | %m | %d | %H | %M | %S.`,
+			`See encode/format/README.md for the full list with examples.`,
+			`Drop the format property to fall back to the default rendering.`,
+		},
+	},
 	"PRISM_RENDER_001": {
 		Code:    "PRISM_RENDER_001",
 		Message: `Mark geometry is malformed for {{.Mark}}.`,
@@ -275,6 +294,15 @@ var Codes = map[string]CodeMetadata{
 			`Check the upstream transform pipeline — a filter may have removed every row.`,
 			`Run ` + "`prism execute <spec>`" + ` to inspect the table the encoder consumed.`,
 			`If the spec intentionally produces no marks, verify axes still render in the SVG output.`,
+		},
+	},
+	"PRISM_RENDER_THEME_UNKNOWN": {
+		Code:    "PRISM_RENDER_THEME_UNKNOWN",
+		Message: `Unknown theme {{.Theme}} (registered themes: {{.Available}}).`,
+		Fixups: []string{
+			`Use one of the built-in theme names: light | dark | print.`,
+			`To use a custom theme, load it via theme.LoadFile(path) before rendering.`,
+			`Drop --theme to fall back to the default (light).`,
 		},
 	},
 	"PRISM_ENCODE_001": {
