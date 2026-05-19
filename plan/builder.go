@@ -24,6 +24,17 @@ func NewBuilder() *Builder {
 	return &Builder{nodes: map[NodeID]Node{}}
 }
 
+// NodeIDs returns a copy of the set of currently-registered ids.
+// Used by the build subpackage to detect "the newest leaf" after a
+// dataset registration.
+func (b *Builder) NodeIDs() map[NodeID]struct{} {
+	out := make(map[NodeID]struct{}, len(b.nodes))
+	for id := range b.nodes {
+		out[id] = struct{}{}
+	}
+	return out
+}
+
 // AddNode registers n. Returns an error if a node with the same id is
 // already present (duplicates are always a bug in the spec → DAG
 // translator).

@@ -37,9 +37,9 @@ func kindOf(n Node) string {
 
 // summaryOf renders the one-line parameter summary for n. Uses the
 // node's Labeled.Summary() when available; otherwise falls back to a
-// type-name-only label. We deliberately keep the per-node summary
-// logic on the node itself (rather than a giant switch here) so adding
-// a new node type does not require touching the renderer.
+// type-name-only label. The per-node summary logic intentionally lives
+// on each node itself (rather than a giant switch in this file) so
+// adding a new node type does not require touching the renderer.
 func summaryOf(n Node) string {
 	if l, ok := n.(Labeled); ok {
 		return l.Summary()

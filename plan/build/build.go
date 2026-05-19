@@ -71,9 +71,11 @@ func Build(s *spec.Spec, opts Options) (*plan.DAG, error) {
 	b := plan.NewBuilder()
 	ctx := newBuildCtx(b, opts)
 
-	// Register every declared dataset as a leaf.
+	// Register every declared dataset as a leaf. The top-level data
+	// gets registered first so its leaf wins the "active" slot even
+	// if a sibling named dataset has the same source ref.
 	if s.Data != nil {
-		if err := ctx.registerDataset("", s.Data); err != nil {
+		if err := ctx.registerTopLevel(s.Data); err != nil {
 			return nil, err
 		}
 	}
@@ -151,6 +153,7 @@ type buildCtx struct {
 	opts         Options
 	leafByName   map[string]plan.NodeID // dataset name → leaf node id
 	leafBySource map[string]plan.NodeID // source ref → SourceNode id (dedupe)
+	topLeaf      plan.NodeID            // the top-level (anonymous) leaf, if any
 	counter      int
 }
 
@@ -166,6 +169,54 @@ func newBuildCtx(b *plan.Builder, opts Options) *buildCtx {
 func (c *buildCtx) nextID(prefix string) plan.NodeID {
 	c.counter++
 	return plan.NodeID(prefix + ":" + strconv.Itoa(c.counter))
+}
+
+// registerTopLevel registers s.Data and records its leaf id as the
+// default active leaf for the top-level transform chain. Pure wrapper
+// around registerDataset that captures the leaf id post-registration.
+func (c *buildCtx) registerTopLevel(ds *spec.Data) error {
+	before := snapshot(c)
+	if err := c.registerDataset(ds.Name, ds); err != nil {
+		return err
+	}
+	// Figure out which leaf was newly added. New SourceNodes appear
+	// in leafBySource; new InlineNodes appear in leafByName under
+	// ds.Name when non-empty, otherwise the most-recently-created
+	// counter slot.
+	if ds.Source != "" {
+		if id, ok := c.leafBySource[ds.Source]; ok {
+			c.topLeaf = id
+			return nil
+		}
+	}
+	if ds.Name != "" {
+		if id, ok := c.leafByName[ds.Name]; ok {
+			c.topLeaf = id
+			return nil
+		}
+	}
+	// Anonymous inline. The newest leaf is the one not in `before`.
+	for id := range c.b.NodeIDs() {
+		if _, was := before.ids[id]; !was {
+			c.topLeaf = id
+			return nil
+		}
+	}
+	return nil
+}
+
+// snapshot captures the current builder's node ids so registerTopLevel
+// can identify the newly added leaf for anonymous inline datasets.
+type buildSnapshot struct {
+	ids map[plan.NodeID]struct{}
+}
+
+func snapshot(c *buildCtx) buildSnapshot {
+	out := buildSnapshot{ids: map[plan.NodeID]struct{}{}}
+	for id := range c.b.NodeIDs() {
+		out.ids[id] = struct{}{}
+	}
+	return out
 }
 
 // registerDataset turns one *spec.Data into a leaf node and records
@@ -227,9 +278,13 @@ func (c *buildCtx) registerDataset(name string, ds *spec.Data) error {
 }
 
 // activeLeaf picks the leaf the top-level transform chain consumes.
-// Preference order: top-level data.source, top-level data.values,
-// top-level data.name (alias), first named dataset alphabetically.
+// Preference order: top-level leaf recorded at registerTopLevel time
+// (handles anonymous inline data.values), top-level data.name alias,
+// first named dataset alphabetically.
 func (c *buildCtx) activeLeaf(s *spec.Spec) (plan.NodeID, error) {
+	if c.topLeaf != "" {
+		return c.topLeaf, nil
+	}
 	if s.Data != nil {
 		if id, ok := c.lookupLeaf(s.Data); ok {
 			return id, nil
