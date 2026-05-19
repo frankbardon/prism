@@ -6,11 +6,14 @@ import (
 	"fmt"
 	"io"
 	"os"
+	"path/filepath"
 	"strings"
 
+	"github.com/spf13/afero"
 	"github.com/urfave/cli/v3"
 
 	prismerrors "github.com/frankbardon/prism/errors"
+	"github.com/frankbardon/prism/resolve"
 	"github.com/frankbardon/prism/spec"
 	"github.com/frankbardon/prism/validate"
 	_ "github.com/frankbardon/prism/validate/rules"
@@ -118,20 +121,26 @@ func openSpec(args []string) (io.ReadCloser, string, error) {
 	}
 }
 
-// buildLookup gives semantic rules a StaticLookup populated from any
-// inline datasets in the spec. Rules that need a real Pulse schema
-// gracefully no-op when the lookup misses (see P02 for the real wiring).
+// buildLookup gives semantic rules a SchemaLookup driven by the spec's
+// own data binding.
+//
+//   - Inline values / fields  -> StaticLookup populated from `data.values`
+//     and `data.fields`, mirroring the P01 path.
+//   - data.source             -> PulseLookup wired through resolve.New(nil)
+//     against the on-disk file system. P02 makes the field-existence /
+//     scale-compat rules fire against real schemas.
+//   - Mixed (some inline, some source) -> CompositeLookup tries
+//     PulseLookup first, then falls back to StaticLookup.
 func buildLookup(s *spec.Spec) validate.SchemaLookup {
-	lookup := validate.NewStaticLookup()
-	if s == nil {
-		return lookup
-	}
-	register := func(name string, ds *spec.Data) {
+	staticLookup := validate.NewStaticLookup()
+	pulseLookup := validate.NewPulseLookup(resolve.New(nil), afero.NewOsFs())
+	usedPulse := false
+
+	registerStatic := func(name string, ds *spec.Data) {
 		if ds == nil {
 			return
 		}
 		shim := &validate.PulseSchemaShim{Name: name}
-		// Inline values: infer field names from the first record.
 		if len(ds.Values) > 0 {
 			seen := map[string]bool{}
 			for _, row := range ds.Values {
@@ -146,26 +155,57 @@ func buildLookup(s *spec.Spec) validate.SchemaLookup {
 				}
 			}
 		}
-		// Explicit fields: honor declared types verbatim.
 		for _, f := range ds.Fields {
 			shim.Fields = append(shim.Fields, validate.FieldShim{
 				Name: f.Name, Type: pulseStorageToMeasure(f.Type),
 			})
 		}
 		if len(shim.Fields) == 0 {
-			// Nothing inferable; let semantic rules no-op rather than
-			// surface false positives based on an empty field set.
 			return
 		}
-		lookup.Register(name, shim)
+		staticLookup.Register(name, shim)
 	}
-	if s.Data != nil {
-		register(s.Data.Name, s.Data)
+
+	registerPulse := func(name string, ds *spec.Data) {
+		if ds == nil || ds.Source == "" {
+			return
+		}
+		// Bind under both `data.name` (when present) and the source
+		// basename so field-exists rules can find the schema regardless
+		// of which key the spec used to address it.
+		if name != "" {
+			pulseLookup.Register(name, ds.Source)
+			usedPulse = true
+		}
+		base := strings.TrimSuffix(filepath.Base(ds.Source), filepath.Ext(ds.Source))
+		if base != "" && base != name {
+			pulseLookup.Register(base, ds.Source)
+			usedPulse = true
+		}
+		// Also bind the literal source string so semantic rules that
+		// fall back to data.source see the same schema.
+		pulseLookup.Register(ds.Source, ds.Source)
+		usedPulse = true
 	}
-	for name, ds := range s.Datasets {
-		register(name, ds)
+
+	walk := func(name string, ds *spec.Data) {
+		registerStatic(name, ds)
+		registerPulse(name, ds)
 	}
-	return lookup
+
+	if s != nil {
+		if s.Data != nil {
+			walk(s.Data.Name, s.Data)
+		}
+		for name, ds := range s.Datasets {
+			walk(name, ds)
+		}
+	}
+
+	if !usedPulse {
+		return staticLookup
+	}
+	return validate.NewCompositeLookup(pulseLookup, staticLookup)
 }
 
 // inferMeasureType maps a Go scalar value to a Prism measure-type bucket.

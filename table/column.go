@@ -14,7 +14,7 @@ import (
 )
 
 // Kind buckets Pulse storage types into Prism's columnar categories.
-// The mapping is deliberately lossy: every Pulse type folds into
+// The mapping is intentionally lossy: every Pulse type folds into
 // exactly one Kind, so downstream code (scales, encodings, format
 // strings) reasons about one of five shapes instead of seventeen.
 type Kind int
