@@ -1,0 +1,67 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:prism:schema:v1:composition",
+  "title": "Prism Composition Primitives",
+  "description": "Layer, concat, facet, and repeat composition operators.",
+  "$defs": {
+    "spec_ref": {
+      "$ref": "urn:prism:schema:v1:spec",
+      "description": "Recursive reference back to the spec schema."
+    },
+    "layer": {
+      "type": "array",
+      "description": "Array of child specs drawn over the same coordinate space.",
+      "minItems": 1,
+      "items": {"$ref": "composition.schema.json#/$defs/spec_ref"}
+    },
+    "concat": {
+      "type": "array",
+      "description": "Array of child specs concatenated in reading order.",
+      "minItems": 1,
+      "items": {"$ref": "composition.schema.json#/$defs/spec_ref"}
+    },
+    "hconcat": {
+      "type": "array",
+      "description": "Array of child specs concatenated horizontally.",
+      "minItems": 1,
+      "items": {"$ref": "composition.schema.json#/$defs/spec_ref"}
+    },
+    "vconcat": {
+      "type": "array",
+      "description": "Array of child specs concatenated vertically.",
+      "minItems": 1,
+      "items": {"$ref": "composition.schema.json#/$defs/spec_ref"}
+    },
+    "facet": {
+      "type": "object",
+      "description": "Small-multiples facet: split data by row/column then apply the child spec.",
+      "additionalProperties": false,
+      "properties": {
+        "row":    {"$ref": "encoding.schema.json#/$defs/facet_channel", "description": "Row facet channel."},
+        "column": {"$ref": "encoding.schema.json#/$defs/facet_channel", "description": "Column facet channel."}
+      }
+    },
+    "repeat": {
+      "type": "object",
+      "description": "Repeat the child spec across a set of field names.",
+      "additionalProperties": false,
+      "properties": {
+        "row": {
+          "type": "array",
+          "items": {"$ref": "shared.schema.json#/$defs/field_ref"},
+          "description": "Fields to repeat across rows."
+        },
+        "column": {
+          "type": "array",
+          "items": {"$ref": "shared.schema.json#/$defs/field_ref"},
+          "description": "Fields to repeat across columns."
+        },
+        "layer": {
+          "type": "array",
+          "items": {"$ref": "shared.schema.json#/$defs/field_ref"},
+          "description": "Fields to repeat as overlaid layers."
+        }
+      }
+    }
+  }
+}
