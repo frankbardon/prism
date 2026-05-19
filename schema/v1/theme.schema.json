@@ -1,0 +1,32 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:prism:schema:v1:theme",
+  "title": "Prism Theme Override",
+  "description": "Sparse theme override applied on top of a registered theme.",
+  "$defs": {
+    "theme_override": {
+      "type": "object",
+      "description": "Theme override block. All keys are optional; only present keys override defaults.",
+      "additionalProperties": false,
+      "properties": {
+        "name":       {"type": "string", "description": "Name of a registered theme to inherit from (e.g. light, dark, print)."},
+        "background": {"$ref": "shared.schema.json#/$defs/color", "description": "Chart background color."},
+        "font":       {"type": "string", "description": "Default font family."},
+        "font_size":  {"type": "number", "minimum": 0, "description": "Default font size in pixels."},
+        "color":      {"$ref": "shared.schema.json#/$defs/color", "description": "Default foreground color."},
+        "palette":    {
+          "type": "array",
+          "items": {"$ref": "shared.schema.json#/$defs/color"},
+          "description": "Categorical color palette override."
+        },
+        "scheme":     {"type": "string", "description": "Sequential or diverging color scheme name."},
+        "padding":    {"$ref": "shared.schema.json#/$defs/padding", "description": "Default chart padding."},
+        "mark":       {"type": "object", "description": "Mark property overrides."},
+        "axis":       {"type": "object", "description": "Axis property overrides."},
+        "legend":     {"type": "object", "description": "Legend property overrides."},
+        "scale":      {"type": "object", "description": "Scale property overrides."},
+        "title":      {"type": "object", "description": "Title property overrides."}
+      }
+    }
+  }
+}

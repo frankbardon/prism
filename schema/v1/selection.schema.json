@@ -1,0 +1,66 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:prism:schema:v1:selection",
+  "title": "Prism Selection",
+  "description": "Interactive selection definitions (point and interval).",
+  "$defs": {
+    "selection": {
+      "oneOf": [
+        {"$ref": "selection.schema.json#/$defs/point_selection"},
+        {"$ref": "selection.schema.json#/$defs/interval_selection"}
+      ],
+      "description": "One selection entry: either point or interval."
+    },
+    "point_selection": {
+      "type": "object",
+      "description": "Click-based selection that captures one or many discrete marks.",
+      "additionalProperties": false,
+      "required": ["type"],
+      "properties": {
+        "type":   {"type": "string", "const": "point", "description": "Discriminator."},
+        "fields": {
+          "type": "array",
+          "items": {"$ref": "shared.schema.json#/$defs/field_ref"},
+          "description": "Fields whose values define selection identity."
+        },
+        "encodings": {
+          "type": "array",
+          "items": {"type": "string"},
+          "description": "Encoding channels whose bound fields drive the selection."
+        },
+        "toggle": {"type": ["boolean", "string"], "description": "Whether shift-click toggles membership; expression allowed."},
+        "nearest": {"type": "boolean", "description": "Snap to the nearest mark."},
+        "empty":  {"type": "string", "enum": ["all", "none"], "description": "Behavior when no marks are selected."},
+        "on":     {"type": "string", "description": "Event trigger description."}
+      }
+    },
+    "interval_selection": {
+      "type": "object",
+      "description": "Drag-based selection that captures a continuous range over one or more channels.",
+      "additionalProperties": false,
+      "required": ["type"],
+      "properties": {
+        "type":      {"type": "string", "const": "interval", "description": "Discriminator."},
+        "encodings": {
+          "type": "array",
+          "items": {"type": "string", "enum": ["x", "y"]},
+          "description": "Channels to brush over."
+        },
+        "mark": {
+          "type": "object",
+          "description": "Visual properties of the brush rectangle.",
+          "additionalProperties": false,
+          "properties": {
+            "fill":         {"$ref": "shared.schema.json#/$defs/color"},
+            "fill_opacity": {"type": "number", "minimum": 0, "maximum": 1},
+            "stroke":       {"$ref": "shared.schema.json#/$defs/color"},
+            "stroke_width": {"type": "number", "minimum": 0}
+          }
+        },
+        "translate": {"type": ["boolean", "string"], "description": "Whether the brush can be translated."},
+        "zoom":      {"type": ["boolean", "string"], "description": "Whether the brush can be zoomed."},
+        "on":        {"type": "string", "description": "Event trigger description."}
+      }
+    }
+  }
+}

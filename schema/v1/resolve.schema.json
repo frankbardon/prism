@@ -1,0 +1,42 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:prism:schema:v1:resolve",
+  "title": "Prism Resolve",
+  "description": "Cross-layer scale, axis, and legend resolution rules.",
+  "$defs": {
+    "resolve_mode": {
+      "type": "string",
+      "description": "Whether the entity is shared across layers or independent per layer.",
+      "enum": ["shared", "independent"]
+    },
+    "channel_map": {
+      "type": "object",
+      "description": "Per-channel resolve modes.",
+      "additionalProperties": false,
+      "properties": {
+        "x":       {"$ref": "resolve.schema.json#/$defs/resolve_mode"},
+        "y":       {"$ref": "resolve.schema.json#/$defs/resolve_mode"},
+        "x2":      {"$ref": "resolve.schema.json#/$defs/resolve_mode"},
+        "y2":      {"$ref": "resolve.schema.json#/$defs/resolve_mode"},
+        "theta":   {"$ref": "resolve.schema.json#/$defs/resolve_mode"},
+        "radius":  {"$ref": "resolve.schema.json#/$defs/resolve_mode"},
+        "color":   {"$ref": "resolve.schema.json#/$defs/resolve_mode"},
+        "fill":    {"$ref": "resolve.schema.json#/$defs/resolve_mode"},
+        "stroke":  {"$ref": "resolve.schema.json#/$defs/resolve_mode"},
+        "opacity": {"$ref": "resolve.schema.json#/$defs/resolve_mode"},
+        "size":    {"$ref": "resolve.schema.json#/$defs/resolve_mode"},
+        "shape":   {"$ref": "resolve.schema.json#/$defs/resolve_mode"}
+      }
+    },
+    "resolve": {
+      "type": "object",
+      "description": "Resolve block specifying shared/independent behavior for scales/axes/legends.",
+      "additionalProperties": false,
+      "properties": {
+        "scale":  {"$ref": "resolve.schema.json#/$defs/channel_map", "description": "Per-channel scale resolution."},
+        "axis":   {"$ref": "resolve.schema.json#/$defs/channel_map", "description": "Per-channel axis resolution."},
+        "legend": {"$ref": "resolve.schema.json#/$defs/channel_map", "description": "Per-channel legend resolution."}
+      }
+    }
+  }
+}
