@@ -1,0 +1,35 @@
+{
+  "$schema": "urn:prism:schema:v1:spec",
+  "title": "Shared y-scale domain union",
+  "resolve": {"scale": {"y": "shared"}},
+  "layer": [
+    {
+      "$schema": "urn:prism:schema:v1:spec",
+      "data": {"values": [
+        {"x": "a", "y": 0},
+        {"x": "b", "y": 10},
+        {"x": "c", "y": 25},
+        {"x": "d", "y": 50}
+      ]},
+      "mark": "bar",
+      "encoding": {
+        "x": {"field": "x", "type": "nominal"},
+        "y": {"field": "y", "type": "quantitative"}
+      }
+    },
+    {
+      "$schema": "urn:prism:schema:v1:spec",
+      "data": {"values": [
+        {"x": "a", "y": 40},
+        {"x": "b", "y": 60},
+        {"x": "c", "y": 80},
+        {"x": "d", "y": 100}
+      ]},
+      "mark": {"type": "rule", "stroke": "#dc2626", "stroke_dash": [4, 2]},
+      "encoding": {
+        "x": {"field": "x", "type": "nominal"},
+        "y": {"field": "y", "type": "quantitative"}
+      }
+    }
+  ]
+}

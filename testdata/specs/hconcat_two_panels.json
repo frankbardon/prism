@@ -1,0 +1,36 @@
+{
+  "$schema": "urn:prism:schema:v1:spec",
+  "title": "Two panels side-by-side (hconcat)",
+  "hconcat": [
+    {
+      "$schema": "urn:prism:schema:v1:spec",
+      "title": "Quarter sales",
+      "data": {"values": [
+        {"q": "Q1", "sales": 120},
+        {"q": "Q2", "sales": 180},
+        {"q": "Q3", "sales": 210},
+        {"q": "Q4", "sales": 260}
+      ]},
+      "mark": "bar",
+      "encoding": {
+        "x": {"field": "q",     "type": "nominal"},
+        "y": {"field": "sales", "type": "quantitative"}
+      }
+    },
+    {
+      "$schema": "urn:prism:schema:v1:spec",
+      "title": "Region share",
+      "data": {"values": [
+        {"region": "NA",    "share": 0.42},
+        {"region": "EMEA",  "share": 0.30},
+        {"region": "APAC",  "share": 0.18},
+        {"region": "LATAM", "share": 0.10}
+      ]},
+      "mark": "bar",
+      "encoding": {
+        "x": {"field": "region", "type": "nominal"},
+        "y": {"field": "share",  "type": "quantitative"}
+      }
+    }
+  ]
+}
