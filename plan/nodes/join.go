@@ -56,9 +56,11 @@ func (n *JoinNode) Schema(in []*encoding.Schema) (*encoding.Schema, error) {
 	return joinedSchema(in[0], in[1], n.on), nil
 }
 
-// Execute implements plan.Node. P03 stub.
-func (n *JoinNode) Execute(_ context.Context, _ []*table.Table) (*table.Table, error) {
-	return nil, notImplementedErr("JoinNode")
+// Execute implements plan.Node. Hash join body lives in
+// join_execute.go (kept separate for diffability against the P03 stub
+// surface).
+func (n *JoinNode) Execute(ctx context.Context, in []*table.Table) (*table.Table, error) {
+	return n.executeJoin(ctx, in)
 }
 
 // Fingerprint implements plan.Node.

@@ -215,8 +215,13 @@ func TestPrismJoinNodeStub(t *testing.T) {
 	if strings.Join(names, ",") != "brand_id,score,age,label" {
 		t.Errorf("join schema fields=%v, want [brand_id score age label]", names)
 	}
+	// P07 retired the JoinNode stub. Execute with no inputs now returns a
+	// shape-check error (not PRISM_COMPILE_001). The full hash-join
+	// behaviour is covered in join_execute_test.go.
 	_, err = n.Execute(context.Background(), nil)
-	assertNotImplemented(t, "JoinNode", err)
+	if err == nil {
+		t.Errorf("JoinNode.Execute(nil inputs) should error")
+	}
 }
 
 func TestPrismUnionNodeStub(t *testing.T) {
@@ -228,8 +233,12 @@ func TestPrismUnionNodeStub(t *testing.T) {
 	if len(out.Fields) != 3 {
 		t.Errorf("union schema fields=%d, want 3 (first-input shape)", len(out.Fields))
 	}
+	// P07 retired the UnionNode stub. Execute with no inputs returns a
+	// shape-check error. Full behaviour covered in union_test.go.
 	_, err = n.Execute(context.Background(), nil)
-	assertNotImplemented(t, "UnionNode", err)
+	if err == nil {
+		t.Errorf("UnionNode.Execute(nil inputs) should error")
+	}
 }
 
 func TestPrismPivotNodeStub(t *testing.T) {
