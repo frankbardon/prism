@@ -1,0 +1,106 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:prism:schema:v1:shared",
+  "title": "Prism Shared Primitives",
+  "description": "Primitive types reused across Prism schema files.",
+  "$defs": {
+    "expression": {
+      "type": "string",
+      "description": "Pulse expression source string evaluated by the Pulse expression parser.",
+      "minLength": 1
+    },
+    "field_ref": {
+      "type": "string",
+      "description": "Reference to a field name in the active dataset or transform output.",
+      "minLength": 1
+    },
+    "measure_type": {
+      "type": "string",
+      "description": "Logical type of an encoded field; drives default scale and axis choices.",
+      "enum": ["nominal", "ordinal", "quantitative", "temporal"]
+    },
+    "color": {
+      "type": "string",
+      "description": "CSS color string (named, hex, rgb, rgba, hsl, or theme token).",
+      "minLength": 1
+    },
+    "dimension": {
+      "oneOf": [
+        {
+          "type": "number",
+          "description": "Pixel dimension when given as a plain number.",
+          "minimum": 0
+        },
+        {
+          "type": "string",
+          "description": "Dimension expressed as a token like \"container\", \"step\", or a length string.",
+          "minLength": 1
+        }
+      ],
+      "description": "Width, height, or other layout dimension; number (pixels) or token."
+    },
+    "padding": {
+      "oneOf": [
+        {
+          "type": "number",
+          "description": "Uniform padding in pixels applied to all four sides.",
+          "minimum": 0
+        },
+        {
+          "type": "object",
+          "description": "Per-side padding map.",
+          "additionalProperties": false,
+          "properties": {
+            "top":    {"type": "number", "minimum": 0, "description": "Top padding in pixels."},
+            "right":  {"type": "number", "minimum": 0, "description": "Right padding in pixels."},
+            "bottom": {"type": "number", "minimum": 0, "description": "Bottom padding in pixels."},
+            "left":   {"type": "number", "minimum": 0, "description": "Left padding in pixels."}
+          }
+        }
+      ],
+      "description": "Padding applied around the chart drawable area."
+    },
+    "text_or_text_obj": {
+      "oneOf": [
+        {
+          "type": "string",
+          "description": "Plain text label."
+        },
+        {
+          "type": "object",
+          "description": "Text object with rich properties such as font and alignment.",
+          "additionalProperties": false,
+          "required": ["text"],
+          "properties": {
+            "text":        {"type": "string", "description": "The displayed text."},
+            "font":        {"type": "string", "description": "Font family name."},
+            "font_size":   {"type": "number", "minimum": 0, "description": "Font size in pixels."},
+            "font_weight": {"type": ["string", "number"], "description": "Font weight, e.g. \"bold\" or 700."},
+            "font_style":  {"type": "string", "description": "Font style, e.g. \"italic\".", "enum": ["normal", "italic"]},
+            "color":       {"$ref": "shared.schema.json#/$defs/color", "description": "Text color."},
+            "align":       {"type": "string", "enum": ["left", "center", "right"], "description": "Horizontal alignment."},
+            "baseline":    {"type": "string", "enum": ["top", "middle", "bottom", "alphabetic"], "description": "Vertical baseline."}
+          }
+        }
+      ],
+      "description": "Text value that can be either a plain string or a rich text object."
+    },
+    "config": {
+      "type": "object",
+      "description": "Inline configuration block that overrides registered theme values.",
+      "additionalProperties": false,
+      "properties": {
+        "background": {"$ref": "shared.schema.json#/$defs/color", "description": "Default chart background."},
+        "padding":    {"$ref": "shared.schema.json#/$defs/padding", "description": "Default chart padding."},
+        "font":       {"type": "string", "description": "Default font family for all text."},
+        "font_size":  {"type": "number", "minimum": 0, "description": "Default font size in pixels."},
+        "color":      {"$ref": "shared.schema.json#/$defs/color", "description": "Default foreground color."},
+        "mark":       {"type": "object", "description": "Default mark property overrides."},
+        "axis":       {"type": "object", "description": "Default axis property overrides."},
+        "legend":     {"type": "object", "description": "Default legend property overrides."},
+        "scale":      {"type": "object", "description": "Default scale property overrides."},
+        "title":      {"type": "object", "description": "Default title property overrides."}
+      }
+    }
+  }
+}
