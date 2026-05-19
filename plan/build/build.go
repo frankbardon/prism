@@ -138,16 +138,19 @@ func Build(s *spec.Spec, opts Options) (*plan.DAG, plan.NodeID, error) {
 
 // rejectOutOfScope walks the spec for features the builder cannot yet
 // represent and emits PRISM_PLAN_002 pointing at the landing phase.
+//
+// P08 landed layer + concat / hconcat / vconcat; callers building a
+// composite spec must use BuildComposite (the rejection here points
+// them at the right entry). Facet / repeat stay deferred to P09;
+// selection to P13.
 func rejectOutOfScope(s *spec.Spec) error {
 	switch {
-	case len(s.Layer) > 0:
-		return outOfScopeErr("layer", "P08")
-	case len(s.Concat) > 0:
-		return outOfScopeErr("concat", "P08")
-	case len(s.HConcat) > 0:
-		return outOfScopeErr("hconcat", "P08")
-	case len(s.VConcat) > 0:
-		return outOfScopeErr("vconcat", "P08")
+	case len(s.Layer) > 0, len(s.Concat) > 0, len(s.HConcat) > 0, len(s.VConcat) > 0:
+		return prismerrors.New(
+			"PRISM_PLAN_002",
+			"Spec is a composite (layer / concat / hconcat / vconcat); use BuildComposite, not Build.",
+			map[string]any{"Kind": "composition:flat-build", "Phase": "P08"},
+		)
 	case s.Facet != nil:
 		return outOfScopeErr("facet", "P09")
 	case s.Repeat != nil:
@@ -156,6 +159,16 @@ func rejectOutOfScope(s *spec.Spec) error {
 		return outOfScopeErr("selection", "P13")
 	}
 	return nil
+}
+
+// IsComposite reports whether s carries any of the four P08 composition
+// primitives. Callers route composite specs through BuildComposite;
+// flat specs continue through Build.
+func IsComposite(s *spec.Spec) bool {
+	if s == nil {
+		return false
+	}
+	return len(s.Layer) > 0 || len(s.Concat) > 0 || len(s.HConcat) > 0 || len(s.VConcat) > 0
 }
 
 func outOfScopeErr(kind, phase string) error {
