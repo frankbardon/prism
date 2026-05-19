@@ -1,24 +1,37 @@
 {
   "$schema": "urn:prism:schema:v1:spec",
-  "title": "Actual vs Benchmark (multi-source join demo)",
+  "title": "Actual vs Benchmark (two-layer composition)",
   "datasets": {
     "actual": {"source": "testdata/cohorts/actual.pulse"},
     "bench":  {"source": "testdata/cohorts/benchmark.pulse"}
   },
-  "data": {"name": "actual"},
-  "transform": [
-    {"data": "actual", "groupby": ["brand_id"],
-     "aggregate": [{"op": "mean", "field": "score", "as": "actual_mean"}],
-     "as": "actual_agg"},
-    {"data": "bench", "groupby": ["brand_id"],
-     "aggregate": [{"op": "mean", "field": "median_score", "as": "bench_mean"}],
-     "as": "bench_agg"},
-    {"join": "inner", "with": "bench_agg", "on": "brand_id",
-     "data": "actual_agg"}
-  ],
-  "mark": "bar",
-  "encoding": {
-    "x": {"field": "brand_id",    "type": "nominal"},
-    "y": {"field": "actual_mean", "type": "quantitative"}
-  }
+  "resolve": {"scale": {"y": "shared"}},
+  "layer": [
+    {
+      "$schema": "urn:prism:schema:v1:spec",
+      "data": {"name": "actual"},
+      "transform": [
+        {"data": "actual", "groupby": ["brand_id"],
+         "aggregate": [{"op": "mean", "field": "score", "as": "actual_mean"}]}
+      ],
+      "mark": "bar",
+      "encoding": {
+        "x": {"field": "brand_id",    "type": "nominal"},
+        "y": {"field": "actual_mean", "type": "quantitative"}
+      }
+    },
+    {
+      "$schema": "urn:prism:schema:v1:spec",
+      "data": {"name": "bench"},
+      "transform": [
+        {"data": "bench", "groupby": ["brand_id"],
+         "aggregate": [{"op": "mean", "field": "median_score", "as": "bench_mean"}]}
+      ],
+      "mark": {"type": "rule", "stroke": "#999999", "stroke_dash": [4, 2]},
+      "encoding": {
+        "x": {"field": "brand_id",   "type": "nominal"},
+        "y": {"field": "bench_mean", "type": "quantitative"}
+      }
+    }
+  ]
 }
