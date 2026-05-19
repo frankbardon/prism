@@ -10,12 +10,13 @@ import (
 	"github.com/frankbardon/prism/table"
 )
 
-// LimitNode keeps the first N rows (with optional offset). P03 stub.
+// LimitNode keeps the first N rows (with optional offset).
 type LimitNode struct {
-	id     plan.NodeID
-	input  plan.NodeID
-	limit  int
-	offset int
+	id      plan.NodeID
+	input   plan.NodeID
+	limit   int
+	offset  int
+	backend plan.Backend
 }
 
 // NewLimit constructs a LimitNode.
@@ -34,10 +35,16 @@ func (n *LimitNode) Schema(in []*encoding.Schema) (*encoding.Schema, error) {
 	return requireSingleInput("LimitNode", in)
 }
 
-// Execute implements plan.Node. P03 stub.
-func (n *LimitNode) Execute(_ context.Context, _ []*table.Table) (*table.Table, error) {
-	return nil, notImplementedErr("LimitNode")
+// Execute implements plan.Node via the injected backend.
+func (n *LimitNode) Execute(ctx context.Context, in []*table.Table) (*table.Table, error) {
+	if n.backend == nil {
+		return nil, notImplementedErr("LimitNode")
+	}
+	return n.backend.Compile(ctx, n, in)
 }
+
+// SetBackend wires the compile backend that powers Execute.
+func (n *LimitNode) SetBackend(b plan.Backend) { n.backend = b }
 
 // Fingerprint implements plan.Node.
 func (n *LimitNode) Fingerprint() string {

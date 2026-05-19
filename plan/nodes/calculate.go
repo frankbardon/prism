@@ -10,12 +10,13 @@ import (
 )
 
 // CalculateNode appends one computed column derived from a Pulse
-// expression. P03 stub.
+// expression.
 type CalculateNode struct {
-	id    plan.NodeID
-	input plan.NodeID
-	expr  string
-	as    string
+	id      plan.NodeID
+	input   plan.NodeID
+	expr    string
+	as      string
+	backend plan.Backend
 }
 
 // NewCalculate constructs a CalculateNode.
@@ -40,10 +41,16 @@ func (n *CalculateNode) Schema(in []*encoding.Schema) (*encoding.Schema, error) 
 	return appendField(s, n.as, encoding.FieldTypeF64), nil
 }
 
-// Execute implements plan.Node. P03 stub.
-func (n *CalculateNode) Execute(_ context.Context, _ []*table.Table) (*table.Table, error) {
-	return nil, notImplementedErr("CalculateNode")
+// Execute implements plan.Node via the injected backend.
+func (n *CalculateNode) Execute(ctx context.Context, in []*table.Table) (*table.Table, error) {
+	if n.backend == nil {
+		return nil, notImplementedErr("CalculateNode")
+	}
+	return n.backend.Compile(ctx, n, in)
 }
+
+// SetBackend wires the compile backend that powers Execute.
+func (n *CalculateNode) SetBackend(b plan.Backend) { n.backend = b }
 
 // Fingerprint implements plan.Node.
 func (n *CalculateNode) Fingerprint() string {

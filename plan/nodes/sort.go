@@ -10,11 +10,12 @@ import (
 	"github.com/frankbardon/prism/table"
 )
 
-// SortNode orders rows by one or more (field, order) keys. P03 stub.
+// SortNode orders rows by one or more (field, order) keys.
 type SortNode struct {
-	id    plan.NodeID
-	input plan.NodeID
-	sort  []SortKey
+	id      plan.NodeID
+	input   plan.NodeID
+	sort    []SortKey
+	backend plan.Backend
 }
 
 // NewSort constructs a SortNode. The sort slice is copied.
@@ -35,10 +36,16 @@ func (n *SortNode) Schema(in []*encoding.Schema) (*encoding.Schema, error) {
 	return requireSingleInput("SortNode", in)
 }
 
-// Execute implements plan.Node. P03 stub.
-func (n *SortNode) Execute(_ context.Context, _ []*table.Table) (*table.Table, error) {
-	return nil, notImplementedErr("SortNode")
+// Execute implements plan.Node via the injected backend.
+func (n *SortNode) Execute(ctx context.Context, in []*table.Table) (*table.Table, error) {
+	if n.backend == nil {
+		return nil, notImplementedErr("SortNode")
+	}
+	return n.backend.Compile(ctx, n, in)
 }
+
+// SetBackend wires the compile backend that powers Execute.
+func (n *SortNode) SetBackend(b plan.Backend) { n.backend = b }
 
 // Fingerprint implements plan.Node.
 func (n *SortNode) Fingerprint() string {

@@ -33,13 +33,14 @@ func (b BinParams) String() string {
 	return fmt.Sprintf("auto=%t,maxbins=%s,step=%s,extent=%v", b.Auto, mb, st, b.Extent)
 }
 
-// BinNode buckets a numeric field. P03 stub.
+// BinNode buckets a numeric field.
 type BinNode struct {
-	id     plan.NodeID
-	input  plan.NodeID
-	field  string
-	as     string
-	params BinParams
+	id      plan.NodeID
+	input   plan.NodeID
+	field   string
+	as      string
+	params  BinParams
+	backend plan.Backend
 }
 
 // NewBin constructs a BinNode.
@@ -66,10 +67,19 @@ func (n *BinNode) Schema(in []*encoding.Schema) (*encoding.Schema, error) {
 	return appendField(s, n.as, encoding.FieldTypeF64), nil
 }
 
-// Execute implements plan.Node. P03 stub.
-func (n *BinNode) Execute(_ context.Context, _ []*table.Table) (*table.Table, error) {
-	return nil, notImplementedErr("BinNode")
+// Execute implements plan.Node via the injected backend.
+func (n *BinNode) Execute(ctx context.Context, in []*table.Table) (*table.Table, error) {
+	if n.backend == nil {
+		return nil, notImplementedErr("BinNode")
+	}
+	return n.backend.Compile(ctx, n, in)
 }
+
+// Params exposes the bin parameters for the executor.
+func (n *BinNode) Params() BinParams { return n.params }
+
+// SetBackend wires the compile backend that powers Execute.
+func (n *BinNode) SetBackend(b plan.Backend) { n.backend = b }
 
 // Fingerprint implements plan.Node.
 func (n *BinNode) Fingerprint() string {

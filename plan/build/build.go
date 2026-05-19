@@ -46,11 +46,16 @@ import (
 )
 
 // Options carries the runtime knobs the builder needs to build leaf
-// nodes (Source needs an afero.Fs + Resolver). FS defaults to
-// afero.NewOsFs() and Resolver to resolve.New(nil) when nil.
+// nodes (Source needs an afero.Fs + Resolver) and to wire the compile
+// backend that every linear node's Execute routes through. FS
+// defaults to afero.NewOsFs(); Resolver defaults to resolve.New(nil);
+// Backend is left nil so callers that don't care about execution
+// (e.g. `prism plan`) skip the dependency on compile/. The CLI
+// `execute` subcommand passes `inmem.New()`. See D033.
 type Options struct {
 	FS       afero.Fs
 	Resolver resolve.Resolver
+	Backend  plan.Backend
 }
 
 // Build translates a *spec.Spec into a *plan.DAG.
@@ -469,12 +474,29 @@ func (c *buildCtx) applyOneTransform(input plan.NodeID, t spec.Transform) (plan.
 	return "", outOfScopeErr("transform:unknown", "P04")
 }
 
-// addAndReturn wraps b.AddNode + returns the new node's id.
+// addAndReturn wraps b.AddNode + returns the new node's id. If the
+// node implements a SetBackend(plan.Backend) hook AND the builder has
+// a Backend configured, we wire it here so every linear node's
+// Execute routes through the backend without callers having to
+// remember to inject manually.
 func (c *buildCtx) addAndReturn(n plan.Node) (plan.NodeID, error) {
 	if err := c.b.AddNode(n); err != nil {
 		return "", err
 	}
+	if c.opts.Backend != nil {
+		if bw, ok := n.(backendWired); ok {
+			bw.SetBackend(c.opts.Backend)
+		}
+	}
 	return n.ID(), nil
+}
+
+// backendWired is the duck-typed interface every linear node
+// satisfies (FilterNode, ProjectNode, etc.). Stub nodes that have
+// not migrated (Join, Union, Pivot, Unpivot) do not satisfy it, so
+// the type assertion skips them without effect.
+type backendWired interface {
+	SetBackend(plan.Backend)
 }
 
 // joinOnFields normalises the spec's polymorphic `on` value (string or

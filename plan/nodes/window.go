@@ -44,7 +44,7 @@ func (s SortKey) String() string {
 	return s.Field + ":" + s.Order
 }
 
-// WindowNode applies windowed aggregates / ranks over an input. P03 stub.
+// WindowNode applies windowed aggregates / ranks over an input.
 type WindowNode struct {
 	id          plan.NodeID
 	input       plan.NodeID
@@ -52,6 +52,7 @@ type WindowNode struct {
 	partitionby []string
 	sort        []SortKey
 	frame       []any
+	backend     plan.Backend
 }
 
 // NewWindow constructs a WindowNode. All slices are copied.
@@ -91,10 +92,16 @@ func (n *WindowNode) Schema(in []*encoding.Schema) (*encoding.Schema, error) {
 	return out, nil
 }
 
-// Execute implements plan.Node. P03 stub.
-func (n *WindowNode) Execute(_ context.Context, _ []*table.Table) (*table.Table, error) {
-	return nil, notImplementedErr("WindowNode")
+// Execute implements plan.Node via the injected backend.
+func (n *WindowNode) Execute(ctx context.Context, in []*table.Table) (*table.Table, error) {
+	if n.backend == nil {
+		return nil, notImplementedErr("WindowNode")
+	}
+	return n.backend.Compile(ctx, n, in)
 }
+
+// SetBackend wires the compile backend that powers Execute.
+func (n *WindowNode) SetBackend(b plan.Backend) { n.backend = b }
 
 // Fingerprint implements plan.Node.
 func (n *WindowNode) Fingerprint() string {
@@ -113,6 +120,16 @@ func (n *WindowNode) Fingerprint() string {
 
 // Ops exposes the window operations for renderers + tests.
 func (n *WindowNode) Ops() []WindowOp { return n.ops }
+
+// Partitionby exposes the partition keys for renderers + executor.
+func (n *WindowNode) Partitionby() []string { return n.partitionby }
+
+// Sort exposes the per-partition ordering keys for executor.
+func (n *WindowNode) Sort() []SortKey { return n.sort }
+
+// Frame exposes the frame specification for the executor; nil when
+// the window op does not consume a frame.
+func (n *WindowNode) Frame() []any { return n.frame }
 
 // Kind implements plan.Labeled.
 func (n *WindowNode) Kind() string { return "WindowNode" }

@@ -10,11 +10,12 @@ import (
 	"github.com/frankbardon/prism/table"
 )
 
-// ProjectNode keeps only the named fields from its input. P03 stub.
+// ProjectNode keeps only the named fields from its input.
 type ProjectNode struct {
-	id     plan.NodeID
-	input  plan.NodeID
-	fields []string
+	id      plan.NodeID
+	input   plan.NodeID
+	fields  []string
+	backend plan.Backend
 }
 
 // NewProject constructs a ProjectNode. The fields slice is copied.
@@ -41,10 +42,16 @@ func (n *ProjectNode) Schema(in []*encoding.Schema) (*encoding.Schema, error) {
 	return projectFields(s, n.fields)
 }
 
-// Execute implements plan.Node. P03 stub.
-func (n *ProjectNode) Execute(_ context.Context, _ []*table.Table) (*table.Table, error) {
-	return nil, notImplementedErr("ProjectNode")
+// Execute implements plan.Node via the injected backend.
+func (n *ProjectNode) Execute(ctx context.Context, in []*table.Table) (*table.Table, error) {
+	if n.backend == nil {
+		return nil, notImplementedErr("ProjectNode")
+	}
+	return n.backend.Compile(ctx, n, in)
 }
+
+// SetBackend wires the compile backend that powers Execute.
+func (n *ProjectNode) SetBackend(b plan.Backend) { n.backend = b }
 
 // Fingerprint implements plan.Node.
 func (n *ProjectNode) Fingerprint() string {

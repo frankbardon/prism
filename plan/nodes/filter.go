@@ -10,11 +10,14 @@ import (
 )
 
 // FilterNode applies a Pulse expression predicate to its input table.
-// P03 stub — Execute returns PRISM_COMPILE_001. P04 wires real impl.
+// Execute routes through the injected backend; falls back to
+// PRISM_COMPILE_001 when no backend is wired (preserves P03 stub
+// behaviour for callers that haven't migrated). See D033.
 type FilterNode struct {
-	id    plan.NodeID
-	input plan.NodeID
-	expr  string
+	id      plan.NodeID
+	input   plan.NodeID
+	expr    string
+	backend plan.Backend
 }
 
 // NewFilter constructs a FilterNode with a stable id derived from
@@ -34,10 +37,19 @@ func (n *FilterNode) Schema(in []*encoding.Schema) (*encoding.Schema, error) {
 	return requireSingleInput("FilterNode", in)
 }
 
-// Execute implements plan.Node. P03 stub.
-func (n *FilterNode) Execute(_ context.Context, _ []*table.Table) (*table.Table, error) {
-	return nil, notImplementedErr("FilterNode")
+// Execute implements plan.Node. Routes through the injected backend
+// when one is wired; returns PRISM_COMPILE_001 otherwise.
+func (n *FilterNode) Execute(ctx context.Context, in []*table.Table) (*table.Table, error) {
+	if n.backend == nil {
+		return nil, notImplementedErr("FilterNode")
+	}
+	return n.backend.Compile(ctx, n, in)
 }
+
+// SetBackend wires the compile backend that powers Execute. The
+// builder calls this after construction so node constructors keep
+// their P03 signatures stable. See D033.
+func (n *FilterNode) SetBackend(b plan.Backend) { n.backend = b }
 
 // Fingerprint implements plan.Node.
 func (n *FilterNode) Fingerprint() string {

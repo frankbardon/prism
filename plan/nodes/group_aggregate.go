@@ -25,12 +25,13 @@ type AggOp struct {
 func (a AggOp) String() string { return a.Op + "(" + a.Field + ")->" + a.As }
 
 // GroupAggregateNode partitions its input by groupby fields and emits
-// one row per partition with each aggregate. P03 stub.
+// one row per partition with each aggregate.
 type GroupAggregateNode struct {
 	id      plan.NodeID
 	input   plan.NodeID
 	groupby []string
 	aggs    []AggOp
+	backend plan.Backend
 }
 
 // NewGroupAggregate constructs a GroupAggregateNode.
@@ -74,10 +75,16 @@ func (n *GroupAggregateNode) Schema(in []*encoding.Schema) (*encoding.Schema, er
 	return out, nil
 }
 
-// Execute implements plan.Node. P03 stub.
-func (n *GroupAggregateNode) Execute(_ context.Context, _ []*table.Table) (*table.Table, error) {
-	return nil, notImplementedErr("GroupAggregateNode")
+// Execute implements plan.Node via the injected backend.
+func (n *GroupAggregateNode) Execute(ctx context.Context, in []*table.Table) (*table.Table, error) {
+	if n.backend == nil {
+		return nil, notImplementedErr("GroupAggregateNode")
+	}
+	return n.backend.Compile(ctx, n, in)
 }
+
+// SetBackend wires the compile backend that powers Execute.
+func (n *GroupAggregateNode) SetBackend(b plan.Backend) { n.backend = b }
 
 // Fingerprint implements plan.Node.
 func (n *GroupAggregateNode) Fingerprint() string {
