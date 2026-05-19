@@ -90,8 +90,27 @@ func TestPrismOptimizeIterationCap(t *testing.T) {
 	}
 }
 
-func TestPrismDefaultPassesEmptyInP03(t *testing.T) {
-	if len(plan.DefaultPasses) != 0 {
-		t.Errorf("DefaultPasses should be empty in P03; got %d passes", len(plan.DefaultPasses))
+// TestPrismDefaultPassesPopulatedInP07 pins the canonical 5-pass list.
+// Order matters per D047: semantics-preserving passes first; sampling
+// last. The list is populated via plan/passes/register.go's init.
+//
+// Importing plan/passes solely for the side-effect of init is fine —
+// the test file already lives in plan_test, so the explicit blank
+// import is the cleanest way to gate the init.
+func TestPrismDefaultPassesPopulatedInP07(t *testing.T) {
+	if len(plan.DefaultPasses) != 5 {
+		t.Fatalf("DefaultPasses len=%d; want 5", len(plan.DefaultPasses))
+	}
+	wantNames := []string{
+		"dedup_sources",
+		"filter_pushdown",
+		"projection_pruning",
+		"aggregate_fusion",
+		"sample_injection",
+	}
+	for i, p := range plan.DefaultPasses {
+		if p.Name() != wantNames[i] {
+			t.Errorf("pass[%d]=%q; want %q (D047 ordering)", i, p.Name(), wantNames[i])
+		}
 	}
 }

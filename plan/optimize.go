@@ -13,12 +13,22 @@ type Pass interface {
 }
 
 // DefaultPasses is the canonical pass list the executor would run if
-// given no override. P03 ships an empty slice — every pass listed in
-// design/05-dag-executor.md (DedupSources, FilterPushdown,
-// ProjectionPruning, AggregateFusion, SampleInjection) lands in P07.
-// Optimize works correctly against an empty list; tests cover the
-// degenerate case.
-var DefaultPasses = []Pass{}
+// given no override. P07 populates it with the 5 passes from
+// design/05-dag-executor.md, ordered per D047 (semantics-preserving
+// passes first, sampling last). The slice is intentionally NOT
+// pre-populated here — passes live in plan/passes/, which imports
+// plan/, so registration happens via plan.SetDefaultPasses called
+// from a small init shim in plan/passes/register.go. Optimize works
+// correctly against either an empty or populated slice; tests cover
+// both shapes.
+var DefaultPasses []Pass
+
+// SetDefaultPasses installs the canonical pass list. Called by the
+// plan/passes package's init function. Exposed so external consumers
+// can substitute a custom list before invoking Optimize.
+func SetDefaultPasses(ps []Pass) {
+	DefaultPasses = ps
+}
 
 // optimizeMaxIterations caps the fixed-point loop so a pair of passes
 // that toggle each other's state cannot spin forever. Documented as a
