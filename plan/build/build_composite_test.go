@@ -203,9 +203,9 @@ func TestPrismBuildRejectsCompositeViaFlatBuild(t *testing.T) {
 
 func TestPrismIsCompositeDetectsAllFour(t *testing.T) {
 	cases := []struct {
-		name     string
-		body     string
-		want     bool
+		name string
+		body string
+		want bool
 	}{
 		{"flat", `{"$schema":"urn:prism:schema:v1:spec","data":{"values":[{"x":1}]},"mark":"bar","encoding":{"x":{"field":"x","type":"quantitative"}}}`, false},
 		{"layer", `{"$schema":"urn:prism:schema:v1:spec","layer":[{"$schema":"urn:prism:schema:v1:spec","data":{"values":[{"x":1}]},"mark":"bar","encoding":{"x":{"field":"x","type":"quantitative"}}}]}`, true},

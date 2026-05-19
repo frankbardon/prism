@@ -87,4 +87,3 @@ func TestPrismExecuteCompositeDispatch(t *testing.T) {
 		t.Errorf("missing `# layer 1` section header in execute output: %s", firstChars(out, 400))
 	}
 }
-
