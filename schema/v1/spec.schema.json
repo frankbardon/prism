@@ -1,0 +1,59 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:prism:schema:v1:spec",
+  "title": "Prism Chart Spec",
+  "description": "Top-level Prism chart specification.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["$schema"],
+  "properties": {
+    "$schema": {
+      "description": "Schema identifier; URN form, relative path to spec.schema.json, or local file URL.",
+      "anyOf": [
+        {"type": "string", "const": "urn:prism:schema:v1:spec"},
+        {"type": "string", "pattern": "^(\\.{1,2}/|/|file://).*spec\\.schema\\.json$"}
+      ]
+    },
+    "data":     {"$ref": "data.schema.json#/$defs/data", "description": "Primary data binding."},
+    "datasets": {"$ref": "data.schema.json#/$defs/datasets", "description": "Named dataset map."},
+    "transform": {
+      "type": "array",
+      "description": "Ordered list of transform steps applied to the active dataset.",
+      "items": {"$ref": "transform.schema.json#/$defs/transform"}
+    },
+    "mark":     {"$ref": "mark.schema.json#/$defs/mark", "description": "Mark type or full mark definition."},
+    "encoding": {"$ref": "encoding.schema.json#/$defs/encoding", "description": "Channel encodings."},
+    "layer":    {"$ref": "composition.schema.json#/$defs/layer", "description": "Overlay child specs."},
+    "concat":   {"$ref": "composition.schema.json#/$defs/concat", "description": "Reading-order concatenation."},
+    "hconcat":  {"$ref": "composition.schema.json#/$defs/hconcat", "description": "Horizontal concatenation."},
+    "vconcat":  {"$ref": "composition.schema.json#/$defs/vconcat", "description": "Vertical concatenation."},
+    "facet":    {"$ref": "composition.schema.json#/$defs/facet", "description": "Facet channels driving small multiples."},
+    "repeat":   {"$ref": "composition.schema.json#/$defs/repeat", "description": "Repeat configuration for repeated specs."},
+    "spec":     {"$ref": "urn:prism:schema:v1:spec", "description": "Child spec used inside facet or repeat."},
+    "selection": {
+      "type": "object",
+      "description": "Named selections available within this spec.",
+      "additionalProperties": {"$ref": "selection.schema.json#/$defs/selection"},
+      "propertyNames": {"type": "string", "pattern": "^[a-z][a-z0-9_]*$", "description": "Selection names are snake_case."}
+    },
+    "resolve":  {"$ref": "resolve.schema.json#/$defs/resolve", "description": "Cross-layer resolution rules."},
+    "theme":    {"$ref": "theme.schema.json#/$defs/theme_override", "description": "Spec-level theme override."},
+    "config":   {"$ref": "shared.schema.json#/$defs/config", "description": "Inline config block."},
+    "width":    {"$ref": "shared.schema.json#/$defs/dimension", "description": "Chart width in pixels or token."},
+    "height":   {"$ref": "shared.schema.json#/$defs/dimension", "description": "Chart height in pixels or token."},
+    "padding":  {"$ref": "shared.schema.json#/$defs/padding", "description": "Chart padding."},
+    "background": {"$ref": "shared.schema.json#/$defs/color", "description": "Chart background color."},
+    "title":    {"$ref": "shared.schema.json#/$defs/text_or_text_obj", "description": "Chart title."},
+    "subtitle": {"$ref": "shared.schema.json#/$defs/text_or_text_obj", "description": "Chart subtitle."},
+    "description": {"type": "string", "description": "Free-form description / alt text."}
+  },
+  "oneOf": [
+    {"required": ["mark"]},
+    {"required": ["layer"]},
+    {"required": ["concat"]},
+    {"required": ["hconcat"]},
+    {"required": ["vconcat"]},
+    {"required": ["facet"]},
+    {"required": ["repeat"]}
+  ]
+}
