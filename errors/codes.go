@@ -144,6 +144,35 @@ var Codes = map[string]CodeMetadata{
 			`Track progress: ` + "`prism errors lookup PRISM_COMPILE_001`" + ` or .planning/ROADMAP.md.`,
 		},
 	},
+	"PRISM_COMPILE_002": {
+		Code:    "PRISM_COMPILE_002",
+		Message: `Expression failed at runtime: {{.Reason}}.`,
+		Fixups: []string{
+			`Expression: {{.Expression}} (site: {{.Site}}).`,
+			`Run ` + "`prism validate`" + ` first — most parse errors surface as PRISM_SPEC_006 before they reach the compiler.`,
+			`Check field references match the upstream schema and that arithmetic does not divide by a possibly-zero value.`,
+		},
+		SeeAlso: []string{"PRISM_SPEC_006"},
+	},
+	"PRISM_COMPILE_003": {
+		Code:    "PRISM_COMPILE_003",
+		Message: `Aggregate alias {{.Alias}} is not yet supported by backend {{.Backend}}.`,
+		Fixups: []string{
+			`Use a supported alias: count, sum, mean, median, min, max, stdev, variance, mode, distinct, q1, q3, ci0, ci1, wmean, ratio, lift, share.`,
+			`If your spec relied on an upstream alias the planner forwarded, check ` + "`compile/aggregates.go`" + ` for the canonical alias-to-Pulse mapping.`,
+			`File an issue with the alias name so it can be added to the next Pulse release.`,
+		},
+		SeeAlso: []string{"PRISM_SPEC_002"},
+	},
+	"PRISM_COMPILE_004": {
+		Code:    "PRISM_COMPILE_004",
+		Message: `Inline data is not supported by the Pulse backend for node {{.NodeType}}: {{.Reason}}.`,
+		Fixups: []string{
+			`The Pulse v0.8.4 facade does not expose an in-memory cohort constructor; inline data flows through the in-memory backend.`,
+			`Materialise the inline values to a ` + "`.pulse`" + ` file via ` + "`prism import`" + ` (post-P02) and reference it as a source.`,
+			`Track the upstream phase: in-memory Pulse cohorts land when Pulse exposes pulse.FromTable / pulse.NewMemory (no ETA).`,
+		},
+	},
 	"PRISM_RESOLVE_001": {
 		Code:    "PRISM_RESOLVE_001",
 		Message: `Dataset {{.Dataset}} not found in any registered source.`,
