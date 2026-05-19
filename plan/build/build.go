@@ -54,10 +54,17 @@ import (
 // Backend is left nil so callers that don't care about execution
 // (e.g. `prism plan`) skip the dependency on compile/. The CLI
 // `execute` subcommand passes `inmem.New()`. See D033.
+//
+// DatasetRegistry (P07, optional) resolves name-only dataset references
+// like `{"data": {"name": "current"}}` through the server-side / env-
+// loaded alias map (see resolve/registry_dataset.go). Nil = no
+// registry; the builder behaviour reverts to P03–P06 (name-only ref
+// raises PRISM_PLAN_003 when the alias is undeclared inline).
 type Options struct {
-	FS       afero.Fs
-	Resolver resolve.Resolver
-	Backend  plan.Backend
+	FS              afero.Fs
+	Resolver        resolve.Resolver
+	Backend         plan.Backend
+	DatasetRegistry resolve.DatasetRegistry
 }
 
 // Build translates a *spec.Spec into a *plan.DAG. The returned
@@ -233,16 +240,37 @@ func snapshot(c *buildCtx) buildSnapshot {
 
 // registerDataset turns one *spec.Data into a leaf node and records
 // its id under name (if non-empty). Source refs are de-duped: two
-// datasets pointing at the same .pulse share one SourceNode.
+// datasets pointing at the same .pulse share one SourceNode. The
+// dataset registry (when configured) is consulted for name-only
+// references before the empty-source path is taken; this lets specs
+// say `{"data": {"name": "current"}}` and resolve via the
+// server-side registry.
+//
+// Duplicate alias detection (P07): a non-empty `name` that already
+// maps to a different leaf id raises PRISM_RESOLVE_DUPLICATE_DATASET.
+// Aliasing the same physical leaf twice is a no-op; aliasing two
+// different leaves under one name is a programmer error.
 func (c *buildCtx) registerDataset(name string, ds *spec.Data) error {
 	if ds == nil {
 		return nil
+	}
+	// Resolve name-only references through the dataset registry so the
+	// downstream Source path can build a real leaf. Mutates a local
+	// copy; the caller's *spec.Data is untouched.
+	if ds.Source == "" && ds.Name != "" && c.opts.DatasetRegistry != nil {
+		if path, ok := c.opts.DatasetRegistry.Resolve(ds.Name); ok {
+			dsCopy := *ds
+			dsCopy.Source = path
+			ds = &dsCopy
+		}
 	}
 	switch {
 	case ds.Source != "":
 		if id, ok := c.leafBySource[ds.Source]; ok {
 			if name != "" {
-				c.leafByName[name] = id
+				if err := c.bindAlias(name, id); err != nil {
+					return err
+				}
 			}
 			return nil
 		}
@@ -255,10 +283,14 @@ func (c *buildCtx) registerDataset(name string, ds *spec.Data) error {
 		}
 		c.leafBySource[ds.Source] = src.ID()
 		if name != "" {
-			c.leafByName[name] = src.ID()
+			if err := c.bindAlias(name, src.ID()); err != nil {
+				return err
+			}
 		}
 		if ds.Name != "" && ds.Name != name {
-			c.leafByName[ds.Name] = src.ID()
+			if err := c.bindAlias(ds.Name, src.ID()); err != nil {
+				return err
+			}
 		}
 		return nil
 	case len(ds.Values) > 0 || len(ds.Fields) > 0:
@@ -271,21 +303,44 @@ func (c *buildCtx) registerDataset(name string, ds *spec.Data) error {
 			return err
 		}
 		if name != "" {
-			c.leafByName[name] = id
+			if err := c.bindAlias(name, id); err != nil {
+				return err
+			}
 		}
 		if ds.Name != "" && ds.Name != name {
-			c.leafByName[ds.Name] = id
+			if err := c.bindAlias(ds.Name, id); err != nil {
+				return err
+			}
 		}
 		return nil
 	case ds.Name != "":
 		// Name-only reference: alias for an already-registered dataset.
 		if name != "" && name != ds.Name {
 			if id, ok := c.leafByName[ds.Name]; ok {
-				c.leafByName[name] = id
+				if err := c.bindAlias(name, id); err != nil {
+					return err
+				}
 			}
 		}
 		return nil
 	}
+	return nil
+}
+
+// bindAlias publishes alias → id under c.leafByName. Binding the same
+// alias to the same id is idempotent (allows the top-level data + a
+// dataset map entry to share the same alias). Binding the alias to a
+// different id raises PRISM_RESOLVE_DUPLICATE_DATASET.
+func (c *buildCtx) bindAlias(alias string, id plan.NodeID) error {
+	if existing, ok := c.leafByName[alias]; ok && existing != id {
+		return prismerrors.New(
+			"PRISM_RESOLVE_DUPLICATE_DATASET",
+			fmt.Sprintf("Dataset alias %q is declared more than once (first at %s, again at %s).",
+				alias, existing, id),
+			map[string]any{"Alias": alias, "First": string(existing), "Second": string(id)},
+		)
+	}
+	c.leafByName[alias] = id
 	return nil
 }
 
@@ -336,6 +391,12 @@ func (c *buildCtx) lookupLeaf(ds *spec.Data) (plan.NodeID, bool) {
 // applyTransforms walks the transform chain rooted at startID and
 // returns the id of the tail node. Unknown transform variants raise
 // PRISM_PLAN_002; missing data references raise PRISM_PLAN_003.
+//
+// Transform.As publishing (P07): each transform variant exposes an
+// optional `as` field. After the corresponding node is constructed, the
+// builder registers the new node id under that alias in leafByName so
+// downstream transforms can reference it via `data: "<as>"`. Alias
+// collision raises PRISM_RESOLVE_DUPLICATE_DATASET via bindAlias.
 func (c *buildCtx) applyTransforms(startID plan.NodeID, ts []spec.Transform) (plan.NodeID, error) {
 	tip := startID
 	for _, t := range ts {
@@ -343,9 +404,48 @@ func (c *buildCtx) applyTransforms(startID plan.NodeID, ts []spec.Transform) (pl
 		if err != nil {
 			return "", err
 		}
+		if alias := transformAsName(t); alias != "" {
+			if err := c.bindAlias(alias, nextTip); err != nil {
+				return "", err
+			}
+		}
 		tip = nextTip
 	}
 	return tip, nil
+}
+
+// transformAsName returns the `as` field of whichever variant is set
+// on t, or "" when the variant declares none.
+func transformAsName(t spec.Transform) string {
+	switch {
+	case t.Filter != nil:
+		return t.Filter.As
+	case t.Calculate != nil:
+		// Calculate.As is the *output column* name (always present),
+		// not a dataset alias — do NOT publish.
+		return ""
+	case t.Aggregate != nil:
+		return t.Aggregate.As
+	case t.Bin != nil:
+		// Bin.As is the output column name (always present), not an
+		// alias.
+		return ""
+	case t.Window != nil:
+		return t.Window.As
+	case t.Join != nil:
+		return t.Join.As
+	case t.Union != nil:
+		return t.Union.As
+	case t.Pivot != nil:
+		return t.Pivot.As
+	case t.Sample != nil:
+		return t.Sample.As
+	case t.Sort != nil:
+		return t.Sort.As
+	case t.Limit != nil:
+		return t.Limit.As
+	}
+	return ""
 }
 
 func (c *buildCtx) applyOneTransform(input plan.NodeID, t spec.Transform) (plan.NodeID, error) {

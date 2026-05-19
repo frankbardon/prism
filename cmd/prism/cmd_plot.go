@@ -68,6 +68,7 @@ func plotCommand() *cli.Command {
 				Name:  "abort-on-error",
 				Usage: "Stop on the first node error instead of skipping dependents",
 			},
+			datasetsConfigFlag(),
 		},
 		Action: runPlot,
 	}
@@ -97,10 +98,15 @@ func runPlot(ctx context.Context, cmd *cli.Command) error {
 		return cli.Exit(fmt.Sprintf("decode %s: %v", srcName, err), 2)
 	}
 
+	registry, err := loadDatasetRegistry(cmd)
+	if err != nil {
+		return cli.Exit(fmt.Sprintf("load --datasets-config: %v", err), 2)
+	}
 	dag, tipID, err := build.Build(s, build.Options{
-		FS:       afero.NewOsFs(),
-		Resolver: resolve.New(nil),
-		Backend:  inmem.New(),
+		FS:              afero.NewOsFs(),
+		Resolver:        resolve.New(nil),
+		Backend:         inmem.New(),
+		DatasetRegistry: registry,
 	})
 	if err != nil {
 		return reportPlanError(cmd, err, srcName)
