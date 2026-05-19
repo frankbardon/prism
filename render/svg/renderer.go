@@ -98,6 +98,12 @@ func (r *Renderer) Render(doc *scene.SceneDoc, opts render.RenderOpts) ([]byte, 
 	// suffice with one cell).
 	renderSharedAxes(w, doc.Grid)
 
+	// Facet headers (P09 / T09.07): grid-edge row + column labels.
+	// Repeat does NOT emit headers (the substituted field name is
+	// implicit in each cell's axis title); the encoder leaves
+	// Layout.Headers zero for repeat so this block is a no-op there.
+	renderGridHeaders(w, doc.Grid)
+
 	w.EndTag("svg")
 	w.Newline()
 	return w.Bytes(), nil
@@ -160,6 +166,92 @@ func renderSharedAxes(w *Writer, g scene.SceneGrid) {
 		w.Indent(4)
 		renderAxis(w, *g.Shared.Y, plot)
 		w.Newline()
+	}
+	w.Indent(2)
+	w.EndTag("g")
+	w.Newline()
+}
+
+// renderGridHeaders emits facet row + column header labels at the
+// grid edge. Headers live in their own `<g class="prism-grid-headers">`
+// block so test scrapers can locate them deterministically. The
+// helper is a no-op when both Top and Left header slices are empty
+// (the standard concat / layer / repeat case).
+//
+// Layout:
+//   - Top labels: centered above each cell column at y = 14.
+//   - Left labels: anchored at x = 6 (left-text-anchor) on each
+//     cell row's vertical midpoint.
+//
+// The encoder reserves space for these via Layout.headerLeft /
+// headerTop offsets when populating cells (encode_facet.go), so the
+// labels do not overlap cell content.
+func renderGridHeaders(w *Writer, g scene.SceneGrid) {
+	if len(g.Layout.Headers.Top) == 0 && len(g.Layout.Headers.Left) == 0 {
+		return
+	}
+	if len(g.Cells) == 0 {
+		return
+	}
+	w.Newline()
+	w.Indent(2)
+	w.OpenTag("g")
+	w.Attr("class", "prism-grid-headers")
+	w.CloseTagOpen()
+	w.Newline()
+
+	// Column headers along the top edge. Use the first cell in each
+	// column to anchor the x coordinate (cells share x within a
+	// column).
+	if labels := g.Layout.Headers.Top; len(labels) > 0 {
+		// Build a quick map: col index → cell.Scene.Frame.X + W/2.
+		colCenters := map[int]float64{}
+		for _, c := range g.Cells {
+			if _, ok := colCenters[c.Col]; !ok {
+				colCenters[c.Col] = c.Scene.Frame.X + c.Scene.Frame.W/2
+			}
+		}
+		for ci, label := range labels {
+			cx, ok := colCenters[ci]
+			if !ok {
+				continue
+			}
+			w.Indent(4)
+			w.OpenTag("text")
+			w.Attr("class", "prism-facet-header prism-facet-header-top")
+			w.AttrFloat("x", cx)
+			w.AttrFloat("y", 14)
+			w.Attr("text-anchor", "middle")
+			w.CloseTagOpen()
+			w.Text(label)
+			w.EndTag("text")
+			w.Newline()
+		}
+	}
+	// Row headers along the left edge.
+	if labels := g.Layout.Headers.Left; len(labels) > 0 {
+		rowCenters := map[int]float64{}
+		for _, c := range g.Cells {
+			if _, ok := rowCenters[c.Row]; !ok {
+				rowCenters[c.Row] = c.Scene.Frame.Y + c.Scene.Frame.H/2
+			}
+		}
+		for ri, label := range labels {
+			cy, ok := rowCenters[ri]
+			if !ok {
+				continue
+			}
+			w.Indent(4)
+			w.OpenTag("text")
+			w.Attr("class", "prism-facet-header prism-facet-header-left")
+			w.AttrFloat("x", 6)
+			w.AttrFloat("y", cy)
+			w.Attr("text-anchor", "start")
+			w.CloseTagOpen()
+			w.Text(label)
+			w.EndTag("text")
+			w.Newline()
+		}
 	}
 	w.Indent(2)
 	w.EndTag("g")
