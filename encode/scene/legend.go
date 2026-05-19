@@ -4,10 +4,14 @@ package scene
 type LegendPosition string
 
 const (
-	LegendRight  LegendPosition = "right"
-	LegendLeft   LegendPosition = "left"
-	LegendTop    LegendPosition = "top"
-	LegendBottom LegendPosition = "bottom"
+	LegendRight       LegendPosition = "right"
+	LegendLeft        LegendPosition = "left"
+	LegendTop         LegendPosition = "top"
+	LegendBottom      LegendPosition = "bottom"
+	LegendTopRight    LegendPosition = "top-right"
+	LegendTopLeft     LegendPosition = "top-left"
+	LegendBottomRight LegendPosition = "bottom-right"
+	LegendBottomLeft  LegendPosition = "bottom-left"
 )
 
 // SwatchType discriminates the visual form of a legend entry's swatch.

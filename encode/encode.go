@@ -175,12 +175,29 @@ func Encode(s *spec.Spec, tables map[plan.NodeID]*table.Table, tipID plan.NodeID
 		Mark:  specMarkToScene(markType),
 		Marks: markList,
 	}
+	// Build legends for non-trivial mark channels.
+	var legends []scene.Legend
+	if colorChannel != nil && len(colorChannel.Categories) > 1 {
+		title := enc.Color.Field
+		legend := BuildSymbolLegend(LegendInputs{
+			Channel:    scene.ChannelColor,
+			Title:      title,
+			Categories: colorChannel.Categories,
+			Palette:    colorChannel.Palette,
+			Position:   scene.LegendTopRight,
+		}, layout.Plot)
+		if legend != nil {
+			legends = append(legends, *legend)
+		}
+	}
+
 	sceneObj := scene.Scene{
-		ID:     "scene-0",
-		Frame:  layout.Frame,
-		Plot:   layout.Plot,
-		Axes:   axes,
-		Layers: []scene.SceneLayer{layer},
+		ID:      "scene-0",
+		Frame:   layout.Frame,
+		Plot:    layout.Plot,
+		Axes:    axes,
+		Legends: legends,
+		Layers:  []scene.SceneLayer{layer},
 	}
 	if hasTitle {
 		sceneObj.Title = &scene.TextElement{
