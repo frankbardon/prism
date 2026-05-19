@@ -18,4 +18,5 @@ func init() {
 	validate.RegisterDefault(func() validate.SemanticRule { return SchemaRef{} })
 	validate.RegisterDefault(func() validate.SemanticRule { return LogScalePositiveDomain{} })
 	validate.RegisterDefault(func() validate.SemanticRule { return FormatStringValid{} })
+	validate.RegisterDefault(func() validate.SemanticRule { return ResolveScaleCompat{} })
 }

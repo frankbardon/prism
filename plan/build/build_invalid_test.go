@@ -36,10 +36,13 @@ func TestPrismDAGBuildInvalidGallery(t *testing.T) {
 		"dataset_undefined.json": "PRISM_PLAN_003",
 	}
 
-	// Composition/selection negatives are not present under invalid/
-	// at the time of writing; if they appear later, list them here
-	// so the test does not flake.
-	skip := map[string]bool{}
+	// Composite-spec negatives belong to BuildComposite + the validate
+	// layer; flat Build cannot exercise them. List them so the
+	// validator-gate sweep does not flake on the composite-shape error
+	// that flat Build returns.
+	skip := map[string]bool{
+		"layer_shared_y_incompatible.json": true,
+	}
 
 	var names []string
 	for _, e := range entries {

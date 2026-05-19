@@ -1,0 +1,25 @@
+{
+  "$schema": "urn:prism:schema:v1:spec",
+  "title": "Incompatible shared y-scale (P08 negative fixture)",
+  "resolve": {"scale": {"y": "shared"}},
+  "layer": [
+    {
+      "$schema": "urn:prism:schema:v1:spec",
+      "data": {"values": [{"x": 1, "category": "alpha"}, {"x": 2, "category": "beta"}]},
+      "mark": "point",
+      "encoding": {
+        "x": {"field": "x",        "type": "quantitative"},
+        "y": {"field": "category", "type": "nominal"}
+      }
+    },
+    {
+      "$schema": "urn:prism:schema:v1:spec",
+      "data": {"values": [{"x": 1, "score": 10.5}, {"x": 2, "score": 22.0}]},
+      "mark": "line",
+      "encoding": {
+        "x": {"field": "x",     "type": "quantitative"},
+        "y": {"field": "score", "type": "quantitative"}
+      }
+    }
+  ]
+}
