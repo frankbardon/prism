@@ -49,16 +49,18 @@ type Axis struct {
 	Title      string       `json:"title,omitempty"`
 	Domain     Line         `json:"domain,omitempty"`
 	Grid       []Line       `json:"grid,omitempty"`
+	LabelAngle float64      `json:"label_angle,omitempty"`
 	LabelStyle Style        `json:"label_style,omitempty"`
 	TitleStyle Style        `json:"title_style,omitempty"`
 }
 
 // Tick is one resolved tick mark: value + pixel + pre-formatted label.
 type Tick struct {
-	Value any     `json:"value"`
-	Pixel float64 `json:"pixel"`
-	Label string  `json:"label"`
-	Minor bool    `json:"minor,omitempty"`
+	Value       any     `json:"value"`
+	Pixel       float64 `json:"pixel"`
+	Label       string  `json:"label"`
+	Minor       bool    `json:"minor,omitempty"`
+	LabelHidden bool    `json:"label_hidden,omitempty"`
 }
 
 // ScaleSpec is the post-resolve scale (Type + Domain + Range + flags).

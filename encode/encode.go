@@ -108,18 +108,10 @@ func Encode(s *spec.Spec, tables map[plan.NodeID]*table.Table, tipID plan.NodeID
 	// Build axes (only when the channel was bound).
 	axes := make([]scene.Axis, 0, 2)
 	if xScale != nil {
-		title := ""
-		if enc.X != nil {
-			title = enc.X.Field
-		}
-		axes = append(axes, BuildAxis(xScale, scene.ChannelX, scene.AxisPositionBottom, layout.Plot, title))
+		axes = append(axes, BuildAxisWithOpts(xScale, scene.ChannelX, scene.AxisPositionBottom, layout.Plot, axisOptsFor(enc.X)))
 	}
 	if yScale != nil {
-		title := ""
-		if enc.Y != nil {
-			title = enc.Y.Field
-		}
-		axes = append(axes, BuildAxis(yScale, scene.ChannelY, scene.AxisPositionLeft, layout.Plot, title))
+		axes = append(axes, BuildAxisWithOpts(yScale, scene.ChannelY, scene.AxisPositionLeft, layout.Plot, axisOptsFor(enc.Y)))
 	}
 
 	// Resolve color channel (P05 supports nominal only).
@@ -363,6 +355,67 @@ func joinNodeIDs(tables map[plan.NodeID]*table.Table) string {
 		out += ", " + k
 	}
 	return out
+}
+
+// axisOptsFor resolves AxisOpts from a PositionChannel. Reads
+// channel.axis.{title, grid, label_angle, label_overlap, format}.
+// Defaults match DefaultAxisOpts; the spec selectively overrides.
+func axisOptsFor(ch *spec.PositionChannel) AxisOpts {
+	title := ""
+	if ch != nil {
+		title = ch.Field
+	}
+	opts := DefaultAxisOpts(title)
+	if ch == nil {
+		return opts
+	}
+	if ch.Axis == nil {
+		return opts
+	}
+	if t, ok := axisTitleString(ch.Axis.Title); ok {
+		opts.Title = t
+	}
+	if ch.Axis.Grid != nil {
+		opts.Grid = *ch.Axis.Grid
+	}
+	if ch.Axis.LabelAngle != nil {
+		opts.LabelAngle = *ch.Axis.LabelAngle
+	}
+	if mode, ok := overlapMode(ch.Axis.LabelOverlap); ok {
+		opts.LabelOverlap = mode
+	}
+	if ch.Axis.Format != "" {
+		opts.Format = ch.Axis.Format
+	}
+	return opts
+}
+
+// axisTitleString accepts the polymorphic axis.title field (string or
+// false to suppress). Returns ("", true) when explicitly suppressed.
+func axisTitleString(v any) (string, bool) {
+	switch t := v.(type) {
+	case string:
+		return t, true
+	case bool:
+		if !t {
+			return "", true
+		}
+	}
+	return "", false
+}
+
+// overlapMode normalises axis.label_overlap (bool or string).
+func overlapMode(v any) (string, bool) {
+	switch t := v.(type) {
+	case bool:
+		if t {
+			return "parity", true
+		}
+		return "none", true
+	case string:
+		return t, true
+	}
+	return "", false
 }
 
 // joinTableFields renders the table's columns as a comma-separated
