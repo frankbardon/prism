@@ -37,8 +37,8 @@ func (n *UnionNode) ID() plan.NodeID { return n.id }
 // Inputs implements plan.Node.
 func (n *UnionNode) Inputs() []plan.NodeID { return n.inputs }
 
-// Schema implements plan.Node. Returns the first input's schema; see
-// the TODO P07 note on cross-input validation.
+// Schema implements plan.Node. Returns the first input's schema; Execute
+// validates that every other input matches it (PRISM_PLAN_004).
 func (n *UnionNode) Schema(in []*encoding.Schema) (*encoding.Schema, error) {
 	if len(in) == 0 {
 		return nil, fmt.Errorf("UnionNode: no input schemas")
@@ -49,9 +49,9 @@ func (n *UnionNode) Schema(in []*encoding.Schema) (*encoding.Schema, error) {
 	return in[0], nil
 }
 
-// Execute implements plan.Node. P03 stub.
-func (n *UnionNode) Execute(_ context.Context, _ []*table.Table) (*table.Table, error) {
-	return nil, notImplementedErr("UnionNode")
+// Execute implements plan.Node. Body lives in union_execute.go.
+func (n *UnionNode) Execute(ctx context.Context, in []*table.Table) (*table.Table, error) {
+	return n.executeUnion(ctx, in)
 }
 
 // Fingerprint implements plan.Node.
