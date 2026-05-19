@@ -15,12 +15,10 @@ import (
 // as the regression net for the spec → svg pipeline; breaks the
 // build if anyone breaks structure in a later phase.
 func TestPrismPlotProducesValidSVGForAllFixtures(t *testing.T) {
-	// P08 unskipped layer + concat / hconcat / vconcat (BuildComposite +
-	// EncodeComposite). Remaining deferrals: facet / repeat (P09) and
-	// selection (P13).
+	// P08 unskipped layer + concat / hconcat / vconcat; P09 unskipped
+	// facet + repeat (BuildComposite + EncodeComposite). Remaining
+	// deferrals: selection (P13).
 	skip := map[string]bool{
-		"facet_by_region.json":    true,
-		"repeat_metrics.json":     true,
 		"selection_interval.json": true,
 		"selection_point.json":    true,
 		// Specialty / composite marks render as axes-only with a
