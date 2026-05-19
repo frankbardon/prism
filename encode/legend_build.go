@@ -11,8 +11,8 @@ import (
 type LegendInputs struct {
 	Channel    scene.Channel
 	Title      string
-	Categories []string        // for symbol legends
-	Palette    []*scene.Color  // for symbol legends
+	Categories []string       // for symbol legends
+	Palette    []*scene.Color // for symbol legends
 	Position   scene.LegendPosition
 	// Continuous gradient legend (optional, overrides Categories):
 	Gradient *GradientLegend
@@ -20,10 +20,10 @@ type LegendInputs struct {
 
 // GradientLegend describes a continuous-color legend.
 type GradientLegend struct {
-	ID         string
-	DomainMin  float64
-	DomainMax  float64
-	Stops      []scene.GradientStop
+	ID          string
+	DomainMin   float64
+	DomainMax   float64
+	Stops       []scene.GradientStop
 	LabelFormat string
 }
 

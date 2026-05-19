@@ -2,7 +2,6 @@ package encode
 
 import (
 	"fmt"
-	"sort"
 
 	"github.com/frankbardon/prism/encode/scale"
 	"github.com/frankbardon/prism/encode/scene"
@@ -325,28 +324,6 @@ func uniqueStrings(values []any) []string {
 		}
 		seen[s] = true
 		out = append(out, s)
-	}
-	return out
-}
-
-// toFloat is kept for back-compat with encode_test.go and other
-// in-package callers that have not yet migrated to scale.ToFloat.
-func toFloat(v any) (float64, bool) { return scale.ToFloat(v) }
-
-// toEpochMs is kept for back-compat (same reason as toFloat).
-func toEpochMs(v any) (float64, bool) { return scale.ToEpochMs(v) }
-
-// joinCommas is a tiny helper that turns a slice into a
-// comma-separated string for error contexts.
-func joinCommas(xs []string) string {
-	if len(xs) == 0 {
-		return ""
-	}
-	cp := append([]string(nil), xs...)
-	sort.Strings(cp)
-	out := cp[0]
-	for _, s := range cp[1:] {
-		out += ", " + s
 	}
 	return out
 }
