@@ -9,14 +9,19 @@ import (
 	"time"
 
 	prismerrors "github.com/frankbardon/prism/errors"
+	"github.com/frankbardon/prism/internal/limits"
 	"github.com/frankbardon/prism/table"
 )
 
 // ExecOpts controls one Execute call. Zero values are sensible:
-// Workers=0 means runtime.NumCPU(); Cache=nil disables memoization;
-// PerNodeTimeout=0 disables per-node timeouts; AbortOnError=false is
-// partial-failure mode.
+// Workers=0 consults PRISM_QUERY_WORKERS env, then falls back to
+// runtime.NumCPU(); Cache=nil disables memoization; PerNodeTimeout=0
+// disables per-node timeouts; AbortOnError=false is partial-failure
+// mode.
 type ExecOpts struct {
+	// Workers is the upper bound on goroutines per level. 0 = consult
+	// PRISM_QUERY_WORKERS (set positive) else runtime.NumCPU(); 1 =
+	// strictly sequential.
 	Workers        int
 	Cache          TableCache
 	JoinMaxRows    int
@@ -51,10 +56,12 @@ func (e *NodeError) Unwrap() error { return e.Err }
 
 // Execute runs d through the executor with the given options.
 //
-// Workers <= 0 → runtime.NumCPU(). Workers == 1 is the sequential
-// path (P03 contract). The bounded worker pool ships in P03 too —
-// saves rework in P07 — but acceptance only requires Workers=1
-// correctness.
+// Workers resolution order (P07):
+//  1. ExecOpts.Workers > 0 → use as-is.
+//  2. ExecOpts.Workers == 0 AND PRISM_QUERY_WORKERS > 0 → env wins.
+//  3. Otherwise → runtime.NumCPU().
+//
+// Workers == 1 is the sequential path (P03 contract).
 //
 // Partial-failure policy (D006): a node whose Execute returns an
 // error leaves its dependents un-runnable (the inputsReady check
@@ -71,10 +78,7 @@ func Execute(ctx context.Context, d *DAG, opts ExecOpts) (*ExecResult, error) {
 		return nil, err
 	}
 
-	workers := opts.Workers
-	if workers <= 0 {
-		workers = runtime.NumCPU()
-	}
+	workers := resolveWorkers(opts.Workers)
 
 	result := &ExecResult{Tables: map[NodeID]*table.Table{}}
 	var mu sync.Mutex
@@ -237,6 +241,20 @@ func inputsReady(d *DAG, id NodeID, result *ExecResult, mu *sync.Mutex) bool {
 		}
 	}
 	return true
+}
+
+// resolveWorkers implements the three-step precedence documented on
+// Execute: explicit opt value wins; sentinel 0 consults the env; final
+// fallback is NumCPU. The function is kept package-private so tests
+// observe the same precedence through the public Execute entry.
+func resolveWorkers(opt int) int {
+	if opt > 0 {
+		return opt
+	}
+	if env, ok := limits.QueryWorkers(); ok && env > 0 {
+		return env
+	}
+	return runtime.NumCPU()
 }
 
 // codeFor extracts the PRISM_* code from an error. AppError carries it
