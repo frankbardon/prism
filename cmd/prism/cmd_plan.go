@@ -63,11 +63,56 @@ func runPlan(_ context.Context, cmd *cli.Command) error {
 	if err != nil {
 		return cli.Exit(fmt.Sprintf("load --datasets-config: %v", err), 2)
 	}
-	d, _, err := build.Build(s, build.Options{
+	buildOpts := build.Options{
 		FS:              afero.NewOsFs(),
 		Resolver:        resolve.New(nil),
 		DatasetRegistry: registry,
-	})
+	}
+
+	// Composite specs (P08): dump each child sub-DAG under a
+	// "# child N (kind)" header in text/dot formats. JSON wraps the
+	// per-child renders in an outer envelope.
+	if build.IsComposite(s) {
+		composite, err := build.BuildComposite(s, buildOpts)
+		if err != nil {
+			return reportPlanError(cmd, err, srcName)
+		}
+		switch format {
+		case "json":
+			fmt.Fprintf(cmd.Writer, `{"kind":%q,"rows":%d,"cols":%d,"children":[`,
+				composite.Kind, composite.Rows, composite.Cols)
+			for i, child := range composite.Children {
+				if i > 0 {
+					fmt.Fprint(cmd.Writer, ",")
+				}
+				if err := plan.RenderJSON(child.DAG, cmd.Writer); err != nil {
+					return err
+				}
+			}
+			fmt.Fprintln(cmd.Writer, "]}")
+			return nil
+		case "dot", "text":
+			for i, child := range composite.Children {
+				fmt.Fprintf(cmd.Writer, "# child %d (%s)\n", i, composite.Kind)
+				switch format {
+				case "dot":
+					if err := plan.RenderDOT(child.DAG, cmd.Writer); err != nil {
+						return err
+					}
+				case "text":
+					if err := plan.RenderText(child.DAG, cmd.Writer); err != nil {
+						return err
+					}
+				}
+				fmt.Fprintln(cmd.Writer)
+			}
+			return nil
+		default:
+			return cli.Exit(fmt.Sprintf("unknown format %q (expected dot, text, or json)", format), 2)
+		}
+	}
+
+	d, _, err := build.Build(s, buildOpts)
 	if err != nil {
 		return reportPlanError(cmd, err, srcName)
 	}

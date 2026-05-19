@@ -12,6 +12,7 @@ import (
 
 	"github.com/frankbardon/prism/compile/inmem"
 	"github.com/frankbardon/prism/encode"
+	"github.com/frankbardon/prism/encode/scene"
 	prismerrors "github.com/frankbardon/prism/errors"
 	"github.com/frankbardon/prism/plan"
 	"github.com/frankbardon/prism/plan/build"
@@ -19,6 +20,7 @@ import (
 	"github.com/frankbardon/prism/render/svg"
 	"github.com/frankbardon/prism/resolve"
 	"github.com/frankbardon/prism/spec"
+	"github.com/frankbardon/prism/table"
 )
 
 // plotCommand returns the `prism plot` subcommand. Reads a spec from
@@ -102,40 +104,28 @@ func runPlot(ctx context.Context, cmd *cli.Command) error {
 	if err != nil {
 		return cli.Exit(fmt.Sprintf("load --datasets-config: %v", err), 2)
 	}
-	dag, tipID, err := build.Build(s, build.Options{
+	buildOpts := build.Options{
 		FS:              afero.NewOsFs(),
 		Resolver:        resolve.New(nil),
 		Backend:         inmem.New(),
 		DatasetRegistry: registry,
-	})
-	if err != nil {
-		return reportPlanError(cmd, err, srcName)
 	}
-
-	res, err := plan.Execute(ctx, dag, plan.ExecOpts{
+	execOpts := plan.ExecOpts{
 		Workers:      cmd.Int("workers"),
 		AbortOnError: cmd.Bool("abort-on-error"),
-	})
-	if err != nil {
-		return cli.Exit(fmt.Sprintf("execute: %v", err), 1)
 	}
-	if len(res.Errors) > 0 {
-		fmt.Fprintf(cmd.Writer, "plot failed: %s\n", srcName)
-		for _, ne := range res.Errors {
-			fmt.Fprintf(cmd.Writer, "\nERROR %s (node %s): %v\n", ne.Code, ne.Node, ne.Err)
-		}
-		return cli.Exit("", 1)
-	}
-
 	width := cmd.Float("width")
 	height := cmd.Float("height")
-	doc, err := encode.Encode(s, res.Tables, tipID, encode.EncodeOpts{
+	encOpts := encode.EncodeOpts{
 		Width:     width,
 		Height:    height,
 		ThemeName: cmd.String("theme"),
-	})
-	if err != nil {
-		return cli.Exit(fmt.Sprintf("encode: %v", err), 1)
+	}
+
+	// Branch by spec shape (flat vs composite per P08 — D049/D050).
+	doc, exitErr := plotPipeline(ctx, s, buildOpts, execOpts, encOpts, cmd, srcName)
+	if exitErr != nil {
+		return exitErr
 	}
 
 	bytes, err := svg.New().Render(doc, render.RenderOpts{
@@ -164,6 +154,70 @@ func runPlot(ctx context.Context, cmd *cli.Command) error {
 		fmt.Fprintf(cmd.ErrWriter, "WARN %s: %s\n", warn.Code, warn.Message)
 	}
 	return nil
+}
+
+// plotPipeline drives the build/execute/encode chain for both flat
+// and composite specs. Flat specs hit Build+Encode unchanged from
+// P05–P07; composite specs route through BuildComposite + per-child
+// Execute + EncodeComposite (D049 / D050). The returned cli.ExitError
+// is already formatted for the caller.
+func plotPipeline(
+	ctx context.Context,
+	s *spec.Spec,
+	buildOpts build.Options,
+	execOpts plan.ExecOpts,
+	encOpts encode.EncodeOpts,
+	cmd *cli.Command,
+	srcName string,
+) (*scene.SceneDoc, error) {
+	if build.IsComposite(s) {
+		composite, err := build.BuildComposite(s, buildOpts)
+		if err != nil {
+			return nil, reportPlanError(cmd, err, srcName)
+		}
+		per := make([]map[plan.NodeID]*table.Table, len(composite.Children))
+		for i, child := range composite.Children {
+			res, err := plan.Execute(ctx, child.DAG, execOpts)
+			if err != nil {
+				return nil, cli.Exit(fmt.Sprintf("execute child %d: %v", i, err), 1)
+			}
+			if len(res.Errors) > 0 {
+				fmt.Fprintf(cmd.Writer, "plot failed: %s (child %d)\n", srcName, i)
+				for _, ne := range res.Errors {
+					fmt.Fprintf(cmd.Writer, "\nERROR %s (node %s): %v\n", ne.Code, ne.Node, ne.Err)
+				}
+				return nil, cli.Exit("", 1)
+			}
+			per[i] = res.Tables
+		}
+		doc, err := encode.EncodeComposite(s, composite, per, encOpts)
+		if err != nil {
+			return nil, cli.Exit(fmt.Sprintf("encode: %v", err), 1)
+		}
+		return doc, nil
+	}
+
+	// Flat path — unchanged from P07.
+	dag, tipID, err := build.Build(s, buildOpts)
+	if err != nil {
+		return nil, reportPlanError(cmd, err, srcName)
+	}
+	res, err := plan.Execute(ctx, dag, execOpts)
+	if err != nil {
+		return nil, cli.Exit(fmt.Sprintf("execute: %v", err), 1)
+	}
+	if len(res.Errors) > 0 {
+		fmt.Fprintf(cmd.Writer, "plot failed: %s\n", srcName)
+		for _, ne := range res.Errors {
+			fmt.Fprintf(cmd.Writer, "\nERROR %s (node %s): %v\n", ne.Code, ne.Node, ne.Err)
+		}
+		return nil, cli.Exit("", 1)
+	}
+	doc, err := encode.Encode(s, res.Tables, tipID, encOpts)
+	if err != nil {
+		return nil, cli.Exit(fmt.Sprintf("encode: %v", err), 1)
+	}
+	return doc, nil
 }
 
 // reportUnsupportedFormat emits PRISM_RENDER_FORMAT_UNAVAILABLE for

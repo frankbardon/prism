@@ -74,20 +74,74 @@ func runExecute(ctx context.Context, cmd *cli.Command) error {
 	if err != nil {
 		return cli.Exit(fmt.Sprintf("load --datasets-config: %v", err), 2)
 	}
-	dag, tipID, err := build.Build(s, build.Options{
+	buildOpts := build.Options{
 		FS:              afero.NewOsFs(),
 		Resolver:        resolve.New(nil),
 		Backend:         inmem.New(),
 		DatasetRegistry: registry,
-	})
+	}
+	execOpts := plan.ExecOpts{
+		Workers:      cmd.Int("workers"),
+		AbortOnError: cmd.Bool("abort-on-error"),
+	}
+
+	// Composite specs (layer / concat / hconcat / vconcat) print each
+	// child tip table under a "# child N (kind)" header so multi-layer
+	// + multi-panel charts dump usefully.
+	if build.IsComposite(s) {
+		composite, err := build.BuildComposite(s, buildOpts)
+		if err != nil {
+			return reportPlanError(cmd, err, srcName)
+		}
+		anyErr := false
+		for i, child := range composite.Children {
+			res, err := plan.Execute(ctx, child.DAG, execOpts)
+			if err != nil {
+				return cli.Exit(fmt.Sprintf("execute child %d: %v", i, err), 1)
+			}
+			if len(res.Errors) > 0 {
+				fmt.Fprintf(cmd.Writer, "execute failed: %s (child %d)\n", srcName, i)
+				for _, ne := range res.Errors {
+					fmt.Fprintf(cmd.Writer, "\nERROR %s (node %s): %v\n", ne.Code, ne.Node, ne.Err)
+				}
+				anyErr = true
+				continue
+			}
+			final, ok := res.Tables[child.Tip]
+			if !ok || final == nil {
+				fmt.Fprintf(cmd.Writer, "# child %d (%s): no table\n", i, composite.Kind)
+				continue
+			}
+			header := fmt.Sprintf("# child %d (%s)", i, composite.Kind)
+			if composite.Kind == plan.CompositeLayer {
+				header = fmt.Sprintf("# layer %d", i)
+			}
+			fmt.Fprintln(cmd.Writer, header)
+			switch format {
+			case "json":
+				if err := renderTableJSON(cmd.Writer, final); err != nil {
+					return err
+				}
+			case "table":
+				if err := renderTableText(cmd.Writer, final); err != nil {
+					return err
+				}
+			default:
+				return cli.Exit(fmt.Sprintf("unknown format %q (expected json or table)", format), 2)
+			}
+		}
+		if anyErr {
+			return cli.Exit("", 1)
+		}
+		return nil
+	}
+
+	dag, tipID, err := build.Build(s, buildOpts)
 	if err != nil {
 		return reportPlanError(cmd, err, srcName)
 	}
 
-	res, err := plan.Execute(ctx, dag, plan.ExecOpts{
-		Workers:      cmd.Int("workers"),
-		AbortOnError: cmd.Bool("abort-on-error"),
-	})
+	res, err := plan.Execute(ctx, dag, execOpts)
 	if err != nil {
 		return cli.Exit(fmt.Sprintf("execute: %v", err), 1)
 	}

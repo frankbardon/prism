@@ -15,17 +15,14 @@ import (
 // as the regression net for the spec → svg pipeline; breaks the
 // build if anyone breaks structure in a later phase.
 func TestPrismPlotProducesValidSVGForAllFixtures(t *testing.T) {
-	// Composition + selection fixtures (PRISM_PLAN_002) skip; same
-	// allowlist as plan/build/build_test.go uses for the parallel
-	// build sweep.
+	// P08 unskipped layer + concat / hconcat / vconcat (BuildComposite +
+	// EncodeComposite). Remaining deferrals: facet / repeat (P09) and
+	// selection (P13).
 	skip := map[string]bool{
-		"concat_h.json":                  true,
-		"concat_v.json":                  true,
-		"facet_by_region.json":           true,
-		"repeat_metrics.json":            true,
-		"layer_actual_vs_benchmark.json": true,
-		"selection_interval.json":        true,
-		"selection_point.json":           true,
+		"facet_by_region.json":    true,
+		"repeat_metrics.json":     true,
+		"selection_interval.json": true,
+		"selection_point.json":    true,
 		// Specialty / composite marks render as axes-only with a
 		// PRISM_WARN_MARK_NOT_IMPLEMENTED warning; we still expect
 		// the SVG to be well-formed, so DO NOT skip them.
