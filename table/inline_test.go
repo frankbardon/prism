@@ -102,6 +102,36 @@ func TestFromInlineHashStable(t *testing.T) {
 	}
 }
 
+// TestPrismTableHashStability is the PHASE.md test gate. It asserts the
+// canonical contract: identical (schema, rows) input -> identical Hash().
+// Wrapped here as a thin alias over TestFromInlineHashStable so the
+// gate name is greppable in CI logs.
+func TestPrismTableHashStability(t *testing.T) {
+	values := []map[string]any{
+		{"brand_id": "alpha", "score": 0.42},
+		{"brand_id": "beta", "score": 0.71},
+		{"brand_id": "gamma", "score": 0.58},
+	}
+	a, _, err := FromInline("brand_scores", values, nil)
+	if err != nil {
+		t.Fatalf("FromInline a: %v", err)
+	}
+	b, _, err := FromInline("brand_scores", values, nil)
+	if err != nil {
+		t.Fatalf("FromInline b: %v", err)
+	}
+	if a.Hash() != b.Hash() {
+		t.Fatalf("Hash() unstable: %s vs %s", a.Hash(), b.Hash())
+	}
+}
+
+// TestPrismTableRowLimit is the PHASE.md test gate. PRISM_TABLE_MAX_ROWS
+// = 10; building an 11-row Table must return PRISM_RESOLVE_007. Already
+// covered by TestNewTableRowLimit; named explicitly here for greppability.
+func TestPrismTableRowLimit(t *testing.T) {
+	TestNewTableRowLimit(t)
+}
+
 func TestFromInlineEmptyRejected(t *testing.T) {
 	_, _, err := FromInline("ds", nil, nil)
 	if err == nil {
