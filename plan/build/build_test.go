@@ -70,15 +70,14 @@ func TestPrismDAGBuildSingleSource(t *testing.T) {
 }
 
 func TestPrismDAGBuildAllFixtures(t *testing.T) {
-	// Composition + selection fixtures defer to P08/P09/P13.
+	// P08 unskipped layer + concat / hconcat / vconcat (now built via
+	// BuildComposite). Remaining deferrals: facet / repeat → P09;
+	// selection → P13.
 	skip := map[string]bool{
-		"concat_h.json":                  true,
-		"concat_v.json":                  true,
-		"facet_by_region.json":           true,
-		"repeat_metrics.json":            true,
-		"layer_actual_vs_benchmark.json": true,
-		"selection_interval.json":        true,
-		"selection_point.json":           true,
+		"facet_by_region.json":    true,
+		"repeat_metrics.json":     true,
+		"selection_interval.json": true,
+		"selection_point.json":    true,
 	}
 
 	root := repoRoot(t)
@@ -102,9 +101,33 @@ func TestPrismDAGBuildAllFixtures(t *testing.T) {
 		name := name
 		t.Run(name, func(t *testing.T) {
 			if skip[name] {
-				t.Skipf("composition/selection: deferred to P08/P09/P13")
+				t.Skipf("composition/selection: deferred to P09/P13")
 			}
 			s := loadSpec(t, filepath.Join(dir, name))
+			// Composite specs (layer/concat/hconcat/vconcat) build via
+			// BuildComposite per D049/D050; each child must produce a
+			// non-empty sub-DAG.
+			if build.IsComposite(s) {
+				c, err := build.BuildComposite(s, build.Options{})
+				if err != nil {
+					t.Fatalf("BuildComposite: %v", err)
+				}
+				if len(c.Children) == 0 {
+					t.Fatal("composite has no children")
+				}
+				for i, child := range c.Children {
+					if child.DAG == nil || child.DAG.Size() == 0 {
+						t.Errorf("child %d: DAG empty", i)
+					}
+					if len(child.DAG.Roots()) == 0 {
+						t.Errorf("child %d: no roots", i)
+					}
+					if len(child.DAG.Sinks()) == 0 {
+						t.Errorf("child %d: no sinks", i)
+					}
+				}
+				return
+			}
 			d, _, err := build.Build(s, build.Options{})
 			if err != nil {
 				t.Fatalf("Build: %v", err)
@@ -122,14 +145,17 @@ func TestPrismDAGBuildAllFixtures(t *testing.T) {
 	}
 }
 
-func TestPrismDAGBuildCompositionRejected(t *testing.T) {
+// TestPrismDAGBuildFacetAndSelectionRejected pins the post-P08
+// rejection set. Composition (layer / concat) is now built via
+// BuildComposite — see TestPrismBuildRejectsCompositeViaFlatBuild
+// for the "wrong entry" rejection. facet and selection stay deferred
+// to P09 / P13 respectively.
+func TestPrismDAGBuildFacetAndSelectionRejected(t *testing.T) {
 	cases := []struct {
 		fixture string
 		kind    string
 	}{
-		{"concat_h.json", "hconcat"},
 		{"facet_by_region.json", "facet"},
-		{"layer_actual_vs_benchmark.json", "layer"},
 		{"selection_interval.json", "selection"},
 	}
 	root := repoRoot(t)
