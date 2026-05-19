@@ -139,36 +139,39 @@ func Build(s *spec.Spec, opts Options) (*plan.DAG, plan.NodeID, error) {
 // rejectOutOfScope walks the spec for features the builder cannot yet
 // represent and emits PRISM_PLAN_002 pointing at the landing phase.
 //
-// P08 landed layer + concat / hconcat / vconcat; callers building a
-// composite spec must use BuildComposite (the rejection here points
-// them at the right entry). Facet / repeat stay deferred to P09;
-// selection to P13.
+// P08 landed layer + concat / hconcat / vconcat; P09 added facet +
+// repeat. Callers building a composite spec must use BuildComposite
+// (the rejection here points them at the right entry). Selection is
+// the only remaining composition primitive deferred (to P13).
 func rejectOutOfScope(s *spec.Spec) error {
 	switch {
-	case len(s.Layer) > 0, len(s.Concat) > 0, len(s.HConcat) > 0, len(s.VConcat) > 0:
+	case len(s.Layer) > 0, len(s.Concat) > 0, len(s.HConcat) > 0, len(s.VConcat) > 0,
+		s.Facet != nil, s.Repeat != nil:
 		return prismerrors.New(
 			"PRISM_PLAN_002",
-			"Spec is a composite (layer / concat / hconcat / vconcat); use BuildComposite, not Build.",
-			map[string]any{"Kind": "composition:flat-build", "Phase": "P08"},
+			"Spec is a composite (layer / concat / hconcat / vconcat / facet / repeat); use BuildComposite, not Build.",
+			map[string]any{"Kind": "composition:flat-build", "Phase": "P08-P09"},
 		)
-	case s.Facet != nil:
-		return outOfScopeErr("facet", "P09")
-	case s.Repeat != nil:
-		return outOfScopeErr("repeat", "P09")
 	case len(s.Selection) > 0:
 		return outOfScopeErr("selection", "P13")
 	}
 	return nil
 }
 
-// IsComposite reports whether s carries any of the four P08 composition
-// primitives. Callers route composite specs through BuildComposite;
-// flat specs continue through Build.
+// IsComposite reports whether s carries any of the six composition
+// primitives (layer / concat / hconcat / vconcat / facet / repeat).
+// Callers route composite specs through BuildComposite; flat specs
+// continue through Build.
 func IsComposite(s *spec.Spec) bool {
 	if s == nil {
 		return false
 	}
-	return len(s.Layer) > 0 || len(s.Concat) > 0 || len(s.HConcat) > 0 || len(s.VConcat) > 0
+	return len(s.Layer) > 0 ||
+		len(s.Concat) > 0 ||
+		len(s.HConcat) > 0 ||
+		len(s.VConcat) > 0 ||
+		s.Facet != nil ||
+		s.Repeat != nil
 }
 
 func outOfScopeErr(kind, phase string) error {

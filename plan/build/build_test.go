@@ -70,12 +70,10 @@ func TestPrismDAGBuildSingleSource(t *testing.T) {
 }
 
 func TestPrismDAGBuildAllFixtures(t *testing.T) {
-	// P08 unskipped layer + concat / hconcat / vconcat (now built via
-	// BuildComposite). Remaining deferrals: facet / repeat → P09;
-	// selection → P13.
+	// P08 unskipped layer + concat / hconcat / vconcat; P09 unskipped
+	// facet / repeat (now built via BuildComposite). Remaining
+	// deferrals: selection → P13.
 	skip := map[string]bool{
-		"facet_by_region.json":    true,
-		"repeat_metrics.json":     true,
 		"selection_interval.json": true,
 		"selection_point.json":    true,
 	}
@@ -145,17 +143,16 @@ func TestPrismDAGBuildAllFixtures(t *testing.T) {
 	}
 }
 
-// TestPrismDAGBuildFacetAndSelectionRejected pins the post-P08
-// rejection set. Composition (layer / concat) is now built via
-// BuildComposite — see TestPrismBuildRejectsCompositeViaFlatBuild
-// for the "wrong entry" rejection. facet and selection stay deferred
-// to P09 / P13 respectively.
-func TestPrismDAGBuildFacetAndSelectionRejected(t *testing.T) {
+// TestPrismDAGBuildSelectionRejected pins the post-P09 rejection
+// set. Composition (layer / concat / facet / repeat) is now built
+// via BuildComposite — see TestPrismBuildRejectsCompositeViaFlatBuild
+// for the "wrong entry" rejection. Only selection stays deferred to
+// P13.
+func TestPrismDAGBuildSelectionRejected(t *testing.T) {
 	cases := []struct {
 		fixture string
 		kind    string
 	}{
-		{"facet_by_region.json", "facet"},
 		{"selection_interval.json", "selection"},
 	}
 	root := repoRoot(t)

@@ -17,7 +17,7 @@
     "mark": "line",
     "encoding": {
       "x": {"field": "day", "type": "temporal"},
-      "y": {"field": "score", "type": "quantitative"}
+      "y": {"field": {"repeat": "row"}, "type": "quantitative"}
     }
   }
 }

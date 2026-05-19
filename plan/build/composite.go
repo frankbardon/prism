@@ -9,16 +9,21 @@ import (
 )
 
 // BuildComposite translates a composite *spec.Spec (layer / concat /
-// hconcat / vconcat) into a *plan.CompositeDAG. Each child becomes
-// one ChildDAG with its own sub-plan + tip; the executor runs each
-// child independently via plan.Execute and the encoder assembles a
-// SceneDoc from the collected per-child tables.
+// hconcat / vconcat / facet / repeat) into a *plan.CompositeDAG.
+// Layer + concat / hconcat / vconcat have each child build its own
+// sub-plan + tip (P08). Facet builds the parent's shared upstream
+// pipeline once and returns a single ChildDAG (D054); the encoder
+// fans out into per-partition SceneCells. Repeat builds one
+// sub-plan per cell after applying the field-name substitution
+// (D055 / D056). The executor runs every child independently via
+// plan.Execute and the encoder assembles a SceneDoc from the
+// collected per-child tables.
 //
-// Per D050, nested composition (a child that is itself composite) is
-// rejected with PRISM_PLAN_002 (Kind="composition:nested") in v1 and
-// deferred to P09. Single-level composition is fully supported.
+// Nested composition: layer / concat children stay flat (D050);
+// facet / repeat children may themselves be composite, and the
+// encoder recurses through EncodeComposite per cell (D058).
 //
-// Per D049, layer children inherit the parent's `datasets` block (and
+// Per D049, children inherit the parent's `datasets` block (and
 // top-level `data` when the child has none) via mergeParentDatasets;
 // per-child `data` overrides win.
 func BuildComposite(s *spec.Spec, opts Options) (*plan.CompositeDAG, error) {
@@ -31,6 +36,15 @@ func BuildComposite(s *spec.Spec, opts Options) (*plan.CompositeDAG, error) {
 			"Spec is not a composite; use Build for flat charts.",
 			map[string]any{"Kind": "composition:flat-spec", "Phase": "P08"},
 		)
+	}
+
+	// Facet + repeat have bespoke build paths because their children
+	// are not literal array entries on the parent spec.
+	if s.Facet != nil {
+		return buildFacetComposite(s, opts)
+	}
+	if s.Repeat != nil {
+		return buildRepeatComposite(s, opts)
 	}
 
 	kind, children := compositeChildren(s)
@@ -61,8 +75,8 @@ func BuildComposite(s *spec.Spec, opts Options) (*plan.CompositeDAG, error) {
 		if IsComposite(child) {
 			return nil, prismerrors.New(
 				"PRISM_PLAN_002",
-				fmt.Sprintf("Nested composition is not supported in v1 (child %d of %s is itself composite).", i, kind),
-				map[string]any{"Kind": "composition:nested", "Phase": "P09"},
+				fmt.Sprintf("Nested composition is not supported in v1 for %s children (child %d is itself composite).", kind, i),
+				map[string]any{"Kind": "composition:nested", "Phase": "P10"},
 			)
 		}
 

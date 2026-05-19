@@ -4,9 +4,9 @@ import (
 	"github.com/frankbardon/prism/spec"
 )
 
-// CompositeKind discriminates the four composition primitives P08
-// supports. Facet / repeat (P09) and nested composition (also P09)
-// are not represented here.
+// CompositeKind discriminates the six composition primitives Prism
+// supports as of P09. Selection-rooted composition stays deferred to
+// P13.
 type CompositeKind string
 
 const (
@@ -15,12 +15,25 @@ const (
 	CompositeLayer CompositeKind = "layer"
 	// CompositeConcat is `spec.Concat[]` — flat array of side-by-side
 	// panels. In v1 this is functionally identical to CompositeHConcat
-	// (D053); the `columns` wrap parameter lands in P09.
+	// (D053); the `columns` wrap parameter lands in a future phase.
 	CompositeConcat CompositeKind = "concat"
 	// CompositeHConcat is `spec.HConcat[]` — 1 row × N cols.
 	CompositeHConcat CompositeKind = "hconcat"
 	// CompositeVConcat is `spec.VConcat[]` — N rows × 1 col.
 	CompositeVConcat CompositeKind = "vconcat"
+	// CompositeFacet is `spec.Facet{row, column}` — small multiples
+	// driven by distinct values of the row / column field(s) (D054).
+	// The builder returns a single shared sub-DAG (the parent's
+	// pipeline); the encoder partitions the resulting Table by
+	// `(row_value, col_value)` tuples and emits one SceneCell per
+	// partition. `len(Children) == 1` is the convention "single
+	// pipeline, encoder fans out" for facet.
+	CompositeFacet CompositeKind = "facet"
+	// CompositeRepeat is `spec.Repeat{row, column}` — small multiples
+	// driven by a field-list. Each cell substitutes its field name
+	// into the child spec and builds an independent sub-DAG (D056),
+	// so `len(Children) == rows * cols` for repeat.
+	CompositeRepeat CompositeKind = "repeat"
 )
 
 // ChildDAG carries one child's plan + the encoder-facing spec. The
@@ -47,6 +60,10 @@ type ChildDAG struct {
 //   - HConcat: Rows=1, Cols=len(Children).
 //   - VConcat: Rows=len(Children), Cols=1.
 //   - Concat:  treated as HConcat in v1 (D053).
+//   - Facet:   Rows=0, Cols=0 placeholders (D054); the encoder fills
+//     in concrete dimensions after partitioning the upstream table.
+//   - Repeat:  Rows=len(repeat.Row) or 1, Cols=len(repeat.Column) or
+//     1 (D056); per-cell sub-DAGs land in Children in row-major order.
 //
 // Resolve carries cross-layer scale / axis resolution and is only
 // meaningful when Kind == CompositeLayer; concat ignores it (cross-
