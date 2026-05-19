@@ -1,0 +1,106 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:prism:schema:v1:data",
+  "title": "Prism Data Block",
+  "description": "Data source references and inline datasets for a Prism spec.",
+  "$defs": {
+    "data": {
+      "oneOf": [
+        {"$ref": "data.schema.json#/$defs/data_source"},
+        {"$ref": "data.schema.json#/$defs/data_named_ref"},
+        {"$ref": "data.schema.json#/$defs/data_inline"}
+      ],
+      "description": "Data binding: an external Pulse source, a named dataset reference, or inline values."
+    },
+    "data_source": {
+      "type": "object",
+      "description": "External Pulse data source identified by path or cohort id.",
+      "additionalProperties": false,
+      "required": ["source"],
+      "properties": {
+        "source": {
+          "type": "string",
+          "description": "Pulse source reference (path, cohort id, or archive#shard form).",
+          "minLength": 1
+        },
+        "format": {
+          "type": "string",
+          "description": "Optional hint that overrides the inferred source format.",
+          "enum": ["pulse", "parquet", "csv", "json", "ndjson", "arrow"]
+        },
+        "name": {
+          "type": "string",
+          "description": "Optional logical name used to refer to this binding within the spec.",
+          "minLength": 1
+        }
+      }
+    },
+    "data_named_ref": {
+      "type": "object",
+      "description": "Reference to a dataset declared in the datasets block, a registry, or a page-level provider.",
+      "additionalProperties": false,
+      "required": ["name"],
+      "properties": {
+        "name": {
+          "type": "string",
+          "description": "Logical dataset name to look up.",
+          "minLength": 1
+        }
+      }
+    },
+    "data_inline": {
+      "type": "object",
+      "description": "Inline literal dataset; mostly useful for examples and tests.",
+      "additionalProperties": false,
+      "required": ["values"],
+      "properties": {
+        "values": {
+          "type": "array",
+          "description": "Row-oriented array of records. Each record is an object keyed by field name.",
+          "items": {
+            "type": "object",
+            "description": "One row of the inline dataset."
+          }
+        },
+        "name": {
+          "type": "string",
+          "description": "Optional logical name for the inline dataset.",
+          "minLength": 1
+        },
+        "fields": {
+          "type": "array",
+          "description": "Optional explicit field schema for the inline values.",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["name", "type"],
+            "properties": {
+              "name": {"type": "string", "description": "Field name."},
+              "type": {
+                "type": "string",
+                "description": "Pulse-style storage type for the field.",
+                "enum": [
+                  "int", "int8", "int16", "int32", "int64",
+                  "float", "float32", "float64",
+                  "string", "bool", "date", "datetime", "duration"
+                ]
+              }
+            }
+          }
+        }
+      }
+    },
+    "datasets": {
+      "type": "object",
+      "description": "Map of dataset name to data binding; referenced from elsewhere in the spec by name.",
+      "additionalProperties": {
+        "$ref": "data.schema.json#/$defs/data"
+      },
+      "propertyNames": {
+        "type": "string",
+        "pattern": "^[a-z][a-z0-9_]*$",
+        "description": "Dataset names are snake_case identifiers."
+      }
+    }
+  }
+}
