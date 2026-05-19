@@ -1,0 +1,24 @@
+{
+  "$schema": "urn:prism:schema:v1:spec",
+  "title": "Score by group, facet by region",
+  "data": {
+    "name": "samples",
+    "values": [
+      {"region": "NA", "group": "a", "score": 0.42},
+      {"region": "NA", "group": "b", "score": 0.55},
+      {"region": "EU", "group": "a", "score": 0.31},
+      {"region": "EU", "group": "b", "score": 0.49}
+    ]
+  },
+  "facet": {
+    "column": {"field": "region", "type": "nominal"}
+  },
+  "spec": {
+    "$schema": "urn:prism:schema:v1:spec",
+    "mark": "bar",
+    "encoding": {
+      "x": {"field": "group", "type": "nominal"},
+      "y": {"field": "score", "type": "quantitative"}
+    }
+  }
+}

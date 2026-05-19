@@ -1,0 +1,23 @@
+{
+  "$schema": "urn:prism:schema:v1:spec",
+  "title": "Score and latency, repeated",
+  "data": {
+    "name": "samples",
+    "values": [
+      {"day": "2026-01-01", "score": 0.42, "latency_ms": 120},
+      {"day": "2026-01-02", "score": 0.55, "latency_ms": 95},
+      {"day": "2026-01-03", "score": 0.49, "latency_ms": 110}
+    ]
+  },
+  "repeat": {
+    "row": ["score", "latency_ms"]
+  },
+  "spec": {
+    "$schema": "urn:prism:schema:v1:spec",
+    "mark": "line",
+    "encoding": {
+      "x": {"field": "day", "type": "temporal"},
+      "y": {"field": "score", "type": "quantitative"}
+    }
+  }
+}
