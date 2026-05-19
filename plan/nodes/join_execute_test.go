@@ -3,7 +3,6 @@ package nodes_test
 import (
 	"context"
 	"errors"
-	"strings"
 	"testing"
 
 	"github.com/frankbardon/pulse/encoding"
@@ -175,55 +174,6 @@ func TestPrismJoinMultiColumnKey(t *testing.T) {
 			t.Errorf("pair %+v missing from output", p)
 		}
 	}
-}
-
-func joinKey(a, b any) string {
-	return strFor(a) + "|" + strFor(b)
-}
-
-func strFor(v any) string {
-	switch x := v.(type) {
-	case float64:
-		return strings.TrimRight(strings.TrimRight(formatFloat(x), "0"), ".")
-	case int64:
-		return formatInt(x)
-	case string:
-		return x
-	}
-	return "?"
-}
-
-func formatFloat(v float64) string {
-	// Just %g via fmt.Sprintf — avoid importing fmt at top by using a
-	// minimal local formatter for the small integer-valued floats we
-	// produce in tests.
-	if v == float64(int64(v)) {
-		return formatInt(int64(v))
-	}
-	// Fallback (not exercised by the table inputs above).
-	return ""
-}
-
-func formatInt(v int64) string {
-	if v == 0 {
-		return "0"
-	}
-	neg := v < 0
-	if neg {
-		v = -v
-	}
-	var b [20]byte
-	i := len(b)
-	for v > 0 {
-		i--
-		b[i] = byte('0' + v%10)
-		v /= 10
-	}
-	if neg {
-		i--
-		b[i] = '-'
-	}
-	return string(b[i:])
 }
 
 func TestPrismJoinCardinalityLimit(t *testing.T) {

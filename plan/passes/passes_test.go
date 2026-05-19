@@ -1,7 +1,6 @@
 package passes_test
 
 import (
-	"context"
 	"testing"
 
 	"github.com/frankbardon/pulse/encoding"
@@ -11,7 +10,6 @@ import (
 	"github.com/frankbardon/prism/plan/nodes"
 	"github.com/frankbardon/prism/plan/passes"
 	"github.com/frankbardon/prism/resolve"
-	"github.com/frankbardon/prism/table"
 )
 
 // memFS produces a memory-backed afero with a stub .pulse file at
@@ -67,29 +65,10 @@ func TestPrismDedupSourcesNoop(t *testing.T) {
 	}
 }
 
-// fakeSourceNode lets us inject distinct ids for the same ref so the
-// dedup pass has actual work. We can't easily do this through the real
-// SourceNode constructor (the id is sha256(ref)), so we mirror the
-// minimal interface the pass needs.
-type fakeSourceForDedup struct {
-	id  plan.NodeID
-	ref string
-}
-
-func (n *fakeSourceForDedup) ID() plan.NodeID                                       { return n.id }
-func (n *fakeSourceForDedup) Inputs() []plan.NodeID                                 { return nil }
-func (n *fakeSourceForDedup) Fingerprint() string                                   { return "fake:" + string(n.id) }
-func (n *fakeSourceForDedup) Schema(_ []*encoding.Schema) (*encoding.Schema, error) { return nil, nil }
-func (n *fakeSourceForDedup) Execute(context.Context, []*table.Table) (*table.Table, error) {
-	return nil, nil
-}
-
-// The dedup pass type-asserts on *nodes.SourceNode so the fake doesn't
-// trigger the actual dedup. Instead we test the structural rewire path
-// with two real Source nodes whose ids differ because we constructed
-// them via slightly different refs that resolve to the same underlying
-// path via a Registry trick. Easier: just test the no-op case (which
-// is the actual P07 baseline) and trust the rewire code via review.
+// The dedup pass type-asserts on *nodes.SourceNode and the builder
+// already shares ids for matching refs, so we only test the no-op
+// baseline + rely on the rewire code review for correctness when a
+// future layer-builder produces distinct-id same-ref Sources.
 
 // TestPrismFilterPushdownLeftSide builds a Filter(brand_id="alpha")
 // over a Join(L on brand_id) and asserts the pass moves the filter
