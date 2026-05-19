@@ -1,0 +1,126 @@
+package rules
+
+import (
+	"fmt"
+	"sort"
+	"strings"
+
+	"github.com/frankbardon/prism/errors"
+	"github.com/frankbardon/prism/spec"
+	"github.com/frankbardon/prism/validate"
+)
+
+// ChannelForMark implements PRISM_SPEC_003: each encoding channel must be
+// supported by the spec's mark type. The supported set is per-mark; for
+// example, theta/radius are supported by arc/pie/donut but not by bar.
+type ChannelForMark struct{}
+
+// Code returns PRISM_SPEC_003.
+func (ChannelForMark) Code() string { return "PRISM_SPEC_003" }
+
+// Check inspects every channel set on s.Encoding against
+// allowedChannelsForMark(mark).
+func (ChannelForMark) Check(s *spec.Spec, _ validate.SchemaLookup) []*errors.AppError {
+	if s == nil || s.Mark == nil || s.Encoding == nil {
+		return nil
+	}
+	mark := s.Mark.TypeName()
+	if mark == "" {
+		return nil
+	}
+	allowed := allowedChannelsForMark(mark)
+	allowedSet := make(map[string]bool, len(allowed))
+	for _, c := range allowed {
+		allowedSet[c] = true
+	}
+
+	var out []*errors.AppError
+	for _, ch := range presentChannels(s.Encoding) {
+		if allowedSet[ch] {
+			continue
+		}
+		out = append(out, errors.New("PRISM_SPEC_003",
+			fmt.Sprintf("Encoding channel %q is not valid for mark type %q.", ch, mark),
+			map[string]any{
+				"Channel": ch,
+				"Mark":    mark,
+				"Allowed": strings.Join(allowed, ", "),
+			},
+		))
+	}
+	return out
+}
+
+// presentChannels returns the sorted list of channel keys that are
+// non-nil on enc.
+func presentChannels(enc *spec.Encoding) []string {
+	out := []string{}
+	if enc == nil {
+		return out
+	}
+	type entry struct {
+		name    string
+		present bool
+	}
+	entries := []entry{
+		{"x", enc.X != nil}, {"y", enc.Y != nil}, {"x2", enc.X2 != nil}, {"y2", enc.Y2 != nil},
+		{"theta", enc.Theta != nil}, {"radius", enc.Radius != nil},
+		{"color", enc.Color != nil}, {"fill", enc.Fill != nil}, {"stroke", enc.Stroke != nil},
+		{"opacity", enc.Opacity != nil}, {"size", enc.Size != nil}, {"shape", enc.Shape != nil},
+		{"text", enc.Text != nil}, {"tooltip", enc.Tooltip != nil},
+		{"order", enc.Order != nil}, {"detail", enc.Detail != nil},
+		{"row", enc.Row != nil}, {"column", enc.Column != nil},
+	}
+	for _, e := range entries {
+		if e.present {
+			out = append(out, e.name)
+		}
+	}
+	sort.Strings(out)
+	return out
+}
+
+// allowedChannelsForMark returns the channels supported by mark.
+//
+// Tooltip, order, detail, row, and column are universal across every
+// mark. The per-mark differences are mostly positional vs angular vs
+// text-only.
+func allowedChannelsForMark(mark string) []string {
+	common := []string{"tooltip", "order", "detail", "row", "column"}
+	cartesianMark := []string{"x", "y", "x2", "y2", "color", "fill", "stroke", "opacity", "size", "shape"}
+	polarMark := []string{"theta", "radius", "color", "fill", "stroke", "opacity"}
+	textMark := []string{"x", "y", "text", "color", "fill", "stroke", "opacity", "size"}
+
+	var set []string
+	switch mark {
+	case "bar", "line", "area", "point", "circle", "square", "tick", "rect", "rule",
+		"histogram", "heatmap", "boxplot", "violin", "sparkline":
+		set = cartesianMark
+	case "arc", "pie", "donut", "sankey", "funnel":
+		set = polarMark
+	case "text":
+		set = textMark
+	case "image":
+		set = []string{"x", "y", "x2", "y2", "opacity"}
+	case "path":
+		set = []string{"x", "y", "color", "fill", "stroke", "opacity"}
+	default:
+		set = append(cartesianMark, polarMark...)
+	}
+	out := append(append([]string{}, set...), common...)
+	sort.Strings(out)
+	return uniqueStrings(out)
+}
+
+func uniqueStrings(in []string) []string {
+	seen := map[string]bool{}
+	out := make([]string, 0, len(in))
+	for _, s := range in {
+		if seen[s] {
+			continue
+		}
+		seen[s] = true
+		out = append(out, s)
+	}
+	return out
+}
