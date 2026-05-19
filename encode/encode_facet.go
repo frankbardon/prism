@@ -151,28 +151,33 @@ func encodeFacetComposite(s *spec.Spec, composite *plan.CompositeDAG, childTable
 			if len(cellDoc.Grid.Cells) == 0 {
 				continue
 			}
-			// Take the cell's Scene; offset into the grid coordinate
-			// space (account for the left-edge row-header reservation
-			// + top-edge col-header reservation).
-			cellScene := cellDoc.Grid.Cells[0].Scene
 			dx := headerLeft + float64(ci)*(cellW+gap)
 			dy := headerTop + float64(ri)*(cellH+gap)
-			offsetScene(&cellScene, dx, dy)
-			cellScene.ID = fmt.Sprintf("scene-r%d-c%d", ri, ci)
 
-			// Strip per-cell axes for shared channels (D051).
-			if xShared != nil {
-				cellScene.Axes = stripAxisChannel(cellScene.Axes, scene.ChannelX)
-			}
-			if yShared != nil {
-				cellScene.Axes = stripAxisChannel(cellScene.Axes, scene.ChannelY)
-			}
+			// If the cell is itself a composite (D058 nested facet),
+			// its SceneDoc carries multiple cells laid out within the
+			// per-cell sub-grid. Carry all of them through into the
+			// outer grid with the outer-cell offset applied. Single-
+			// child cells (the common case) walk the same loop with
+			// one iteration.
+			for ii, inner := range cellDoc.Grid.Cells {
+				innerScene := inner.Scene
+				offsetScene(&innerScene, dx, dy)
+				innerScene.ID = fmt.Sprintf("scene-r%d-c%d-%d", ri, ci, ii)
 
-			cells = append(cells, scene.SceneCell{
-				Row:   ri,
-				Col:   ci,
-				Scene: cellScene,
-			})
+				// Strip per-cell axes for shared channels (D051).
+				if xShared != nil {
+					innerScene.Axes = stripAxisChannel(innerScene.Axes, scene.ChannelX)
+				}
+				if yShared != nil {
+					innerScene.Axes = stripAxisChannel(innerScene.Axes, scene.ChannelY)
+				}
+				cells = append(cells, scene.SceneCell{
+					Row:   ri,
+					Col:   ci,
+					Scene: innerScene,
+				})
+			}
 			warnings = append(warnings, cellDoc.Warnings...)
 		}
 	}
