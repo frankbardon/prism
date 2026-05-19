@@ -409,6 +409,18 @@ var Codes = map[string]CodeMetadata{
 		},
 		SeeAlso: []string{"PRISM_SPEC_005", "PRISM_PLAN_002"},
 	},
+
+	// --- P10 composite mark codes.
+	"PRISM_SPEC_013": {
+		Code:    "PRISM_SPEC_013",
+		Message: `Composite mark {{.Mark}} cannot expand: {{.Reason}}.`,
+		Fixups: []string{
+			`Check the mark's required channels: pie/donut → theta + color; histogram → x (quantitative); heatmap → x + y + color; boxplot/violin → one category axis + one quantitative axis.`,
+			`Replace the mark with a primitive (bar/rect/arc/rule/point) when the encoding does not fit the composite's required shape.`,
+			`If you need a different aggregation, write the expansion by hand using primitive marks.`,
+		},
+		SeeAlso: []string{"PRISM_SPEC_003", "PRISM_SPEC_008"},
+	},
 }
 
 // CodesSorted returns the catalog keys in ascending order.
