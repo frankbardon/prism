@@ -79,6 +79,58 @@ func TestValidateCLISmoke(t *testing.T) {
 		}
 	})
 
+	t.Run("plan-dot", func(t *testing.T) {
+		fixture := repoFile(t, "testdata", "specs", "bar_basic.json")
+		out, exit := runCLI(t, "prism", "plan", fixture)
+		if exit != 0 {
+			t.Fatalf("expected exit 0, got %d (stdout=%q)", exit, out)
+		}
+		if !strings.HasPrefix(out, "digraph prism_plan") {
+			t.Errorf("expected DOT output, got: %q", out)
+		}
+	})
+
+	t.Run("plan-text", func(t *testing.T) {
+		fixture := repoFile(t, "testdata", "specs", "bar_basic.json")
+		out, exit := runCLI(t, "prism", "plan", fixture, "--format", "text")
+		if exit != 0 {
+			t.Fatalf("expected exit 0, got %d (stdout=%q)", exit, out)
+		}
+		if !strings.Contains(out, "SinkNode") {
+			t.Errorf("expected text output containing SinkNode, got: %q", out)
+		}
+	})
+
+	t.Run("plan-json", func(t *testing.T) {
+		fixture := repoFile(t, "testdata", "specs", "bar_basic.json")
+		out, exit := runCLI(t, "prism", "plan", fixture, "--format", "json")
+		if exit != 0 {
+			t.Fatalf("expected exit 0, got %d (stdout=%q)", exit, out)
+		}
+		if !strings.Contains(out, `"nodes"`) {
+			t.Errorf("expected JSON with nodes key, got: %q", out)
+		}
+	})
+
+	t.Run("plan-missing-dataset", func(t *testing.T) {
+		fixture := repoFile(t, "testdata", "specs", "invalid", "dataset_undefined.json")
+		out, exit := runCLI(t, "prism", "plan", fixture)
+		if exit != 1 {
+			t.Fatalf("expected exit 1, got %d (stdout=%q)", exit, out)
+		}
+		if !strings.Contains(out, "PRISM_PLAN_003") {
+			t.Errorf("expected PRISM_PLAN_003 in stdout, got: %q", out)
+		}
+	})
+
+	t.Run("plan-bad-format", func(t *testing.T) {
+		fixture := repoFile(t, "testdata", "specs", "bar_basic.json")
+		_, exit := runCLI(t, "prism", "plan", fixture, "--format", "yaml")
+		if exit != 2 {
+			t.Fatalf("expected exit 2 for bad format, got %d", exit)
+		}
+	})
+
 	t.Run("invalid-pulse-backed", func(t *testing.T) {
 		root := repoFile(t, "")
 		originalCwd, _ := os.Getwd()
