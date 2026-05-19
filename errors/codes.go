@@ -130,6 +130,76 @@ var Codes = map[string]CodeMetadata{
 			`Add the dataset to "datasets" or to the prism serve config.`,
 		},
 	},
+	"PRISM_RESOLVE_002": {
+		Code:    "PRISM_RESOLVE_002",
+		Message: `Local .pulse file {{.Path}} not found on the configured filesystem.`,
+		Fixups: []string{
+			`Check the path spelling and that the file exists (` + "`ls -lh {{.Path}}`" + `).`,
+			`Confirm the working directory matches what the spec assumes — relative paths are resolved against the process cwd unless an afero.Fs jail is in effect.`,
+			`If the data lives in an archive, use the anchor form: ` + "`archive.pulse#shard.pulse`" + `.`,
+		},
+		SeeAlso: []string{"PRISM_RESOLVE_003", "PRISM_RESOLVE_005"},
+	},
+	"PRISM_RESOLVE_003": {
+		Code:    "PRISM_RESOLVE_003",
+		Message: `Shard {{.Shard}} not present in archive {{.Archive}}.`,
+		Fixups: []string{
+			`Run ` + "`prism inspect {{.Archive}}`" + ` to list shard names (basenames only; no path).`,
+			`Anchors are case-sensitive; copy the basename verbatim from the archive listing.`,
+		},
+		SeeAlso: []string{"PRISM_RESOLVE_002"},
+	},
+	"PRISM_RESOLVE_004": {
+		Code:    "PRISM_RESOLVE_004",
+		Message: `Cohort id {{.Id}} is not registered in the active resolver registry.`,
+		Fixups: []string{
+			`Register the id with the resolver's Registry before resolving (` + "`registry.Lookup(\"{{.Id}}\")`" + `).`,
+			`If you intended to load a file directly, drop the ` + "`cohort:`" + ` prefix and use the path form.`,
+		},
+	},
+	"PRISM_RESOLVE_005": {
+		Code:    "PRISM_RESOLVE_005",
+		Message: `Reference {{.Ref}} does not match any known form (path, archive#shard, gs://, or cohort:id).`,
+		Fixups: []string{
+			`Use one of: ` + "`cohort.pulse`" + `, ` + "`archive.pulse#shard.pulse`" + `, ` + "`gs://bucket/path.pulse`" + `, ` + "`cohort:<id>`" + `.`,
+			`Drop trailing whitespace and double-check for leading slashes that imply absolute paths.`,
+		},
+	},
+	"PRISM_RESOLVE_006": {
+		Code:    "PRISM_RESOLVE_006",
+		Message: `Pulse failed to open {{.Ref}}: {{.Reason}}.`,
+		Fixups: []string{
+			`Run ` + "`prism inspect {{.Ref}}`" + ` for header diagnostics.`,
+			`Verify the file is a real .pulse (the first 8 bytes spell ` + "`PULSE\\x00\\x00\\x00`" + `).`,
+		},
+		SeeAlso: []string{"PRISM_RESOLVE_002", "PRISM_RESOLVE_003"},
+	},
+	"PRISM_RESOLVE_007": {
+		Code:    "PRISM_RESOLVE_007",
+		Message: `Materialisation refused: {{.Actual}} rows would exceed PRISM_TABLE_MAX_ROWS={{.Limit}}.`,
+		Fixups: []string{
+			`Raise the ceiling by setting ` + "`PRISM_TABLE_MAX_ROWS`" + ` in the environment before running prism.`,
+			`Pre-aggregate, sample, or filter at the Pulse layer to bring the result under the cap.`,
+			`Switch to a streaming consumer once P03 lands streaming; for v1 every node materialises a Table.`,
+		},
+	},
+	"PRISM_RESOLVE_GCS_UNAVAILABLE": {
+		Code:    "PRISM_RESOLVE_GCS_UNAVAILABLE",
+		Message: `gs:// references are not implemented in v1 (ref: {{.Ref}}).`,
+		Fixups: []string{
+			`Stage the .pulse locally (` + "`gsutil cp gs://bucket/path.pulse ./`" + `) and reference the local path.`,
+			`Track the upstream phase: gs:// support lands once Pulse ships a generic GCS afero.Fs (planned P-NN-gcs-fs).`,
+		},
+	},
+	"PRISM_RESOLVE_INLINE_TYPE_MISMATCH": {
+		Code:    "PRISM_RESOLVE_INLINE_TYPE_MISMATCH",
+		Message: `Inline row {{.Row}} field {{.Field}} has type {{.GotType}} but the schema (inferred from row 0) declared {{.WantType}}.`,
+		Fixups: []string{
+			`Make every row use the same JSON kind per field — strings, numbers, and bools cannot mix in a column.`,
+			`Declare types explicitly via ` + "`data.fields`" + ` so the inference path is skipped.`,
+		},
+		SeeAlso: []string{"PRISM_SPEC_001"},
+	},
 	"PRISM_RENDER_001": {
 		Code:    "PRISM_RENDER_001",
 		Message: `Mark geometry is malformed for {{.Mark}}.`,
