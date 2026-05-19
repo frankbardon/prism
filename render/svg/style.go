@@ -40,6 +40,9 @@ func writeStyleBlock(w *Writer, theme *scene.Theme) {
 	w.Raw(".prism-axis-title{fill:var(--prism-color-text);font-family:var(--prism-font-sans);font-size:12px;font-weight:600;}")
 	w.Raw(".prism-grid-line{stroke:var(--prism-color-grid);}")
 	w.Raw(".prism-title{fill:var(--prism-color-text);font-family:var(--prism-font-sans);font-size:16px;font-weight:600;}")
+	w.Raw(".prism-legend-title{fill:var(--prism-color-text);font-family:var(--prism-font-sans);font-size:12px;font-weight:600;}")
+	w.Raw(".prism-legend-label{fill:var(--prism-color-text);font-family:var(--prism-font-sans);font-size:11px;}")
+	w.Raw(".prism-legend-swatch{stroke:none;}")
 	w.Raw("</style>")
 	w.Newline()
 }

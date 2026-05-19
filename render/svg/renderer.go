@@ -138,6 +138,13 @@ func renderScene(w *Writer, s scene.Scene) {
 		w.Newline()
 	}
 
+	// Scene-level defs (gradients used by legends + marks).
+	if s.Defs != nil {
+		w.Indent(4)
+		renderDefs(w, s.Defs)
+		w.Newline()
+	}
+
 	// Plot group with layered marks.
 	w.Indent(4)
 	w.OpenTag("g")
@@ -168,6 +175,13 @@ func renderScene(w *Writer, s scene.Scene) {
 	w.Indent(4)
 	w.EndTag("g")
 	w.Newline()
+
+	// Legends group.
+	if len(s.Legends) > 0 {
+		w.Indent(4)
+		renderLegends(w, s.Legends)
+		w.Newline()
+	}
 
 	w.Indent(2)
 	w.EndTag("g")
