@@ -58,7 +58,7 @@ func runPlan(_ context.Context, cmd *cli.Command) error {
 		return cli.Exit(fmt.Sprintf("decode %s: %v", srcName, err), 2)
 	}
 
-	d, err := build.Build(s, build.Options{
+	d, _, err := build.Build(s, build.Options{
 		FS:       afero.NewOsFs(),
 		Resolver: resolve.New(nil),
 	})

@@ -69,7 +69,7 @@ func runExecute(ctx context.Context, cmd *cli.Command) error {
 		return cli.Exit(fmt.Sprintf("decode %s: %v", srcName, err), 2)
 	}
 
-	dag, err := build.Build(s, build.Options{
+	dag, tipID, err := build.Build(s, build.Options{
 		FS:       afero.NewOsFs(),
 		Resolver: resolve.New(nil),
 		Backend:  inmem.New(),
@@ -94,13 +94,9 @@ func runExecute(ctx context.Context, cmd *cli.Command) error {
 		return cli.Exit("", 1)
 	}
 
-	sinks := dag.Sinks()
-	if len(sinks) == 0 {
-		return cli.Exit("execute: DAG has no Sink node", 1)
-	}
-	final, ok := res.Tables[sinks[0]]
+	final, ok := res.Tables[tipID]
 	if !ok || final == nil {
-		return cli.Exit("execute: Sink node produced no table", 1)
+		return cli.Exit(fmt.Sprintf("execute: tip node %q produced no table", tipID), 1)
 	}
 
 	switch format {

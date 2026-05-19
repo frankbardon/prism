@@ -176,10 +176,11 @@ func Encode(s *spec.Spec, tables map[plan.NodeID]*table.Table, tipID plan.NodeID
 		warnings = append(warnings, *markWarn)
 	}
 
-	// Wrap into the full nesting.
+	// Wrap into the full nesting. Map spec mark type ("bar", "line"…)
+	// to the canonical scene.MarkType (MarkRect, MarkLine…).
 	layer := scene.SceneLayer{
 		ID:    "layer-0",
-		Mark:  scene.MarkType(markType),
+		Mark:  specMarkToScene(markType),
 		Marks: markList,
 	}
 	sceneObj := scene.Scene{
@@ -294,6 +295,34 @@ func applyMarkDef(def *spec.MarkDef, style *scene.Style) {
 	if def.Opacity != nil {
 		style.Opacity = *def.Opacity
 	}
+}
+
+// specMarkToScene maps the spec's mark-type string to the canonical
+// scene.MarkType. "bar" → MarkRect, "line"/"area"/"point"/"rule"
+// map verbatim. Unknown types pass through as-is (the dispatch in
+// encode/marks will have already emitted a warning).
+func specMarkToScene(markType string) scene.MarkType {
+	switch markType {
+	case "bar":
+		return scene.MarkRect
+	case "line":
+		return scene.MarkLine
+	case "area":
+		return scene.MarkArea
+	case "point":
+		return scene.MarkPoint
+	case "rule":
+		return scene.MarkRule
+	case "arc", "pie", "donut":
+		return scene.MarkArc
+	case "text":
+		return scene.MarkText
+	case "path":
+		return scene.MarkPath
+	case "image":
+		return scene.MarkImage
+	}
+	return scene.MarkType(markType)
 }
 
 // titleText extracts a plain-string title from the spec's polymorphic

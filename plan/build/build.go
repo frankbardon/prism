@@ -16,8 +16,10 @@
 //     previous transform's output (or the active dataset's leaf).
 //   - If the leaf encoding declares an aggregate on any channel, a
 //     synthetic GroupAggregateNode is injected at the tail.
-//   - Every DAG ends with a synthetic SinkNode (D030) so the executor
-//     and renderers have a deterministic terminal.
+//   - The tail node is marked as the DAG's sole sink and its id is
+//     returned alongside the DAG so the encode stage knows which
+//     table to consume. P03's synthetic SinkNode (D030) was retired
+//     in P05 — see D040.
 //
 // Out of scope for P03 (raise PRISM_PLAN_002):
 //
@@ -58,13 +60,17 @@ type Options struct {
 	Backend  plan.Backend
 }
 
-// Build translates a *spec.Spec into a *plan.DAG.
-func Build(s *spec.Spec, opts Options) (*plan.DAG, error) {
+// Build translates a *spec.Spec into a *plan.DAG. The returned
+// NodeID is the tip — the table the encode stage consumes. The
+// builder marks this node as the DAG's sole sink so existing
+// renderers (DOT / JSON / text) and the executor continue to find
+// it via DAG.Sinks() without a code change.
+func Build(s *spec.Spec, opts Options) (*plan.DAG, plan.NodeID, error) {
 	if s == nil {
-		return nil, fmt.Errorf("plan/build: nil spec")
+		return nil, "", fmt.Errorf("plan/build: nil spec")
 	}
 	if err := rejectOutOfScope(s); err != nil {
-		return nil, err
+		return nil, "", err
 	}
 	if opts.FS == nil {
 		opts.FS = afero.NewOsFs()
@@ -81,12 +87,12 @@ func Build(s *spec.Spec, opts Options) (*plan.DAG, error) {
 	// if a sibling named dataset has the same source ref.
 	if s.Data != nil {
 		if err := ctx.registerTopLevel(s.Data); err != nil {
-			return nil, err
+			return nil, "", err
 		}
 	}
 	for name, ds := range s.Datasets {
 		if err := ctx.registerDataset(name, ds); err != nil {
-			return nil, err
+			return nil, "", err
 		}
 	}
 
@@ -95,31 +101,32 @@ func Build(s *spec.Spec, opts Options) (*plan.DAG, error) {
 	// back to the first registered dataset (deterministic by name).
 	active, err := ctx.activeLeaf(s)
 	if err != nil {
-		return nil, err
+		return nil, "", err
 	}
 
 	// Walk the transform chain.
 	tip, err := ctx.applyTransforms(active, s.Transform)
 	if err != nil {
-		return nil, err
+		return nil, "", err
 	}
 
 	// If the encoding declares an aggregate, inject a GroupAggregate.
 	tip, err = ctx.injectEncodingAggregate(tip, s.Encoding)
 	if err != nil {
-		return nil, err
+		return nil, "", err
 	}
 
-	// Terminate with a Sink.
-	sinkID := plan.NodeID("sink:" + string(tip))
-	sink := nodes.NewSink(sinkID, tip)
-	if err := b.AddNode(sink); err != nil {
-		return nil, err
+	// Mark the tip as the DAG's sole sink. Encode stage consumes the
+	// table at this id; renderers locate it via DAG.Sinks(). D040
+	// retired the synthetic SinkNode that P03 wired here.
+	if err := b.MarkSink(tip); err != nil {
+		return nil, "", err
 	}
-	if err := b.MarkSink(sinkID); err != nil {
-		return nil, err
+	dag, err := b.Build()
+	if err != nil {
+		return nil, "", err
 	}
-	return b.Build()
+	return dag, tip, nil
 }
 
 // rejectOutOfScope walks the spec for features the builder cannot yet

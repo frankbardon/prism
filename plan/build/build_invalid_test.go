@@ -56,7 +56,7 @@ func TestPrismDAGBuildInvalidGallery(t *testing.T) {
 				t.Skip("skipped")
 			}
 			s := loadSpec(t, filepath.Join(dir, name))
-			d, err := build.Build(s, build.Options{})
+			d, _, err := build.Build(s, build.Options{})
 			if wantCode, isBuilderGate := builderGate[name]; isBuilderGate {
 				if err == nil {
 					t.Fatalf("expected %s, got nil error", wantCode)

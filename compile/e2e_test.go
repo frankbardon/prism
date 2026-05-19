@@ -39,7 +39,7 @@ func TestPrismSingleSourceLinearPipeline(t *testing.T) {
 		},
 	}
 
-	dag, err := build.Build(s, build.Options{
+	dag, tipID, err := build.Build(s, build.Options{
 		FS:       fs,
 		Resolver: resolve.New(nil),
 		Backend:  inmem.New(),
@@ -48,15 +48,19 @@ func TestPrismSingleSourceLinearPipeline(t *testing.T) {
 		t.Fatalf("build: %v", err)
 	}
 
-	// Node-count sanity: Source + Filter + GroupAggregate + Sink = 4.
-	if got := len(dag.Nodes()); got != 4 {
-		t.Errorf("DAG node count = %d, want 4 (Source+Filter+GroupAggregate+Sink)", got)
+	// Node-count sanity: Source + Filter + GroupAggregate = 3 (SinkNode
+	// retired in P05 per D040; the tip is now the GroupAggregate itself).
+	if got := len(dag.Nodes()); got != 3 {
+		t.Errorf("DAG node count = %d, want 3 (Source+Filter+GroupAggregate)", got)
 	}
 	if got := len(dag.Roots()); got != 1 {
 		t.Errorf("DAG roots = %d, want 1", got)
 	}
 	if got := len(dag.Sinks()); got != 1 {
 		t.Errorf("DAG sinks = %d, want 1", got)
+	}
+	if dag.Sinks()[0] != tipID {
+		t.Errorf("Sinks[0]=%q want tip=%q", dag.Sinks()[0], tipID)
 	}
 
 	res, err := plan.Execute(context.Background(), dag, plan.ExecOpts{Workers: 1})
@@ -69,7 +73,7 @@ func TestPrismSingleSourceLinearPipeline(t *testing.T) {
 
 	final := finalTable(dag, res)
 	if final == nil {
-		t.Fatal("no sink table")
+		t.Fatal("no tip table")
 	}
 
 	avgCol, ok := final.Column("avg")

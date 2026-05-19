@@ -97,8 +97,10 @@ func TestValidateCLISmoke(t *testing.T) {
 		if exit != 0 {
 			t.Fatalf("expected exit 0, got %d (stdout=%q)", exit, out)
 		}
-		if !strings.Contains(out, "SinkNode") {
-			t.Errorf("expected text output containing SinkNode, got: %q", out)
+		// Tip node is the bar_basic InlineNode itself (no transforms,
+		// no aggregate in the spec — so the tip = inline data source).
+		if !strings.Contains(out, "InlineNode") {
+			t.Errorf("expected text output containing the tip node kind, got: %q", out)
 		}
 	})
 

@@ -48,18 +48,24 @@ func loadSpec(t *testing.T, path string) *spec.Spec {
 func TestPrismDAGBuildSingleSource(t *testing.T) {
 	root := repoRoot(t)
 	s := loadSpec(t, filepath.Join(root, "testdata", "specs", "bar_basic.json"))
-	d, err := build.Build(s, build.Options{})
+	d, tip, err := build.Build(s, build.Options{})
 	if err != nil {
 		t.Fatalf("Build: %v", err)
 	}
-	if d.Size() < 2 {
-		t.Errorf("Size=%d, want >=2 (source + sink at minimum)", d.Size())
+	if d.Size() < 1 {
+		t.Errorf("Size=%d, want >=1 (one source)", d.Size())
 	}
 	if len(d.Roots()) == 0 {
 		t.Error("no roots")
 	}
 	if len(d.Sinks()) != 1 {
 		t.Errorf("Sinks=%v, want 1", d.Sinks())
+	}
+	if tip == "" {
+		t.Error("Build returned empty tip id")
+	}
+	if d.Sinks()[0] != tip {
+		t.Errorf("Sinks[0]=%q, want tip=%q", d.Sinks()[0], tip)
 	}
 }
 
@@ -99,7 +105,7 @@ func TestPrismDAGBuildAllFixtures(t *testing.T) {
 				t.Skipf("composition/selection: deferred to P08/P09/P13")
 			}
 			s := loadSpec(t, filepath.Join(dir, name))
-			d, err := build.Build(s, build.Options{})
+			d, _, err := build.Build(s, build.Options{})
 			if err != nil {
 				t.Fatalf("Build: %v", err)
 			}
@@ -131,7 +137,7 @@ func TestPrismDAGBuildCompositionRejected(t *testing.T) {
 		c := c
 		t.Run(c.fixture, func(t *testing.T) {
 			s := loadSpec(t, filepath.Join(root, "testdata", "specs", c.fixture))
-			_, err := build.Build(s, build.Options{})
+			_, _, err := build.Build(s, build.Options{})
 			if err == nil {
 				t.Fatal("expected PRISM_PLAN_002, got nil")
 			}
@@ -157,7 +163,7 @@ func TestPrismDAGBuildMissingDataset(t *testing.T) {
 	if err != nil {
 		t.Fatalf("decode: %v", err)
 	}
-	_, err = build.Build(s, build.Options{})
+	_, _, err = build.Build(s, build.Options{})
 	if err == nil {
 		t.Fatal("expected PRISM_PLAN_003, got nil")
 	}

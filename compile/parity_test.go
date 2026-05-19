@@ -15,7 +15,6 @@ import (
 	"github.com/frankbardon/prism/compile/inmem"
 	"github.com/frankbardon/prism/plan"
 	"github.com/frankbardon/prism/plan/build"
-	"github.com/frankbardon/prism/plan/nodes"
 	"github.com/frankbardon/prism/resolve"
 	specpkg "github.com/frankbardon/prism/spec"
 	"github.com/frankbardon/prism/table"
@@ -66,7 +65,7 @@ func TestPrismAggregateValueParity(t *testing.T) {
 				}},
 			},
 		}
-		dag, err := build.Build(s, build.Options{
+		dag, _, err := build.Build(s, build.Options{
 			FS:       fs,
 			Resolver: resolve.New(nil),
 			Backend:  inmem.New(),
@@ -80,7 +79,7 @@ func TestPrismAggregateValueParity(t *testing.T) {
 		}
 		final := finalTable(dag, res)
 		if final == nil {
-			t.Fatalf("%s: no sink table", alias)
+			t.Fatalf("%s: no tip table", alias)
 		}
 		prismResults[alias] = tableToBrandValueMap(t, final, "value")
 	}
@@ -152,8 +151,10 @@ func pulseAliasSet(t *testing.T) map[string]compile.AggregateMapping {
 	return out
 }
 
-// finalTable locates the Sink node's output table inside an
-// ExecResult. The builder always wires exactly one Sink (D030).
+// finalTable locates the tip node's output table inside an
+// ExecResult. The builder marks the tip as the DAG's sole sink so
+// the existing Sinks() accessor still finds it (D040 retired the
+// synthetic SinkNode that D030 originally wired).
 func finalTable(dag *plan.DAG, res *plan.ExecResult) *table.Table {
 	for _, id := range dag.Sinks() {
 		if t, ok := res.Tables[id]; ok {
@@ -183,6 +184,3 @@ func tableToBrandValueMap(t *testing.T, tbl *table.Table, valueCol string) map[s
 	return out
 }
 
-// ensure nodes import stays for goimports stability when the test
-// is extended.
-var _ = nodes.NewSink
