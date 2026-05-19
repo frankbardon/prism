@@ -54,6 +54,11 @@ func plotCommand() *cli.Command {
 				Value: "-",
 				Usage: "Output path (default: - for stdout)",
 			},
+			&cli.StringFlag{
+				Name:  "theme",
+				Value: "light",
+				Usage: "Theme name: light | dark | print",
+			},
 			&cli.IntFlag{
 				Name:  "workers",
 				Value: 0,
@@ -119,8 +124,9 @@ func runPlot(ctx context.Context, cmd *cli.Command) error {
 	width := cmd.Float("width")
 	height := cmd.Float("height")
 	doc, err := encode.Encode(s, res.Tables, tipID, encode.EncodeOpts{
-		Width:  width,
-		Height: height,
+		Width:     width,
+		Height:    height,
+		ThemeName: cmd.String("theme"),
 	})
 	if err != nil {
 		return cli.Exit(fmt.Sprintf("encode: %v", err), 1)
