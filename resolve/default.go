@@ -245,4 +245,3 @@ func splitAnchor(ref string) (string, string, bool) {
 	}
 	return ref[:i], ref[i+1:], true
 }
-

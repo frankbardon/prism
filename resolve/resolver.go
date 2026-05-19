@@ -4,9 +4,9 @@
 //   - cohort.pulse                 local OsFs path
 //   - archive.pulse#shard.pulse    anchor inside a Pulse shard archive
 //   - gs://bucket/path.pulse       GCS-backed file (PUNT in v1: returns
-//                                  PRISM_RESOLVE_GCS_UNAVAILABLE)
+//     PRISM_RESOLVE_GCS_UNAVAILABLE)
 //   - cohort:<id>                  registry lookup; the resolved string
-//                                  is recursively resolved (one level)
+//     is recursively resolved (one level)
 //
 // Every read goes through an afero.Fs so tests can use NewMemMapFs.
 // The Resolver does not cache; it leaves caching to the DAG executor

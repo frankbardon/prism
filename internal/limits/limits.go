@@ -34,9 +34,9 @@ const (
 // Env var names. Exported so callers (CLI help text, error fixups) can
 // reference the canonical names without typo risk.
 const (
-	EnvTableMaxRows    = "PRISM_TABLE_MAX_ROWS"
-	EnvJoinMaxRows     = "PRISM_JOIN_MAX_ROWS"
-	EnvRenderMaxMarks  = "PRISM_RENDER_MAX_MARKS"
+	EnvTableMaxRows   = "PRISM_TABLE_MAX_ROWS"
+	EnvJoinMaxRows    = "PRISM_JOIN_MAX_ROWS"
+	EnvRenderMaxMarks = "PRISM_RENDER_MAX_MARKS"
 )
 
 // TableMaxRows returns the effective cap for any single Table. The
