@@ -44,60 +44,89 @@ type ColorChannel struct {
 
 // Inputs carries the per-Encode-call context: table, encoded
 // channels, layout, mark style.
+//
+// Tooltip (P10) carries the encoding.tooltip binding; when non-nil,
+// the dispatch attaches one *scene.Tooltip per produced mark via
+// AttachTooltips (per-row marks: 1:1; single-mark types: row 0's
+// tooltip). See D063.
 type Inputs struct {
-	Table  *table.Table
-	X      Channel
-	Y      Channel
-	Color  *ColorChannel
-	Layout scene.Rect // the Plot region
-	Style  scene.Style
-	Mark   *spec.MarkDef // mark-level overrides; nil ok
+	Table   *table.Table
+	X       Channel
+	Y       Channel
+	Color   *ColorChannel
+	Layout  scene.Rect // the Plot region
+	Style   scene.Style
+	Mark    *spec.MarkDef        // mark-level overrides; nil ok
+	Tooltip *spec.TooltipChannel // encoding.tooltip binding; nil ok
 }
 
 // Encode dispatches markType to its per-mark helper. Returns the
 // generated marks + an optional warning (for unsupported types).
 // Errors bubble PRISM_ENCODE_001 or PRISM_RENDER_001 from the
 // helpers.
+//
+// P10: tooltip materialisation runs post-dispatch. When
+// in.Tooltip != nil, BuildTooltips walks the upstream table once
+// and AttachTooltips attaches the *scene.Tooltip to each mark in
+// per-row order (single-mark types receive row 0's tooltip).
 func Encode(markType string, in Inputs) ([]scene.Mark, *scene.Warning, error) {
+	var (
+		marksOut []scene.Mark
+		warn     *scene.Warning
+		err      error
+	)
 	switch markType {
 	case "bar":
-		marks, err := encodeBar(in)
-		return marks, nil, err
+		marksOut, err = encodeBar(in)
 	case "line":
-		marks, err := encodeLine(in)
-		return marks, nil, err
+		marksOut, err = encodeLine(in)
 	case "area":
-		marks, err := encodeArea(in)
-		return marks, nil, err
+		marksOut, err = encodeArea(in)
 	case "point":
-		marks, err := encodePoint(in)
-		return marks, nil, err
+		marksOut, err = encodePoint(in)
 	case "rule":
-		marks, err := encodeRule(in)
-		return marks, nil, err
+		marksOut, err = encodeRule(in)
 	case "text":
-		marks, err := encodeText(in)
-		return marks, nil, err
+		marksOut, err = encodeText(in)
 	case "tick":
-		marks, err := encodeTick(in)
-		return marks, nil, err
+		marksOut, err = encodeTick(in)
 	case "rect":
-		marks, err := encodeRect(in)
-		return marks, nil, err
-	case "arc", "path", "image",
-		"pie", "donut", "histogram", "heatmap", "boxplot", "violin",
-		"sankey", "funnel", "sparkline":
+		marksOut, err = encodeRect(in)
+	case "arc", "pie", "donut":
+		marksOut, err = encodeArc(in, markType)
+	case "histogram":
+		result, herr := EncodeHistogram(in)
+		if herr != nil {
+			return nil, nil, herr
+		}
+		marksOut = result.Marks
+	case "heatmap":
+		marksOut, err = encodeHeatmap(in)
+	case "boxplot":
+		marksOut, err = encodeBoxplot(in)
+	case "violin":
+		marksOut, err = encodeViolin(in)
+	case "path", "image", "sankey", "funnel", "sparkline":
 		return nil, &scene.Warning{
 			Code:    scene.WarnMarkNotImplemented,
 			Message: fmt.Sprintf("mark type %q lands in a later phase; layer rendered without marks.", markType),
 			Details: map[string]any{"mark": markType},
 		}, nil
+	default:
+		return nil, nil, prismerrors.New(
+			"PRISM_ENCODE_001",
+			fmt.Sprintf("Unknown mark type %q.", markType),
+			map[string]any{"Field": "<mark>", "Source": "<spec>", "Available": "bar|line|area|point|rule|arc|pie|donut|histogram|heatmap|boxplot|violin"},
+		)
 	}
-	return nil, nil, prismerrors.New(
-		"PRISM_ENCODE_001",
-		fmt.Sprintf("Unknown mark type %q.", markType),
-		map[string]any{"Field": "<mark>", "Source": "<spec>", "Available": "bar|line|area|point|rule"},
-	)
+	if err != nil {
+		return nil, nil, err
+	}
+	if in.Tooltip != nil && len(marksOut) > 0 {
+		tooltips := BuildTooltips(in.Table, in.Tooltip, in.Table.NumRows())
+		AttachTooltips(marksOut, tooltips)
+	}
+	return marksOut, warn, nil
 }
 
 // readField returns a slice of values from the named column on tbl.

@@ -98,6 +98,14 @@ func Encode(s *spec.Spec, tables map[plan.NodeID]*table.Table, tipID plan.NodeID
 
 	var warnings []scene.Warning
 
+	// Polar marks (arc / pie / donut) consume theta + (optional) color;
+	// they do not need cartesian x / y scales. Histogram builds its
+	// own synthetic x/y scales inside the encoder (D060) so the
+	// standard x/y resolution is skipped here too. The arc / histogram
+	// encoders return their own axes when relevant.
+	polarMark := markType == "arc" || markType == "pie" || markType == "donut"
+	selfScaleMark := markType == "histogram"
+
 	// Resolve x / y scales (composite caller may supply pre-computed
 	// shared overrides per P09 / D057; honour them when present so
 	// every cell in a faceted grid lands on the same domain).
@@ -107,29 +115,31 @@ func Encode(s *spec.Spec, tables map[plan.NodeID]*table.Table, tipID plan.NodeID
 		xWarn  *scene.Warning
 		yWarn  *scene.Warning
 	)
-	if opts.OverrideXScale != nil {
-		xScale = opts.OverrideXScale
-	} else {
-		xScale, xWarn, err = resolveChannel(enc.X, tbl, layout.Plot.X, layout.Plot.Right())
-		if err != nil {
-			return nil, err
+	if !polarMark && !selfScaleMark {
+		if opts.OverrideXScale != nil {
+			xScale = opts.OverrideXScale
+		} else {
+			xScale, xWarn, err = resolveChannel(enc.X, tbl, layout.Plot.X, layout.Plot.Right())
+			if err != nil {
+				return nil, err
+			}
+			if xWarn != nil {
+				warnings = append(warnings, *xWarn)
+			}
 		}
-		if xWarn != nil {
-			warnings = append(warnings, *xWarn)
-		}
-	}
-	// Y is inverted: low data → high pixel (the SVG y-axis grows
-	// downward). Pass (rangeMax, rangeMin) so the linear interpolation
-	// flips naturally.
-	if opts.OverrideYScale != nil {
-		yScale = opts.OverrideYScale
-	} else {
-		yScale, yWarn, err = resolveChannel(enc.Y, tbl, layout.Plot.Bottom(), layout.Plot.Y)
-		if err != nil {
-			return nil, err
-		}
-		if yWarn != nil {
-			warnings = append(warnings, *yWarn)
+		// Y is inverted: low data → high pixel (the SVG y-axis grows
+		// downward). Pass (rangeMax, rangeMin) so the linear interpolation
+		// flips naturally.
+		if opts.OverrideYScale != nil {
+			yScale = opts.OverrideYScale
+		} else {
+			yScale, yWarn, err = resolveChannel(enc.Y, tbl, layout.Plot.Bottom(), layout.Plot.Y)
+			if err != nil {
+				return nil, err
+			}
+			if yWarn != nil {
+				warnings = append(warnings, *yWarn)
+			}
 		}
 	}
 
@@ -176,16 +186,52 @@ func Encode(s *spec.Spec, tables map[plan.NodeID]*table.Table, tipID plan.NodeID
 		applyMarkDef(s.Mark.Def, &style)
 	}
 
+	// For polar marks (arc/pie/donut), the theta channel field flows
+	// in via marks.Channel.X.Field — the arc encoder builds its own
+	// share-based geometry without an x/y scale (D059).
+	markX := marks.Channel{Field: fieldOf(enc.X), Scale: toMarkScale(xScale)}
+	markY := marks.Channel{Field: fieldOf(enc.Y), Scale: toMarkScale(yScale)}
+	if polarMark && enc.Theta != nil && enc.Theta.Field != "" {
+		markX = marks.Channel{Field: enc.Theta.Field}
+	}
+
 	markInputs := marks.Inputs{
-		Table:  tbl,
-		X:      marks.Channel{Field: fieldOf(enc.X), Scale: toMarkScale(xScale)},
-		Y:      marks.Channel{Field: fieldOf(enc.Y), Scale: toMarkScale(yScale)},
-		Color:  colorChannel,
-		Layout: layout.Plot,
-		Style:  style,
+		Table:   tbl,
+		X:       markX,
+		Y:       markY,
+		Color:   colorChannel,
+		Layout:  layout.Plot,
+		Style:   style,
+		Tooltip: enc.Tooltip,
 	}
 	if s.Mark != nil {
 		markInputs.Mark = s.Mark.Def
+	}
+
+	// Histogram: route via EncodeHistogram so axes can be built from
+	// the synthetic bin scales (D060).
+	if markType == "histogram" {
+		hr, herr := marks.EncodeHistogram(markInputs)
+		if herr != nil {
+			return nil, herr
+		}
+		// Attach tooltips per bin if requested (one TooltipLine per
+		// bin with the bin index — simple but functional).
+		if enc.Tooltip != nil && len(hr.Marks) > 0 {
+			tooltips := marks.BuildTooltips(tbl, enc.Tooltip, tbl.NumRows())
+			marks.AttachTooltips(hr.Marks, tooltips)
+		}
+		if hr.XScale != nil {
+			axes = append(axes, BuildAxisWithOpts(hr.XScale, scene.ChannelX, scene.AxisPositionBottom, layout.Plot, axisOptsFor(enc.X)))
+		}
+		if hr.YScale != nil {
+			yTitle := "count"
+			if enc.Y != nil && enc.Y.Field != "" {
+				yTitle = enc.Y.Field
+			}
+			axes = append(axes, BuildAxisWithOpts(hr.YScale, scene.ChannelY, scene.AxisPositionLeft, layout.Plot, DefaultAxisOpts(yTitle)))
+		}
+		return buildSceneDoc(s, layout, axes, hr.Marks, markType, colorChannel, enc, sceneTheme, warnings, hasTitle), nil
 	}
 
 	markList, markWarn, err := marks.Encode(markType, markInputs)
@@ -244,6 +290,61 @@ func Encode(s *spec.Spec, tables map[plan.NodeID]*table.Table, tipID plan.NodeID
 	}
 	doc.Warnings = warnings
 	return doc, nil
+}
+
+// buildSceneDoc wraps a list of marks + axes into the full nesting
+// (SceneDoc → SceneGrid → SceneCell → Scene → SceneLayer → marks).
+// Used by special-case mark paths (histogram) that build their own
+// scales + axes before reaching the standard wrap step.
+func buildSceneDoc(
+	s *spec.Spec, layout Layout, axes []scene.Axis, markList []scene.Mark,
+	markType string, colorChannel *marks.ColorChannel, enc *spec.Encoding,
+	sceneTheme *scene.Theme, warnings []scene.Warning, hasTitle bool,
+) *scene.SceneDoc {
+	layer := scene.SceneLayer{
+		ID:    "layer-0",
+		Mark:  specMarkToScene(markType),
+		Marks: markList,
+	}
+	var legends []scene.Legend
+	if colorChannel != nil && len(colorChannel.Categories) > 1 {
+		title := enc.Color.Field
+		legend := BuildSymbolLegend(LegendInputs{
+			Channel:    scene.ChannelColor,
+			Title:      title,
+			Categories: colorChannel.Categories,
+			Palette:    colorChannel.Palette,
+			Position:   scene.LegendTopRight,
+		}, layout.Plot)
+		if legend != nil {
+			legends = append(legends, *legend)
+		}
+	}
+	sceneObj := scene.Scene{
+		ID:      "scene-0",
+		Frame:   layout.Frame,
+		Plot:    layout.Plot,
+		Axes:    axes,
+		Legends: legends,
+		Layers:  []scene.SceneLayer{layer},
+	}
+	if hasTitle {
+		sceneObj.Title = &scene.TextElement{
+			Content: titleText(s),
+			X:       layout.Plot.CenterX(),
+			Y:       20,
+		}
+	}
+	doc := scene.NewDoc()
+	doc.Theme = sceneTheme
+	doc.Grid = scene.SceneGrid{
+		Layout: scene.GridLayout{Rows: 1, Cols: 1},
+		Cells: []scene.SceneCell{
+			{Row: 0, Col: 0, Scene: sceneObj},
+		},
+	}
+	doc.Warnings = warnings
+	return doc
 }
 
 // resolveChannel turns a PositionChannel + table into a Scale.
