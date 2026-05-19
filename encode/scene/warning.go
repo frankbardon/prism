@@ -11,8 +11,8 @@ type Warning struct {
 
 // Known warning codes emitted by the encoder / renderer in P05.
 const (
-	WarnTimeScaleStubbed     = "PRISM_WARN_TIME_SCALE_STUBBED"
-	WarnMarkNotImplemented   = "PRISM_WARN_MARK_NOT_IMPLEMENTED"
-	WarnNoDataForLayer       = "PRISM_WARN_NO_DATA_FOR_LAYER"
-	WarnPrecisionTruncation  = "PRISM_WARN_PRECISION_TRUNCATION"
+	WarnTimeScaleStubbed    = "PRISM_WARN_TIME_SCALE_STUBBED"
+	WarnMarkNotImplemented  = "PRISM_WARN_MARK_NOT_IMPLEMENTED"
+	WarnNoDataForLayer      = "PRISM_WARN_NO_DATA_FOR_LAYER"
+	WarnPrecisionTruncation = "PRISM_WARN_PRECISION_TRUNCATION"
 )

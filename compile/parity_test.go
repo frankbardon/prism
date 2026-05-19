@@ -183,4 +183,3 @@ func tableToBrandValueMap(t *testing.T, tbl *table.Table, valueCol string) map[s
 	}
 	return out
 }
-

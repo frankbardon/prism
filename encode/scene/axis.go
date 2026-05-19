@@ -63,14 +63,14 @@ type Tick struct {
 
 // ScaleSpec is the post-resolve scale (Type + Domain + Range + flags).
 type ScaleSpec struct {
-	Type    ScaleType `json:"type"`
-	Domain  []any     `json:"domain,omitempty"`
+	Type    ScaleType  `json:"type"`
+	Domain  []any      `json:"domain,omitempty"`
 	Range   [2]float64 `json:"range"`
-	Padding float64   `json:"padding,omitempty"`
-	Base    float64   `json:"base,omitempty"`
-	Exp     float64   `json:"exp,omitempty"`
-	Nice    bool      `json:"nice,omitempty"`
-	Clamp   bool      `json:"clamp,omitempty"`
+	Padding float64    `json:"padding,omitempty"`
+	Base    float64    `json:"base,omitempty"`
+	Exp     float64    `json:"exp,omitempty"`
+	Nice    bool       `json:"nice,omitempty"`
+	Clamp   bool       `json:"clamp,omitempty"`
 }
 
 // Line is a pre-resolved line segment, used for axis domain lines and

@@ -36,10 +36,10 @@ func (s *linScale) Domain() []any { return []any{s.dmin, s.dmax} }
 
 // Local band scale for tests.
 type bandScaleT struct {
-	cats     []string
-	rmin     float64
-	rmax     float64
-	padding  float64
+	cats    []string
+	rmin    float64
+	rmax    float64
+	padding float64
 }
 
 func (s *bandScaleT) Apply(v any) (float64, error) {

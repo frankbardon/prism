@@ -38,7 +38,7 @@ func (r Rect) CenterY() float64 { return r.Y + r.H/2 }
 
 // TextElement carries one text placement (title, subtitle, etc).
 type TextElement struct {
-	Content string `json:"content"`
+	Content string  `json:"content"`
 	X       float64 `json:"x"`
 	Y       float64 `json:"y"`
 	Style   Style   `json:"style,omitempty"`

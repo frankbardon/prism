@@ -85,4 +85,3 @@ func lookupCategoryColor(category string, categories []string, palette []*scene.
 	}
 	return palette[0]
 }
-
