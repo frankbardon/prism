@@ -50,3 +50,9 @@ func (n *SinkNode) Execute(_ context.Context, in []*table.Table) (*table.Table, 
 func (n *SinkNode) Fingerprint() string {
 	return fingerprintFor("SinkNode", string(n.input))
 }
+
+// Kind implements plan.Labeled.
+func (n *SinkNode) Kind() string { return "SinkNode" }
+
+// Summary implements plan.Labeled.
+func (n *SinkNode) Summary() string { return "" }

@@ -93,3 +93,19 @@ func (n *GroupAggregateNode) Groupby() []string { return n.groupby }
 
 // Aggs exposes the aggregate operations for renderers + tests.
 func (n *GroupAggregateNode) Aggs() []AggOp { return n.aggs }
+
+// Kind implements plan.Labeled.
+func (n *GroupAggregateNode) Kind() string { return "GroupAggregateNode" }
+
+// Summary implements plan.Labeled — "by: a,b | aggs: mean(score)->m, ...".
+func (n *GroupAggregateNode) Summary() string {
+	out := "by: " + strings.Join(n.groupby, ",")
+	if len(n.aggs) > 0 {
+		aggStrs := make([]string, len(n.aggs))
+		for i, a := range n.aggs {
+			aggStrs[i] = a.String()
+		}
+		out += " | aggs: " + strings.Join(aggStrs, ",")
+	}
+	return out
+}

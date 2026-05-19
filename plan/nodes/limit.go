@@ -49,3 +49,14 @@ func (n *LimitNode) Limit() int { return n.limit }
 
 // Offset exposes the offset for renderers + tests.
 func (n *LimitNode) Offset() int { return n.offset }
+
+// Kind implements plan.Labeled.
+func (n *LimitNode) Kind() string { return "LimitNode" }
+
+// Summary implements plan.Labeled.
+func (n *LimitNode) Summary() string {
+	if n.offset > 0 {
+		return "limit: " + strconv.Itoa(n.limit) + " offset: " + strconv.Itoa(n.offset)
+	}
+	return "limit: " + strconv.Itoa(n.limit)
+}

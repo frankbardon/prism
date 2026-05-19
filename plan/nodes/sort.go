@@ -60,3 +60,9 @@ func (n *SortNode) SortLabel() string {
 	}
 	return strings.Join(parts, ",")
 }
+
+// Kind implements plan.Labeled.
+func (n *SortNode) Kind() string { return "SortNode" }
+
+// Summary implements plan.Labeled.
+func (n *SortNode) Summary() string { return "by: " + n.SortLabel() }

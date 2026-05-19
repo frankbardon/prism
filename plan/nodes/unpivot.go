@@ -89,3 +89,11 @@ func (n *UnpivotNode) Fingerprint() string {
 
 // Unpivot exposes the source fields for renderers + tests.
 func (n *UnpivotNode) Unpivot() []string { return n.unpivot }
+
+// Kind implements plan.Labeled.
+func (n *UnpivotNode) Kind() string { return "UnpivotNode" }
+
+// Summary implements plan.Labeled.
+func (n *UnpivotNode) Summary() string {
+	return "fields: " + strings.Join(n.unpivot, ",")
+}

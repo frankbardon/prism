@@ -55,3 +55,9 @@ func (n *CalculateNode) Expr() string { return n.expr }
 
 // As exposes the output column name for renderers + tests.
 func (n *CalculateNode) As() string { return n.as }
+
+// Kind implements plan.Labeled.
+func (n *CalculateNode) Kind() string { return "CalculateNode" }
+
+// Summary implements plan.Labeled.
+func (n *CalculateNode) Summary() string { return n.as + " = " + n.expr }

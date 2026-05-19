@@ -46,3 +46,9 @@ func (n *FilterNode) Fingerprint() string {
 
 // Expr exposes the predicate string for renderers + tests.
 func (n *FilterNode) Expr() string { return n.expr }
+
+// Kind implements plan.Labeled.
+func (n *FilterNode) Kind() string { return "FilterNode" }
+
+// Summary implements plan.Labeled.
+func (n *FilterNode) Summary() string { return "expr: " + n.expr }

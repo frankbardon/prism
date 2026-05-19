@@ -50,3 +50,9 @@ func (n *SampleNode) Fingerprint() string {
 
 // N exposes the requested sample size for renderers + tests.
 func (n *SampleNode) N() int { return n.sample }
+
+// Kind implements plan.Labeled.
+func (n *SampleNode) Kind() string { return "SampleNode" }
+
+// Summary implements plan.Labeled.
+func (n *SampleNode) Summary() string { return "n: " + strconv.Itoa(n.sample) }

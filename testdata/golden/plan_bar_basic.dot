@@ -1,0 +1,7 @@
+digraph prism_plan {
+  rankdir=LR;
+  node [shape=box, style=rounded];
+  "inline:1" [label="InlineNode\ninline:1\n3 rows"];
+  "sink:inline:1" [label="SinkNode\nsink:inline:1"];
+  "inline:1" -> "sink:inline:1";
+}

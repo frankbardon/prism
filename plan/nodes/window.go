@@ -113,3 +113,15 @@ func (n *WindowNode) Fingerprint() string {
 
 // Ops exposes the window operations for renderers + tests.
 func (n *WindowNode) Ops() []WindowOp { return n.ops }
+
+// Kind implements plan.Labeled.
+func (n *WindowNode) Kind() string { return "WindowNode" }
+
+// Summary implements plan.Labeled.
+func (n *WindowNode) Summary() string {
+	opStrs := make([]string, len(n.ops))
+	for i, o := range n.ops {
+		opStrs[i] = o.String()
+	}
+	return "ops: " + strings.Join(opStrs, ",")
+}

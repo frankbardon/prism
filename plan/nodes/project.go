@@ -53,3 +53,9 @@ func (n *ProjectNode) Fingerprint() string {
 
 // Fields exposes the field list for renderers + tests.
 func (n *ProjectNode) Fields() []string { return n.fields }
+
+// Kind implements plan.Labeled.
+func (n *ProjectNode) Kind() string { return "ProjectNode" }
+
+// Summary implements plan.Labeled.
+func (n *ProjectNode) Summary() string { return "fields: " + strings.Join(n.fields, ",") }

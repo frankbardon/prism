@@ -81,3 +81,9 @@ func (n *BinNode) Field() string { return n.field }
 
 // As exposes the output field name for renderers + tests.
 func (n *BinNode) As() string { return n.as }
+
+// Kind implements plan.Labeled.
+func (n *BinNode) Kind() string { return "BinNode" }
+
+// Summary implements plan.Labeled.
+func (n *BinNode) Summary() string { return n.as + " = bin(" + n.field + ")" }

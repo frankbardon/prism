@@ -62,3 +62,17 @@ func (n *UnionNode) Fingerprint() string {
 	}
 	return fingerprintFor("UnionNode", parts...)
 }
+
+// Kind implements plan.Labeled.
+func (n *UnionNode) Kind() string { return "UnionNode" }
+
+// Summary implements plan.Labeled — number of inputs being concatenated.
+func (n *UnionNode) Summary() string {
+	switch len(n.inputs) {
+	case 0:
+		return "0 inputs"
+	case 1:
+		return "1 input"
+	}
+	return fmt.Sprintf("%d inputs", len(n.inputs))
+}

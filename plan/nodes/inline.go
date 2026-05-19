@@ -111,7 +111,13 @@ func (n *InlineNode) Fingerprint() string {
 // Name exposes the dataset name (empty if unnamed).
 func (n *InlineNode) Name() string { return n.name }
 
-// Summary returns a one-line text summary for renderers.
+// Kind implements plan.Labeled.
+func (n *InlineNode) Kind() string { return "InlineNode" }
+
+// Summary implements plan.Labeled.
 func (n *InlineNode) Summary() string {
+	if n.name != "" {
+		return fmt.Sprintf("%s, %d rows", n.name, len(n.values))
+	}
 	return fmt.Sprintf("%d rows", len(n.values))
 }

@@ -73,5 +73,14 @@ func (n *JoinNode) Fingerprint() string {
 // On exposes the join keys for renderers + tests.
 func (n *JoinNode) On() []string { return n.on }
 
-// Kind exposes the join semantics for renderers + tests.
-func (n *JoinNode) Kind() JoinKind { return n.kind }
+// JoinKind exposes the join semantics for renderers + tests.
+// (Named JoinKind not Kind to avoid colliding with plan.Labeled.Kind.)
+func (n *JoinNode) JoinKind() JoinKind { return n.kind }
+
+// Kind implements plan.Labeled.
+func (n *JoinNode) Kind() string { return "JoinNode" }
+
+// Summary implements plan.Labeled.
+func (n *JoinNode) Summary() string {
+	return string(n.kind) + " on: " + strings.Join(n.on, ",")
+}

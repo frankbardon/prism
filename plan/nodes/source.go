@@ -68,6 +68,12 @@ func (n *SourceNode) Fingerprint() string {
 // and plan-visualisation tooling.
 func (n *SourceNode) Ref() string { return n.ref }
 
+// Kind implements plan.Labeled.
+func (n *SourceNode) Kind() string { return "SourceNode" }
+
+// Summary implements plan.Labeled — the ref string the user wrote.
+func (n *SourceNode) Summary() string { return n.ref }
+
 // OutputSchema resolves the ref so the schema is discoverable without
 // materialising records. The ReadCloser returned by Resolve is closed
 // immediately. Kept as a public method for backwards compatibility with

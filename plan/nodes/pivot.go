@@ -67,3 +67,11 @@ func (n *PivotNode) Pivot() string { return n.pivot }
 
 // Value exposes the source value column.
 func (n *PivotNode) Value() string { return n.value }
+
+// Kind implements plan.Labeled.
+func (n *PivotNode) Kind() string { return "PivotNode" }
+
+// Summary implements plan.Labeled.
+func (n *PivotNode) Summary() string {
+	return "pivot: " + n.pivot + " value: " + n.value
+}
