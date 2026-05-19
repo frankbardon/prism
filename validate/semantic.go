@@ -56,3 +56,29 @@ func (v *SemanticValidator) Rules() []SemanticRule {
 	copy(cp, v.rules)
 	return cp
 }
+
+// RuleFactory builds a SemanticRule; using a factory list keeps the
+// rules sub-package free to import validate without an import cycle.
+type RuleFactory func() SemanticRule
+
+// defaultRuleFactories is populated at init time by the rules sub-package
+// (validate/rules) via RegisterDefault. Keeping the registration in the
+// downstream package avoids the cycle that would arise from validate
+// importing validate/rules.
+var defaultRuleFactories []RuleFactory
+
+// RegisterDefault appends a rule factory to the default rule set used by
+// NewDefaultSemanticValidator. The rules package calls this in its init.
+func RegisterDefault(f RuleFactory) {
+	defaultRuleFactories = append(defaultRuleFactories, f)
+}
+
+// NewDefaultSemanticValidator returns a SemanticValidator wired with the
+// canonical Prism rule set (PRISM_SPEC_001 through PRISM_SPEC_009).
+func NewDefaultSemanticValidator() *SemanticValidator {
+	rules := make([]SemanticRule, 0, len(defaultRuleFactories))
+	for _, f := range defaultRuleFactories {
+		rules = append(rules, f())
+	}
+	return NewSemanticValidator(rules...)
+}

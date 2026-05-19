@@ -3,7 +3,7 @@
 // Decode to read a spec from an io.Reader; it sets DisallowUnknownFields and
 // returns the typed *Spec.
 //
-// Type structure deliberately uses pointer-to-struct for optional nested
+// Type structure intentionally uses pointer-to-struct for optional nested
 // blocks so omitempty works correctly with json.Marshal.
 package spec
 

@@ -1,0 +1,19 @@
+package rules
+
+import "github.com/frankbardon/prism/validate"
+
+// Register the canonical PRISM_SPEC_001..009 rule set on the validate
+// package's default registry. CLI / library callers can then build a
+// fully-wired SemanticValidator via validate.NewDefaultSemanticValidator()
+// without naming each rule.
+func init() {
+	validate.RegisterDefault(func() validate.SemanticRule { return FieldExists{} })
+	validate.RegisterDefault(func() validate.SemanticRule { return AggCompat{} })
+	validate.RegisterDefault(func() validate.SemanticRule { return ChannelForMark{} })
+	validate.RegisterDefault(func() validate.SemanticRule { return SelectionRef{} })
+	validate.RegisterDefault(func() validate.SemanticRule { return DatasetRef{} })
+	validate.RegisterDefault(func() validate.SemanticRule { return ExpressionParses{} })
+	validate.RegisterDefault(func() validate.SemanticRule { return ScaleTypeCompat{} })
+	validate.RegisterDefault(func() validate.SemanticRule { return PieDonutEncoding{} })
+	validate.RegisterDefault(func() validate.SemanticRule { return SchemaRef{} })
+}
