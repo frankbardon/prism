@@ -10,9 +10,27 @@
       "minLength": 1
     },
     "field_ref": {
-      "type": "string",
-      "description": "Reference to a field name in the active dataset or transform output.",
-      "minLength": 1
+      "oneOf": [
+        {
+          "type": "string",
+          "description": "Reference to a field name in the active dataset or transform output.",
+          "minLength": 1
+        },
+        {
+          "type": "object",
+          "description": "Repeat substitution placeholder; resolved per-cell at build time.",
+          "additionalProperties": false,
+          "properties": {
+            "repeat": {
+              "type": "string",
+              "enum": ["row", "column"],
+              "description": "Repeat axis whose current field name substitutes here."
+            }
+          },
+          "required": ["repeat"]
+        }
+      ],
+      "description": "Field name (bare string) or {repeat: axis} substitution placeholder used in facet/repeat child specs."
     },
     "measure_type": {
       "type": "string",

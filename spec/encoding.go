@@ -28,16 +28,24 @@ type Encoding struct {
 }
 
 // ChannelCommon holds the fields shared by every channel class.
+//
+// Field is the bare field-name binding. FieldRef carries the
+// {"repeat": "row"|"column"} substitution placeholder when the spec
+// uses the polymorphic form; the build-time repeat walker
+// (plan/build/composite.go) rewrites FieldRef into Field per cell.
+// At most one of the two is populated for a given channel — never
+// both. See D055.
 type ChannelCommon struct {
-	Field     string `json:"field,omitempty"`
-	Type      string `json:"type,omitempty"`
-	Aggregate string `json:"aggregate,omitempty"`
-	Scale     *Scale `json:"scale,omitempty"`
-	Title     string `json:"title,omitempty"`
-	Format    string `json:"format,omitempty"`
-	Bin       any    `json:"bin,omitempty"`
-	Sort      any    `json:"sort,omitempty"`
-	Value     any    `json:"value,omitempty"`
+	Field     string     `json:"field,omitempty"`
+	FieldRef  *RepeatRef `json:"-"`
+	Type      string     `json:"type,omitempty"`
+	Aggregate string     `json:"aggregate,omitempty"`
+	Scale     *Scale     `json:"scale,omitempty"`
+	Title     string     `json:"title,omitempty"`
+	Format    string     `json:"format,omitempty"`
+	Bin       any        `json:"bin,omitempty"`
+	Sort      any        `json:"sort,omitempty"`
+	Value     any        `json:"value,omitempty"`
 }
 
 // PositionChannel adds axis + stack to ChannelCommon.
@@ -47,10 +55,58 @@ type PositionChannel struct {
 	Stack any   `json:"stack,omitempty"`
 }
 
+// UnmarshalJSON intercepts the `field` key so the channel accepts
+// either a bare string or a {"repeat": <axis>} substitution object.
+// All other keys decode through the default struct path; unknown
+// keys still error per Decode's DisallowUnknownFields setting.
+func (p *PositionChannel) UnmarshalJSON(data []byte) error {
+	type alias PositionChannel
+	var aux struct {
+		Field json.RawMessage `json:"field"`
+		alias
+	}
+	if err := json.Unmarshal(data, &aux); err != nil {
+		return err
+	}
+	*p = PositionChannel(aux.alias)
+	if len(aux.Field) > 0 {
+		f, ref, err := fieldOrRepeat(aux.Field)
+		if err != nil {
+			return err
+		}
+		p.Field = f
+		p.FieldRef = ref
+	}
+	return nil
+}
+
 // MarkChannel adds legend to ChannelCommon.
 type MarkChannel struct {
 	ChannelCommon
 	Legend *Legend `json:"legend,omitempty"`
+}
+
+// UnmarshalJSON intercepts the `field` key for the same reason as
+// PositionChannel.
+func (m *MarkChannel) UnmarshalJSON(data []byte) error {
+	type alias MarkChannel
+	var aux struct {
+		Field json.RawMessage `json:"field"`
+		alias
+	}
+	if err := json.Unmarshal(data, &aux); err != nil {
+		return err
+	}
+	*m = MarkChannel(aux.alias)
+	if len(aux.Field) > 0 {
+		f, ref, err := fieldOrRepeat(aux.Field)
+		if err != nil {
+			return err
+		}
+		m.Field = f
+		m.FieldRef = ref
+	}
+	return nil
 }
 
 // TextChannel is a slimmer channel for text marks and tooltips.
