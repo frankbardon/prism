@@ -75,7 +75,16 @@ func Encode(markType string, in Inputs) ([]scene.Mark, *scene.Warning, error) {
 	case "rule":
 		marks, err := encodeRule(in)
 		return marks, nil, err
-	case "arc", "text", "path", "image",
+	case "text":
+		marks, err := encodeText(in)
+		return marks, nil, err
+	case "tick":
+		marks, err := encodeTick(in)
+		return marks, nil, err
+	case "rect":
+		marks, err := encodeRect(in)
+		return marks, nil, err
+	case "arc", "path", "image",
 		"pie", "donut", "histogram", "heatmap", "boxplot", "violin",
 		"sankey", "funnel", "sparkline":
 		return nil, &scene.Warning{

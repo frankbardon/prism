@@ -20,6 +20,8 @@ func renderMark(w *Writer, m scene.Mark) {
 		renderPoint(w, m)
 	case m.Rule != nil:
 		renderRule(w, m)
+	case m.Text != nil:
+		renderTextMark(w, m)
 	default:
 		// Unsupported geometry types (Arc, Text, Path, Image) reach
 		// us only if the encoder advanced past P05 without updating
@@ -162,6 +164,35 @@ func renderPoint(w *Writer, m scene.Mark) {
 	w.AttrFloat("r", g.R)
 	writeStyleAttrs(w, m.Style)
 	w.SelfClose()
+}
+
+func renderTextMark(w *Writer, m scene.Mark) {
+	g := m.Text
+	w.OpenTag("text")
+	w.Attr("class", "prism-mark-text")
+	if m.ID != "" {
+		w.Attr("data-prism-id", m.ID)
+	}
+	w.AttrFloat("x", g.X)
+	w.AttrFloat("y", g.Y)
+	switch g.Anchor {
+	case scene.AnchorStart:
+		w.Attr("text-anchor", "start")
+	case scene.AnchorEnd:
+		w.Attr("text-anchor", "end")
+	default:
+		w.Attr("text-anchor", "middle")
+	}
+	if g.FontSize > 0 {
+		w.AttrFloat("font-size", g.FontSize)
+	}
+	if g.Angle != 0 {
+		w.Attr("transform", rotateAround(g.Angle, g.X, g.Y))
+	}
+	writeStyleAttrs(w, m.Style)
+	w.CloseTagOpen()
+	w.Text(g.Content)
+	w.EndTag("text")
 }
 
 func renderRule(w *Writer, m scene.Mark) {
