@@ -106,20 +106,42 @@ var Codes = map[string]CodeMetadata{
 		},
 	},
 
-	// --- Initial codes for downstream phases (smoke-only; deeper rules land later).
+	// --- Plan / compile codes (P03+).
 	"PRISM_PLAN_001": {
 		Code:    "PRISM_PLAN_001",
-		Message: `Cyclic dataset reference involving {{.Dataset}}.`,
+		Message: `Cyclic dataset reference detected (involving {{.Cycle}}; {{.Nodes}} nodes unscheduled).`,
 		Fixups: []string{
 			`Break the cycle by introducing an intermediate named alias.`,
 			`Check transform "data" and "as" aliases for accidental loops.`,
+			`Run ` + "`prism plan <spec> --format dot`" + ` to visualise the DAG and locate the cycle.`,
 		},
 	},
 	"PRISM_PLAN_002": {
 		Code:    "PRISM_PLAN_002",
-		Message: `Transform references undefined dataset {{.Dataset}}.`,
+		Message: `Unknown or unsupported plan kind {{.Kind}} (deferred to {{.Phase}}).`,
+		Fixups: []string{
+			`This spec uses a feature that is not yet implemented in the current Prism build.`,
+			`Composition primitives (layer, concat, facet, repeat) land in P08/P09; selections land in P13.`,
+			`Track the rollout in .planning/ROADMAP.md or run ` + "`prism errors lookup PRISM_PLAN_002`" + ` for the latest status.`,
+		},
+	},
+	"PRISM_PLAN_003": {
+		Code:    "PRISM_PLAN_003",
+		Message: `Transform references undeclared dataset {{.Dataset}} (available: {{.Available}}).`,
 		Fixups: []string{
 			`Declare the dataset in "datasets" or earlier in the transform pipeline.`,
+			`Check the spelling of the data/source reference.`,
+			`If the dataset lives in another spec, hoist it into a top-level "datasets" entry.`,
+		},
+		SeeAlso: []string{"PRISM_SPEC_005", "PRISM_RESOLVE_001"},
+	},
+	"PRISM_COMPILE_001": {
+		Code:    "PRISM_COMPILE_001",
+		Message: `Node type {{.NodeType}} is not implemented yet (lands in {{.Phase}}).`,
+		Fixups: []string{
+			`This node is a P03 placeholder; the real Execute body ships in {{.Phase}}.`,
+			`Until then the DAG builds and the rest of the pipeline runs — only this node fails.`,
+			`Track progress: ` + "`prism errors lookup PRISM_COMPILE_001`" + ` or .planning/ROADMAP.md.`,
 		},
 	},
 	"PRISM_RESOLVE_001": {
