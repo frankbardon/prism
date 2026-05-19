@@ -26,9 +26,10 @@ import (
 // (or shard), materialises every record into typed columns, and emits
 // a *table.Table tagged with the content hash of the on-disk bytes.
 //
-// SourceNode satisfies the minimal plan.Node interface (P02) and the
-// plan.SchemaProbe optional capability — callers can fetch the output
-// schema without executing.
+// SourceNode satisfies the full plan.Node interface (P03 widened it
+// to include Schema(in)). The Schema method delegates to
+// OutputSchema, which is kept for backwards compatibility with the
+// P02 callers (validate.PulseLookup) that already use it.
 type SourceNode struct {
 	id       plan.NodeID
 	ref      string
@@ -67,9 +68,10 @@ func (n *SourceNode) Fingerprint() string {
 // and plan-visualisation tooling.
 func (n *SourceNode) Ref() string { return n.ref }
 
-// OutputSchema implements plan.SchemaProbe. Resolves the ref so the
-// schema is discoverable without materialising records. The ReadCloser
-// returned by Resolve is closed immediately.
+// OutputSchema resolves the ref so the schema is discoverable without
+// materialising records. The ReadCloser returned by Resolve is closed
+// immediately. Kept as a public method for backwards compatibility with
+// validate.PulseLookup; new callers should prefer Schema(nil).
 func (n *SourceNode) OutputSchema() (*encoding.Schema, error) {
 	rc, schema, err := n.resolver.Resolve(n.ref, n.fs)
 	if err != nil {
@@ -79,6 +81,13 @@ func (n *SourceNode) OutputSchema() (*encoding.Schema, error) {
 		_ = rc.Close()
 	}
 	return schema, nil
+}
+
+// Schema implements plan.Node. Source nodes ignore the `in` slice (they
+// have no upstream); the output schema is whatever the resolver reports
+// for the underlying .pulse cohort.
+func (n *SourceNode) Schema(_ []*encoding.Schema) (*encoding.Schema, error) {
+	return n.OutputSchema()
 }
 
 // Execute implements plan.Node. Reads the resolved payload bytes,
