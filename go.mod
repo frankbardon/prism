@@ -2,7 +2,10 @@ module github.com/frankbardon/prism
 
 go 1.26.1
 
-require github.com/frankbardon/pulse v0.8.4
+require (
+	github.com/frankbardon/pulse v0.8.4
+	github.com/urfave/cli/v3 v3.9.0
+)
 
 require (
 	github.com/andybalholm/brotli v1.2.1 // indirect

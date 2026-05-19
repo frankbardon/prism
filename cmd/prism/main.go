@@ -5,15 +5,44 @@
 package main
 
 import (
+	"context"
 	"fmt"
 	"os"
+
+	"github.com/urfave/cli/v3"
 )
 
+const versionString = "prism v0.0.0-dev"
+
 func main() {
-	if len(os.Args) > 1 && os.Args[1] == "version" {
-		fmt.Println("prism v0.0.0-dev")
-		return
+	app := newApp()
+	if err := app.Run(context.Background(), os.Args); err != nil {
+		fmt.Fprintln(os.Stderr, err)
+		os.Exit(1)
 	}
-	fmt.Fprintln(os.Stderr, "prism: no subcommands yet")
-	os.Exit(2)
+}
+
+func newApp() *cli.Command {
+	return &cli.Command{
+		Name:    "prism",
+		Usage:   "Visualization library for .pulse files",
+		Version: versionString,
+		Commands: []*cli.Command{
+			{
+				Name:  "version",
+				Usage: "Print the prism version",
+				Action: func(_ context.Context, _ *cli.Command) error {
+					fmt.Println(versionString)
+					return nil
+				},
+			},
+		},
+		Action: func(_ context.Context, c *cli.Command) error {
+			if c.NArg() == 0 {
+				_ = cli.ShowAppHelp(c)
+				return cli.Exit("", 2)
+			}
+			return cli.Exit(fmt.Sprintf("prism: unknown command %q", c.Args().First()), 2)
+		},
+	}
 }
