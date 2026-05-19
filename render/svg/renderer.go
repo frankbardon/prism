@@ -47,11 +47,12 @@ func (r *Renderer) Render(doc *scene.SceneDoc, opts render.RenderOpts) ([]byte, 
 
 	w := NewWriter()
 
-	// Compute viewBox from the first (and only, in P05) cell's Frame.
-	var frame scene.Rect
-	if len(doc.Grid.Cells) > 0 {
-		frame = doc.Grid.Cells[0].Scene.Frame
-	}
+	// Compute viewBox. For 1×1 grids (the P05–P07 default) the math
+	// collapses to the first (and only) cell's Frame — byte-identical
+	// to the pre-P08 path. For N×M grids we take the max of all cell
+	// frames so the SVG spans every cell + any shared axis on the
+	// outer edge.
+	frame := outerFrame(doc.Grid)
 	if frame.W == 0 || frame.H == 0 {
 		// Defensive fallback.
 		frame = scene.Rect{W: 800, H: 600}
@@ -85,14 +86,84 @@ func (r *Renderer) Render(doc *scene.SceneDoc, opts render.RenderOpts) ([]byte, 
 	// Style block + defs.
 	writeStyleBlock(w, theme)
 
-	// Walk grid cells.
+	// Walk grid cells in row-major order. Each cell's Scene already
+	// carries pre-offset coordinates from EncodeComposite — the
+	// renderer never has to wrap cells in a <g transform=> group.
 	for _, cell := range doc.Grid.Cells {
 		renderScene(w, cell.Scene)
 	}
 
+	// Shared axes (D051): emit once at the grid edge, outside any
+	// cell. Skipped when nil; common for 1×1 grids (per-cell axes
+	// suffice with one cell).
+	renderSharedAxes(w, doc.Grid)
+
 	w.EndTag("svg")
 	w.Newline()
 	return w.Bytes(), nil
+}
+
+// outerFrame computes the bounding rectangle covering every cell in
+// the grid. For 1×1 grids it returns the single cell's frame
+// unchanged (preserving P05–P07 SVG goldens byte-for-byte). For N×M
+// grids it spans from (0,0) to (max-right, max-bottom).
+func outerFrame(g scene.SceneGrid) scene.Rect {
+	if len(g.Cells) == 0 {
+		return scene.Rect{}
+	}
+	if len(g.Cells) == 1 {
+		return g.Cells[0].Scene.Frame
+	}
+	var maxX, maxY float64
+	for _, c := range g.Cells {
+		right := c.Scene.Frame.X + c.Scene.Frame.W
+		bottom := c.Scene.Frame.Y + c.Scene.Frame.H
+		if right > maxX {
+			maxX = right
+		}
+		if bottom > maxY {
+			maxY = bottom
+		}
+	}
+	return scene.Rect{W: maxX, H: maxY}
+}
+
+// renderSharedAxes emits Grid.Shared.X and Grid.Shared.Y once outside
+// the cell loop. Each axis is wrapped in its own prism-axes group so
+// the structural class is consistent with per-cell axes, but with an
+// extra data-shared="true" attribute for diagnostic + test scraping.
+func renderSharedAxes(w *Writer, g scene.SceneGrid) {
+	if g.Shared.X == nil && g.Shared.Y == nil {
+		return
+	}
+	// Approximate the plot rect that anchors the shared axis. For
+	// 1×1 grids the cell's plot rect is fine; for multi-cell grids
+	// the axis was built against the single-cell plot so spans the
+	// expected width / height per its position.
+	plot := scene.Rect{}
+	if len(g.Cells) > 0 {
+		plot = g.Cells[0].Scene.Plot
+	}
+	w.Newline()
+	w.Indent(2)
+	w.OpenTag("g")
+	w.Attr("class", "prism-axes")
+	w.Attr("data-shared", "true")
+	w.CloseTagOpen()
+	w.Newline()
+	if g.Shared.X != nil {
+		w.Indent(4)
+		renderAxis(w, *g.Shared.X, plot)
+		w.Newline()
+	}
+	if g.Shared.Y != nil {
+		w.Indent(4)
+		renderAxis(w, *g.Shared.Y, plot)
+		w.Newline()
+	}
+	w.Indent(2)
+	w.EndTag("g")
+	w.Newline()
 }
 
 // renderScene emits the per-Scene structural tree.
