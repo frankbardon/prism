@@ -224,6 +224,11 @@ func Encode(s *spec.Spec, tables map[plan.NodeID]*table.Table, tipID plan.NodeID
 // resolveChannel turns a PositionChannel + table into a Scale.
 // Returns (nil, nil, nil) when the channel is nil or has no field
 // binding — the encoder skips axis creation in that case.
+//
+// When the channel carries an explicit scale.type (and scale.base /
+// scale.exponent for log / pow), the typed dispatch ResolveScaleTyped
+// takes over. Otherwise the channel-type / column-kind inference
+// path runs.
 func resolveChannel(ch *spec.PositionChannel, tbl *table.Table, rmin, rmax float64) (Scale, *scene.Warning, error) {
 	if ch == nil || ch.Field == "" {
 		return nil, nil, nil
@@ -239,6 +244,16 @@ func resolveChannel(ch *spec.PositionChannel, tbl *table.Table, rmin, rmax float
 	values := make([]any, col.Len())
 	for i := 0; i < col.Len(); i++ {
 		values[i] = col.ValueAt(i)
+	}
+	if ch.Scale != nil && ch.Scale.Type != "" {
+		opts := ScaleOpts{}
+		if ch.Scale.Base != nil {
+			opts.Base = *ch.Scale.Base
+		}
+		if ch.Scale.Exponent != nil {
+			opts.Exp = *ch.Scale.Exponent
+		}
+		return ResolveScaleTyped(scene.ScaleType(ch.Scale.Type), values, rmin, rmax, opts)
 	}
 	return ResolveScale(ch.Type, col.Kind(), values, rmin, rmax)
 }
