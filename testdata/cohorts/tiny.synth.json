@@ -1,0 +1,29 @@
+{
+  "row_count": 1000,
+  "fields": [
+    {
+      "name": "brand_id",
+      "type": "categorical_u8",
+      "description": "Brand identifier; small dictionary keeps the fixture deterministic.",
+      "distribution": "weighted_categorical",
+      "params": {
+        "values":  ["alpha", "beta", "gamma", "delta"],
+        "weights": [0.40, 0.30, 0.20, 0.10]
+      }
+    },
+    {
+      "name": "score",
+      "type": "f64",
+      "description": "Brand affinity score in [0, 1] domain; clipped normal centred at 0.5.",
+      "distribution": "normal",
+      "params": { "mean": 0.5, "std": 0.15, "min": 0.0, "max": 1.0 }
+    },
+    {
+      "name": "age",
+      "type": "u8",
+      "description": "Subject age in years; clipped normal centred at 35.",
+      "distribution": "normal",
+      "params": { "mean": 35, "std": 11, "min": 18, "max": 95 }
+    }
+  ]
+}
