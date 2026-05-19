@@ -368,6 +368,16 @@ var Codes = map[string]CodeMetadata{
 		},
 		SeeAlso: []string{"PRISM_PLAN_003"},
 	},
+	"PRISM_PLAN_005": {
+		Code:    "PRISM_PLAN_005",
+		Message: `Channel {{.Channel}} cannot be resolved as shared: layers disagree on type ({{.Types}}).`,
+		Fixups: []string{
+			`Convert one layer's channel to the matching type via a "calculate" cast upstream of the encoder.`,
+			`Switch the channel to a Pulse-compatible measure type so every layer publishes the same scale family.`,
+			"Set `resolve.scale.{{.Channel}}` to `independent` to keep per-layer scales + per-layer axes.",
+		},
+		SeeAlso: []string{"PRISM_PLAN_002", "PRISM_SPEC_007", "PRISM_RESOLVE_DUPLICATE_DATASET"},
+	},
 	"PRISM_WARN_DOWNSAMPLE": {
 		Code:    "PRISM_WARN_DOWNSAMPLE",
 		Message: `Source {{.Source}} exceeds PRISM_RENDER_MAX_MARKS={{.Limit}} ({{.Actual}} rows); injected SampleNode({{.SampleN}}).`,
@@ -376,6 +386,16 @@ var Codes = map[string]CodeMetadata{
 			`If the chart is exploratory, the sample is deterministic for the spec's seed.`,
 			`Pre-aggregate upstream of the encoder to avoid the auto-sample entirely.`,
 		},
+	},
+	"PRISM_WARN_LAYER_SKIPPED": {
+		Code:    "PRISM_WARN_LAYER_SKIPPED",
+		Message: `Layer {{.Layer}} skipped: upstream Source {{.Source}} failed ({{.Code}}).`,
+		Fixups: []string{
+			"Rerun with `--abort-on-error` to fail fast instead of dropping the layer.",
+			`Inspect the upstream error code via ` + "`prism errors lookup {{.Code}}`" + ` and unblock the failing Source.`,
+			`Remove the offending dataset from "datasets" if it is no longer published.`,
+		},
+		SeeAlso: []string{"PRISM_COMPILE_001"},
 	},
 }
 
