@@ -1,0 +1,19 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 600">
+  <style>:root{--prism-color-axis:#6b7280;--prism-color-grid:#e5e7eb;--prism-color-text:#111827;--prism-color-bg:transparent;--prism-font-sans:Inter, system-ui, sans-serif;--prism-font-mono:ui-monospace, SF Mono, monospace;--prism-font-size-label:11px;--prism-font-size-title:16px;--prism-font-size-axis-title:12px;}.prism-axis-domain{stroke:var(--prism-color-axis);fill:none;}.prism-axis-tick{stroke:var(--prism-color-axis);}.prism-axis-label{fill:var(--prism-color-text);font-family:var(--prism-font-sans);font-size:var(--prism-font-size-label,11px);}.prism-axis-title{fill:var(--prism-color-text);font-family:var(--prism-font-sans);font-size:var(--prism-font-size-axis-title,12px);font-weight:600;}.prism-grid-line{stroke:var(--prism-color-grid);}.prism-title{fill:var(--prism-color-text);font-family:var(--prism-font-sans);font-size:var(--prism-font-size-title,16px);font-weight:600;}.prism-legend-title{fill:var(--prism-color-text);font-family:var(--prism-font-sans);font-size:12px;font-weight:600;}.prism-legend-label{fill:var(--prism-color-text);font-family:var(--prism-font-sans);font-size:11px;}.prism-legend-swatch{stroke:none;}.prism-selected{opacity:var(--prism-selected-opacity,1);}.prism-deselected{opacity:var(--prism-deselected-opacity,0.3);}</style>
+
+  <g class="prism-scene" data-scene-id="scene-0">
+    <text class="prism-title" x="410" y="20" text-anchor="middle">Region x bucket heatmap</text>
+    <g class="prism-axes">
+      <g class="prism-axis prism-axis-x" data-prism-axis-id="x-axis"><line class="prism-grid-line" x1="225" y1="50" x2="225" y2="560"/><line class="prism-grid-line" x1="595" y1="50" x2="595" y2="560"/><line class="prism-axis-domain" x1="40" y1="560" x2="780" y2="560"/><line class="prism-axis-tick" x1="225" y1="560" x2="225" y2="565"/><text class="prism-axis-label" x="225" y="578" text-anchor="middle">NA</text><line class="prism-axis-tick" x1="595" y1="560" x2="595" y2="565"/><text class="prism-axis-label" x="595" y="578" text-anchor="middle">EU</text><text class="prism-axis-title" x="410" y="594" text-anchor="middle">region</text></g>
+      <g class="prism-axis prism-axis-y" data-prism-axis-id="y-axis"><line class="prism-grid-line" x1="40" y1="432.5" x2="780" y2="432.5"/><line class="prism-grid-line" x1="40" y1="177.5" x2="780" y2="177.5"/><line class="prism-axis-domain" x1="40" y1="50" x2="40" y2="560"/><line class="prism-axis-tick" x1="40" y1="432.5" x2="35" y2="432.5"/><text class="prism-axis-label" x="32" y="436.5" text-anchor="end">0-25</text><line class="prism-axis-tick" x1="40" y1="177.5" x2="35" y2="177.5"/><text class="prism-axis-title" x="10" y="305" text-anchor="middle" transform="rotate(-90 10 305)">bucket</text></g>
+    </g>
+    <g class="prism-plot">
+      <g class="prism-layer" data-layer-id="layer-0" data-prism-layer="layer-0">
+        <rect class="prism-mark-bar" data-prism-id="heatmap-0" data-prism-datum-row="0" x="58.5" y="547.25" width="333" height="-229.5" fill="#b5caf6"/>
+        <rect class="prism-mark-bar" data-prism-id="heatmap-1" data-prism-datum-row="1" x="58.5" y="292.25" width="333" height="-229.5" fill="#4f77e2"/>
+        <rect class="prism-mark-bar" data-prism-id="heatmap-2" data-prism-datum-row="2" x="428.5" y="547.25" width="333" height="-229.5" fill="#dbeafe"/>
+        <rect class="prism-mark-bar" data-prism-id="heatmap-3" data-prism-datum-row="3" x="428.5" y="292.25" width="333" height="-229.5" fill="#1d4ed8"/>
+      </g>
+    </g>
+  </g>
+</svg>

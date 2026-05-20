@@ -24,6 +24,7 @@ func TestPrismNoBeraReferences(t *testing.T) {
 		"bin":          true,
 		"node_modules": true,
 		".planning":    true,
+		"book":         true, // mdBook output (docs/book) — built artefact, may contain upstream font licences.
 	}
 	skipExt := map[string]bool{
 		".png":   true,
@@ -62,6 +63,12 @@ func TestPrismNoBeraReferences(t *testing.T) {
 			if skip[d.Name()] {
 				return filepath.SkipDir
 			}
+			return nil
+		}
+		// Skip symlinks — WalkDir doesn't recurse into them by default,
+		// and reading a symlink-to-directory errors. The docs site uses
+		// docs/src/static -> ../../static so mdBook can find the JS bundle.
+		if d.Type()&fs.ModeSymlink != 0 {
 			return nil
 		}
 		// Skip known binary file types up front.

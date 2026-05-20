@@ -42,13 +42,13 @@ func sceneCommand() *cli.Command {
 			},
 			&cli.FloatFlag{
 				Name:  "width",
-				Value: 800,
-				Usage: "Width in pixels",
+				Value: 0,
+				Usage: "Width in pixels (0 = use scene's natural frame; downstream SVG render is viewBox-only)",
 			},
 			&cli.FloatFlag{
 				Name:  "height",
-				Value: 600,
-				Usage: "Height in pixels",
+				Value: 0,
+				Usage: "Height in pixels (0 = use scene's natural frame; downstream SVG render is viewBox-only)",
 			},
 			&cli.StringFlag{
 				Name:  "theme",

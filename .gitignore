@@ -2,6 +2,16 @@ bin/
 *.test
 *.out
 coverage.txt
+coverage.out
+
+# mdBook output — `make docs` builds into docs/book/, `make docs-clean` removes it.
+docs/book/
+
+# Gallery SceneDoc JSON — derived from *.prism.json by `make docs-scenes`.
+# Regenerated on every `make docs`; live <prism-chart> needs them but they
+# are not source of truth.
+docs/src/gallery/**/*.scene.json
+
 .DS_Store
 .idea/
 .vscode/

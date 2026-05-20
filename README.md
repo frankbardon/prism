@@ -47,12 +47,14 @@ open chart.svg
 
 ## Documentation
 
-- [Getting started](docs/getting-started.md) — install + first chart + editor setup.
-- [Gallery](docs/gallery/index.md) — 59 fixture specs with rendered SVGs.
-- [Concepts](docs/concepts/) — spec, marks, encoding, composition, selections, themes, multi-source.
-- [Cookbook](docs/cookbook/) — multi-source join, faceting, custom themes, MCP agent integration.
-- [Migration from Vega-Lite](docs/migration-from-vega-lite.md).
-- [Errors](docs/reference/errors.md) — every `PRISM_*` code with fixups.
+The full manual is an [mdBook](https://rust-lang.github.io/mdBook/) under [`docs/`](docs/), published to <https://frankbardon.github.io/prism/>. Build locally with `make docs-serve`.
+
+- [Getting started](docs/src/getting-started.md) — install + first chart + editor setup.
+- [Gallery](docs/src/gallery/index.md) — 59 fixture specs with rendered SVGs.
+- [Concepts](docs/src/concepts/) — spec, marks, encoding, composition, selections, themes, multi-source.
+- [Cookbook](docs/src/cookbook/) — multi-source join, faceting, custom themes, MCP agent integration.
+- [Migration from Vega-Lite](docs/src/migration-from-vega-lite.md).
+- [`prism errors lookup CODE`](CLAUDE.md#error-handling) — fixup metadata for every `PRISM_*` code.
 
 ## License
 
@@ -60,7 +62,9 @@ MIT — see [LICENSE](./LICENSE).
 
 ## Contributing
 
-Open an issue or PR at the repo. The `.planning/` directory carries
-the design discussion, phase plans, and locked decisions. New
+See [CONTRIBUTING.md](CONTRIBUTING.md) for setup, conventions, and PR
+guidelines, and [CLAUDE.md](CLAUDE.md) for the full set of conventions,
+contracts, and the Update Demand table. The `.planning/` directory
+carries the design discussion, phase plans, and locked decisions; new
 features should land with a PHASE.md + PLAN.md following the existing
 pattern.

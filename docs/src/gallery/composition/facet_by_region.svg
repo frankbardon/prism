@@ -1,0 +1,89 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 600">
+  <style>:root{--prism-color-axis:#6b7280;--prism-color-grid:#e5e7eb;--prism-color-text:#111827;--prism-color-bg:transparent;--prism-font-sans:Inter, system-ui, sans-serif;--prism-font-mono:ui-monospace, SF Mono, monospace;--prism-font-size-label:11px;--prism-font-size-title:16px;--prism-font-size-axis-title:12px;}.prism-axis-domain{stroke:var(--prism-color-axis);fill:none;}.prism-axis-tick{stroke:var(--prism-color-axis);}.prism-axis-label{fill:var(--prism-color-text);font-family:var(--prism-font-sans);font-size:var(--prism-font-size-label,11px);}.prism-axis-title{fill:var(--prism-color-text);font-family:var(--prism-font-sans);font-size:var(--prism-font-size-axis-title,12px);font-weight:600;}.prism-grid-line{stroke:var(--prism-color-grid);}.prism-title{fill:var(--prism-color-text);font-family:var(--prism-font-sans);font-size:var(--prism-font-size-title,16px);font-weight:600;}.prism-legend-title{fill:var(--prism-color-text);font-family:var(--prism-font-sans);font-size:12px;font-weight:600;}.prism-legend-label{fill:var(--prism-color-text);font-family:var(--prism-font-sans);font-size:11px;}.prism-legend-swatch{stroke:none;}.prism-selected{opacity:var(--prism-selected-opacity,1);}.prism-deselected{opacity:var(--prism-deselected-opacity,0.3);}</style>
+
+  <g class="prism-scene" data-scene-id="scene-r0-c0-0">
+    <g class="prism-plot">
+      <g class="prism-layer" data-layer-id="layer-0" data-prism-layer="layer-0">
+        <rect class="prism-mark-bar" data-prism-id="bar-0" data-prism-datum-row="0" x="102.889" y="70.206" width="52" height="91.127" fill="#3b82f6"/>
+      </g>
+    </g>
+  </g>
+
+  <g class="prism-scene" data-scene-id="scene-r0-c1-0">
+    <g class="prism-plot">
+      <g class="prism-layer" data-layer-id="layer-0" data-prism-layer="layer-0">
+        <rect class="prism-mark-bar" data-prism-id="bar-0" data-prism-datum-row="0" x="414" y="42" width="52" height="119.333" fill="#3b82f6"/>
+      </g>
+    </g>
+  </g>
+
+  <g class="prism-scene" data-scene-id="scene-r0-c2-0">
+    <g class="prism-plot">
+      <g class="prism-layer" data-layer-id="layer-0" data-prism-layer="layer-0">
+        <rect class="prism-mark-bar" data-prism-id="bar-0" data-prism-datum-row="0" x="725.111" y="57.188" width="52" height="104.145" fill="#3b82f6"/>
+      </g>
+    </g>
+  </g>
+
+  <g class="prism-scene" data-scene-id="scene-r1-c0-0">
+    <g class="prism-plot">
+      <g class="prism-layer" data-layer-id="layer-0" data-prism-layer="layer-0">
+        <rect class="prism-mark-bar" data-prism-id="bar-0" data-prism-datum-row="0" x="102.889" y="293.406" width="52" height="67.261" fill="#3b82f6"/>
+      </g>
+    </g>
+  </g>
+
+  <g class="prism-scene" data-scene-id="scene-r1-c1-0">
+    <g class="prism-plot">
+      <g class="prism-layer" data-layer-id="layer-0" data-prism-layer="layer-0">
+        <rect class="prism-mark-bar" data-prism-id="bar-0" data-prism-datum-row="0" x="414" y="254.352" width="52" height="106.315" fill="#3b82f6"/>
+      </g>
+    </g>
+  </g>
+
+  <g class="prism-scene" data-scene-id="scene-r1-c2-0">
+    <g class="prism-plot">
+      <g class="prism-layer" data-layer-id="layer-0" data-prism-layer="layer-0">
+        <rect class="prism-mark-bar" data-prism-id="bar-0" data-prism-datum-row="0" x="725.111" y="280.388" width="52" height="80.279" fill="#3b82f6"/>
+      </g>
+    </g>
+  </g>
+
+  <g class="prism-scene" data-scene-id="scene-r2-c0-0">
+    <g class="prism-plot">
+      <g class="prism-layer" data-layer-id="layer-0" data-prism-layer="layer-0">
+        <rect class="prism-mark-bar" data-prism-id="bar-0" data-prism-datum-row="0" x="102.889" y="449.345" width="52" height="110.655" fill="#3b82f6"/>
+      </g>
+    </g>
+  </g>
+
+  <g class="prism-scene" data-scene-id="scene-r2-c1-0">
+    <g class="prism-plot">
+      <g class="prism-layer" data-layer-id="layer-0" data-prism-layer="layer-0">
+        <rect class="prism-mark-bar" data-prism-id="bar-0" data-prism-datum-row="0" x="414" y="462.364" width="52" height="97.636" fill="#3b82f6"/>
+      </g>
+    </g>
+  </g>
+
+  <g class="prism-scene" data-scene-id="scene-r2-c2-0">
+    <g class="prism-plot">
+      <g class="prism-layer" data-layer-id="layer-0" data-prism-layer="layer-0">
+        <rect class="prism-mark-bar" data-prism-id="bar-0" data-prism-datum-row="0" x="725.111" y="475.382" width="52" height="84.618" fill="#3b82f6"/>
+      </g>
+    </g>
+  </g>
+
+  <g class="prism-axes" data-shared="true">
+    <g class="prism-axis prism-axis-x" data-prism-axis-id="x-axis"><line class="prism-grid-line" x1="68.889" y1="440.667" x2="68.889" y2="560"/><line class="prism-grid-line" x1="126.667" y1="440.667" x2="126.667" y2="560"/><line class="prism-grid-line" x1="184.444" y1="440.667" x2="184.444" y2="560"/><line class="prism-axis-domain" x1="606.667" y1="560" x2="780" y2="560"/><line class="prism-axis-tick" x1="68.889" y1="161.333" x2="68.889" y2="166.333"/><text class="prism-axis-label" x="68.889" y="179.333" text-anchor="middle">alpha</text><line class="prism-axis-tick" x1="126.667" y1="161.333" x2="126.667" y2="166.333"/><text class="prism-axis-label" x="126.667" y="179.333" text-anchor="middle">beta</text><line class="prism-axis-tick" x1="184.444" y1="161.333" x2="184.444" y2="166.333"/><text class="prism-axis-label" x="184.444" y="179.333" text-anchor="middle">gamma</text><text class="prism-axis-title" x="186.667" y="195.333" text-anchor="middle">brand</text></g>
+    <g class="prism-axis prism-axis-y" data-prism-axis-id="y-axis"><line class="prism-grid-line" x1="100" y1="139.333" x2="273.333" y2="139.333"/><line class="prism-grid-line" x1="100" y1="117.636" x2="273.333" y2="117.636"/><line class="prism-grid-line" x1="100" y1="95.939" x2="273.333" y2="95.939"/><line class="prism-grid-line" x1="100" y1="74.242" x2="273.333" y2="74.242"/><line class="prism-grid-line" x1="100" y1="52.545" x2="273.333" y2="52.545"/><line class="prism-grid-line" x1="100" y1="30.848" x2="273.333" y2="30.848"/><line class="prism-axis-domain" x1="100" y1="42" x2="100" y2="161.333"/><line class="prism-axis-tick" x1="100" y1="139.333" x2="95" y2="139.333"/><text class="prism-axis-label" x="92" y="143.333" text-anchor="end">0</text><line class="prism-axis-tick" x1="100" y1="128.485" x2="97" y2="128.485"/><line class="prism-axis-tick" x1="100" y1="117.636" x2="95" y2="117.636"/><line class="prism-axis-tick" x1="100" y1="106.788" x2="97" y2="106.788"/><line class="prism-axis-tick" x1="100" y1="95.939" x2="95" y2="95.939"/><text class="prism-axis-label" x="92" y="99.939" text-anchor="end">0.2</text><line class="prism-axis-tick" x1="100" y1="85.091" x2="97" y2="85.091"/><line class="prism-axis-tick" x1="100" y1="74.242" x2="95" y2="74.242"/><line class="prism-axis-tick" x1="100" y1="63.394" x2="97" y2="63.394"/><line class="prism-axis-tick" x1="100" y1="52.545" x2="95" y2="52.545"/><text class="prism-axis-label" x="92" y="56.545" text-anchor="end">0.4</text><line class="prism-axis-tick" x1="100" y1="41.697" x2="97" y2="41.697"/><line class="prism-axis-tick" x1="100" y1="30.848" x2="95" y2="30.848"/><text class="prism-axis-title" x="70" y="101.667" text-anchor="middle" transform="rotate(-90 70 101.667)">score</text></g>
+  </g>
+
+  <g class="prism-grid-headers">
+    <text class="prism-facet-header prism-facet-header-top" x="176.667" y="14" text-anchor="middle">brand = alpha</text>
+    <text class="prism-facet-header prism-facet-header-top" x="430" y="14" text-anchor="middle">brand = beta</text>
+    <text class="prism-facet-header prism-facet-header-top" x="683.333" y="14" text-anchor="middle">brand = gamma</text>
+    <text class="prism-facet-header prism-facet-header-left" x="6" y="111.667" text-anchor="start">region = NA</text>
+    <text class="prism-facet-header prism-facet-header-left" x="6" y="311" text-anchor="start">region = EU</text>
+    <text class="prism-facet-header prism-facet-header-left" x="6" y="510.333" text-anchor="start">region = APAC</text>
+  </g>
+</svg>

@@ -60,8 +60,10 @@ export function render(sceneDoc, target) {
   const svg = doc.createElementNS(SVG_NS, "svg");
   svg.setAttribute("xmlns", SVG_NS);
   svg.setAttribute("viewBox", `0 0 ${fmt(W)} ${fmt(H)}`);
-  svg.setAttribute("width", fmt(W));
-  svg.setAttribute("height", fmt(H));
+  // viewBox-only: mirror the Go renderer's default. Consumers that
+  // need a fixed pixel size set width/height on the host element via
+  // CSS (works even through shadow DOM because SVG with no width/
+  // height attrs respects its parent's box).
 
   // Style block. Prefer theme.css verbatim (D075); fall back to
   // hand-built block when absent (parity with writeStyleBlock).

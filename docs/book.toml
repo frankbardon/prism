@@ -1,0 +1,21 @@
+[book]
+authors = ["Frank Bardon"]
+language = "en"
+src = "src"
+title = "Prism Documentation"
+description = "Visualization library for .pulse files"
+
+[build]
+build-dir = "book"
+
+[output.html]
+default-theme = "navy"
+preferred-dark-theme = "navy"
+git-repository-url = "https://github.com/frankbardon/prism"
+edit-url-template = "https://github.com/frankbardon/prism/edit/main/docs/src/{path}"
+no-section-label = false
+
+[output.html.search]
+enable = true
+limit-results = 30
+boost-hierarchy = 2

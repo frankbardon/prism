@@ -11,12 +11,12 @@ import (
 )
 
 // TestPrismGalleryFixtures — PHASE.md P16 mandate. Walks
-// docs/gallery/**/*.prism.json; for each fixture asserts: (a) validates
+// docs/src/gallery/**/*.prism.json; for each fixture asserts: (a) validates
 // clean, (b) plot produces non-empty SVG that parses as XML.
 //
 // Set UPDATE_GOLDENS=1 to regenerate the committed .svg files.
 func TestPrismGalleryFixtures(t *testing.T) {
-	galleryDir := repoFile(t, "docs", "gallery")
+	galleryDir := repoFile(t, "docs", "src", "gallery")
 
 	type fixture struct {
 		spec string

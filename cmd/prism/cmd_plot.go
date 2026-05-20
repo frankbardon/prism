@@ -45,13 +45,13 @@ func plotCommand() *cli.Command {
 			},
 			&cli.FloatFlag{
 				Name:  "width",
-				Value: 800,
-				Usage: "Width in pixels",
+				Value: 0,
+				Usage: "Width in pixels (0 = SVG: viewBox-only / responsive; PDF: use scene's natural frame)",
 			},
 			&cli.FloatFlag{
 				Name:  "height",
-				Value: 600,
-				Usage: "Height in pixels",
+				Value: 0,
+				Usage: "Height in pixels (0 = SVG: viewBox-only / responsive; PDF: use scene's natural frame)",
 			},
 			&cli.StringFlag{
 				Name:  "out",

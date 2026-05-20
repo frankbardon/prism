@@ -19,7 +19,7 @@ func (r *Renderer) MimeType() string { return "image/svg+xml" }
 
 // Render implements render.Renderer. Walks the SceneDoc top-down:
 //
-//	<svg viewBox="0 0 W H" width="..." height="...">
+//	<svg viewBox="0 0 W H" [width="..." height="..."]>
 //	  <style>:root{ --prism-color-axis: ...; ... }
 //	          .prism-axis-label { ... } ...</style>
 //	  <defs>...</defs>
@@ -29,6 +29,13 @@ func (r *Renderer) MimeType() string { return "image/svg+xml" }
 //	    <g class="prism-plot"><g class="prism-layer">...</g></g>
 //	  </g>
 //	</svg>
+//
+// `width` and `height` attrs are emitted only when the caller asks
+// for them via RenderOpts.Width / RenderOpts.Height. Default
+// (zero-zero) output is viewBox-only so the SVG fills its container
+// and CSS can resize it from outside — including inside shadow-DOM
+// consumers like the <prism-chart> web component, which cannot
+// otherwise override fixed attributes.
 //
 // Coordinates are pinned to RenderPrecision; attributes are
 // XML-escaped via the writer helpers; layer-by-layer dispatch hands
@@ -58,18 +65,6 @@ func (r *Renderer) Render(doc *scene.SceneDoc, opts render.RenderOpts) ([]byte, 
 		frame = scene.Rect{W: 800, H: 600}
 	}
 
-	// Use opts.Width/Height when supplied; otherwise the frame's
-	// natural dimensions. The viewBox always matches the frame so
-	// scaling is uniform.
-	width := opts.Width
-	if width == 0 {
-		width = frame.W
-	}
-	height := opts.Height
-	if height == 0 {
-		height = frame.H
-	}
-
 	w.OpenTag("svg")
 	w.Attr("xmlns", "http://www.w3.org/2000/svg")
 	w.OpenAttr("viewBox")
@@ -78,8 +73,21 @@ func (r *Renderer) Render(doc *scene.SceneDoc, opts render.RenderOpts) ([]byte, 
 	w.Raw(" ")
 	w.Raw(render.FormatFloat(frame.H))
 	w.CloseAttr()
-	w.AttrFloat("width", width)
-	w.AttrFloat("height", height)
+	// Emit width/height only when explicitly requested. Default
+	// (both zero) is viewBox-only: the SVG fills its container and
+	// CSS / parent layout drives the rendered size.
+	if opts.Width != 0 || opts.Height != 0 {
+		width := opts.Width
+		if width == 0 {
+			width = frame.W
+		}
+		height := opts.Height
+		if height == 0 {
+			height = frame.H
+		}
+		w.AttrFloat("width", width)
+		w.AttrFloat("height", height)
+	}
 	w.CloseTagOpen()
 	w.Newline()
 
