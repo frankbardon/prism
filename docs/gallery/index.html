@@ -1,0 +1,80 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Prism Gallery</title>
+  <script type="module" src="../../static/vendor/prism/prism-element.mjs"></script>
+  <style>
+    body {
+      font-family: Inter, system-ui, sans-serif;
+      max-width: 1100px;
+      margin: 2em auto;
+      padding: 0 1em;
+      color: #111827;
+    }
+    h1 { margin: 0 0 0.5em; }
+    h2 { margin-top: 2em; border-bottom: 1px solid #e5e7eb; padding-bottom: 0.25em; }
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(360px, 1fr));
+      gap: 1.5em;
+    }
+    .card {
+      background: #f9fafb;
+      border-radius: 6px;
+      padding: 1em;
+      border: 1px solid #e5e7eb;
+    }
+    .card h3 {
+      margin: 0 0 0.5em;
+      font-size: 0.95em;
+      font-family: ui-monospace, SF Mono, monospace;
+    }
+    prism-chart { display: block; min-height: 240px; background: #fff; }
+  </style>
+</head>
+<body>
+<h1>Prism Gallery</h1>
+<p>Live-rendered fixtures via the vendored JS port. Source specs in
+<code>docs/gallery/</code>. For the static SVG version, see
+<a href="index.md">index.md</a>.</p>
+
+<h2>Basic marks</h2>
+<div class="grid">
+  <div class="card"><h3>bar_basic</h3><prism-chart src="basic-marks/bar_basic.prism.json"></prism-chart></div>
+  <div class="card"><h3>line_basic</h3><prism-chart src="basic-marks/line_basic.prism.json"></prism-chart></div>
+  <div class="card"><h3>area_basic</h3><prism-chart src="basic-marks/area_basic.prism.json"></prism-chart></div>
+  <div class="card"><h3>point_scatter</h3><prism-chart src="basic-marks/point_scatter.prism.json"></prism-chart></div>
+  <div class="card"><h3>multi_series_line</h3><prism-chart src="basic-marks/multi_series_line.prism.json"></prism-chart></div>
+</div>
+
+<h2>Composite marks</h2>
+<div class="grid">
+  <div class="card"><h3>histogram</h3><prism-chart src="composite-marks/histogram.prism.json"></prism-chart></div>
+  <div class="card"><h3>heatmap</h3><prism-chart src="composite-marks/heatmap.prism.json"></prism-chart></div>
+  <div class="card"><h3>boxplot</h3><prism-chart src="composite-marks/boxplot.prism.json"></prism-chart></div>
+  <div class="card"><h3>violin_score</h3><prism-chart src="composite-marks/violin_score.prism.json"></prism-chart></div>
+  <div class="card"><h3>pie</h3><prism-chart src="composite-marks/pie.prism.json"></prism-chart></div>
+  <div class="card"><h3>donut</h3><prism-chart src="composite-marks/donut.prism.json"></prism-chart></div>
+</div>
+
+<h2>Specialty marks</h2>
+<div class="grid">
+  <div class="card"><h3>sankey_user_flow</h3><prism-chart src="specialty-marks/sankey_user_flow.prism.json"></prism-chart></div>
+  <div class="card"><h3>funnel_signup</h3><prism-chart src="specialty-marks/funnel_signup.prism.json"></prism-chart></div>
+  <div class="card"><h3>sparkline_inline</h3><prism-chart src="specialty-marks/sparkline_inline.prism.json"></prism-chart></div>
+</div>
+
+<h2>Composition</h2>
+<div class="grid">
+  <div class="card"><h3>layer_actual_vs_benchmark</h3><prism-chart src="composition/layer_actual_vs_benchmark.prism.json"></prism-chart></div>
+  <div class="card"><h3>facet_by_region</h3><prism-chart src="composition/facet_by_region.prism.json"></prism-chart></div>
+  <div class="card"><h3>repeat_metrics</h3><prism-chart src="composition/repeat_metrics.prism.json"></prism-chart></div>
+  <div class="card"><h3>vconcat_metrics</h3><prism-chart src="composition/vconcat_metrics.prism.json"></prism-chart></div>
+</div>
+
+<p style="margin-top:3em; color:#6b7280; font-size:0.85em;">
+For the full 59-fixture catalog, see
+<a href="index.md">index.md</a>.</p>
+</body>
+</html>
