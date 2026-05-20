@@ -1,0 +1,85 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Prism browser demo (P12)</title>
+  <style>
+    body {
+      font-family: Inter, system-ui, -apple-system, sans-serif;
+      max-width: 1000px;
+      margin: 2rem auto;
+      padding: 0 1rem;
+      color: #111827;
+    }
+    h1 { margin-bottom: 0.25rem; }
+    .subtitle { color: #6b7280; margin-top: 0; }
+    prism-chart {
+      display: block;
+      margin: 1.5rem 0;
+      border: 1px solid #e5e7eb;
+      border-radius: 6px;
+      padding: 1rem;
+      background: white;
+    }
+    .info {
+      background: #f3f4f6;
+      border-left: 3px solid #6366f1;
+      padding: 0.75rem 1rem;
+      margin: 1rem 0;
+      font-size: 0.9rem;
+    }
+    code {
+      background: #fef3c7;
+      padding: 0.1rem 0.3rem;
+      border-radius: 3px;
+      font-size: 0.9rem;
+    }
+  </style>
+  <!-- Auto-registers <prism-chart> + <prism-dataset>. -->
+  <script type="module" src="../../static/vendor/prism/prism-element.mjs"></script>
+</head>
+<body>
+  <h1>Prism browser demo</h1>
+  <p class="subtitle">P12 launch fixtures rendered via <code>prism.mjs</code> + <code>&lt;prism-chart&gt;</code>.</p>
+
+  <div class="info">
+    Serve from the repo root (e.g. <code>python3 -m http.server</code>) and
+    open <code>/testdata/browser/demo.html</code>. Each <code>&lt;prism-chart&gt;</code>
+    fetches a Scene JSON committed under <code>testdata/cross_impl/</code> — the same
+    inputs the cross-impl parity harness diffs Go vs JS on.
+  </div>
+
+  <h2>bar_basic</h2>
+  <prism-chart src="../cross_impl/bar_basic/scene.json"></prism-chart>
+
+  <h2>line_basic</h2>
+  <prism-chart src="../cross_impl/line_basic/scene.json"></prism-chart>
+
+  <h2>layer_actual_vs_benchmark</h2>
+  <prism-chart src="../cross_impl/layer_actual_vs_benchmark/scene.json"></prism-chart>
+
+  <h2>pie</h2>
+  <prism-chart src="../cross_impl/pie/scene.json"></prism-chart>
+
+  <h2>sankey_user_flow</h2>
+  <prism-chart src="../cross_impl/sankey_user_flow/scene.json"></prism-chart>
+
+  <h2>Shared dataset registry demo</h2>
+  <p>Three charts using two shared datasets — only two fetches occur:</p>
+  <prism-dataset name="bars"  src="../cross_impl/bar_basic/scene.json"></prism-dataset>
+  <prism-dataset name="lines" src="../cross_impl/line_basic/scene.json"></prism-dataset>
+  <prism-chart src="../cross_impl/bar_basic/scene.json"></prism-chart>
+  <prism-chart src="../cross_impl/bar_basic/scene.json"></prism-chart>
+  <prism-chart src="../cross_impl/line_basic/scene.json"></prism-chart>
+
+  <script type="module">
+    // Selection event surface (P12 stub; populated in P13).
+    document.querySelectorAll("prism-chart").forEach((c) => {
+      c.addEventListener("prism:select", (e) => {
+        console.log("prism:select", e.detail);
+      });
+    });
+  </script>
+</body>
+</html>
