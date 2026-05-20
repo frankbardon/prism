@@ -2,7 +2,6 @@ package devtools
 
 import (
 	"bytes"
-	"errors"
 	"fmt"
 	"os"
 	"os/exec"
@@ -184,11 +183,6 @@ func diffContext(a, b []byte, n int) string {
 	}
 	return "(no diff?)"
 }
-
-// errNotInstalled is the sentinel for the skip path when the runner
-// is missing its node deps. Kept as a named var so callers can
-// errors.Is check it instead of string-matching.
-var errNotInstalled = errors.New("happy-dom not installed")
 
 // normaliseSVG canonicalises an SVG byte stream so two implementations
 // that differ only in serialiser cosmetics still compare equal. Per
