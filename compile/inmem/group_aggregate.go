@@ -268,19 +268,9 @@ func computeAggregate(tbl *table.Table, op nodes.AggOp, idx []int, shareTotals m
 	case "distinct":
 		return distinct(idx, col), nil
 	case "ci0":
-		m := mean(vals)
-		s := math.Sqrt(variance(vals))
-		if len(vals) == 0 {
-			return 0, nil
-		}
-		return m - 1.96*s/math.Sqrt(float64(len(vals))), nil
+		return ciBound(vals, -1), nil
 	case "ci1":
-		m := mean(vals)
-		s := math.Sqrt(variance(vals))
-		if len(vals) == 0 {
-			return 0, nil
-		}
-		return m + 1.96*s/math.Sqrt(float64(len(vals))), nil
+		return ciBound(vals, +1), nil
 	case "wmean":
 		weights, err := siblingValues(tbl, op.Field, "_weight", idx)
 		if err != nil {
@@ -467,4 +457,38 @@ func weightedMean(vals, weights []float64) float64 {
 		return 0
 	}
 	return num / den
+}
+
+// ciBound mirrors Pulse's AGG_CI_LOWER / AGG_CI_UPPER bound2() math
+// for default 0.95-confidence normal-method intervals: sample variance,
+// Beasley-Springer-Moro inverse-normal quantile. Sign +1 = upper,
+// -1 = lower. Returns NaN when n < 2 (matches Pulse).
+func ciBound(vals []float64, sign float64) float64 {
+	n := len(vals)
+	if n < 2 {
+		return math.NaN()
+	}
+	m := mean(vals)
+	sampleVar := variance(vals) * float64(n) / float64(n-1)
+	if sampleVar < 0 {
+		sampleVar = 0
+	}
+	stderr := math.Sqrt(sampleVar) / math.Sqrt(float64(n))
+	z := normalQuantile((1 + 0.95) / 2)
+	return m + sign*z*stderr
+}
+
+// normalQuantile is the inverse CDF of the standard normal. Pulse
+// v0.10.0 uses Beasley-Springer-Moro (~1e-9 accuracy); stdlib
+// math.Erfinv via `z = sqrt(2) * erfinv(2p - 1)` is mathematically
+// equivalent and matches Pulse output well within the parity
+// tolerance.
+func normalQuantile(p float64) float64 {
+	if p <= 0 {
+		return math.Inf(-1)
+	}
+	if p >= 1 {
+		return math.Inf(1)
+	}
+	return math.Sqrt2 * math.Erfinv(2*p-1)
 }
