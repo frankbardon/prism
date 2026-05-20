@@ -1,0 +1,17 @@
+{
+  "//": "Workspace settings for the Prism repo. Wires VSCode JSON validation to the in-repo schema bundle under schema/v1/ — the same bundle prism init extracts into .prism/schemas/ for downstream projects. Edit schema/v1/spec.schema.json (and siblings) and VSCode picks up changes immediately; no init / copy step.",
+  "json.schemas": [
+    {
+      "fileMatch": [
+        "*.prism.json",
+        "**/gallery/**/*.prism.json",
+        "**/testdata/**/*.prism.json",
+        "**/examples/**/*.prism.json"
+      ],
+      "url": "./schema/v1/spec.schema.json"
+    }
+  ],
+  "files.associations": {
+    "*.prism.json": "json"
+  }
+}

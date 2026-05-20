@@ -14,7 +14,12 @@ docs/src/gallery/**/*.scene.json
 
 .DS_Store
 .idea/
-.vscode/
+
+# VSCode: share workspace settings + recommended extensions, ignore
+# per-user state (launch, tasks, history, etc.).
+.vscode/*
+!.vscode/settings.json
+!.vscode/extensions.json
 
 # Cross-impl parity harness — npm dev deps installed locally per
 # internal/devtools/cross-impl-runner/README.md. Never commit.
