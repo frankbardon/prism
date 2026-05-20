@@ -15,6 +15,10 @@ docs/src/gallery/**/*.scene.json
 .DS_Store
 .idea/
 
+# Planning artefacts — local-only design history, phase plans, locked
+# decisions. Kept on disk for context but not published.
+.planning/
+
 # VSCode: share workspace settings + recommended extensions, ignore
 # per-user state (launch, tasks, history, etc.).
 .vscode/*
