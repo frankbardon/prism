@@ -11,12 +11,15 @@ package staticfs
 
 import "embed"
 
-// Tree is the full vendored static tree (everything under
-// static/vendor/prism/, recursively). The `all:` prefix includes
-// directories whose names begin with "_" or "." per the embed
-// docs — defensive in case a vendored file ever uses one.
+// Tree carries the vendored ESM browser surface (the four .mjs
+// files plus README). `prism.wasm` and `wasm_exec.js` are NOT
+// embedded — they are produced by `make build-wasm`, can be
+// dropped into static/vendor/prism/ at docs-build time for mdBook
+// to pick up, and shipped by `prism static-bundle --wasm` from
+// their build artefact locations. Keeping them out of the embed
+// FS prevents the host CLI binary from inflating by ~70 MiB.
 //
-//go:embed all:vendor/prism
+//go:embed vendor/prism/*.mjs vendor/prism/*.md
 var Tree embed.FS
 
 // BundleRoot is the directory inside Tree that maps to the

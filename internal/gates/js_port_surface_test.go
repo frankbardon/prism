@@ -55,8 +55,18 @@ func TestPrismJSPortSurfaceTrimmed(t *testing.T) {
 		wantSet[n] = true
 	}
 
+	// prism.wasm + wasm_exec.js are transient build outputs staged
+	// into this directory by `make docs` so mdBook picks them up;
+	// .gitignore keeps them out of source control. Allow but do not
+	// require their presence so the gate stays green whether or not
+	// docs have been built.
+	allowedTransient := map[string]bool{
+		"prism.wasm":   true,
+		"wasm_exec.js": true,
+	}
+
 	for _, name := range got {
-		if !wantSet[name] {
+		if !wantSet[name] && !allowedTransient[name] {
 			t.Errorf("unexpected file under static/vendor/prism/: %s (post-P17 surface is %v; remove or document the addition in CLAUDE.md)", name, want)
 		}
 	}

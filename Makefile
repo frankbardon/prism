@@ -1,4 +1,4 @@
-.PHONY: build build-wasm clean test test-race cover fmt fmt-check vet lint proto docs docs-scenes docs-serve docs-clean
+.PHONY: build build-wasm clean test test-race cover fmt fmt-check vet lint proto docs docs-scenes docs-wasm-stage docs-serve docs-clean
 
 BINARY_NAME=prism
 WASM_BINARY=prism.wasm
@@ -103,14 +103,27 @@ $(GALLERY_DIR)/%.scene.json: $(GALLERY_DIR)/%.prism.json $(BUILD_DIR)/$(BINARY_N
 		rm -f $@; \
 	}
 
-docs: build docs-scenes
+# docs-wasm-stage copies the WASM build outputs from bin/ into
+# static/vendor/prism/ so mdBook picks them up via the
+# docs/src/static symlink. The files are gitignored (P17): they
+# only exist locally to serve the live <prism-chart> gallery
+# (docs/src/gallery/index.html). docs/docs-serve depend on this
+# so a fresh checkout + `make docs-serve` works without manual
+# staging steps.
+docs-wasm-stage: build-wasm
+	@cp $(BUILD_DIR)/$(WASM_BINARY) static/vendor/prism/$(WASM_BINARY)
+	@cp $(BUILD_DIR)/wasm_exec.js   static/vendor/prism/wasm_exec.js
+	@echo "docs-wasm-stage: staged prism.wasm + wasm_exec.js into static/vendor/prism/"
+
+docs: build docs-scenes docs-wasm-stage
 	mdbook build docs
 
-docs-serve: build docs-scenes
+docs-serve: build docs-scenes docs-wasm-stage
 	mdbook serve docs --open
 
 docs-clean:
 	rm -rf docs/book
+	rm -f static/vendor/prism/$(WASM_BINARY) static/vendor/prism/wasm_exec.js
 	find $(GALLERY_DIR) -name '*.scene.json' -delete 2>/dev/null || true
 
 .DEFAULT_GOAL := build

@@ -4,6 +4,12 @@ bin/
 coverage.txt
 coverage.out
 
+# WASM artefacts staged into static/vendor/prism/ by `make docs` so
+# mdBook picks them up next to prism.mjs. The canonical source lives
+# in bin/ after `make build-wasm`; these are local build outputs.
+static/vendor/prism/prism.wasm
+static/vendor/prism/wasm_exec.js
+
 # mdBook output — `make docs` builds into docs/book/, `make docs-clean` removes it.
 docs/book/
 
@@ -31,7 +37,7 @@ internal/devtools/cross-impl-runner/node_modules/
 internal/devtools/cross-impl-runner/package-lock.json
 
 # Per-run cross-impl artifacts. scene.json + go.svg are committed
-# (the Go-side canonical inputs); js.svg + diff.txt are generated
+# (the Go-side canonical inputs); wasm.svg + diff.txt are generated
 # each test run.
-testdata/cross_impl/**/js.svg
+testdata/cross_impl/**/wasm.svg
 testdata/cross_impl/**/diff.txt
