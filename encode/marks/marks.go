@@ -122,11 +122,7 @@ func Encode(markType string, in Inputs) ([]scene.Mark, *scene.Warning, error) {
 	case "funnel":
 		marksOut, err = encodeFunnel(in)
 	case "sparkline":
-		return nil, &scene.Warning{
-			Code:    scene.WarnMarkNotImplemented,
-			Message: fmt.Sprintf("mark type %q lands later in P11; layer rendered without marks.", markType),
-			Details: map[string]any{"mark": markType},
-		}, nil
+		marksOut, err = encodeSparkline(in)
 	default:
 		return nil, nil, prismerrors.New(
 			"PRISM_ENCODE_001",

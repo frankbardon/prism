@@ -94,7 +94,16 @@ func Encode(s *spec.Spec, tables map[plan.NodeID]*table.Table, tipID plan.NodeID
 	}
 
 	hasTitle := s.Title != nil
-	layout := Compute(width, height, hasTitle)
+	// Sparkline (D067): 4-px-padded plot rect, no axis/legend/title
+	// reservation; the title block, axes, and legends are suppressed
+	// at scene-assembly time below.
+	var layout Layout
+	if markType == "sparkline" {
+		layout = ComputeSparkline(width, height)
+		hasTitle = false
+	} else {
+		layout = Compute(width, height, hasTitle)
+	}
 
 	var warnings []scene.Warning
 
@@ -152,13 +161,16 @@ func Encode(s *spec.Spec, tables map[plan.NodeID]*table.Table, tipID plan.NodeID
 		}
 	}
 
-	// Build axes (only when the channel was bound).
+	// Build axes (only when the channel was bound). Sparkline (D067)
+	// suppresses axes entirely — leave axes empty.
 	axes := make([]scene.Axis, 0, 2)
-	if xScale != nil {
-		axes = append(axes, BuildAxisWithOpts(xScale, scene.ChannelX, scene.AxisPositionBottom, layout.Plot, axisOptsFor(enc.X)))
-	}
-	if yScale != nil {
-		axes = append(axes, BuildAxisWithOpts(yScale, scene.ChannelY, scene.AxisPositionLeft, layout.Plot, axisOptsFor(enc.Y)))
+	if markType != "sparkline" {
+		if xScale != nil {
+			axes = append(axes, BuildAxisWithOpts(xScale, scene.ChannelX, scene.AxisPositionBottom, layout.Plot, axisOptsFor(enc.X)))
+		}
+		if yScale != nil {
+			axes = append(axes, BuildAxisWithOpts(yScale, scene.ChannelY, scene.AxisPositionLeft, layout.Plot, axisOptsFor(enc.Y)))
+		}
 	}
 
 	// Resolve color channel (P05 supports nominal only).
@@ -309,10 +321,17 @@ func Encode(s *spec.Spec, tables map[plan.NodeID]*table.Table, tipID plan.NodeID
 		Mark:  specMarkToScene(markType),
 		Marks: markList,
 	}
-	// Build legends for non-trivial mark channels.
+	// Build legends for non-trivial mark channels. Sparkline (D067)
+	// suppresses legends entirely.
 	var legends []scene.Legend
-	if colorChannel != nil && len(colorChannel.Categories) > 1 {
+	if markType != "sparkline" && colorChannel != nil && len(colorChannel.Categories) > 1 {
+		// Funnel binds color on the stage field which lines up 1:1 with
+		// the bars; build the legend over the source field for sankey,
+		// the color field otherwise.
 		title := enc.Color.Field
+		if title == "" && enc.Source != nil {
+			title = enc.Source.Field
+		}
 		legend := BuildSymbolLegend(LegendInputs{
 			Channel:    scene.ChannelColor,
 			Title:      title,

@@ -47,3 +47,17 @@ func Compute(width, height float64, hasTitle bool) Layout {
 	}
 	return Layout{Frame: frame, Plot: plot, Padding: pad}
 }
+
+// ComputeSparkline returns a Layout for a sparkline plot: 4-px
+// padding all sides, no axis/legend/title reservation. See D067.
+func ComputeSparkline(width, height float64) Layout {
+	pad := Padding{Top: 4, Right: 4, Bottom: 4, Left: 4}
+	frame := scene.Rect{X: 0, Y: 0, W: width, H: height}
+	plot := scene.Rect{
+		X: pad.Left,
+		Y: pad.Top,
+		W: width - pad.Left - pad.Right,
+		H: height - pad.Top - pad.Bottom,
+	}
+	return Layout{Frame: frame, Plot: plot, Padding: pad}
+}
