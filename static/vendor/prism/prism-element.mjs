@@ -16,7 +16,7 @@
 // Charts use shadow DOM (mode: "open") so CSS variables from the
 // host page propagate into the SVG `<style>` block (D073).
 
-import { render } from "./prism.mjs";
+import { render, executeSpec } from "./prism.mjs";
 import { PrismResolver } from "./prism-resolver.mjs";
 import {
   listen,
@@ -176,8 +176,36 @@ class PrismChart extends HTMLElement {
         return;
       }
     } else if (spec) {
-      this._renderError("Client-side spec compile requires the server endpoint (lands in P14). Use the `src` attribute to point at a precompiled Scene JSON.");
-      return;
+      // Two shapes accepted: an inline JSON literal (`spec='{"$schema":...}'`)
+      // or a URL pointing at a `.prism.json` file (`spec="/specs/foo.prism.json"`).
+      // The latter mirrors the Scene URL path so static hosts can serve raw
+      // specs without compiling them up front.
+      let parsed;
+      const trimmed = spec.trim();
+      if (trimmed.startsWith("{")) {
+        try { parsed = JSON.parse(trimmed); }
+        catch (err) {
+          this._renderError(`Spec attribute is not valid JSON: ${err.message}`);
+          return;
+        }
+      } else {
+        try { parsed = await PrismResolver.fetchJSON(trimmed); }
+        catch (err) {
+          this._renderError(`Failed to load spec from ${trimmed}: ${err.message}`);
+          return;
+        }
+      }
+      try {
+        const datasets = PrismResolver.snapshot();
+        const opts = {};
+        const themeAttr = this.getAttribute("theme");
+        if (themeAttr) opts.theme = themeAttr;
+        sceneDoc = await executeSpec(parsed, datasets, opts);
+      } catch (err) {
+        const code = err.prismCode ? `${err.prismCode}: ` : "";
+        this._renderError(`Spec compile failed: ${code}${err.message}`);
+        return;
+      }
     } else {
       this._renderError("No `src` or `spec` attribute provided.");
       return;
@@ -191,11 +219,13 @@ class PrismChart extends HTMLElement {
     }
 
     try {
-      this._handle = render(sceneDoc, this.shadowRoot);
+      this._handle = await render(sceneDoc, this.shadowRoot);
     } catch (err) {
       this._renderError(`Render failed: ${err.message}`);
       return;
     }
+    if (token !== this._renderToken) return; // newer render started while WASM resolved
+    if (!this.isConnected) return;
 
     // Forward selection events from the SceneHandle's root onto the
     // host element. Use composed:true so listeners outside the shadow
