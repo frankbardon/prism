@@ -557,29 +557,157 @@ function _tickLabel(parent, label, x, y, anchor, angle, doc) {
 // Legends (basic — solid + symbol swatches; gradient skipped in v1)
 // ---------------------------------------------------------------- //
 
+// _renderLegends mirrors render/svg/legends.go renderLegends.
+// Wraps every Scene.Legend in a single <g class="prism-legends">
+// container, then emits one <g class="prism-legend prism-legend-{channel}">
+// per legend with title + entries (solid + gradient + symbol).
 function _renderLegends(parent, legends, doc) {
+  if (!legends || legends.length === 0) return;
+  const wrap = doc.createElementNS(SVG_NS, "g");
+  wrap.setAttribute("class", "prism-legends");
   for (const lg of legends) {
-    const g = doc.createElementNS(SVG_NS, "g");
-    g.setAttribute("class", "prism-legend");
-    if (lg.id) g.setAttribute("data-prism-legend-id", lg.id);
-    // The Go renderer has a richer legend layout; the JS port mirrors
-    // the structural class hierarchy. Full visual parity for legends
-    // is a P12.5 follow-up (not gated by the curated fixture set).
-    parent.appendChild(g);
+    _renderLegend(wrap, lg, doc);
   }
+  parent.appendChild(wrap);
+}
+
+function _renderLegend(parent, lg, doc) {
+  const g = doc.createElementNS(SVG_NS, "g");
+  g.setAttribute("class", `prism-legend prism-legend-${lg.channel || ""}`);
+  g.setAttribute("data-prism-legend-id", lg.id || "");
+
+  const frame = lg.frame || { x: 0, y: 0, w: 0, h: 0 };
+  const titleH = 14;
+
+  if (lg.title) {
+    const t = doc.createElementNS(SVG_NS, "text");
+    t.setAttribute("class", "prism-legend-title");
+    t.setAttribute("x", fmt(frame.x + 4));
+    t.setAttribute("y", fmt(frame.y + titleH));
+    t.textContent = lg.title;
+    g.appendChild(t);
+  }
+  const rowOffset = lg.title ? (titleH + 4) : 0;
+
+  const entries = Array.isArray(lg.entries) ? lg.entries : [];
+  entries.forEach((entry, i) => {
+    const y = frame.y + rowOffset + i * 18 + 8;
+    const swatch = entry.swatch || {};
+    switch (swatch.type) {
+      case "solid": {
+        const sw = doc.createElementNS(SVG_NS, "rect");
+        sw.setAttribute("class", "prism-legend-swatch");
+        sw.setAttribute("x", fmt(frame.x + 4));
+        sw.setAttribute("y", fmt(y));
+        sw.setAttribute("width",  fmt(12));
+        sw.setAttribute("height", fmt(12));
+        if (swatch.color) sw.setAttribute("fill", _colorCSS(swatch.color));
+        g.appendChild(sw);
+        const tt = doc.createElementNS(SVG_NS, "text");
+        tt.setAttribute("class", "prism-legend-label");
+        tt.setAttribute("x", fmt(frame.x + 22));
+        tt.setAttribute("y", fmt(y + 10));
+        tt.textContent = entry.label || "";
+        g.appendChild(tt);
+        break;
+      }
+      case "gradient": {
+        const sw = doc.createElementNS(SVG_NS, "rect");
+        sw.setAttribute("class", "prism-legend-swatch");
+        sw.setAttribute("x", fmt(frame.x + 4));
+        sw.setAttribute("y", fmt(y));
+        sw.setAttribute("width",  fmt(12));
+        sw.setAttribute("height", fmt(frame.h - rowOffset - 16));
+        if (swatch.gradient_id) sw.setAttribute("fill", `url(#${swatch.gradient_id})`);
+        g.appendChild(sw);
+        const tt = doc.createElementNS(SVG_NS, "text");
+        tt.setAttribute("class", "prism-legend-label");
+        tt.setAttribute("x", fmt(frame.x + 22));
+        tt.setAttribute("y", fmt(y + 10));
+        tt.textContent = entry.label || "";
+        g.appendChild(tt);
+        break;
+      }
+      case "symbol": {
+        const sym = doc.createElementNS(SVG_NS, "circle");
+        sym.setAttribute("class", "prism-legend-symbol");
+        sym.setAttribute("cx", fmt(frame.x + 10));
+        sym.setAttribute("cy", fmt(y + 6));
+        sym.setAttribute("r",  fmt(5));
+        if (swatch.color) sym.setAttribute("fill", _colorCSS(swatch.color));
+        g.appendChild(sym);
+        const tt = doc.createElementNS(SVG_NS, "text");
+        tt.setAttribute("class", "prism-legend-label");
+        tt.setAttribute("x", fmt(frame.x + 22));
+        tt.setAttribute("y", fmt(y + 10));
+        tt.textContent = entry.label || "";
+        g.appendChild(tt);
+        break;
+      }
+    }
+  });
+
+  parent.appendChild(g);
 }
 
 // ---------------------------------------------------------------- //
 // Defs (gradients / patterns / clips) — pass-through for v1
 // ---------------------------------------------------------------- //
 
+// _renderDefs mirrors render/svg/legends.go renderDefs. Skipped
+// when defs is empty (no gradients, no patterns, no clips) — the
+// Go renderer's guard matches.
 function _renderDefs(parent, defs, doc) {
+  if (!defs) return;
+  const grads = defs.gradients || {};
+  const pats  = defs.patterns  || {};
+  const clips = defs.clips     || {};
+  if (Object.keys(grads).length === 0 && Object.keys(pats).length === 0 && Object.keys(clips).length === 0) {
+    return;
+  }
   const el = doc.createElementNS(SVG_NS, "defs");
-  // Gradients + patterns + clips — emit empty placeholders for v1.
-  // Real gradient + pattern + clip rendering ships with selection
-  // highlighting in P13.
+  for (const [id, g] of Object.entries(grads)) {
+    if (g.type === "linear") {
+      const grad = doc.createElementNS(SVG_NS, "linearGradient");
+      grad.setAttribute("id", id);
+      grad.setAttribute("x1", fmt(g.x1 || 0));
+      grad.setAttribute("y1", fmt(g.y1 || 0));
+      grad.setAttribute("x2", fmt(g.x2 || 0));
+      grad.setAttribute("y2", fmt(g.y2 || 0));
+      for (const s of (g.stops || [])) {
+        const stop = doc.createElementNS(SVG_NS, "stop");
+        stop.setAttribute("offset", fmt(s.offset));
+        stop.setAttribute("stop-color", _colorCSS(s.color));
+        grad.appendChild(stop);
+      }
+      el.appendChild(grad);
+    } else if (g.type === "radial") {
+      const grad = doc.createElementNS(SVG_NS, "radialGradient");
+      grad.setAttribute("id", id);
+      grad.setAttribute("cx", fmt(g.x1 || 0));
+      grad.setAttribute("cy", fmt(g.y1 || 0));
+      grad.setAttribute("r",  fmt(g.x2 || 0));
+      for (const s of (g.stops || [])) {
+        const stop = doc.createElementNS(SVG_NS, "stop");
+        stop.setAttribute("offset", fmt(s.offset));
+        stop.setAttribute("stop-color", _colorCSS(s.color));
+        grad.appendChild(stop);
+      }
+      el.appendChild(grad);
+    }
+  }
+  for (const [id, c] of Object.entries(clips)) {
+    const cp = doc.createElementNS(SVG_NS, "clipPath");
+    cp.setAttribute("id", id);
+    const rect = doc.createElementNS(SVG_NS, "rect");
+    rect.setAttribute("x", fmt(c.x || 0));
+    rect.setAttribute("y", fmt(c.y || 0));
+    rect.setAttribute("width",  fmt(c.w || 0));
+    rect.setAttribute("height", fmt(c.h || 0));
+    cp.appendChild(rect);
+    el.appendChild(cp);
+  }
   parent.appendChild(el);
-  void defs;
 }
 
 // ---------------------------------------------------------------- //

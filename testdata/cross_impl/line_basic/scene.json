@@ -1,0 +1,343 @@
+{
+  "version": "1.0",
+  "theme": {
+    "name": "light",
+    "color_axis": {
+      "r": 107,
+      "g": 114,
+      "b": 128,
+      "a": 255
+    },
+    "color_grid": {
+      "r": 229,
+      "g": 231,
+      "b": 235,
+      "a": 255
+    },
+    "color_text": {
+      "r": 17,
+      "g": 24,
+      "b": 39,
+      "a": 255
+    },
+    "background": "transparent",
+    "font_sans": "Inter, system-ui, sans-serif",
+    "font_mono": "ui-monospace, SF Mono, monospace",
+    "css": "\u003cstyle\u003e:root{--prism-color-axis:#6b7280;--prism-color-grid:#e5e7eb;--prism-color-text:#111827;--prism-color-bg:transparent;--prism-font-sans:Inter, system-ui, sans-serif;--prism-font-mono:ui-monospace, SF Mono, monospace;--prism-font-size-label:11px;--prism-font-size-title:16px;--prism-font-size-axis-title:12px;}.prism-axis-domain{stroke:var(--prism-color-axis);fill:none;}.prism-axis-tick{stroke:var(--prism-color-axis);}.prism-axis-label{fill:var(--prism-color-text);font-family:var(--prism-font-sans);font-size:var(--prism-font-size-label,11px);}.prism-axis-title{fill:var(--prism-color-text);font-family:var(--prism-font-sans);font-size:var(--prism-font-size-axis-title,12px);font-weight:600;}.prism-grid-line{stroke:var(--prism-color-grid);}.prism-title{fill:var(--prism-color-text);font-family:var(--prism-font-sans);font-size:var(--prism-font-size-title,16px);font-weight:600;}.prism-legend-title{fill:var(--prism-color-text);font-family:var(--prism-font-sans);font-size:12px;font-weight:600;}.prism-legend-label{fill:var(--prism-color-text);font-family:var(--prism-font-sans);font-size:11px;}.prism-legend-swatch{stroke:none;}\u003c/style\u003e"
+  },
+  "grid": {
+    "layout": {
+      "rows": 1,
+      "cols": 1,
+      "headers": {}
+    },
+    "cells": [
+      {
+        "row": 0,
+        "col": 0,
+        "scene": {
+          "id": "scene-0",
+          "frame": {
+            "x": 0,
+            "y": 0,
+            "w": 800,
+            "h": 600
+          },
+          "plot": {
+            "x": 40,
+            "y": 50,
+            "w": 740,
+            "h": 510
+          },
+          "title": {
+            "content": "Score over time",
+            "x": 410,
+            "y": 20,
+            "style": {}
+          },
+          "axes": [
+            {
+              "id": "x-axis",
+              "channel": "x",
+              "position": "bottom",
+              "scale": {
+                "type": "time",
+                "domain": [
+                  1767225600000,
+                  1767398400000
+                ],
+                "range": [
+                  40,
+                  780
+                ]
+              },
+              "ticks": [
+                {
+                  "value": 1767225600000,
+                  "pixel": 40,
+                  "label": "00:00"
+                },
+                {
+                  "value": 1767258000000,
+                  "pixel": 178.75,
+                  "label": "09:00"
+                },
+                {
+                  "value": 1767290400000,
+                  "pixel": 317.5,
+                  "label": "18:00"
+                },
+                {
+                  "value": 1767322800000,
+                  "pixel": 456.25,
+                  "label": "03:00"
+                },
+                {
+                  "value": 1767355200000,
+                  "pixel": 595,
+                  "label": "12:00"
+                },
+                {
+                  "value": 1767387600000,
+                  "pixel": 733.75,
+                  "label": "21:00"
+                }
+              ],
+              "title": "day",
+              "domain": {
+                "x1": 40,
+                "y1": 560,
+                "x2": 780,
+                "y2": 560
+              },
+              "grid": [
+                {
+                  "x1": 40,
+                  "y1": 50,
+                  "x2": 40,
+                  "y2": 560
+                },
+                {
+                  "x1": 178.75,
+                  "y1": 50,
+                  "x2": 178.75,
+                  "y2": 560
+                },
+                {
+                  "x1": 317.5,
+                  "y1": 50,
+                  "x2": 317.5,
+                  "y2": 560
+                },
+                {
+                  "x1": 456.25,
+                  "y1": 50,
+                  "x2": 456.25,
+                  "y2": 560
+                },
+                {
+                  "x1": 595,
+                  "y1": 50,
+                  "x2": 595,
+                  "y2": 560
+                },
+                {
+                  "x1": 733.75,
+                  "y1": 50,
+                  "x2": 733.75,
+                  "y2": 560
+                }
+              ],
+              "label_style": {},
+              "title_style": {}
+            },
+            {
+              "id": "y-axis",
+              "channel": "y",
+              "position": "left",
+              "scale": {
+                "type": "linear",
+                "domain": [
+                  0,
+                  0.61
+                ],
+                "range": [
+                  560,
+                  50
+                ]
+              },
+              "ticks": [
+                {
+                  "value": 0,
+                  "pixel": 560,
+                  "label": "0"
+                },
+                {
+                  "value": 0.05,
+                  "pixel": 518.1967213114754,
+                  "label": "",
+                  "minor": true
+                },
+                {
+                  "value": 0.1,
+                  "pixel": 476.39344262295083,
+                  "label": "0.1",
+                  "label_hidden": true
+                },
+                {
+                  "value": 0.15000000000000002,
+                  "pixel": 434.5901639344262,
+                  "label": "",
+                  "minor": true
+                },
+                {
+                  "value": 0.2,
+                  "pixel": 392.7868852459016,
+                  "label": "0.2"
+                },
+                {
+                  "value": 0.25,
+                  "pixel": 350.983606557377,
+                  "label": "",
+                  "minor": true
+                },
+                {
+                  "value": 0.3,
+                  "pixel": 309.1803278688525,
+                  "label": "0.3",
+                  "label_hidden": true
+                },
+                {
+                  "value": 0.35,
+                  "pixel": 267.3770491803279,
+                  "label": "",
+                  "minor": true
+                },
+                {
+                  "value": 0.4,
+                  "pixel": 225.57377049180326,
+                  "label": "0.4"
+                },
+                {
+                  "value": 0.45,
+                  "pixel": 183.77049180327867,
+                  "label": "",
+                  "minor": true
+                },
+                {
+                  "value": 0.5,
+                  "pixel": 141.9672131147541,
+                  "label": "0.5",
+                  "label_hidden": true
+                },
+                {
+                  "value": 0.55,
+                  "pixel": 100.16393442622945,
+                  "label": "",
+                  "minor": true
+                },
+                {
+                  "value": 0.6,
+                  "pixel": 58.360655737704924,
+                  "label": "0.6"
+                }
+              ],
+              "title": "score",
+              "domain": {
+                "x1": 40,
+                "y1": 50,
+                "x2": 40,
+                "y2": 560
+              },
+              "grid": [
+                {
+                  "x1": 40,
+                  "y1": 560,
+                  "x2": 780,
+                  "y2": 560
+                },
+                {
+                  "x1": 40,
+                  "y1": 476.39344262295083,
+                  "x2": 780,
+                  "y2": 476.39344262295083
+                },
+                {
+                  "x1": 40,
+                  "y1": 392.7868852459016,
+                  "x2": 780,
+                  "y2": 392.7868852459016
+                },
+                {
+                  "x1": 40,
+                  "y1": 309.1803278688525,
+                  "x2": 780,
+                  "y2": 309.1803278688525
+                },
+                {
+                  "x1": 40,
+                  "y1": 225.57377049180326,
+                  "x2": 780,
+                  "y2": 225.57377049180326
+                },
+                {
+                  "x1": 40,
+                  "y1": 141.9672131147541,
+                  "x2": 780,
+                  "y2": 141.9672131147541
+                },
+                {
+                  "x1": 40,
+                  "y1": 58.360655737704924,
+                  "x2": 780,
+                  "y2": 58.360655737704924
+                }
+              ],
+              "label_style": {},
+              "title_style": {}
+            }
+          ],
+          "layers": [
+            {
+              "id": "layer-0",
+              "mark": "line",
+              "marks": [
+                {
+                  "type": "line",
+                  "id": "line-0",
+                  "style": {
+                    "stroke": {
+                      "r": 59,
+                      "g": 130,
+                      "b": 246,
+                      "a": 255
+                    },
+                    "stroke_width": 1.5
+                  },
+                  "line": {
+                    "points": [
+                      [
+                        40,
+                        208.85245901639345
+                      ],
+                      [
+                        410,
+                        100.16393442622945
+                      ],
+                      [
+                        780,
+                        50
+                      ]
+                    ],
+                    "curve": "linear"
+                  }
+                }
+              ]
+            }
+          ]
+        }
+      }
+    ],
+    "shared": {}
+  }
+}

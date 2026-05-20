@@ -1,0 +1,182 @@
+{
+  "version": "1.0",
+  "theme": {
+    "name": "light",
+    "color_axis": {
+      "r": 107,
+      "g": 114,
+      "b": 128,
+      "a": 255
+    },
+    "color_grid": {
+      "r": 229,
+      "g": 231,
+      "b": 235,
+      "a": 255
+    },
+    "color_text": {
+      "r": 17,
+      "g": 24,
+      "b": 39,
+      "a": 255
+    },
+    "background": "transparent",
+    "font_sans": "Inter, system-ui, sans-serif",
+    "font_mono": "ui-monospace, SF Mono, monospace",
+    "css": "\u003cstyle\u003e:root{--prism-color-axis:#6b7280;--prism-color-grid:#e5e7eb;--prism-color-text:#111827;--prism-color-bg:transparent;--prism-font-sans:Inter, system-ui, sans-serif;--prism-font-mono:ui-monospace, SF Mono, monospace;--prism-font-size-label:11px;--prism-font-size-title:16px;--prism-font-size-axis-title:12px;}.prism-axis-domain{stroke:var(--prism-color-axis);fill:none;}.prism-axis-tick{stroke:var(--prism-color-axis);}.prism-axis-label{fill:var(--prism-color-text);font-family:var(--prism-font-sans);font-size:var(--prism-font-size-label,11px);}.prism-axis-title{fill:var(--prism-color-text);font-family:var(--prism-font-sans);font-size:var(--prism-font-size-axis-title,12px);font-weight:600;}.prism-grid-line{stroke:var(--prism-color-grid);}.prism-title{fill:var(--prism-color-text);font-family:var(--prism-font-sans);font-size:var(--prism-font-size-title,16px);font-weight:600;}.prism-legend-title{fill:var(--prism-color-text);font-family:var(--prism-font-sans);font-size:12px;font-weight:600;}.prism-legend-label{fill:var(--prism-color-text);font-family:var(--prism-font-sans);font-size:11px;}.prism-legend-swatch{stroke:none;}\u003c/style\u003e"
+  },
+  "grid": {
+    "layout": {
+      "rows": 1,
+      "cols": 1,
+      "headers": {}
+    },
+    "cells": [
+      {
+        "row": 0,
+        "col": 0,
+        "scene": {
+          "id": "scene-0",
+          "frame": {
+            "x": 0,
+            "y": 0,
+            "w": 800,
+            "h": 600
+          },
+          "plot": {
+            "x": 40,
+            "y": 50,
+            "w": 740,
+            "h": 510
+          },
+          "title": {
+            "content": "Region share (pie)",
+            "x": 410,
+            "y": 20,
+            "style": {}
+          },
+          "legends": [
+            {
+              "id": "legend-color",
+              "channel": "color",
+              "position": "top-right",
+              "title": "region",
+              "entries": [
+                {
+                  "label": "NA",
+                  "swatch": {
+                    "type": "solid",
+                    "color": {
+                      "r": 59,
+                      "g": 130,
+                      "b": 246,
+                      "a": 255
+                    }
+                  }
+                },
+                {
+                  "label": "EU",
+                  "swatch": {
+                    "type": "solid",
+                    "color": {
+                      "r": 239,
+                      "g": 68,
+                      "b": 68,
+                      "a": 255
+                    }
+                  }
+                },
+                {
+                  "label": "APAC",
+                  "swatch": {
+                    "type": "solid",
+                    "color": {
+                      "r": 16,
+                      "g": 185,
+                      "b": 129,
+                      "a": 255
+                    }
+                  }
+                }
+              ],
+              "frame": {
+                "x": 676,
+                "y": 50,
+                "w": 104,
+                "h": 56
+              },
+              "title_style": {},
+              "label_style": {}
+            }
+          ],
+          "layers": [
+            {
+              "id": "layer-0",
+              "mark": "arc",
+              "marks": [
+                {
+                  "type": "arc",
+                  "id": "pie-0",
+                  "style": {
+                    "fill": {
+                      "r": 59,
+                      "g": 130,
+                      "b": 246,
+                      "a": 255
+                    }
+                  },
+                  "arc": {
+                    "cx": 410,
+                    "cy": 305,
+                    "start_angle": -1.5707963267948966,
+                    "end_angle": 1.0681415022205296,
+                    "outer_r": 247
+                  }
+                },
+                {
+                  "type": "arc",
+                  "id": "pie-1",
+                  "style": {
+                    "fill": {
+                      "r": 239,
+                      "g": 68,
+                      "b": 68,
+                      "a": 255
+                    }
+                  },
+                  "arc": {
+                    "cx": 410,
+                    "cy": 305,
+                    "start_angle": 1.0681415022205296,
+                    "end_angle": 3.015928947446201,
+                    "outer_r": 247
+                  }
+                },
+                {
+                  "type": "arc",
+                  "id": "pie-2",
+                  "style": {
+                    "fill": {
+                      "r": 16,
+                      "g": 185,
+                      "b": 129,
+                      "a": 255
+                    }
+                  },
+                  "arc": {
+                    "cx": 410,
+                    "cy": 305,
+                    "start_angle": 3.015928947446201,
+                    "end_angle": 4.71238898038469,
+                    "outer_r": 247
+                  }
+                }
+              ]
+            }
+          ]
+        }
+      }
+    ],
+    "shared": {}
+  }
+}

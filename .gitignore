@@ -5,3 +5,14 @@ coverage.txt
 .DS_Store
 .idea/
 .vscode/
+
+# Cross-impl parity harness — npm dev deps installed locally per
+# internal/devtools/cross-impl-runner/README.md. Never commit.
+internal/devtools/cross-impl-runner/node_modules/
+internal/devtools/cross-impl-runner/package-lock.json
+
+# Per-run cross-impl artifacts. scene.json + go.svg are committed
+# (the Go-side canonical inputs); js.svg + diff.txt are generated
+# each test run.
+testdata/cross_impl/**/js.svg
+testdata/cross_impl/**/diff.txt

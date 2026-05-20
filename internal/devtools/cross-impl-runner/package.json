@@ -1,0 +1,12 @@
+{
+  "name": "prism-cross-impl-runner",
+  "private": true,
+  "type": "module",
+  "description": "Node + happy-dom harness for Prism cross-implementation parity tests (D076). Not part of the production tree.",
+  "scripts": {
+    "render": "node main.mjs"
+  },
+  "dependencies": {
+    "happy-dom": "^15.11.0"
+  }
+}
