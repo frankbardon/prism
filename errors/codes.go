@@ -281,9 +281,28 @@ var Codes = map[string]CodeMetadata{
 		Code:    "PRISM_RENDER_FORMAT_UNAVAILABLE",
 		Message: `Render format {{.Format}} is not available in the current Prism build (lands in {{.Phase}}).`,
 		Fixups: []string{
-			`Use --format svg for now; SVG is the only renderer shipped in P05.`,
-			`PNG support lands in P12 (via resvg-go); PDF lands in P15; canvas-json lands in P12.`,
-			`Track the rollout in .planning/ROADMAP.md.`,
+			`SVG (default) and PDF (P15) are the available renderers; use --format svg or --format pdf.`,
+			`PNG support is deferred to V2; consume the JS port (prism.mjs) via prism scene + canvas for browser-native screenshots.`,
+			`canvas-json consumes the Scene IR directly via 'prism scene <spec>' → render/svg's prism.mjs in the browser.`,
+		},
+		SeeAlso: []string{"PRISM_RENDER_001"},
+	},
+	"PRISM_RENDER_PDF_UNSUPPORTED_PATH": {
+		Code:    "PRISM_RENDER_PDF_UNSUPPORTED_PATH",
+		Message: `PDF renderer cannot translate SVG path command {{.Got}} (only M/L/H/V/Q/C/A/Z + relative forms are supported per D092).`,
+		Fixups: []string{
+			`Rewrite the path using only the supported subset: M / L / H / V / Q / C / A / Z (and the relative forms m / l / h / v / q / c / a / z).`,
+			`Smooth cubic (S / s) and smooth quadratic (T / t) are rejected because they depend on the previous command's reflected control point; expand them to explicit C / Q commands.`,
+			`If you need an arbitrary SVG shape, consider using a primitive Prism mark (rect / line / area / arc) instead of a raw <path>.`,
+		},
+		SeeAlso: []string{"PRISM_SPEC_017", "PRISM_RENDER_001"},
+	},
+	"PRISM_WARN_PDF_GRADIENT_FLATTENED": {
+		Code:    "PRISM_WARN_PDF_GRADIENT_FLATTENED",
+		Message: `PDF renderer flattened a gradient fill to its first color stop (gradient {{.Gradient}}).`,
+		Fixups: []string{
+			`Use a solid color in your spec for byte-identical PDF rendering; gradient support arrives in V2 (D091).`,
+			`The SVG renderer preserves the gradient; only PDF flattens.`,
 		},
 		SeeAlso: []string{"PRISM_RENDER_001"},
 	},
