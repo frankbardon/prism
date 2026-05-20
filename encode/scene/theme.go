@@ -16,8 +16,10 @@ type Theme struct {
 	// CSS carries the pre-rendered <style> block produced by the
 	// theme package. The renderer emits this verbatim when set, and
 	// falls back to a hardcoded block when empty (back-compat with
-	// scene.Default()).
-	CSS string `json:"-"`
+	// scene.Default()). Serialised to JSON so the JS port (prism.mjs)
+	// receives the same theme bytes the Go renderer emits — required
+	// for cross-impl parity (D075 + D076).
+	CSS string `json:"css,omitempty"`
 }
 
 // Default returns the hard-coded P05 theme:
