@@ -216,6 +216,57 @@ func Encode(s *spec.Spec, tables map[plan.NodeID]*table.Table, tipID plan.NodeID
 	if s.Mark != nil {
 		markInputs.Mark = s.Mark.Def
 	}
+	// Sankey: forward source/target/value channels (D064). These are
+	// field names only; sankey computes positions internally without
+	// per-axis scales.
+	if markType == "sankey" {
+		if enc.Source != nil {
+			markInputs.Source = marks.Channel{Field: enc.Source.Field}
+		}
+		if enc.Target != nil {
+			markInputs.Target = marks.Channel{Field: enc.Target.Field}
+		}
+		if enc.Value != nil {
+			markInputs.Value = marks.Channel{Field: enc.Value.Field}
+		}
+		// Sankey color channel binds the source node field — build a
+		// categorical palette over the unique source values when
+		// color isn't already bound.
+		if colorChannel == nil && enc.Source != nil && enc.Source.Field != "" {
+			col, ok := tbl.Column(enc.Source.Field)
+			if ok {
+				cats := []string{}
+				seen := map[string]bool{}
+				for i := 0; i < col.Len(); i++ {
+					sv, ok := col.ValueAt(i).(string)
+					if !ok || seen[sv] {
+						continue
+					}
+					seen[sv] = true
+					cats = append(cats, sv)
+				}
+				// Also fold in target categories so any target-only node
+				// gets a colour mapping too.
+				if tcol, tok := tbl.Column(enc.Target.Field); tok && enc.Target != nil {
+					for i := 0; i < tcol.Len(); i++ {
+						sv, ok := tcol.ValueAt(i).(string)
+						if !ok || seen[sv] {
+							continue
+						}
+						seen[sv] = true
+						cats = append(cats, sv)
+					}
+				}
+				markInputs.Color = &marks.ColorChannel{
+					Field:      enc.Source.Field,
+					Categories: cats,
+					Palette:    DefaultPalette(),
+				}
+				// Update local colorChannel ref so legend builder picks it up later.
+				colorChannel = markInputs.Color
+			}
+		}
+	}
 
 	// Histogram: route via EncodeHistogram so axes can be built from
 	// the synthetic bin scales (D060).

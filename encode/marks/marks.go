@@ -49,6 +49,10 @@ type ColorChannel struct {
 // the dispatch attaches one *scene.Tooltip per produced mark via
 // AttachTooltips (per-row marks: 1:1; single-mark types: row 0's
 // tooltip). See D063.
+//
+// Source / Target / Value (P11) carry the sankey-specific channel
+// bindings — Field name only, no scale. See D064. Used exclusively
+// by encodeSankey; other encoders ignore them.
 type Inputs struct {
 	Table   *table.Table
 	X       Channel
@@ -58,6 +62,9 @@ type Inputs struct {
 	Style   scene.Style
 	Mark    *spec.MarkDef        // mark-level overrides; nil ok
 	Tooltip *spec.TooltipChannel // encoding.tooltip binding; nil ok
+	Source  Channel              // sankey source-node field (no scale)
+	Target  Channel              // sankey target-node field (no scale)
+	Value   Channel              // sankey flow-magnitude field (no scale)
 }
 
 // Encode dispatches markType to its per-mark helper. Returns the
@@ -110,7 +117,9 @@ func Encode(markType string, in Inputs) ([]scene.Mark, *scene.Warning, error) {
 		marksOut, err = encodePath(in)
 	case "image":
 		marksOut, err = encodeImage(in)
-	case "sankey", "funnel", "sparkline":
+	case "sankey":
+		marksOut, err = encodeSankey(in)
+	case "funnel", "sparkline":
 		return nil, &scene.Warning{
 			Code:    scene.WarnMarkNotImplemented,
 			Message: fmt.Sprintf("mark type %q lands later in P11; layer rendered without marks.", markType),
