@@ -47,6 +47,7 @@ func newApp() *cli.Command {
 			mcpCommand(),
 			inspectCommand(),
 			examplesCommand(),
+			schemaCommand(),
 		},
 		Action: func(_ context.Context, c *cli.Command) error {
 			if c.NArg() == 0 {
