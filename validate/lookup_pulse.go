@@ -130,7 +130,7 @@ func measureTypeFor(ft encoding.FieldType) string {
 		return "quantitative"
 	case ft.IsCategorical():
 		return "nominal"
-	case ft == encoding.FieldTypePackedBool, ft == encoding.FieldTypeNullableBool:
+	case ft == encoding.FieldTypePackedBool:
 		return "nominal"
 	default:
 		return "nominal"

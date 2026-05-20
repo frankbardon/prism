@@ -37,7 +37,6 @@ func TestPrismAggOpEnumCoverage(t *testing.T) {
 	}
 
 	deferred := map[string]bool{
-		"ci0": true, "ci1": true, "wmean": true, "ratio": true,
 		"lift": true, "share": true,
 	}
 	for _, alias := range got {
@@ -90,7 +89,7 @@ func TestPrismPulseBackedAliasesSubset(t *testing.T) {
 			t.Errorf("PulseBackedAliases includes deferred alias %q", alias)
 		}
 	}
-	if len(backed)+6 != len(AllAliases()) {
-		t.Errorf("PulseBackedAliases len = %d; expected 12 (18 total - 6 deferred)", len(backed))
+	if len(backed)+2 != len(AllAliases()) {
+		t.Errorf("PulseBackedAliases len = %d; expected 16 (18 total - 2 deferred)", len(backed))
 	}
 }

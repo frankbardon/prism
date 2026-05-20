@@ -12,6 +12,7 @@ import (
 	"io"
 
 	"github.com/cespare/xxhash/v2"
+	"github.com/frankbardon/pulse"
 	"github.com/frankbardon/pulse/encoding"
 	"github.com/spf13/afero"
 
@@ -94,6 +95,22 @@ func (n *SourceNode) OutputSchema() (*encoding.Schema, error) {
 // for the underlying .pulse cohort.
 func (n *SourceNode) Schema(_ []*encoding.Schema) (*encoding.Schema, error) {
 	return n.OutputSchema()
+}
+
+// RowCount returns the record count from the cohort's Pulse header
+// without materialising any records. Backed by pulse.CountRecords
+// (available since pulse v0.10.0). Used by the SampleInjection
+// optimizer pass to decide whether to inject a SampleNode below a
+// Source whose row count exceeds PRISM_RENDER_MAX_MARKS.
+func (n *SourceNode) RowCount(ctx context.Context) (uint64, error) {
+	if n.fs == nil {
+		return 0, fmt.Errorf("source: fs is nil")
+	}
+	p, err := pulse.New(pulse.Options{FS: n.fs})
+	if err != nil {
+		return 0, err
+	}
+	return p.CountRecords(ctx, n.ref)
 }
 
 // Execute implements plan.Node. Reads the resolved payload bytes,

@@ -1,6 +1,6 @@
 // Package table holds Prism's columnar in-memory table type (`Table`),
 // shared by every DAG node from Source through Encode. Columns are
-// typed by a small `Kind` enum that buckets Pulse's 17 storage types
+// typed by a small `Kind` enum that buckets Pulse's 13 storage types
 // down to five categories sufficient for spec validation and rendering.
 //
 // D015 establishes that Table is materialised (not streaming); D016
@@ -28,7 +28,8 @@ const (
 	KindFloat
 	// KindString covers categorical types (rendered by dictionary).
 	KindString
-	// KindBool covers packed_bool and nullable_bool.
+	// KindBool covers packed_bool. Null state lives in the per-record
+	// null bitmap when Field.Nullable is set.
 	KindBool
 	// KindDate covers the date Pulse type (days-since-epoch).
 	KindDate
@@ -52,10 +53,11 @@ func (k Kind) String() string {
 	}
 }
 
-// KindFromPulseFieldType folds the 17 Pulse FieldType variants into the
+// KindFromPulseFieldType folds the 13 Pulse FieldType variants into the
 // five Prism Kinds. Decimal types route to KindFloat in v1 because we
 // surface them as numeric scalars at the encoding layer; revisit when a
-// dedicated decimal renderer lands.
+// dedicated decimal renderer lands. Nullability is orthogonal to Kind —
+// callers consult Field.Nullable separately.
 func KindFromPulseFieldType(ft encoding.FieldType) Kind {
 	switch {
 	case ft.IsDecimal():
@@ -64,14 +66,13 @@ func KindFromPulseFieldType(ft encoding.FieldType) Kind {
 		return KindFloat
 	case ft == encoding.FieldTypeDate:
 		return KindDate
-	case ft == encoding.FieldTypePackedBool, ft == encoding.FieldTypeNullableBool:
+	case ft == encoding.FieldTypePackedBool:
 		return KindBool
 	case ft.IsCategorical():
 		return KindString
 	case ft == encoding.FieldTypeU8, ft == encoding.FieldTypeU16,
 		ft == encoding.FieldTypeU32, ft == encoding.FieldTypeU64,
-		ft == encoding.FieldTypeNullableU4, ft == encoding.FieldTypeNullableU8,
-		ft == encoding.FieldTypeNullableU16:
+		ft == encoding.FieldTypeU4:
 		return KindInt
 	}
 	return KindUnknown

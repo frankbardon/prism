@@ -1,6 +1,8 @@
 package passes_test
 
 import (
+	"path/filepath"
+	"runtime"
 	"testing"
 
 	"github.com/frankbardon/pulse/encoding"
@@ -11,6 +13,18 @@ import (
 	"github.com/frankbardon/prism/plan/passes"
 	"github.com/frankbardon/prism/resolve"
 )
+
+// repoRootForPasses returns the absolute repo root, derived from this
+// test file's location so the tiny.pulse fixture resolves regardless
+// of `go test ./...` cwd.
+func repoRootForPasses(t *testing.T) string {
+	t.Helper()
+	_, here, _, ok := runtime.Caller(0)
+	if !ok {
+		t.Fatal("runtime.Caller failed")
+	}
+	return filepath.Join(filepath.Dir(here), "..", "..")
+}
 
 // memFS produces a memory-backed afero with a stub .pulse file at
 // /a.pulse. For unit tests we only need SourceNode.OutputSchema() to
@@ -346,9 +360,11 @@ func TestPrismAggregateFusionDifferentGroupbyNoop(t *testing.T) {
 	}
 }
 
-// TestPrismSampleInjectionInactive asserts the P07 baseline: SampleInjection
-// is registered but always reports no-change.
-func TestPrismSampleInjectionInactive(t *testing.T) {
+// TestPrismSampleInjectionSkipsSmallSource asserts SampleInjection
+// leaves a Source alone when its row count fits under
+// PRISM_RENDER_MAX_MARKS. The in-memory cohort has 0 records, so the
+// pass must report no change regardless of the marks ceiling.
+func TestPrismSampleInjectionSkipsSmallSource(t *testing.T) {
 	schema := &encoding.Schema{Fields: []encoding.Field{
 		{Name: "v", Type: encoding.FieldTypeF64},
 	}}
@@ -363,10 +379,52 @@ func TestPrismSampleInjectionInactive(t *testing.T) {
 		t.Fatalf("Apply: %v", err)
 	}
 	if changed {
-		t.Errorf("SampleInjectionPass should be no-op in P07")
+		t.Errorf("SampleInjectionPass should skip a 0-row source")
 	}
 	if out.Size() != d.Size() {
 		t.Errorf("size changed: %d vs %d", out.Size(), d.Size())
+	}
+}
+
+// TestPrismSampleInjectionFiresAboveLimit asserts SampleInjection
+// injects a SampleNode below a Source whose row count exceeds the
+// runtime PRISM_RENDER_MAX_MARKS ceiling. Uses the committed 1000-row
+// tiny.pulse fixture with the env var lowered to 100 so the Source
+// crosses the threshold deterministically.
+func TestPrismSampleInjectionFiresAboveLimit(t *testing.T) {
+	t.Setenv("PRISM_RENDER_MAX_MARKS", "100")
+	root := repoRootForPasses(t)
+	cohort := filepath.Join(root, "testdata", "cohorts", "tiny.pulse")
+	src := nodes.New(cohort, afero.NewOsFs(), resolve.New(nil))
+
+	b := plan.NewBuilder()
+	_ = b.AddNode(src)
+	_ = b.MarkRoot(src.ID())
+	_ = b.MarkSink(src.ID())
+	d, _ := b.Build()
+
+	out, changed, err := passes.SampleInjectionPass{}.Apply(d)
+	if err != nil {
+		t.Fatalf("Apply: %v", err)
+	}
+	if !changed {
+		t.Fatalf("expected injection (tiny.pulse has 1000 rows; max=100)")
+	}
+	if out.Size() != d.Size()+1 {
+		t.Fatalf("size = %d, want %d (one Sample added)", out.Size(), d.Size()+1)
+	}
+
+	// Re-run: pass must be idempotent because the Source already has a
+	// SampleNode dependent. No second injection.
+	out2, changed2, err := passes.SampleInjectionPass{}.Apply(out)
+	if err != nil {
+		t.Fatalf("Apply 2: %v", err)
+	}
+	if changed2 {
+		t.Errorf("second Apply re-injected; pass must be idempotent")
+	}
+	if out2.Size() != out.Size() {
+		t.Errorf("size drift on second Apply: %d vs %d", out2.Size(), out.Size())
 	}
 }
 

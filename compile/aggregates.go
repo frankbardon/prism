@@ -8,17 +8,22 @@ import (
 
 // AggregateMapping resolves a Prism alias to its Pulse counterpart
 // (Type) plus any required params. When Type == "" the alias has no
-// Pulse equivalent in v0.8.4 — the in-memory backend implements
-// these (`wmean`, `ratio`, `lift`, `share`, `ci0`, `ci1`). See D034.
+// Pulse equivalent in the pinned facade version — the in-memory
+// backend implements these (`lift`, `share` as of v0.10.0). See D034.
 type AggregateMapping struct {
 	// Alias is the friendly spec-level name (`mean`, `sum`, …).
 	Alias string
 	// Type is the Pulse AggregationType constant; "" when no Pulse
-	// equivalent exists in v0.8.4.
+	// equivalent exists in the pinned facade version.
 	Type types.AggregationType
-	// Params is the JSON-encoded params blob Pulse expects for
-	// parameterised aggregators (e.g. percentile). nil for the
-	// parameterless ops.
+	// Params is the JSON-encoded params blob Pulse expects when the
+	// alias resolves to a parameterised aggregator and the params are
+	// statically derivable from the alias (e.g. `q1` always means
+	// percentile=25). Aliases whose params depend on the per-call
+	// AggOp (e.g. wmean's weight_field, ratio's numerator_field /
+	// denominator_field) leave this nil — callers synthesize Params
+	// from the AggOp at request-build time, using the documented
+	// sibling-column conventions.
 	Params []byte
 }
 
@@ -31,6 +36,10 @@ func (m AggregateMapping) IsDeferredFromPulse() bool { return m.Type == "" }
 // alias resolution. Mirrors validate/rules/agg_compat.go's
 // quantitative-op list verbatim — adding a new alias requires editing
 // both (a TODO in agg_compat.go points here).
+//
+// Pulse v0.10.0 promoted `wmean`, `ratio`, `ci0`, `ci1` from
+// inmem-only to first-class AGG_* constants. `lift` and `share`
+// remain deferred until Pulse upstreams them.
 var AliasToPulse = map[string]AggregateMapping{
 	"count":    {Alias: "count", Type: types.AGG_COUNT},
 	"sum":      {Alias: "sum", Type: types.AGG_SUM},
@@ -45,13 +54,17 @@ var AliasToPulse = map[string]AggregateMapping{
 	"q1":       {Alias: "q1", Type: types.AGG_PERCENTILE, Params: []byte(`{"percentile":25}`)},
 	"q3":       {Alias: "q3", Type: types.AGG_PERCENTILE, Params: []byte(`{"percentile":75}`)},
 
-	// Cohort-analytics extensions (D003): first-class Prism ops with
-	// no Pulse equivalent in v0.8.4. Executed by the in-memory
-	// backend. Convention for sibling columns documented per alias.
-	"ci0":   {Alias: "ci0"},   // 95% lower CI of mean over the group
-	"ci1":   {Alias: "ci1"},   // 95% upper CI of mean over the group
-	"wmean": {Alias: "wmean"}, // weighted mean; weight column = <field>_weight
-	"ratio": {Alias: "ratio"}, // first(field)/first(<field>_denom)
+	// Cohort-analytics extensions (D003) promoted in pulse v0.10.0.
+	// Sibling-column conventions still bind the Pulse Params at
+	// request-build time: wmean uses <field>_weight; ratio uses
+	// <field> as numerator and <field>_denom as denominator;
+	// ci0/ci1 default to 95% confidence via the "normal" method.
+	"ci0":   {Alias: "ci0", Type: types.AGG_CI_LOWER},
+	"ci1":   {Alias: "ci1", Type: types.AGG_CI_UPPER},
+	"wmean": {Alias: "wmean", Type: types.AGG_WEIGHTED_MEAN},
+	"ratio": {Alias: "ratio", Type: types.AGG_RATIO},
+
+	// Cohort-analytics extensions not yet upstreamed by Pulse.
 	"lift":  {Alias: "lift"},  // mean(field)/mean(<field>_baseline)
 	"share": {Alias: "share"}, // sum(field)/sum(field across whole input)
 }

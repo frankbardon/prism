@@ -52,6 +52,14 @@ func TestPrismAggregateValueParity(t *testing.T) {
 		if alias == "distinct" || alias == "mode" {
 			continue
 		}
+		// wmean / ratio bind to the sibling-column convention
+		// (`<field>_weight`, `<field>_denom`). tiny.pulse has no
+		// siblings, so neither side can produce a value — parity
+		// for these two aliases will land when the cohort-analytics
+		// fixture grows (tracked as follow-up to pulse v0.10.0).
+		if alias == "wmean" || alias == "ratio" {
+			continue
+		}
 		field := "score"
 		if alias == "count" {
 			field = "score" // pulse.AGG_COUNT counts non-null score
@@ -93,6 +101,9 @@ func TestPrismAggregateValueParity(t *testing.T) {
 	pulseResults := map[string]map[string]float64{}
 	for alias, mapping := range pulseAliasSet(t) {
 		if alias == "distinct" || alias == "mode" {
+			continue
+		}
+		if alias == "wmean" || alias == "ratio" {
 			continue
 		}
 		field := "score"
