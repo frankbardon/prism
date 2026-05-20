@@ -23,7 +23,6 @@ package pdf
 
 import (
 	"fmt"
-	"math"
 
 	"github.com/signintech/gopdf"
 
@@ -493,5 +492,3 @@ func appendWarning(doc *scene.SceneDoc, code, msg string) {
 	doc.Warnings = append(doc.Warnings, scene.Warning{Code: code, Message: msg})
 }
 
-// degToRad returns d * pi / 180.
-func degToRad(d float64) float64 { return d * math.Pi / 180 }

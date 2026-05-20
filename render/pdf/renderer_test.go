@@ -18,6 +18,7 @@ import (
 	"github.com/frankbardon/prism/render"
 	"github.com/frankbardon/prism/resolve"
 	"github.com/frankbardon/prism/spec"
+	"github.com/frankbardon/prism/table"
 )
 
 // TestPrismPDFRendererNilDoc verifies the defensive nil-doc guard.
@@ -102,8 +103,10 @@ func minimalDoc() *scene.SceneDoc {
 }
 
 // loadFixture runs a fixture through the full pipeline (build /
-// execute / encode) and returns the resulting SceneDoc. Halts the
-// test on any pipeline failure.
+// execute / encode) and returns the resulting SceneDoc. Handles
+// both flat + composite specs via the same branching logic the CLI
+// plotPipeline uses (D049 / D050). Halts the test on any pipeline
+// failure.
 func loadFixture(t *testing.T, path string) *scene.SceneDoc {
 	t.Helper()
 	body, err := os.ReadFile(path)
@@ -119,6 +122,30 @@ func loadFixture(t *testing.T, path string) *scene.SceneDoc {
 		Resolver: resolve.New(nil),
 		Backend:  inmem.New(),
 	}
+	encOpts := encode.EncodeOpts{
+		Width: 600, Height: 400, ThemeName: "light",
+	}
+
+	if build.IsComposite(s) {
+		composite, err := build.BuildComposite(s, buildOpts)
+		if err != nil {
+			t.Fatalf("BuildComposite %s: %v", path, err)
+		}
+		per := make([]map[plan.NodeID]*table.Table, len(composite.Children))
+		for i, child := range composite.Children {
+			res, err := plan.Execute(context.Background(), child.DAG, plan.ExecOpts{})
+			if err != nil {
+				t.Fatalf("execute child %d of %s: %v", i, path, err)
+			}
+			per[i] = res.Tables
+		}
+		doc, err := encode.EncodeComposite(s, composite, per, encOpts)
+		if err != nil {
+			t.Fatalf("EncodeComposite %s: %v", path, err)
+		}
+		return doc
+	}
+
 	dag, tipID, err := build.Build(s, buildOpts)
 	if err != nil {
 		t.Fatalf("build %s: %v", path, err)
@@ -127,9 +154,7 @@ func loadFixture(t *testing.T, path string) *scene.SceneDoc {
 	if err != nil {
 		t.Fatalf("execute %s: %v", path, err)
 	}
-	doc, err := encode.Encode(s, res.Tables, tipID, encode.EncodeOpts{
-		Width: 600, Height: 400, ThemeName: "light",
-	})
+	doc, err := encode.Encode(s, res.Tables, tipID, encOpts)
 	if err != nil {
 		t.Fatalf("encode %s: %v", path, err)
 	}

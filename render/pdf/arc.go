@@ -6,10 +6,10 @@ import "math"
 // X0 / Y0 is the start point; (C1X, C1Y) and (C2X, C2Y) are the two
 // control points; (X1, Y1) is the end point.
 type arcSegment struct {
-	X0, Y0 float64
+	X0, Y0   float64
 	C1X, C1Y float64
 	C2X, C2Y float64
-	X1, Y1 float64
+	X1, Y1   float64
 }
 
 // arcToBeziers converts a circular / elliptical arc into a sequence
@@ -22,9 +22,9 @@ type arcSegment struct {
 //   - rx, ry           x / y radii (positive)
 //   - startAngle       starting angle in radians (0 = +X axis)
 //   - deltaAngle       signed sweep in radians (positive = CCW in
-//                      math coords, which is CW in PDF's y-down
-//                      page coords — callers compose the page-
-//                      direction sign before calling)
+//     math coords, which is CW in PDF's y-down
+//     page coords — callers compose the page-
+//     direction sign before calling)
 //   - xAxisRotation    rotation of the ellipse's x-axis in radians
 //
 // Maximum 90° per segment per the standard W3C SVG implementation
