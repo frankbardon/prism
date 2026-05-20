@@ -1,0 +1,11 @@
+{
+  "_comment": "Structural assertions for the dashboard.json PDF render under --paginate=true. PDF byte equality is fragile (gopdf embeds timestamps + indirect-object renumbering across runs), so we assert per-PDF structural predicates instead of byte-diff goldens.",
+  "spec": "testdata/specs/dashboard.json",
+  "paginate": true,
+  "expected": {
+    "page_count": 4,
+    "min_font_count": 1,
+    "min_bytes": 5000,
+    "no_image_operators": true
+  }
+}
