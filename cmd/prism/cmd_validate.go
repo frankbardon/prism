@@ -6,14 +6,13 @@ import (
 	"fmt"
 	"io"
 	"os"
-	"path/filepath"
 	"strings"
 
 	"github.com/spf13/afero"
 	"github.com/urfave/cli/v3"
 
 	prismerrors "github.com/frankbardon/prism/errors"
-	"github.com/frankbardon/prism/resolve"
+	"github.com/frankbardon/prism/internal/validatorutil"
 	"github.com/frankbardon/prism/spec"
 	"github.com/frankbardon/prism/validate"
 	_ "github.com/frankbardon/prism/validate/rules"
@@ -91,7 +90,7 @@ func runValidate(_ context.Context, cmd *cli.Command) error {
 
 	// Semantic validation runs against the typed spec.
 	sem := validate.NewDefaultSemanticValidator()
-	semErrs := sem.Validate(typedSpec, buildLookup(typedSpec))
+	semErrs := sem.Validate(typedSpec, validatorutil.BuildLookup(typedSpec, afero.NewOsFs()))
 	if len(semErrs) > 0 {
 		return reportAndExit(cmd, jsonOut, semErrs, srcName)
 	}
@@ -118,121 +117,6 @@ func openSpec(args []string) (io.ReadCloser, string, error) {
 		return f, args[0], nil
 	default:
 		return nil, "", fmt.Errorf("expected at most one spec file argument, got %d", len(args))
-	}
-}
-
-// buildLookup gives semantic rules a SchemaLookup driven by the spec's
-// own data binding.
-//
-//   - Inline values / fields  -> StaticLookup populated from `data.values`
-//     and `data.fields`, mirroring the P01 path.
-//   - data.source             -> PulseLookup wired through resolve.New(nil)
-//     against the on-disk file system. P02 makes the field-existence /
-//     scale-compat rules fire against real schemas.
-//   - Mixed (some inline, some source) -> CompositeLookup tries
-//     PulseLookup first, then falls back to StaticLookup.
-func buildLookup(s *spec.Spec) validate.SchemaLookup {
-	staticLookup := validate.NewStaticLookup()
-	pulseLookup := validate.NewPulseLookup(resolve.New(nil), afero.NewOsFs())
-	usedPulse := false
-
-	registerStatic := func(name string, ds *spec.Data) {
-		if ds == nil {
-			return
-		}
-		shim := &validate.PulseSchemaShim{Name: name}
-		if len(ds.Values) > 0 {
-			seen := map[string]bool{}
-			for _, row := range ds.Values {
-				for k, v := range row {
-					if seen[k] {
-						continue
-					}
-					seen[k] = true
-					shim.Fields = append(shim.Fields, validate.FieldShim{
-						Name: k, Type: inferMeasureType(v),
-					})
-				}
-			}
-		}
-		for _, f := range ds.Fields {
-			shim.Fields = append(shim.Fields, validate.FieldShim{
-				Name: f.Name, Type: pulseStorageToMeasure(f.Type),
-			})
-		}
-		if len(shim.Fields) == 0 {
-			return
-		}
-		staticLookup.Register(name, shim)
-	}
-
-	registerPulse := func(name string, ds *spec.Data) {
-		if ds == nil || ds.Source == "" {
-			return
-		}
-		// Bind under both `data.name` (when present) and the source
-		// basename so field-exists rules can find the schema regardless
-		// of which key the spec used to address it.
-		if name != "" {
-			pulseLookup.Register(name, ds.Source)
-			usedPulse = true
-		}
-		base := strings.TrimSuffix(filepath.Base(ds.Source), filepath.Ext(ds.Source))
-		if base != "" && base != name {
-			pulseLookup.Register(base, ds.Source)
-			usedPulse = true
-		}
-		// Also bind the literal source string so semantic rules that
-		// fall back to data.source see the same schema.
-		pulseLookup.Register(ds.Source, ds.Source)
-		usedPulse = true
-	}
-
-	walk := func(name string, ds *spec.Data) {
-		registerStatic(name, ds)
-		registerPulse(name, ds)
-	}
-
-	if s != nil {
-		if s.Data != nil {
-			walk(s.Data.Name, s.Data)
-		}
-		for name, ds := range s.Datasets {
-			walk(name, ds)
-		}
-	}
-
-	if !usedPulse {
-		return staticLookup
-	}
-	return validate.NewCompositeLookup(pulseLookup, staticLookup)
-}
-
-// inferMeasureType maps a Go scalar value to a Prism measure-type bucket.
-func inferMeasureType(v any) string {
-	switch v.(type) {
-	case float64, float32, int, int64, int32:
-		return "quantitative"
-	case bool:
-		return "nominal"
-	case string:
-		return "nominal"
-	default:
-		return ""
-	}
-}
-
-// pulseStorageToMeasure folds the FieldSpec.Type tokens (int/float/string/...)
-// down to a measure type bucket. The full Pulse-storage type stays in
-// the FieldSpec for downstream consumers.
-func pulseStorageToMeasure(storage string) string {
-	switch strings.ToLower(storage) {
-	case "int", "int8", "int16", "int32", "int64", "float", "float32", "float64":
-		return "quantitative"
-	case "date", "datetime", "duration":
-		return "temporal"
-	default:
-		return "nominal"
 	}
 }
 

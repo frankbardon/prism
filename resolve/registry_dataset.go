@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"os"
+	"sort"
 	"strings"
 
 	"github.com/spf13/afero"
@@ -40,12 +41,40 @@ func (m MapDatasetRegistry) Resolve(alias string) (string, bool) {
 	return v, ok
 }
 
+// DatasetLister is an optional interface implementations may provide
+// to enumerate the registered aliases. The Twirp `ListDatasets` RPC
+// (P14) introspects registries by type-asserting to this interface;
+// registries without a meaningful enumeration return nil and the RPC
+// emits an empty list. Names returned are deduplicated across
+// chained layers and sorted ascending.
+type DatasetLister interface {
+	Names() []string
+}
+
+// Names enumerates the alias keys for the in-memory registry. It
+// returns a sorted, freshly-allocated slice (the caller may mutate
+// the result without affecting the registry).
+func (m MapDatasetRegistry) Names() []string {
+	if len(m) == 0 {
+		return nil
+	}
+	out := make([]string, 0, len(m))
+	for k := range m {
+		out = append(out, k)
+	}
+	sort.Strings(out)
+	return out
+}
+
 // EmptyDatasetRegistry rejects every Resolve. Useful when callers want
 // to declare "no registry" without a nil check at every site.
 type EmptyDatasetRegistry struct{}
 
 // Resolve implements DatasetRegistry.
 func (EmptyDatasetRegistry) Resolve(string) (string, bool) { return "", false }
+
+// Names implements DatasetLister with the empty slice.
+func (EmptyDatasetRegistry) Names() []string { return nil }
 
 // LoadDatasetRegistryFile parses a JSON file of shape
 //
@@ -143,4 +172,27 @@ func (c chainedDatasetRegistry) Resolve(alias string) (string, bool) {
 		}
 	}
 	return "", false
+}
+
+// Names implements DatasetLister by unioning every layer that itself
+// implements DatasetLister. Layers without enumeration support are
+// skipped silently.
+func (c chainedDatasetRegistry) Names() []string {
+	seen := make(map[string]struct{})
+	for _, r := range c {
+		if lister, ok := r.(DatasetLister); ok {
+			for _, n := range lister.Names() {
+				seen[n] = struct{}{}
+			}
+		}
+	}
+	if len(seen) == 0 {
+		return nil
+	}
+	out := make([]string, 0, len(seen))
+	for n := range seen {
+		out = append(out, n)
+	}
+	sort.Strings(out)
+	return out
 }
