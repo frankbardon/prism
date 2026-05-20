@@ -15,12 +15,12 @@ func TestPrismEncodeHeatmapCategorical(t *testing.T) {
 	xBand := &bandScaleT{cats: []string{"EU", "NA"}, rmin: 0, rmax: 400, padding: 0.1}
 	yBand := &bandScaleT{cats: []string{"0-25", "26-50"}, rmin: 0, rmax: 300, padding: 0.1}
 	in := Inputs{
-		Table: tbl,
-		X:     Channel{Field: "region", Scale: xBand},
-		Y:     Channel{Field: "bucket", Scale: yBand},
-		Color: &ColorChannel{Field: "count"},
+		Table:  tbl,
+		X:      Channel{Field: "region", Scale: xBand},
+		Y:      Channel{Field: "bucket", Scale: yBand},
+		Color:  &ColorChannel{Field: "count"},
 		Layout: scene.Rect{W: 400, H: 300},
-		Style: scene.Style{},
+		Style:  scene.Style{},
 	}
 	marks, err := encodeHeatmap(in)
 	if err != nil {
