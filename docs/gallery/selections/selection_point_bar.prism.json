@@ -1,0 +1,29 @@
+{
+  "$schema": "urn:prism:schema:v1:spec",
+  "title": "Brand score (point-select highlight)",
+  "data": {
+    "name": "scores",
+    "values": [
+      {"brand_id": "alpha",   "score": 0.42},
+      {"brand_id": "beta",    "score": 0.71},
+      {"brand_id": "gamma",   "score": 0.58},
+      {"brand_id": "delta",   "score": 0.34},
+      {"brand_id": "epsilon", "score": 0.66}
+    ]
+  },
+  "selection": {
+    "highlight": {
+      "type": "point",
+      "fields": ["brand_id"],
+      "toggle": true,
+      "encodings": ["color"],
+      "on": "click"
+    }
+  },
+  "mark": "bar",
+  "encoding": {
+    "x":     {"field": "brand_id", "type": "nominal"},
+    "y":     {"field": "score",    "type": "quantitative"},
+    "color": {"field": "brand_id", "type": "nominal"}
+  }
+}

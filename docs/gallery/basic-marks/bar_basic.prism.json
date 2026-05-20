@@ -1,0 +1,17 @@
+{
+  "$schema": "urn:prism:schema:v1:spec",
+  "title": "Brand score (basic bar)",
+  "data": {
+    "name": "brand_scores",
+    "values": [
+      {"brand_id": "alpha", "score": 0.42},
+      {"brand_id": "beta",  "score": 0.71},
+      {"brand_id": "gamma", "score": 0.58}
+    ]
+  },
+  "mark": "bar",
+  "encoding": {
+    "x": {"field": "brand_id", "type": "nominal"},
+    "y": {"field": "score",    "type": "quantitative"}
+  }
+}

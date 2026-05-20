@@ -1,0 +1,21 @@
+{
+  "$schema": "urn:prism:schema:v1:spec",
+  "title": "User journey flow",
+  "data": {
+    "name": "flows",
+    "values": [
+      {"src": "Visit",   "tgt": "Signup",   "v": 500},
+      {"src": "Visit",   "tgt": "Bounce",   "v": 500},
+      {"src": "Signup",  "tgt": "Trial",    "v": 300},
+      {"src": "Signup",  "tgt": "Abandon",  "v": 200},
+      {"src": "Trial",   "tgt": "Purchase", "v": 120},
+      {"src": "Trial",   "tgt": "Cancel",   "v": 180}
+    ]
+  },
+  "mark": "sankey",
+  "encoding": {
+    "source": {"field": "src", "type": "nominal"},
+    "target": {"field": "tgt", "type": "nominal"},
+    "value":  {"field": "v",   "type": "quantitative"}
+  }
+}

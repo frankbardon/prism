@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 600" width="800" height="600">
+  <style>:root{--prism-color-axis:#6b7280;--prism-color-grid:#e5e7eb;--prism-color-text:#111827;--prism-color-bg:transparent;--prism-font-sans:Inter, system-ui, sans-serif;--prism-font-mono:ui-monospace, SF Mono, monospace;--prism-font-size-label:11px;--prism-font-size-title:16px;--prism-font-size-axis-title:12px;}.prism-axis-domain{stroke:var(--prism-color-axis);fill:none;}.prism-axis-tick{stroke:var(--prism-color-axis);}.prism-axis-label{fill:var(--prism-color-text);font-family:var(--prism-font-sans);font-size:var(--prism-font-size-label,11px);}.prism-axis-title{fill:var(--prism-color-text);font-family:var(--prism-font-sans);font-size:var(--prism-font-size-axis-title,12px);font-weight:600;}.prism-grid-line{stroke:var(--prism-color-grid);}.prism-title{fill:var(--prism-color-text);font-family:var(--prism-font-sans);font-size:var(--prism-font-size-title,16px);font-weight:600;}.prism-legend-title{fill:var(--prism-color-text);font-family:var(--prism-font-sans);font-size:12px;font-weight:600;}.prism-legend-label{fill:var(--prism-color-text);font-family:var(--prism-font-sans);font-size:11px;}.prism-legend-swatch{stroke:none;}.prism-selected{opacity:var(--prism-selected-opacity,1);}.prism-deselected{opacity:var(--prism-deselected-opacity,0.3);}</style>
+
+  <g class="prism-scene" data-scene-id="scene-0">
+    <text class="prism-title" x="410" y="20" text-anchor="middle">Region share (donut)</text>
+    <g class="prism-plot">
+      <g class="prism-layer" data-layer-id="layer-0" data-prism-layer="layer-0">
+        <path class="prism-mark-arc" data-prism-id="donut-0" data-prism-datum-row="0" d="M410,225 A80,80 0 0 1 448.54,375.105 L429.27,340.052 A40,40 0 0 0 410,265 Z" fill="#3b82f6"/>
+        <path class="prism-mark-arc" data-prism-id="donut-1" data-prism-datum-row="1" d="M448.54,375.105 A80,80 0 0 1 330.631,315.027 L370.315,310.013 A40,40 0 0 0 429.27,340.052 Z" fill="#ef4444"/>
+        <path class="prism-mark-arc" data-prism-id="donut-2" data-prism-datum-row="2" d="M330.631,315.027 A80,80 0 0 1 410,225 L410,265 A40,40 0 0 0 370.315,310.013 Z" fill="#10b981"/>
+      </g>
+    </g>
+    <g class="prism-legends"><g class="prism-legend prism-legend-color" data-prism-legend-id="legend-color"><text class="prism-legend-title" x="680" y="64">region</text><rect class="prism-legend-swatch" x="680" y="76" width="12" height="12" fill="#3b82f6"/><text class="prism-legend-label" x="698" y="86">NA</text><rect class="prism-legend-swatch" x="680" y="94" width="12" height="12" fill="#ef4444"/><text class="prism-legend-label" x="698" y="104">EU</text><rect class="prism-legend-swatch" x="680" y="112" width="12" height="12" fill="#10b981"/><text class="prism-legend-label" x="698" y="122">APAC</text></g></g>
+  </g>
+</svg>
