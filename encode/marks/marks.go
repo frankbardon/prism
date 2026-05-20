@@ -65,6 +65,11 @@ type Inputs struct {
 	Source  Channel              // sankey source-node field (no scale)
 	Target  Channel              // sankey target-node field (no scale)
 	Value   Channel              // sankey flow-magnitude field (no scale)
+	// LayerID is the scene-layer identifier stamped onto every
+	// per-row mark's Datum back-reference (D077). Empty defaults to
+	// "layer-0" — matches the flat-encoder hardcoded layer ID.
+	// Composite callers (layer / facet / repeat) override per-cell.
+	LayerID string
 }
 
 // Encode dispatches markType to its per-mark helper. Returns the
@@ -132,6 +137,14 @@ func Encode(markType string, in Inputs) ([]scene.Mark, *scene.Warning, error) {
 	}
 	if err != nil {
 		return nil, nil, err
+	}
+	// Stamp Datum back-references on per-row marks (D077).
+	// Per-row encoders produce one mark per upstream row; composite
+	// encoders that emit fewer/more marks just get the leading prefix
+	// stamped — the JS hit-test silently ignores marks without the
+	// data-prism-datum-row attribute (see D077).
+	if in.Table != nil && len(marksOut) > 0 {
+		AttachDatum(marksOut, in.LayerID, in.Table.NumRows())
 	}
 	if in.Tooltip != nil && len(marksOut) > 0 {
 		tooltips := BuildTooltips(in.Table, in.Tooltip, in.Table.NumRows())
