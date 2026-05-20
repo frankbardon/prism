@@ -421,6 +421,38 @@ var Codes = map[string]CodeMetadata{
 		},
 		SeeAlso: []string{"PRISM_SPEC_003", "PRISM_SPEC_008"},
 	},
+
+	// --- P11 specialty mark codes.
+	"PRISM_SPEC_016": {
+		Code:    "PRISM_SPEC_016",
+		Message: `Image URL {{.URL}} is not allowed (offline-first; only data: and relative paths are accepted).`,
+		Fixups: []string{
+			`Embed the image as a base64 data: URL ("data:image/png;base64,...").`,
+			`Reference a relative path under the spec's working directory; the renderer passes the string through to <image href>.`,
+			`Remote fetch is intentionally disabled — Prism plots must render without network access. See PROJECT.md.`,
+		},
+		SeeAlso: []string{"PRISM_RENDER_001"},
+	},
+	"PRISM_SPEC_017": {
+		Code:    "PRISM_SPEC_017",
+		Message: `Mark "path" requires a non-empty d field (got {{.Got}}).`,
+		Fixups: []string{
+			`Set mark_def.path or encoding.path.value to a valid SVG path string (e.g. "M 0 0 L 10 10 Z").`,
+			`Path mark is the escape hatch for SVG primitives without first-class Prism support — its sole input is the d string passed through to <path d=...>.`,
+			`If you intended a polyline, use mark "line" with x/y encodings instead.`,
+		},
+		SeeAlso: []string{"PRISM_SPEC_003"},
+	},
+	"PRISM_SPEC_018": {
+		Code:    "PRISM_SPEC_018",
+		Message: `Sankey mark requires source, target, and value channels (missing: {{.Missing}}).`,
+		Fixups: []string{
+			`Bind each channel: { "source": {"field": "src", "type": "nominal"}, "target": {"field": "tgt", "type": "nominal"}, "value": {"field": "v", "type": "quantitative"} }.`,
+			`Sankey reads a flat-table form: one row per link with src node, tgt node, and flow magnitude.`,
+			`If you have a {nodes, links} two-array form, flatten it to a single table with the three required columns before passing to Prism.`,
+		},
+		SeeAlso: []string{"PRISM_SPEC_013"},
+	},
 }
 
 // CodesSorted returns the catalog keys in ascending order.
