@@ -8,6 +8,7 @@ require (
 	github.com/frankbardon/pulse v0.8.4
 	github.com/mark3labs/mcp-go v0.54.0
 	github.com/santhosh-tekuri/jsonschema/v6 v6.0.2
+	github.com/signintech/gopdf v0.36.1
 	github.com/spf13/afero v1.15.0
 	github.com/twitchtv/twirp v8.1.3+incompatible
 	github.com/urfave/cli/v3 v3.9.0
@@ -25,6 +26,7 @@ require (
 	github.com/google/uuid v1.6.0 // indirect
 	github.com/klauspost/compress v1.18.5 // indirect
 	github.com/klauspost/cpuid/v2 v2.3.0 // indirect
+	github.com/phpdave11/gofpdi v1.0.14-0.20211212211723-1f10f9844311 // indirect
 	github.com/pierrec/lz4/v4 v4.1.26 // indirect
 	github.com/pkg/errors v0.9.1 // indirect
 	github.com/richardlehane/mscfb v1.0.6 // indirect
