@@ -1,3 +1,5 @@
+//go:build !js
+
 // Package pdf is the Prism PDF renderer. It walks the Scene IR
 // directly and emits PDF drawing primitives via
 // github.com/signintech/gopdf (D088). Vector preserved throughout:

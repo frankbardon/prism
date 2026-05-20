@@ -1,3 +1,5 @@
+//go:build !js
+
 // Package prism.v1 defines the Twirp service surface for Prism.
 //
 // All spec-carrying requests pass the spec as a JSON-encoded string
