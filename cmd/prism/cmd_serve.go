@@ -11,34 +11,42 @@ import (
 	"strings"
 
 	"github.com/spf13/afero"
+	"github.com/twitchtv/twirp"
 	"github.com/urfave/cli/v3"
 
-	"github.com/frankbardon/prism/compile/inmem"
-	"github.com/frankbardon/prism/encode"
-	"github.com/frankbardon/prism/plan"
-	"github.com/frankbardon/prism/plan/build"
-	"github.com/frankbardon/prism/resolve"
+	"github.com/frankbardon/prism/rpc"
 	"github.com/frankbardon/prism/spec"
 )
 
-// serveCommand returns the `prism serve --port N` subcommand. P13
-// stop-gap HTTP endpoint that lets the JS port exercise server-
-// reactive selections without waiting for P14's full Twirp service.
-// Single route: POST /prism/scene. Contract documented in D081.
+// serveCommand returns the `prism serve` subcommand. P14 promoted the
+// P13 stop-gap into a full Twirp service mounted at
+// /twirp/prism.v1.Prism/<RPC>; the P13 /prism/scene endpoint is
+// retained as a thin compatibility wrapper around the Twirp Scene
+// handler (D084) because the JS web component hardcodes that path.
 func serveCommand() *cli.Command {
 	return &cli.Command{
 		Name:  "serve",
-		Usage: "Run an HTTP endpoint that compiles spec + selection state to Scene IR JSON (P13 stop-gap; full service in P14)",
+		Usage: "Run the Prism Twirp service + the /prism/scene compatibility endpoint",
 		Flags: []cli.Flag{
+			&cli.StringFlag{
+				Name:  "addr",
+				Value: "",
+				Usage: "Bind address (e.g. :8080 or 127.0.0.1:8080). Overrides --host/--port when set.",
+			},
 			&cli.IntFlag{
 				Name:  "port",
 				Value: 0,
-				Usage: "TCP port (0 = random, printed to stderr)",
+				Usage: "TCP port (0 = random, printed to stderr). Composed with --host when --addr is unset.",
 			},
 			&cli.StringFlag{
 				Name:  "host",
 				Value: "127.0.0.1",
-				Usage: "Bind host (127.0.0.1 = loopback only)",
+				Usage: "Bind host (127.0.0.1 = loopback only). Composed with --port when --addr is unset.",
+			},
+			&cli.StringFlag{
+				Name:  "cors",
+				Value: "*",
+				Usage: "CORS Access-Control-Allow-Origin value. Empty string disables CORS headers.",
 			},
 			datasetsConfigFlag(),
 		},
@@ -46,9 +54,102 @@ func serveCommand() *cli.Command {
 	}
 }
 
+// runServe binds the configured address, mounts both surfaces, and
+// blocks until the context is cancelled or the listener errors.
+func runServe(ctx context.Context, cmd *cli.Command) error {
+	addr := resolveBindAddr(cmd)
+
+	lis, err := net.Listen("tcp", addr)
+	if err != nil {
+		return cli.Exit(fmt.Sprintf("listen %s: %v", addr, err), 1)
+	}
+	actual := lis.Addr().(*net.TCPAddr)
+	// "listening on <host>:<port>" — exact prefix preserved so the
+	// P13 serve_smoke_test regex (`listening on 127.0.0.1:(\d+)`)
+	// keeps matching.
+	fmt.Fprintf(cmd.ErrWriter,
+		"prism serve: listening on %s (twirp at /twirp/prism.v1.Prism, compat at /prism/scene)\n",
+		actual.String())
+
+	registry, err := loadDatasetRegistry(cmd)
+	if err != nil {
+		return cli.Exit(fmt.Sprintf("load --datasets-config: %v", err), 2)
+	}
+
+	impl := &rpc.PrismServer{
+		DatasetRegistry: registry,
+		Fs:              afero.NewOsFs(),
+	}
+	twirpHandler := rpc.NewPrismServer(impl, twirp.WithServerInterceptors(rpc.ErrorInterceptor))
+
+	mux := http.NewServeMux()
+	mux.Handle(rpc.PrismPathPrefix, twirpHandler)
+	mux.HandleFunc("/prism/scene", sceneCompatHandler(ctx, impl))
+
+	corsOrigin := cmd.String("cors")
+	srv := &http.Server{Handler: corsMiddleware(corsOrigin, mux)}
+	errCh := make(chan error, 1)
+	go func() { errCh <- srv.Serve(lis) }()
+
+	select {
+	case <-ctx.Done():
+		shutdownCtx, cancel := context.WithCancel(context.Background())
+		defer cancel()
+		_ = srv.Shutdown(shutdownCtx)
+		return nil
+	case err := <-errCh:
+		if err == http.ErrServerClosed {
+			return nil
+		}
+		return cli.Exit(fmt.Sprintf("serve: %v", err), 1)
+	}
+}
+
+// resolveBindAddr applies the flag-precedence rule. --addr wins when
+// set; otherwise host:port composes the bind string. Warns on stderr
+// when both are present (covers the deprecated --port/--host pair
+// being passed alongside the new --addr).
+func resolveBindAddr(cmd *cli.Command) string {
+	addr := cmd.String("addr")
+	if addr == "" {
+		return cmd.String("host") + ":" + strconv.Itoa(int(cmd.Int("port")))
+	}
+	if cmd.Int("port") != 0 || (cmd.String("host") != "" && cmd.String("host") != "127.0.0.1") {
+		fmt.Fprintf(cmd.ErrWriter,
+			"prism serve: --addr=%s overrides --host=%s / --port=%d\n",
+			addr, cmd.String("host"), cmd.Int("port"))
+	}
+	return addr
+}
+
+// corsMiddleware applies the configured Access-Control-Allow-Origin
+// header to every response and short-circuits OPTIONS preflights with
+// 204 No Content. Empty origin = no CORS headers (production-tight
+// default for embedders who run behind their own gateway).
+func corsMiddleware(origin string, next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if origin != "" {
+			w.Header().Set("Access-Control-Allow-Origin", origin)
+			w.Header().Set("Access-Control-Allow-Methods", "POST, OPTIONS")
+			w.Header().Set("Access-Control-Allow-Headers", "Content-Type")
+		}
+		if r.Method == http.MethodOptions {
+			w.WriteHeader(http.StatusNoContent)
+			return
+		}
+		next.ServeHTTP(w, r)
+	})
+}
+
+// ── /prism/scene compatibility wrapper (D084) ──────────────────────────
+//
+// The P12/P13 JS web component hardcodes /prism/scene. We keep the
+// route and the P13 sceneRequest envelope; selection-state synthesis
+// stays here because the Twirp Scene RPC does not carry per-call
+// selection state. The actual Scene compilation goes through the
+// shared PrismServer in-process (so one pipeline owns the work).
+
 // sceneRequest mirrors D081 — the JSON body the JS port POSTs.
-// Selection state is keyed by selection ID; values match
-// scene.SelectionState (snake_case fields).
 type sceneRequest struct {
 	Spec      json.RawMessage                `json:"spec"`
 	Selection map[string]selectionStateInput `json:"selection,omitempty"`
@@ -76,68 +177,15 @@ type errorResponse struct {
 	Message   string `json:"message"`
 }
 
-func runServe(ctx context.Context, cmd *cli.Command) error {
-	host := cmd.String("host")
-	port := cmd.Int("port")
-
-	addr := host + ":" + strconv.Itoa(int(port))
-	lis, err := net.Listen("tcp", addr)
-	if err != nil {
-		return cli.Exit(fmt.Sprintf("listen %s: %v", addr, err), 1)
-	}
-	actual := lis.Addr().(*net.TCPAddr)
-	fmt.Fprintf(cmd.ErrWriter, "prism serve: listening on %s\n", actual.String())
-
-	registry, err := loadDatasetRegistry(cmd)
-	if err != nil {
-		return cli.Exit(fmt.Sprintf("load --datasets-config: %v", err), 2)
-	}
-
-	mux := http.NewServeMux()
-	mux.HandleFunc("/prism/scene", serveSceneHandler(ctx, registry))
-
-	srv := &http.Server{Handler: corsMiddleware(mux)}
-	errCh := make(chan error, 1)
-	go func() { errCh <- srv.Serve(lis) }()
-
-	select {
-	case <-ctx.Done():
-		shutdownCtx, cancel := context.WithCancel(context.Background())
-		defer cancel()
-		_ = srv.Shutdown(shutdownCtx)
-		return nil
-	case err := <-errCh:
-		if err == http.ErrServerClosed {
-			return nil
-		}
-		return cli.Exit(fmt.Sprintf("serve: %v", err), 1)
-	}
-}
-
-// corsMiddleware applies the P13 stop-gap CORS rule (wide-open). P14
-// hardens with origin allow-list + credentials. OPTIONS preflight
-// returns 204 No Content + the CORS headers.
-func corsMiddleware(next http.Handler) http.Handler {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		w.Header().Set("Access-Control-Allow-Origin", "*")
-		w.Header().Set("Access-Control-Allow-Methods", "POST, OPTIONS")
-		w.Header().Set("Access-Control-Allow-Headers", "Content-Type")
-		if r.Method == http.MethodOptions {
-			w.WriteHeader(http.StatusNoContent)
-			return
-		}
-		next.ServeHTTP(w, r)
-	})
-}
-
-// serveSceneHandler returns the /prism/scene route handler closed over
-// the dataset registry. POST only; decodes the body per D081,
-// synthesises filters from the selection state, runs plotPipeline,
-// returns the SceneDoc JSON.
-func serveSceneHandler(ctx context.Context, registry resolve.DatasetRegistry) http.HandlerFunc {
+// sceneCompatHandler returns the /prism/scene handler. It decodes the
+// P13 envelope, synthesises selection-state filters, calls the Twirp
+// Scene RPC in-process, and writes the resulting scene_json body.
+func sceneCompatHandler(ctx context.Context, impl *rpc.PrismServer) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		if r.Method != http.MethodPost {
-			writeJSONErr(w, http.StatusMethodNotAllowed, "PRISM_SERVE_METHOD", "only POST is supported on /prism/scene")
+			writeJSONErr(w, http.StatusMethodNotAllowed,
+				"PRISM_SERVE_METHOD",
+				"only POST is supported on /prism/scene")
 			return
 		}
 		body, err := io.ReadAll(r.Body)
@@ -169,100 +217,45 @@ func serveSceneHandler(ctx context.Context, registry resolve.DatasetRegistry) ht
 			return
 		}
 		if len(injected) > 0 {
-			// Prepend so the filter runs before any spec transforms.
 			s.Transform = append(injected, s.Transform...)
 		}
 
-		// Reuse plotPipeline to build/execute/encode the (possibly
-		// mutated) spec.
-		buildOpts := build.Options{
-			FS:              afero.NewOsFs(),
-			Resolver:        resolve.New(nil),
-			Backend:         inmem.New(),
-			DatasetRegistry: registry,
+		// Re-marshal the (possibly mutated) spec and route through
+		// the Twirp Scene handler. Per request context derived from
+		// the long-lived serve context so handlers see cancellation.
+		mutated, mErr := json.Marshal(s)
+		if mErr != nil {
+			writeJSONErr(w, http.StatusInternalServerError, "PRISM_SERVE_ENCODE", "re-marshal: "+mErr.Error())
+			return
 		}
-		execOpts := plan.ExecOpts{}
-		encOpts := encode.EncodeOpts{Width: 800, Height: 600}
-
-		// We can't drive plotPipeline directly (it expects a cli.Command
-		// for error reporting). Inline the build/execute/encode chain
-		// using the same primitives. Composite specs use the same
-		// branching pattern.
-		var (
-			doc    interface{}
-			encErr error
-		)
-		if build.IsComposite(s) {
-			composite, berr := build.BuildComposite(s, buildOpts)
-			if berr != nil {
-				writeJSONErr(w, http.StatusBadRequest, "PRISM_SERVE_BUILD", berr.Error())
-				return
-			}
-			perCell := make([]map[plan.NodeID]*planTableMap, 0, len(composite.Children))
-			_ = perCell
-			// Composite execution is more involved; for P13 we keep the
-			// stop-gap focused on flat specs (the common case for
-			// selection-driven flows). Composite support tracks with
-			// P14's full service.
+		// Composite specs are rejected here (P13 parity); the full
+		// Twirp Scene RPC handles them. The JS port only emits flat
+		// specs through this path.
+		if len(s.Layer)+len(s.Concat)+len(s.HConcat)+len(s.VConcat) > 0 ||
+			s.Facet != nil || s.Repeat != nil {
 			writeJSONErr(w, http.StatusBadRequest, "PRISM_SERVE_COMPOSITE",
-				"composite specs not supported in P13 stop-gap; full Twirp service (P14) handles them")
+				"composite specs not supported on /prism/scene; use /twirp/prism.v1.Prism/Scene")
 			return
 		}
 
-		dag, tipID, berr := build.Build(s, buildOpts)
-		if berr != nil {
-			writeJSONErr(w, http.StatusBadRequest, "PRISM_SERVE_BUILD", berr.Error())
-			return
-		}
-		res, eerr := plan.Execute(ctx, dag, execOpts)
-		if eerr != nil {
-			writeJSONErr(w, http.StatusBadRequest, "PRISM_SERVE_EXECUTE", eerr.Error())
-			return
-		}
-		if len(res.Errors) > 0 {
-			var b strings.Builder
-			for _, ne := range res.Errors {
-				fmt.Fprintf(&b, "node %s: %v; ", ne.Node, ne.Err)
-			}
-			writeJSONErr(w, http.StatusBadRequest, "PRISM_SERVE_EXECUTE", b.String())
-			return
-		}
-		doc, encErr = encode.Encode(s, res.Tables, tipID, encOpts)
-		if encErr != nil {
-			writeJSONErr(w, http.StatusInternalServerError, "PRISM_SERVE_ENCODE", encErr.Error())
+		resp, sceneErr := impl.Scene(r.Context(), &rpc.SceneRequest{
+			Spec: string(mutated),
+		})
+		if sceneErr != nil {
+			writeJSONErr(w, http.StatusBadRequest, "PRISM_SERVE_EXECUTE", sceneErr.Error())
 			return
 		}
 
 		w.Header().Set("Content-Type", "application/json; charset=utf-8")
 		w.WriteHeader(http.StatusOK)
-		_ = json.NewEncoder(w).Encode(doc)
+		// scene_json is a pre-marshalled SceneDoc body; ship as-is.
+		_, _ = w.Write([]byte(resp.SceneJson))
 	}
 }
 
-// planTableMap is a small alias used only as a placeholder above so
-// the composite branch keeps its types descriptive without pulling in
-// an unused import. The real Tables type lives on plan.Execute's
-// result.
-type planTableMap struct{}
-
-// synthesiseSelectionFilters walks the selection state map + the spec's
-// selection declarations and emits one FilterTransform per active
-// selection. Returns nil when no selection is active.
-//
-// Filter expressions per D081:
-//   - point on field F  → `F in [v1, v2, ...]`. Values come from the
-//     selection state's DatumRefs by looking up the row id on the
-//     spec's data values when present (inline data only — pulse-backed
-//     specs work too because the executor evaluates the filter against
-//     the materialised table).
-//     v1: we filter on `F == 'lookup_row_value'`; for inline data we
-//     read the values straight from spec.Data.Values; otherwise we
-//     emit a row-index predicate using the special `__row__` env var.
-//   - interval on x     → `<x-field> >= min and <x-field> <= max`.
-//   - interval on y     → mirror for y-field.
-//
-// Unknown selection IDs in the request are ignored (defensive — the
-// JS port may send stale state across a spec change).
+// synthesiseSelectionFilters walks the selection state map + the
+// spec's selection declarations and emits one FilterTransform per
+// active selection (D081 semantics).
 func synthesiseSelectionFilters(s *spec.Spec, state map[string]selectionStateInput) ([]spec.Transform, error) {
 	if len(state) == 0 || s == nil {
 		return nil, nil
@@ -271,22 +264,15 @@ func synthesiseSelectionFilters(s *spec.Spec, state map[string]selectionStateInp
 	for id, st := range state {
 		decl, ok := s.Selection[id]
 		if !ok {
-			continue // stale state — silent skip
+			continue
 		}
 		if decl.Point != nil && len(st.Points) > 0 {
-			// V1 P13 path: filter by row-id list using the special
-			// __row__ env var (executor already binds it per row).
 			rowIDs := make([]string, 0, len(st.Points))
 			for _, p := range st.Points {
 				rowIDs = append(rowIDs, strconv.FormatInt(p.RowID, 10))
 			}
-			// Prefer the configured field when present (more meaningful
-			// for users who inspect the synthesised filter); fall back
-			// to row id when no field is named.
 			if len(decl.Point.Fields) > 0 {
 				field := decl.Point.Fields[0]
-				// Build `<field> in [<values>]` using the actual row
-				// values from inline data when available.
 				values := lookupInlineFieldValues(s, field, st.Points)
 				if len(values) > 0 {
 					expr := field + " in [" + strings.Join(quotedList(values), ", ") + "]"
@@ -294,7 +280,6 @@ func synthesiseSelectionFilters(s *spec.Spec, state map[string]selectionStateInp
 					continue
 				}
 			}
-			// Fallback: row-index list.
 			expr := "__row__ in [" + strings.Join(rowIDs, ", ") + "]"
 			out = append(out, spec.Transform{Filter: &spec.FilterTransform{Filter: expr}})
 		}
@@ -312,8 +297,8 @@ func synthesiseSelectionFilters(s *spec.Spec, state map[string]selectionStateInp
 	return out, nil
 }
 
-// fieldForChannel resolves a Scene channel (x / y / etc) back to the
-// spec encoding's bound field name.
+// fieldForChannel resolves a Scene channel back to its bound field
+// name from the spec encoding.
 func fieldForChannel(s *spec.Spec, channel string) string {
 	if s == nil || s.Encoding == nil {
 		return ""
@@ -341,7 +326,7 @@ func fieldForChannel(s *spec.Spec, channel string) string {
 
 // lookupInlineFieldValues returns the values at the named field for
 // each DatumRef row id, sourced from spec.Data.Values. Returns nil
-// when the spec uses a non-inline data source (pulse-backed).
+// when the spec uses a non-inline data source.
 func lookupInlineFieldValues(s *spec.Spec, field string, refs []datumRefInput) []string {
 	if s == nil || s.Data == nil || len(s.Data.Values) == 0 {
 		return nil
@@ -361,15 +346,14 @@ func lookupInlineFieldValues(s *spec.Spec, field string, refs []datumRefInput) [
 	return values
 }
 
-// quotedList wraps each entry in single quotes for embedding in an
-// expr-lang expression. Numeric-looking entries pass through unquoted.
+// quotedList wraps non-numeric entries in single quotes for embedding
+// in an expr-lang expression.
 func quotedList(values []string) []string {
 	out := make([]string, len(values))
 	for i, v := range values {
 		if _, err := strconv.ParseFloat(v, 64); err == nil {
 			out[i] = v
 		} else {
-			// expr-lang accepts single-quoted strings.
 			out[i] = "'" + strings.ReplaceAll(v, "'", "\\'") + "'"
 		}
 	}

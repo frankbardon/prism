@@ -194,6 +194,53 @@ func TestPrismSelectionServerReactive(t *testing.T) {
 	}
 }
 
+// TestPrismCLIServeTwirpValidateRoundTrip exercises the P14 Twirp
+// surface via the same out-of-process binary used by the P13
+// /prism/scene smokes. POSTs a JSON-encoded ValidateRequest to
+// /twirp/prism.v1.Prism/Validate and asserts ok=true.
+func TestPrismCLIServeTwirpValidateRoundTrip(t *testing.T) {
+	if testing.Short() {
+		t.Skip("short mode skips network smoke")
+	}
+	ensurePrismBinary(t)
+	port, kill := startTestServer(t)
+	defer kill()
+
+	specJSON := `{
+      "$schema":"urn:prism:schema:v1:spec",
+      "data":{"values":[{"x":1,"y":2}]},
+      "mark":"bar",
+      "encoding":{"x":{"field":"x","type":"quantitative"},"y":{"field":"y","type":"quantitative"}}
+    }`
+	// Twirp JSON envelope.
+	body, _ := json.Marshal(map[string]string{"spec": specJSON})
+	url := "http://127.0.0.1:" + port + "/twirp/prism.v1.Prism/Validate"
+	req, _ := http.NewRequest(http.MethodPost, url, bytes.NewReader(body))
+	req.Header.Set("Content-Type", "application/json")
+	resp, err := http.DefaultClient.Do(req)
+	if err != nil {
+		t.Fatalf("POST twirp Validate: %v", err)
+	}
+	defer resp.Body.Close()
+	if resp.StatusCode != http.StatusOK {
+		b, _ := io.ReadAll(resp.Body)
+		t.Fatalf("twirp Validate status = %d; body=%s", resp.StatusCode, truncBody(b, 400))
+	}
+	out, _ := io.ReadAll(resp.Body)
+	var v struct {
+		Ok     bool `json:"ok"`
+		Errors []struct {
+			Code string `json:"code"`
+		} `json:"errors"`
+	}
+	if err := json.Unmarshal(out, &v); err != nil {
+		t.Fatalf("twirp Validate body parse: %v\n%s", err, string(out))
+	}
+	if !v.Ok {
+		t.Fatalf("twirp Validate ok=false; errors=%+v", v.Errors)
+	}
+}
+
 // TestPrismCLIServeRejectsGET asserts non-POST methods → 405.
 func TestPrismCLIServeRejectsGET(t *testing.T) {
 	if testing.Short() {
