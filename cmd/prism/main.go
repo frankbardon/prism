@@ -44,6 +44,7 @@ func newApp() *cli.Command {
 			sceneCommand(),
 			staticBundleCommand(),
 			serveCommand(),
+			mcpCommand(),
 		},
 		Action: func(_ context.Context, c *cli.Command) error {
 			if c.NArg() == 0 {

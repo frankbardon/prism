@@ -1,0 +1,53 @@
+package main
+
+import (
+	"context"
+	"fmt"
+
+	"github.com/mark3labs/mcp-go/server"
+	"github.com/spf13/afero"
+	"github.com/urfave/cli/v3"
+
+	prismmcp "github.com/frankbardon/prism/mcp"
+	"github.com/frankbardon/prism/rpc"
+)
+
+// mcpCommand returns the `prism mcp` subcommand. Runs an MCP server
+// over stdio so agent hosts (Nexus, Claude Desktop, etc.) can invoke
+// prism_plot / prism_validate / prism_describe / prism_examples_search.
+func mcpCommand() *cli.Command {
+	return &cli.Command{
+		Name:  "mcp",
+		Usage: "Run a Model Context Protocol server over stdio for agent integration",
+		Flags: []cli.Flag{
+			&cli.StringFlag{
+				Name:  "examples-root",
+				Value: "testdata/specs/",
+				Usage: "Directory the prism_examples_search tool walks for fixture specs",
+			},
+			datasetsConfigFlag(),
+		},
+		Action: runMCP,
+	}
+}
+
+func runMCP(ctx context.Context, cmd *cli.Command) error {
+	registry, err := loadDatasetRegistry(cmd)
+	if err != nil {
+		return cli.Exit(fmt.Sprintf("load --datasets-config: %v", err), 2)
+	}
+	impl := &rpc.PrismServer{
+		DatasetRegistry: registry,
+		Fs:              afero.NewOsFs(),
+	}
+	srv := prismmcp.New(prismmcp.Options{
+		PrismServer:  impl,
+		ExamplesRoot: cmd.String("examples-root"),
+		ExamplesFS:   afero.NewOsFs(),
+	})
+	if err := server.ServeStdio(srv); err != nil {
+		return cli.Exit(fmt.Sprintf("mcp serve: %v", err), 1)
+	}
+	_ = ctx
+	return nil
+}
