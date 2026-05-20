@@ -13,7 +13,12 @@
 // vendored d3-* modules in ./d3/ ride along for future client-side
 // scale recomputation (post-v1).
 
-import { getSelection as _getSelection } from "./prism-selection.mjs";
+import {
+  getSelection as _getSelection,
+  installHandlers as _installHandlers,
+  getAllSelections as _getAllSelections,
+  revalidateSelections as _revalidateSelections,
+} from "./prism-selection.mjs";
 
 const SVG_NS  = "http://www.w3.org/2000/svg";
 const XHTML_NS = "http://www.w3.org/1999/xhtml";
@@ -75,7 +80,12 @@ export function render(sceneDoc, target) {
   _renderGridHeaders(svg, sceneDoc.grid, doc);
 
   root.appendChild(svg);
-  return new SceneHandle({ svg, root, sceneDoc });
+  const handle = new SceneHandle({ svg, root, sceneDoc });
+  // Selection hit-test handlers (D077/D078). installHandlers is a
+  // no-op when the first cell has no selections declared, so the cost
+  // is one Map lookup per render in the no-selection case.
+  try { _installHandlers(handle); } catch (e) { /* defensive */ }
+  return handle;
 }
 
 /**
@@ -120,20 +130,40 @@ export class SceneHandle {
     this._root = root;
     this._doc = sceneDoc;
     this._listeners = new Map(); // eventName → Set<handler>
+    // Selection descriptors come from the first cell. v1 keeps
+    // selections per-cell (composite cross-cell sharing → P14).
+    const firstCell = sceneDoc?.grid?.cells?.[0];
+    this._selections = firstCell?.scene?.selections || [];
+    // Per-handle dispose closures returned by installHandlers; reset
+    // on every render so SceneHandle.update doesn't double-bind.
+    this._disposers = [];
   }
 
-  /** update re-renders with a new SceneDoc. */
+  /** update re-renders with a new SceneDoc. Runs selection
+   * invalidation (D080) before mounting the new DOM so the
+   * post-render classList pass sees the cleaned-up state. */
   update(newSceneDoc) {
     const errs = validate(newSceneDoc);
     if (errs.length > 0) {
       throw new Error("SceneHandle.update: invalid SceneDoc: " + errs.join("; "));
     }
+    try { _revalidateSelections(this, newSceneDoc); } catch (e) { /* defensive */ }
     if (this._svg && this._svg.parentNode) {
       this._svg.parentNode.removeChild(this._svg);
+    }
+    // Tear down listeners from the previous render before swapping
+    // the SVG; otherwise dispose closures hold stale references.
+    if (this._disposers && this._disposers.length > 0) {
+      for (const d of this._disposers) {
+        try { d(); } catch {}
+      }
+      this._disposers = [];
     }
     const replacement = render(newSceneDoc, this._root);
     this._svg = replacement._svg;
     this._doc = replacement._doc;
+    this._selections = replacement._selections;
+    this._disposers = replacement._disposers;
     return this;
   }
 
@@ -163,14 +193,26 @@ export class SceneHandle {
     return this;
   }
 
-  /** getSelection returns the current selection state. P12 stub:
-   * always returns null until P13 wires hit-testing. */
-  getSelection() {
-    return _getSelection(this);
+  /** getSelection returns the current selection state for the named
+   * selection ID, or null when none stored. Wired in P13 per D077/D078.
+   * Pass no args (or undefined) to get the full Map snapshot via
+   * getAllSelections. */
+  getSelection(selectionID) {
+    if (selectionID === undefined) {
+      return _getAllSelections(this);
+    }
+    return _getSelection(this, selectionID);
   }
 
-  /** destroy removes the SVG + clears listeners. */
+  /** destroy removes the SVG + clears listeners + tears down
+   *  hit-test handlers. */
   destroy() {
+    if (this._disposers && this._disposers.length > 0) {
+      for (const d of this._disposers) {
+        try { d(); } catch (e) { /* swallow */ }
+      }
+      this._disposers = [];
+    }
     if (this._svg && this._svg.parentNode) {
       this._svg.parentNode.removeChild(this._svg);
     }
@@ -270,8 +312,12 @@ function _appendStyleBlock(svg, theme, doc) {
   } else {
     inner = css;
   }
+  // Append D078 selection defaults. Theme authors override via the
+  // documented CSS-variable contract; the JS port stamps the defaults
+  // verbatim so unstyled charts get a sensible look out of the box.
+  const selectionDefaults = `.prism-selected{opacity:var(--prism-selected-opacity,1);}.prism-deselected{opacity:var(--prism-deselected-opacity,0.3);}`;
   const styleEl = doc.createElementNS(SVG_NS, "style");
-  styleEl.textContent = inner;
+  styleEl.textContent = inner + selectionDefaults;
   svg.appendChild(styleEl);
 }
 
@@ -351,6 +397,9 @@ function _renderScene(svg, scene, doc) {
     const lg = doc.createElementNS(SVG_NS, "g");
     lg.setAttribute("class", "prism-layer");
     if (layer.id) lg.setAttribute("data-layer-id", layer.id);
+    // Hit-test scope per D077. Always emit (empty string when layer.id
+    // is unset) so selector queries stay stable.
+    lg.setAttribute("data-prism-layer", layer.id || "");
     const marks = Array.isArray(layer.marks) ? layer.marks : [];
     for (const m of marks) {
       _renderMark(lg, m, doc);
@@ -729,6 +778,16 @@ function _renderMark(parent, mark, doc) {
   parent.appendChild(cmt);
 }
 
+// _setDatum stamps the per-mark hit-test attribute (D077). Called by
+// every mark renderer; no-op when mark.datum is absent (composite
+// helper marks that don't map back to a row).
+function _setDatum(el, mark) {
+  if (!mark || !mark.datum) return;
+  if (mark.datum.row_id !== undefined && mark.datum.row_id !== null) {
+    el.setAttribute("data-prism-datum-row", String(mark.datum.row_id));
+  }
+}
+
 function _styleAttrs(el, style) {
   if (!style) return;
   if (style.fill)         el.setAttribute("fill",   _colorCSS(style.fill));
@@ -761,6 +820,7 @@ function _renderRect(parent, m, doc) {
   el.setAttribute("height", fmt(g.h));
   if (g.corner_r) el.setAttribute("rx", fmt(g.corner_r));
   _styleAttrs(el, m.style);
+  _setDatum(el, m);
   _maybeTooltip(el, m, doc);
   parent.appendChild(el);
 }
@@ -776,6 +836,7 @@ function _renderLine(parent, m, doc) {
   el.setAttribute("points", ptsStr);
   el.setAttribute("fill", "none");
   _styleAttrs(el, m.style);
+  _setDatum(el, m);
   _maybeTooltip(el, m, doc);
   parent.appendChild(el);
 }
@@ -806,6 +867,7 @@ function _renderArea(parent, m, doc) {
   d += " Z";
   el.setAttribute("d", d);
   _styleAttrs(el, m.style);
+  _setDatum(el, m);
   _maybeTooltip(el, m, doc);
   parent.appendChild(el);
 }
@@ -819,6 +881,7 @@ function _renderPoint(parent, m, doc) {
   el.setAttribute("cy", fmt(g.cy));
   el.setAttribute("r",  fmt(g.r));
   _styleAttrs(el, m.style);
+  _setDatum(el, m);
   _maybeTooltip(el, m, doc);
   parent.appendChild(el);
 }
@@ -833,6 +896,7 @@ function _renderRule(parent, m, doc) {
   el.setAttribute("x2", fmt(g.x2));
   el.setAttribute("y2", fmt(g.y2));
   _styleAttrs(el, m.style);
+  _setDatum(el, m);
   _maybeTooltip(el, m, doc);
   parent.appendChild(el);
 }
@@ -861,6 +925,7 @@ function _renderArc(parent, m, doc) {
   if (m.id) el.setAttribute("data-prism-id", m.id);
   el.setAttribute("d", _arcPath(g));
   _styleAttrs(el, m.style);
+  _setDatum(el, m);
   _maybeTooltip(el, m, doc);
   parent.appendChild(el);
 }
@@ -903,6 +968,7 @@ function _renderPath(parent, m, doc) {
   if (m.id) el.setAttribute("data-prism-id", m.id);
   el.setAttribute("d", g.d || "");
   _styleAttrs(el, m.style);
+  _setDatum(el, m);
   _maybeTooltip(el, m, doc);
   parent.appendChild(el);
 }
@@ -919,6 +985,7 @@ function _renderImage(parent, m, doc) {
   // SVG2 uses href; SVG1 used xlink:href. Match Go (which emits href).
   el.setAttribute("href", g.href || "");
   _styleAttrs(el, m.style);
+  _setDatum(el, m);
   _maybeTooltip(el, m, doc);
   parent.appendChild(el);
   void XHTML_NS;
