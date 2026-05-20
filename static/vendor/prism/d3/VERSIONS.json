@@ -1,0 +1,62 @@
+{
+  "generator": "internal/devtools/vendor-d3-manifest.go",
+  "note": "Regenerate after running internal/devtools/vendor-d3.sh. TestPrismD3VendoredPinned verifies sha256 matches every test run.",
+  "modules": [
+    {
+      "name": "d3-array",
+      "version": "3.2.4",
+      "source_url": "https://cdn.jsdelivr.net/npm/d3-array@3.2.4/+esm",
+      "sha256": "00124633cfb0cddce4026324956d3f551ec4b299904ff6f66139408ff02845b4",
+      "byte_size": 16633
+    },
+    {
+      "name": "d3-axis",
+      "version": "3.0.0",
+      "source_url": "https://cdn.jsdelivr.net/npm/d3-axis@3.0.0/+esm",
+      "sha256": "61e28b8a5f9464b6596f985322011d2eab6041bebbdb04498fbb035c23ad41d1",
+      "byte_size": 3143
+    },
+    {
+      "name": "d3-brush",
+      "version": "3.0.0",
+      "source_url": "https://cdn.jsdelivr.net/npm/d3-brush@3.0.0/+esm",
+      "sha256": "1bb4f016fa547fd158010300c188b1a09445225acc7d91254b16abf3ba323ae9",
+      "byte_size": 9802
+    },
+    {
+      "name": "d3-format",
+      "version": "3.1.0",
+      "source_url": "https://cdn.jsdelivr.net/npm/d3-format@3.1.0/+esm",
+      "sha256": "1c3c0b078e1735ed3a2d7237ad58e9080903ad0902b2b9808cddb86def929b10",
+      "byte_size": 5219
+    },
+    {
+      "name": "d3-scale",
+      "version": "4.0.2",
+      "source_url": "https://cdn.jsdelivr.net/npm/d3-scale@4.0.2/+esm",
+      "sha256": "c03f6709329013e41a79e16750fc60974bf30df8b6f83259df20baa486eacfdf",
+      "byte_size": 15967
+    },
+    {
+      "name": "d3-shape",
+      "version": "3.2.0",
+      "source_url": "https://cdn.jsdelivr.net/npm/d3-shape@3.2.0/+esm",
+      "sha256": "0dee80e8e82a5d090465b93e9d54256ce8908298ad5c24724255aaf9f75eebf1",
+      "byte_size": 31130
+    },
+    {
+      "name": "d3-time-format",
+      "version": "4.1.0",
+      "source_url": "https://cdn.jsdelivr.net/npm/d3-time-format@4.1.0/+esm",
+      "sha256": "94ad07fcaf5f689cd50d543f1a26c6677c82fafaaa5eead136bfc4cbe8a562b8",
+      "byte_size": 9693
+    },
+    {
+      "name": "d3-zoom",
+      "version": "3.0.0",
+      "source_url": "https://cdn.jsdelivr.net/npm/d3-zoom@3.0.0/+esm",
+      "sha256": "0b25a604005e21abcfb1ec9dfb6fdf24836199ab8ae1ce96b8332f66f6d3730f",
+      "byte_size": 9907
+    }
+  ]
+}
