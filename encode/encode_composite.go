@@ -303,12 +303,13 @@ func encodeLayerComposite(s *spec.Spec, composite *plan.CompositeDAG, childTable
 	}
 
 	sceneObj := scene.Scene{
-		ID:      "scene-0",
-		Frame:   layout.Frame,
-		Plot:    layout.Plot,
-		Axes:    perCellAxes,
-		Legends: legends,
-		Layers:  sceneLayers,
+		ID:         "scene-0",
+		Frame:      layout.Frame,
+		Plot:       layout.Plot,
+		Axes:       perCellAxes,
+		Legends:    legends,
+		Layers:     sceneLayers,
+		Selections: BuildSelections(s.Selection),
 	}
 	if hasTitle {
 		sceneObj.Title = &scene.TextElement{

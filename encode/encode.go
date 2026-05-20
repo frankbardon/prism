@@ -345,12 +345,13 @@ func Encode(s *spec.Spec, tables map[plan.NodeID]*table.Table, tipID plan.NodeID
 	}
 
 	sceneObj := scene.Scene{
-		ID:      "scene-0",
-		Frame:   layout.Frame,
-		Plot:    layout.Plot,
-		Axes:    axes,
-		Legends: legends,
-		Layers:  []scene.SceneLayer{layer},
+		ID:         "scene-0",
+		Frame:      layout.Frame,
+		Plot:       layout.Plot,
+		Axes:       axes,
+		Legends:    legends,
+		Layers:     []scene.SceneLayer{layer},
+		Selections: BuildSelections(s.Selection),
 	}
 	if hasTitle {
 		sceneObj.Title = &scene.TextElement{
@@ -400,12 +401,13 @@ func buildSceneDoc(
 		}
 	}
 	sceneObj := scene.Scene{
-		ID:      "scene-0",
-		Frame:   layout.Frame,
-		Plot:    layout.Plot,
-		Axes:    axes,
-		Legends: legends,
-		Layers:  []scene.SceneLayer{layer},
+		ID:         "scene-0",
+		Frame:      layout.Frame,
+		Plot:       layout.Plot,
+		Axes:       axes,
+		Legends:    legends,
+		Layers:     []scene.SceneLayer{layer},
+		Selections: BuildSelections(s.Selection),
 	}
 	if hasTitle {
 		sceneObj.Title = &scene.TextElement{

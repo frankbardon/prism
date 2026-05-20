@@ -141,8 +141,10 @@ func Build(s *spec.Spec, opts Options) (*plan.DAG, plan.NodeID, error) {
 //
 // P08 landed layer + concat / hconcat / vconcat; P09 added facet +
 // repeat. Callers building a composite spec must use BuildComposite
-// (the rejection here points them at the right entry). Selection is
-// the only remaining composition primitive deferred (to P13).
+// (the rejection here points them at the right entry). P13 wires
+// Selection so the planner pipes the block straight through to the
+// encoder (no DAG nodes are required — selections are pure encoder /
+// renderer state per D004).
 func rejectOutOfScope(s *spec.Spec) error {
 	switch {
 	case len(s.Layer) > 0, len(s.Concat) > 0, len(s.HConcat) > 0, len(s.VConcat) > 0,
@@ -152,8 +154,6 @@ func rejectOutOfScope(s *spec.Spec) error {
 			"Spec is a composite (layer / concat / hconcat / vconcat / facet / repeat); use BuildComposite, not Build.",
 			map[string]any{"Kind": "composition:flat-build", "Phase": "P08-P09"},
 		)
-	case len(s.Selection) > 0:
-		return outOfScopeErr("selection", "P13")
 	}
 	return nil
 }

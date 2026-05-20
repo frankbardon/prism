@@ -71,12 +71,10 @@ func TestPrismDAGBuildSingleSource(t *testing.T) {
 
 func TestPrismDAGBuildAllFixtures(t *testing.T) {
 	// P08 unskipped layer + concat / hconcat / vconcat; P09 unskipped
-	// facet / repeat (now built via BuildComposite). Remaining
-	// deferrals: selection → P13.
-	skip := map[string]bool{
-		"selection_interval.json": true,
-		"selection_point.json":    true,
-	}
+	// facet / repeat. P13 unskipped selection (the builder pipes the
+	// selection block to the encoder; no DAG nodes are required per
+	// D004). No deferrals remain.
+	skip := map[string]bool{}
 
 	root := repoRoot(t)
 	dir := filepath.Join(root, "testdata", "specs")
@@ -143,33 +141,29 @@ func TestPrismDAGBuildAllFixtures(t *testing.T) {
 	}
 }
 
-// TestPrismDAGBuildSelectionRejected pins the post-P09 rejection
-// set. Composition (layer / concat / facet / repeat) is now built
-// via BuildComposite — see TestPrismBuildRejectsCompositeViaFlatBuild
-// for the "wrong entry" rejection. Only selection stays deferred to
-// P13.
-func TestPrismDAGBuildSelectionRejected(t *testing.T) {
-	cases := []struct {
-		fixture string
-		kind    string
-	}{
-		{"selection_interval.json", "selection"},
+// TestPrismDAGBuildSelectionFixturesPipe through P13 — the previously
+// rejected selection_*.json fixtures now build through Build() because
+// selections flow straight to the encoder per D004. This test pins
+// the new positive contract.
+func TestPrismDAGBuildSelectionFixturesPipe(t *testing.T) {
+	cases := []string{
+		"selection_point.json",
+		"selection_interval.json",
 	}
 	root := repoRoot(t)
-	for _, c := range cases {
-		c := c
-		t.Run(c.fixture, func(t *testing.T) {
-			s := loadSpec(t, filepath.Join(root, "testdata", "specs", c.fixture))
-			_, _, err := build.Build(s, build.Options{})
-			if err == nil {
-				t.Fatal("expected PRISM_PLAN_002, got nil")
+	for _, name := range cases {
+		name := name
+		t.Run(name, func(t *testing.T) {
+			s := loadSpec(t, filepath.Join(root, "testdata", "specs", name))
+			d, tip, err := build.Build(s, build.Options{})
+			if err != nil {
+				t.Fatalf("Build: %v", err)
 			}
-			var ae *prismerrors.AppError
-			if !errors.As(err, &ae) || ae.Code != "PRISM_PLAN_002" {
-				t.Fatalf("expected PRISM_PLAN_002, got %v", err)
+			if d == nil || d.Size() == 0 {
+				t.Fatal("DAG empty after Build")
 			}
-			if got := ae.Context["Kind"]; got != c.kind {
-				t.Errorf("Kind=%v, want %q", got, c.kind)
+			if tip == "" {
+				t.Fatal("tip id empty")
 			}
 		})
 	}
