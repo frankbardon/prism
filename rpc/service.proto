@@ -1,0 +1,102 @@
+// Package prism.v1 defines the Twirp service surface for Prism.
+//
+// All spec-carrying requests pass the spec as a JSON-encoded string
+// rather than re-modeling the Spec inside protobuf. There is one
+// source of truth for the Spec — the Go types under `spec/` and the
+// JSON Schema bundle under `schema/v1/`. Re-modeling here would
+// guarantee drift.
+//
+// Scene IR and LogicalPlan are returned as JSON strings for the same
+// reason.
+
+syntax = "proto3";
+
+package prism.v1;
+
+option go_package = "github.com/frankbardon/prism/rpc;rpc";
+
+// Prism is the canonical RPC surface for the Prism visualization
+// library. Every method except ListDatasets requires a spec; specs
+// are JSON-encoded per the schemas under `schema/v1/`.
+service Prism {
+  // Plot compiles a spec and renders it to bytes in the requested
+  // format. SVG is always supported; PNG (P15) and PDF (P16) return
+  // PRISM_RENDER_FORMAT_UNAVAILABLE in P14.
+  rpc Plot         (PlotRequest)     returns (PlotResponse);
+
+  // Validate returns ok=true with no errors when the spec is valid,
+  // or ok=false with the structured error list when it isn't.
+  rpc Validate     (ValidateRequest) returns (ValidateResponse);
+
+  // Scene runs stages 1-5 (resolve, plan, execute, encode) and
+  // returns the Scene IR as JSON. The browser-side renderer
+  // consumes this directly.
+  rpc Scene        (SceneRequest)    returns (SceneResponse);
+
+  // Plan returns the logical DAG that would execute the spec.
+  // Useful for debugging and visualisation tooling.
+  rpc Plan         (PlanRequest)     returns (PlanResponse);
+
+  // ListDatasets returns the names + sources of every dataset in
+  // the server's registry.
+  rpc ListDatasets (DatasetsRequest) returns (DatasetsResponse);
+}
+
+message PlotRequest {
+  string spec   = 1;
+  string format = 2;
+  string theme  = 3;
+  int32  width  = 4;
+  int32  height = 5;
+}
+
+message PlotResponse {
+  bytes           bytes    = 1;
+  string          mime     = 2;
+  repeated string warnings = 3;
+}
+
+message ValidateRequest {
+  string spec = 1;
+}
+
+message ValidateResponse {
+  bool                     ok     = 1;
+  repeated ValidateError   errors = 2;
+}
+
+message ValidateError {
+  string          code    = 1;
+  string          message = 2;
+  repeated string fixups  = 3;
+}
+
+message SceneRequest {
+  string spec   = 1;
+  string theme  = 2;
+  int32  width  = 3;
+  int32  height = 4;
+}
+
+message SceneResponse {
+  string scene_json = 1;
+}
+
+message PlanRequest {
+  string spec = 1;
+}
+
+message PlanResponse {
+  string plan_json = 1;
+}
+
+message DatasetsRequest {}
+
+message DatasetsResponse {
+  repeated Dataset datasets = 1;
+}
+
+message Dataset {
+  string name   = 1;
+  string source = 2;
+}
