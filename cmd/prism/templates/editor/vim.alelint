@@ -1,0 +1,18 @@
+" Drop into your .vimrc (or under after/plugin/) to wire prism validate
+" as an ALE linter for *.prism.json files. Requires dense-analysis/ale
+" and `prism` in PATH.
+
+au BufRead,BufNewFile *.prism.json set filetype=json
+
+let g:ale_linters_aliases = get(g:, 'ale_linters_aliases', {})
+let g:ale_linters_aliases['prism'] = ['json']
+
+let g:ale_linters = get(g:, 'ale_linters', {})
+let g:ale_linters['prism'] = ['prism_validate']
+
+call ale#linter#Define('prism', {
+  \   'name': 'prism_validate',
+  \   'executable': 'prism',
+  \   'command': 'prism validate --json %t',
+  \   'callback': 'ale#handlers#json#HandleJSONErrors',
+  \})

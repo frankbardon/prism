@@ -1,0 +1,30 @@
+<!--
+  Drop this into .idea/jsonSchemas.xml (or merge with existing) to wire
+  Prism schema validation in JetBrains IDEs (IntelliJ, GoLand, WebStorm).
+  Schema path assumes .prism/ sits at project root.
+-->
+<application>
+  <component name="JsonSchemaMappingsProjectConfiguration">
+    <state>
+      <map>
+        <entry key="Prism Spec">
+          <value>
+            <SchemaInfo>
+              <option name="name" value="Prism Spec" />
+              <option name="relativePathToSchema" value=".prism/schemas/spec.schema.json" />
+              <option name="applicationDefined" value="false" />
+              <option name="patterns">
+                <list>
+                  <Item>
+                    <option name="path" value="*.prism.json" />
+                    <option name="mappingKind" value="Pattern" />
+                  </Item>
+                </list>
+              </option>
+            </SchemaInfo>
+          </value>
+        </entry>
+      </map>
+    </state>
+  </component>
+</application>

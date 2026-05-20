@@ -1,0 +1,9 @@
+{
+  "_comment": "Drop this into .vscode/settings.json (or merge with existing) to wire Prism schema validation + autocomplete for *.prism.json files. Schema path assumes .prism/ sits at workspace root.",
+  "json.schemas": [
+    {
+      "fileMatch": ["*.prism.json", "**/prism/**/*.json"],
+      "url": "./.prism/schemas/spec.schema.json"
+    }
+  ]
+}

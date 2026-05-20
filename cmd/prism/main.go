@@ -48,6 +48,7 @@ func newApp() *cli.Command {
 			inspectCommand(),
 			examplesCommand(),
 			schemaCommand(),
+			initCommand(),
 		},
 		Action: func(_ context.Context, c *cli.Command) error {
 			if c.NArg() == 0 {
