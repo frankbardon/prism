@@ -12,7 +12,7 @@ require (
 	github.com/spf13/afero v1.15.0
 	github.com/twitchtv/twirp v8.1.3+incompatible
 	github.com/urfave/cli/v3 v3.9.0
-	golang.org/x/text v0.35.0
+	golang.org/x/text v0.37.0
 	google.golang.org/protobuf v1.36.11
 )
 
