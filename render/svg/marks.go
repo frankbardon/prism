@@ -27,13 +27,15 @@ func renderMark(w *Writer, m scene.Mark) {
 		renderRule(w, m)
 	case m.Text != nil:
 		renderTextMark(w, m)
+	case m.Path != nil:
+		renderPath(w, m)
+	case m.Image != nil:
+		renderImage(w, m)
 	default:
-		// Unsupported geometry types (Path, Image) reach us only if
-		// the encoder advanced past P10 without updating the renderer.
-		// Emit a comment so the cause is visible.
+		// Unknown geometry — defensive comment so the cause is visible.
 		w.Raw("<!-- mark type ")
 		w.Text(string(m.Type))
-		w.Raw(" not rendered in P10 -->")
+		w.Raw(" not rendered -->")
 	}
 }
 
@@ -327,6 +329,54 @@ func itoa(n int) string {
 
 func cos(a float64) float64 { return math.Cos(a) }
 func sin(a float64) float64 { return math.Sin(a) }
+
+// renderPath emits a `<path class="prism-mark-path" d="..."/>`
+// passing the user-supplied d string straight through. The writer's
+// attribute escaping (escapeAttr) handles the five XML special chars
+// so pathological d values round-trip safely. See D068.
+func renderPath(w *Writer, m scene.Mark) {
+	g := m.Path
+	w.OpenTag("path")
+	w.Attr("class", "prism-mark-path")
+	if m.ID != "" {
+		w.Attr("data-prism-id", m.ID)
+	}
+	w.Attr("d", g.D)
+	writeStyleAttrs(w, m.Style)
+	if hasTooltip(m) {
+		w.CloseTagOpen()
+		writeTooltipChild(w, m)
+		w.EndTag("path")
+		return
+	}
+	w.SelfClose()
+}
+
+// renderImage emits a `<image class="prism-mark-image" x="" y=""
+// width="" height="" href="..."/>`. The href is attribute-escaped.
+// See D068 for the data: + relative-path allowlist enforced by
+// validator PRISM_SPEC_016.
+func renderImage(w *Writer, m scene.Mark) {
+	g := m.Image
+	w.OpenTag("image")
+	w.Attr("class", "prism-mark-image")
+	if m.ID != "" {
+		w.Attr("data-prism-id", m.ID)
+	}
+	w.AttrFloat("x", g.X)
+	w.AttrFloat("y", g.Y)
+	w.AttrFloat("width", g.W)
+	w.AttrFloat("height", g.H)
+	w.Attr("href", g.Href)
+	writeStyleAttrs(w, m.Style)
+	if hasTooltip(m) {
+		w.CloseTagOpen()
+		writeTooltipChild(w, m)
+		w.EndTag("image")
+		return
+	}
+	w.SelfClose()
+}
 
 func renderRule(w *Writer, m scene.Mark) {
 	g := m.Rule

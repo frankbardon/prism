@@ -106,17 +106,21 @@ func Encode(markType string, in Inputs) ([]scene.Mark, *scene.Warning, error) {
 		marksOut, err = encodeBoxplot(in)
 	case "violin":
 		marksOut, err = encodeViolin(in)
-	case "path", "image", "sankey", "funnel", "sparkline":
+	case "path":
+		marksOut, err = encodePath(in)
+	case "image":
+		marksOut, err = encodeImage(in)
+	case "sankey", "funnel", "sparkline":
 		return nil, &scene.Warning{
 			Code:    scene.WarnMarkNotImplemented,
-			Message: fmt.Sprintf("mark type %q lands in a later phase; layer rendered without marks.", markType),
+			Message: fmt.Sprintf("mark type %q lands later in P11; layer rendered without marks.", markType),
 			Details: map[string]any{"mark": markType},
 		}, nil
 	default:
 		return nil, nil, prismerrors.New(
 			"PRISM_ENCODE_001",
 			fmt.Sprintf("Unknown mark type %q.", markType),
-			map[string]any{"Field": "<mark>", "Source": "<spec>", "Available": "bar|line|area|point|rule|arc|pie|donut|histogram|heatmap|boxplot|violin"},
+			map[string]any{"Field": "<mark>", "Source": "<spec>", "Available": "bar|line|area|point|rule|arc|pie|donut|histogram|heatmap|boxplot|violin|path|image|sankey|funnel|sparkline"},
 		)
 	}
 	if err != nil {

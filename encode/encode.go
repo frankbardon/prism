@@ -103,8 +103,17 @@ func Encode(s *spec.Spec, tables map[plan.NodeID]*table.Table, tipID plan.NodeID
 	// own synthetic x/y scales inside the encoder (D060) so the
 	// standard x/y resolution is skipped here too. The arc / histogram
 	// encoders return their own axes when relevant.
+	//
+	// P11 marks that bring their own geometry:
+	//   - sankey: source/target/value channels, no axes (D064/D065).
+	//   - funnel: stacked trapezoids, no cartesian axes (D066).
+	//   - path:   raw SVG d-string, no axes.
+	// Image mark uses x/y when bound, otherwise skips — let the
+	// standard path run; the image encoder is forgiving on missing
+	// scales.
 	polarMark := markType == "arc" || markType == "pie" || markType == "donut"
 	selfScaleMark := markType == "histogram"
+	specialtyMark := markType == "sankey" || markType == "funnel" || markType == "path"
 
 	// Resolve x / y scales (composite caller may supply pre-computed
 	// shared overrides per P09 / D057; honour them when present so
@@ -115,7 +124,7 @@ func Encode(s *spec.Spec, tables map[plan.NodeID]*table.Table, tipID plan.NodeID
 		xWarn  *scene.Warning
 		yWarn  *scene.Warning
 	)
-	if !polarMark && !selfScaleMark {
+	if !polarMark && !selfScaleMark && !specialtyMark {
 		if opts.OverrideXScale != nil {
 			xScale = opts.OverrideXScale
 		} else {

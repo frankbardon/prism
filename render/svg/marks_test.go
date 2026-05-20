@@ -136,3 +136,68 @@ func TestPrismRenderArcDonutHasInnerArc(t *testing.T) {
 		t.Errorf("donut sector should have exactly 2 A commands: %s", got)
 	}
 }
+
+func TestPrismRenderPathEmitsPath(t *testing.T) {
+	w := NewWriter()
+	m := scene.Mark{
+		Type: scene.MarkPath,
+		ID:   "path-0",
+		Path: &scene.PathGeom{D: "M 0 0 L 10 10"},
+	}
+	renderPath(w, m)
+	got := w.String()
+	for _, want := range []string{
+		`<path`,
+		`class="prism-mark-path"`,
+		`d="M 0 0 L 10 10"`,
+		`data-prism-id="path-0"`,
+	} {
+		if !strings.Contains(got, want) {
+			t.Errorf("path output missing %q: %s", want, got)
+		}
+	}
+	if !bytes.HasSuffix(w.Bytes(), []byte("/>")) {
+		t.Errorf("path not self-closed: %s", got)
+	}
+}
+
+func TestPrismRenderPathEscapesQuotes(t *testing.T) {
+	w := NewWriter()
+	m := scene.Mark{
+		Type: scene.MarkPath,
+		Path: &scene.PathGeom{D: `M 0 0 L "x" 1`}, // pathological
+	}
+	renderPath(w, m)
+	got := w.String()
+	if strings.Contains(got, `"x"`) {
+		t.Errorf("unescaped quote in path d-attr: %s", got)
+	}
+	if !strings.Contains(got, `&quot;`) {
+		t.Errorf("expected &quot; entity for quote: %s", got)
+	}
+}
+
+func TestPrismRenderImageEmitsImage(t *testing.T) {
+	w := NewWriter()
+	href := "data:image/png;base64,AAA="
+	m := scene.Mark{
+		Type:  scene.MarkImage,
+		ID:    "image-0",
+		Image: &scene.ImageGeom{X: 100, Y: 50, W: 64, H: 64, Href: href},
+	}
+	renderImage(w, m)
+	got := w.String()
+	for _, want := range []string{
+		`<image`,
+		`class="prism-mark-image"`,
+		`x="100"`,
+		`y="50"`,
+		`width="64"`,
+		`height="64"`,
+		`href="data:image/png;base64,AAA="`,
+	} {
+		if !strings.Contains(got, want) {
+			t.Errorf("image output missing %q: %s", want, got)
+		}
+	}
+}
