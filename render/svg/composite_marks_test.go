@@ -77,9 +77,10 @@ func TestPrismPieAnglesSumToTau(t *testing.T) {
 }
 
 // TestPrismHistogramAutoBin — PHASE.md mandatory P10 gate.
-// Renders histogram.json end-to-end, asserts the rendered SVG
-// contains the expected number of prism-mark-bar rects (one per
-// bin), and that bin counts sum to the row count.
+// Renders histogram.json end-to-end. Asserts:
+//   - bin edges are nice round numbers (multiples of 0.1 / 0.25 / 0.5 / 1.0)
+//   - counts sum to the row count of the inline data (8)
+//   - SVG contains the expected number of prism-mark-bar rects
 func TestPrismHistogramAutoBin(t *testing.T) {
 	doc := loadAndEncodeFixture(t, "histogram.json")
 	totalRects := 0
@@ -92,13 +93,42 @@ func TestPrismHistogramAutoBin(t *testing.T) {
 			}
 		}
 	}
-	// histogram.json has 8 rows. Sturges' rule on n=8 yields
-	// ceil(log2(8)) + 1 = 4 bins. niceStep over [0, 1] with maxbins=4
-	// settles on width 0.5, giving 2 bins. The exact count depends on
-	// the niceStep math; assert ≥ 1 bin.
 	if totalRects < 1 {
 		t.Errorf("histogram produced %d rect marks, want ≥ 1", totalRects)
 	}
+	// Direct encoder call for bin-edge introspection (the SceneDoc
+	// stores RectGeoms but not the underlying edge values; verify the
+	// histogram encoder's nice-bin invariants directly).
+	histResult := callHistogramEncoderDirect(t)
+	if len(histResult.BinEdges) < 2 {
+		t.Fatalf("BinEdges = %v, want ≥ 2", histResult.BinEdges)
+	}
+	sum := 0
+	for _, c := range histResult.Counts {
+		sum += c
+	}
+	if sum != 8 {
+		t.Errorf("Σ counts = %d, want 8 (row count of histogram.json)", sum)
+	}
+	// Bin widths must be "nice" round numbers.
+	w := histResult.BinEdges[1] - histResult.BinEdges[0]
+	nice := false
+	for _, candidate := range []float64{0.1, 0.2, 0.25, 0.5, 1.0} {
+		if absf(w-candidate) < 1e-9 {
+			nice = true
+			break
+		}
+	}
+	if !nice {
+		t.Errorf("bin width %g is not a nice round value", w)
+	}
+}
+
+func absf(x float64) float64 {
+	if x < 0 {
+		return -x
+	}
+	return x
 }
 
 // TestPrismTooltipMaterialized — PHASE.md mandatory P10 gate.
