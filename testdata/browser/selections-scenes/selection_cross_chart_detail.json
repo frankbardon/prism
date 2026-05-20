@@ -1,0 +1,725 @@
+{
+  "version": "1.0",
+  "theme": {
+    "name": "light",
+    "color_axis": {
+      "r": 107,
+      "g": 114,
+      "b": 128,
+      "a": 255
+    },
+    "color_grid": {
+      "r": 229,
+      "g": 231,
+      "b": 235,
+      "a": 255
+    },
+    "color_text": {
+      "r": 17,
+      "g": 24,
+      "b": 39,
+      "a": 255
+    },
+    "background": "transparent",
+    "font_sans": "Inter, system-ui, sans-serif",
+    "font_mono": "ui-monospace, SF Mono, monospace",
+    "css": "\u003cstyle\u003e:root{--prism-color-axis:#6b7280;--prism-color-grid:#e5e7eb;--prism-color-text:#111827;--prism-color-bg:transparent;--prism-font-sans:Inter, system-ui, sans-serif;--prism-font-mono:ui-monospace, SF Mono, monospace;--prism-font-size-label:11px;--prism-font-size-title:16px;--prism-font-size-axis-title:12px;}.prism-axis-domain{stroke:var(--prism-color-axis);fill:none;}.prism-axis-tick{stroke:var(--prism-color-axis);}.prism-axis-label{fill:var(--prism-color-text);font-family:var(--prism-font-sans);font-size:var(--prism-font-size-label,11px);}.prism-axis-title{fill:var(--prism-color-text);font-family:var(--prism-font-sans);font-size:var(--prism-font-size-axis-title,12px);font-weight:600;}.prism-grid-line{stroke:var(--prism-color-grid);}.prism-title{fill:var(--prism-color-text);font-family:var(--prism-font-sans);font-size:var(--prism-font-size-title,16px);font-weight:600;}.prism-legend-title{fill:var(--prism-color-text);font-family:var(--prism-font-sans);font-size:12px;font-weight:600;}.prism-legend-label{fill:var(--prism-color-text);font-family:var(--prism-font-sans);font-size:11px;}.prism-legend-swatch{stroke:none;}.prism-selected{opacity:var(--prism-selected-opacity,1);}.prism-deselected{opacity:var(--prism-deselected-opacity,0.3);}\u003c/style\u003e"
+  },
+  "grid": {
+    "layout": {
+      "rows": 1,
+      "cols": 1,
+      "headers": {}
+    },
+    "cells": [
+      {
+        "row": 0,
+        "col": 0,
+        "scene": {
+          "id": "scene-0",
+          "frame": {
+            "x": 0,
+            "y": 0,
+            "w": 800,
+            "h": 600
+          },
+          "plot": {
+            "x": 40,
+            "y": 50,
+            "w": 740,
+            "h": 510
+          },
+          "title": {
+            "content": "Brand detail (filtered by overview's brand_focus)",
+            "x": 410,
+            "y": 20,
+            "style": {}
+          },
+          "axes": [
+            {
+              "id": "x-axis",
+              "channel": "x",
+              "position": "bottom",
+              "scale": {
+                "type": "linear",
+                "domain": [
+                  0,
+                  3
+                ],
+                "range": [
+                  40,
+                  780
+                ]
+              },
+              "ticks": [
+                {
+                  "value": 0,
+                  "pixel": 40,
+                  "label": "0"
+                },
+                {
+                  "value": 0.25,
+                  "pixel": 101.66666666666666,
+                  "label": "",
+                  "minor": true
+                },
+                {
+                  "value": 0.5,
+                  "pixel": 163.33333333333331,
+                  "label": "0.5"
+                },
+                {
+                  "value": 0.75,
+                  "pixel": 225,
+                  "label": "",
+                  "minor": true
+                },
+                {
+                  "value": 1,
+                  "pixel": 286.66666666666663,
+                  "label": "1"
+                },
+                {
+                  "value": 1.25,
+                  "pixel": 348.33333333333337,
+                  "label": "",
+                  "minor": true
+                },
+                {
+                  "value": 1.5,
+                  "pixel": 410,
+                  "label": "1.5"
+                },
+                {
+                  "value": 1.75,
+                  "pixel": 471.6666666666667,
+                  "label": "",
+                  "minor": true
+                },
+                {
+                  "value": 2,
+                  "pixel": 533.3333333333333,
+                  "label": "2"
+                },
+                {
+                  "value": 2.25,
+                  "pixel": 595,
+                  "label": "",
+                  "minor": true
+                },
+                {
+                  "value": 2.5,
+                  "pixel": 656.6666666666667,
+                  "label": "2.5"
+                },
+                {
+                  "value": 2.75,
+                  "pixel": 718.3333333333333,
+                  "label": "",
+                  "minor": true
+                },
+                {
+                  "value": 3,
+                  "pixel": 780,
+                  "label": "3"
+                }
+              ],
+              "title": "month",
+              "domain": {
+                "x1": 40,
+                "y1": 560,
+                "x2": 780,
+                "y2": 560
+              },
+              "grid": [
+                {
+                  "x1": 40,
+                  "y1": 50,
+                  "x2": 40,
+                  "y2": 560
+                },
+                {
+                  "x1": 163.33333333333331,
+                  "y1": 50,
+                  "x2": 163.33333333333331,
+                  "y2": 560
+                },
+                {
+                  "x1": 286.66666666666663,
+                  "y1": 50,
+                  "x2": 286.66666666666663,
+                  "y2": 560
+                },
+                {
+                  "x1": 410,
+                  "y1": 50,
+                  "x2": 410,
+                  "y2": 560
+                },
+                {
+                  "x1": 533.3333333333333,
+                  "y1": 50,
+                  "x2": 533.3333333333333,
+                  "y2": 560
+                },
+                {
+                  "x1": 656.6666666666667,
+                  "y1": 50,
+                  "x2": 656.6666666666667,
+                  "y2": 560
+                },
+                {
+                  "x1": 780,
+                  "y1": 50,
+                  "x2": 780,
+                  "y2": 560
+                }
+              ],
+              "label_style": {},
+              "title_style": {}
+            },
+            {
+              "id": "y-axis",
+              "channel": "y",
+              "position": "left",
+              "scale": {
+                "type": "linear",
+                "domain": [
+                  0,
+                  0.71
+                ],
+                "range": [
+                  560,
+                  50
+                ]
+              },
+              "ticks": [
+                {
+                  "value": 0,
+                  "pixel": 560,
+                  "label": "0"
+                },
+                {
+                  "value": 0.1,
+                  "pixel": 488.169014084507,
+                  "label": "",
+                  "minor": true
+                },
+                {
+                  "value": 0.2,
+                  "pixel": 416.3380281690141,
+                  "label": "0.2",
+                  "label_hidden": true
+                },
+                {
+                  "value": 0.30000000000000004,
+                  "pixel": 344.5070422535211,
+                  "label": "",
+                  "minor": true
+                },
+                {
+                  "value": 0.4,
+                  "pixel": 272.67605633802816,
+                  "label": "0.4"
+                },
+                {
+                  "value": 0.5,
+                  "pixel": 200.84507042253517,
+                  "label": "",
+                  "minor": true
+                },
+                {
+                  "value": 0.6,
+                  "pixel": 129.01408450704227,
+                  "label": "0.6",
+                  "label_hidden": true
+                }
+              ],
+              "title": "value",
+              "domain": {
+                "x1": 40,
+                "y1": 50,
+                "x2": 40,
+                "y2": 560
+              },
+              "grid": [
+                {
+                  "x1": 40,
+                  "y1": 560,
+                  "x2": 780,
+                  "y2": 560
+                },
+                {
+                  "x1": 40,
+                  "y1": 416.3380281690141,
+                  "x2": 780,
+                  "y2": 416.3380281690141
+                },
+                {
+                  "x1": 40,
+                  "y1": 272.67605633802816,
+                  "x2": 780,
+                  "y2": 272.67605633802816
+                },
+                {
+                  "x1": 40,
+                  "y1": 129.01408450704227,
+                  "x2": 780,
+                  "y2": 129.01408450704227
+                }
+              ],
+              "label_style": {},
+              "title_style": {}
+            }
+          ],
+          "legends": [
+            {
+              "id": "legend-color",
+              "channel": "color",
+              "position": "top-right",
+              "title": "brand_id",
+              "entries": [
+                {
+                  "label": "alpha",
+                  "swatch": {
+                    "type": "solid",
+                    "color": {
+                      "r": 59,
+                      "g": 130,
+                      "b": 246,
+                      "a": 255
+                    }
+                  }
+                },
+                {
+                  "label": "beta",
+                  "swatch": {
+                    "type": "solid",
+                    "color": {
+                      "r": 239,
+                      "g": 68,
+                      "b": 68,
+                      "a": 255
+                    }
+                  }
+                },
+                {
+                  "label": "gamma",
+                  "swatch": {
+                    "type": "solid",
+                    "color": {
+                      "r": 16,
+                      "g": 185,
+                      "b": 129,
+                      "a": 255
+                    }
+                  }
+                },
+                {
+                  "label": "delta",
+                  "swatch": {
+                    "type": "solid",
+                    "color": {
+                      "r": 245,
+                      "g": 158,
+                      "b": 11,
+                      "a": 255
+                    }
+                  }
+                },
+                {
+                  "label": "epsilon",
+                  "swatch": {
+                    "type": "solid",
+                    "color": {
+                      "r": 139,
+                      "g": 92,
+                      "b": 246,
+                      "a": 255
+                    }
+                  }
+                }
+              ],
+              "frame": {
+                "x": 676,
+                "y": 50,
+                "w": 104,
+                "h": 88
+              },
+              "title_style": {},
+              "label_style": {}
+            }
+          ],
+          "layers": [
+            {
+              "id": "layer-0",
+              "mark": "point",
+              "marks": [
+                {
+                  "type": "point",
+                  "id": "point-0",
+                  "style": {
+                    "fill": {
+                      "r": 59,
+                      "g": 130,
+                      "b": 246,
+                      "a": 255
+                    }
+                  },
+                  "datum": {
+                    "layer_id": "layer-0",
+                    "row_id": 0
+                  },
+                  "point": {
+                    "cx": 286.66666666666663,
+                    "cy": 272.67605633802816,
+                    "r": 4,
+                    "shape": "circle"
+                  }
+                },
+                {
+                  "type": "point",
+                  "id": "point-1",
+                  "style": {
+                    "fill": {
+                      "r": 59,
+                      "g": 130,
+                      "b": 246,
+                      "a": 255
+                    }
+                  },
+                  "datum": {
+                    "layer_id": "layer-0",
+                    "row_id": 1
+                  },
+                  "point": {
+                    "cx": 533.3333333333333,
+                    "cy": 258.3098591549296,
+                    "r": 4,
+                    "shape": "circle"
+                  }
+                },
+                {
+                  "type": "point",
+                  "id": "point-2",
+                  "style": {
+                    "fill": {
+                      "r": 59,
+                      "g": 130,
+                      "b": 246,
+                      "a": 255
+                    }
+                  },
+                  "datum": {
+                    "layer_id": "layer-0",
+                    "row_id": 2
+                  },
+                  "point": {
+                    "cx": 780,
+                    "cy": 236.76056338028167,
+                    "r": 4,
+                    "shape": "circle"
+                  }
+                },
+                {
+                  "type": "point",
+                  "id": "point-3",
+                  "style": {
+                    "fill": {
+                      "r": 239,
+                      "g": 68,
+                      "b": 68,
+                      "a": 255
+                    }
+                  },
+                  "datum": {
+                    "layer_id": "layer-0",
+                    "row_id": 3
+                  },
+                  "point": {
+                    "cx": 286.66666666666663,
+                    "cy": 93.09859154929572,
+                    "r": 4,
+                    "shape": "circle"
+                  }
+                },
+                {
+                  "type": "point",
+                  "id": "point-4",
+                  "style": {
+                    "fill": {
+                      "r": 239,
+                      "g": 68,
+                      "b": 68,
+                      "a": 255
+                    }
+                  },
+                  "datum": {
+                    "layer_id": "layer-0",
+                    "row_id": 4
+                  },
+                  "point": {
+                    "cx": 533.3333333333333,
+                    "cy": 71.5492957746478,
+                    "r": 4,
+                    "shape": "circle"
+                  }
+                },
+                {
+                  "type": "point",
+                  "id": "point-5",
+                  "style": {
+                    "fill": {
+                      "r": 239,
+                      "g": 68,
+                      "b": 68,
+                      "a": 255
+                    }
+                  },
+                  "datum": {
+                    "layer_id": "layer-0",
+                    "row_id": 5
+                  },
+                  "point": {
+                    "cx": 780,
+                    "cy": 50,
+                    "r": 4,
+                    "shape": "circle"
+                  }
+                },
+                {
+                  "type": "point",
+                  "id": "point-6",
+                  "style": {
+                    "fill": {
+                      "r": 16,
+                      "g": 185,
+                      "b": 129,
+                      "a": 255
+                    }
+                  },
+                  "datum": {
+                    "layer_id": "layer-0",
+                    "row_id": 6
+                  },
+                  "point": {
+                    "cx": 286.66666666666663,
+                    "cy": 164.92957746478868,
+                    "r": 4,
+                    "shape": "circle"
+                  }
+                },
+                {
+                  "type": "point",
+                  "id": "point-7",
+                  "style": {
+                    "fill": {
+                      "r": 16,
+                      "g": 185,
+                      "b": 129,
+                      "a": 255
+                    }
+                  },
+                  "datum": {
+                    "layer_id": "layer-0",
+                    "row_id": 7
+                  },
+                  "point": {
+                    "cx": 533.3333333333333,
+                    "cy": 157.7464788732394,
+                    "r": 4,
+                    "shape": "circle"
+                  }
+                },
+                {
+                  "type": "point",
+                  "id": "point-8",
+                  "style": {
+                    "fill": {
+                      "r": 16,
+                      "g": 185,
+                      "b": 129,
+                      "a": 255
+                    }
+                  },
+                  "datum": {
+                    "layer_id": "layer-0",
+                    "row_id": 8
+                  },
+                  "point": {
+                    "cx": 780,
+                    "cy": 143.38028169014083,
+                    "r": 4,
+                    "shape": "circle"
+                  }
+                },
+                {
+                  "type": "point",
+                  "id": "point-9",
+                  "style": {
+                    "fill": {
+                      "r": 245,
+                      "g": 158,
+                      "b": 11,
+                      "a": 255
+                    }
+                  },
+                  "datum": {
+                    "layer_id": "layer-0",
+                    "row_id": 9
+                  },
+                  "point": {
+                    "cx": 286.66666666666663,
+                    "cy": 344.50704225352115,
+                    "r": 4,
+                    "shape": "circle"
+                  }
+                },
+                {
+                  "type": "point",
+                  "id": "point-10",
+                  "style": {
+                    "fill": {
+                      "r": 245,
+                      "g": 158,
+                      "b": 11,
+                      "a": 255
+                    }
+                  },
+                  "datum": {
+                    "layer_id": "layer-0",
+                    "row_id": 10
+                  },
+                  "point": {
+                    "cx": 533.3333333333333,
+                    "cy": 330.14084507042253,
+                    "r": 4,
+                    "shape": "circle"
+                  }
+                },
+                {
+                  "type": "point",
+                  "id": "point-11",
+                  "style": {
+                    "fill": {
+                      "r": 245,
+                      "g": 158,
+                      "b": 11,
+                      "a": 255
+                    }
+                  },
+                  "datum": {
+                    "layer_id": "layer-0",
+                    "row_id": 11
+                  },
+                  "point": {
+                    "cx": 780,
+                    "cy": 315.7746478873239,
+                    "r": 4,
+                    "shape": "circle"
+                  }
+                },
+                {
+                  "type": "point",
+                  "id": "point-12",
+                  "style": {
+                    "fill": {
+                      "r": 139,
+                      "g": 92,
+                      "b": 246,
+                      "a": 255
+                    }
+                  },
+                  "datum": {
+                    "layer_id": "layer-0",
+                    "row_id": 12
+                  },
+                  "point": {
+                    "cx": 286.66666666666663,
+                    "cy": 114.64788732394364,
+                    "r": 4,
+                    "shape": "circle"
+                  }
+                },
+                {
+                  "type": "point",
+                  "id": "point-13",
+                  "style": {
+                    "fill": {
+                      "r": 139,
+                      "g": 92,
+                      "b": 246,
+                      "a": 255
+                    }
+                  },
+                  "datum": {
+                    "layer_id": "layer-0",
+                    "row_id": 13
+                  },
+                  "point": {
+                    "cx": 533.3333333333333,
+                    "cy": 100.28169014084506,
+                    "r": 4,
+                    "shape": "circle"
+                  }
+                },
+                {
+                  "type": "point",
+                  "id": "point-14",
+                  "style": {
+                    "fill": {
+                      "r": 139,
+                      "g": 92,
+                      "b": 246,
+                      "a": 255
+                    }
+                  },
+                  "datum": {
+                    "layer_id": "layer-0",
+                    "row_id": 14
+                  },
+                  "point": {
+                    "cx": 780,
+                    "cy": 85.91549295774644,
+                    "r": 4,
+                    "shape": "circle"
+                  }
+                }
+              ]
+            }
+          ],
+          "selections": [
+            {
+              "id": "brand_focus",
+              "kind": "point",
+              "on": "click",
+              "resolve": "global",
+              "reactive": "client"
+            }
+          ]
+        }
+      }
+    ],
+    "shared": {}
+  }
+}

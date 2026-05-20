@@ -1,0 +1,482 @@
+{
+  "version": "1.0",
+  "theme": {
+    "name": "light",
+    "color_axis": {
+      "r": 107,
+      "g": 114,
+      "b": 128,
+      "a": 255
+    },
+    "color_grid": {
+      "r": 229,
+      "g": 231,
+      "b": 235,
+      "a": 255
+    },
+    "color_text": {
+      "r": 17,
+      "g": 24,
+      "b": 39,
+      "a": 255
+    },
+    "background": "transparent",
+    "font_sans": "Inter, system-ui, sans-serif",
+    "font_mono": "ui-monospace, SF Mono, monospace",
+    "css": "\u003cstyle\u003e:root{--prism-color-axis:#6b7280;--prism-color-grid:#e5e7eb;--prism-color-text:#111827;--prism-color-bg:transparent;--prism-font-sans:Inter, system-ui, sans-serif;--prism-font-mono:ui-monospace, SF Mono, monospace;--prism-font-size-label:11px;--prism-font-size-title:16px;--prism-font-size-axis-title:12px;}.prism-axis-domain{stroke:var(--prism-color-axis);fill:none;}.prism-axis-tick{stroke:var(--prism-color-axis);}.prism-axis-label{fill:var(--prism-color-text);font-family:var(--prism-font-sans);font-size:var(--prism-font-size-label,11px);}.prism-axis-title{fill:var(--prism-color-text);font-family:var(--prism-font-sans);font-size:var(--prism-font-size-axis-title,12px);font-weight:600;}.prism-grid-line{stroke:var(--prism-color-grid);}.prism-title{fill:var(--prism-color-text);font-family:var(--prism-font-sans);font-size:var(--prism-font-size-title,16px);font-weight:600;}.prism-legend-title{fill:var(--prism-color-text);font-family:var(--prism-font-sans);font-size:12px;font-weight:600;}.prism-legend-label{fill:var(--prism-color-text);font-family:var(--prism-font-sans);font-size:11px;}.prism-legend-swatch{stroke:none;}.prism-selected{opacity:var(--prism-selected-opacity,1);}.prism-deselected{opacity:var(--prism-deselected-opacity,0.3);}\u003c/style\u003e"
+  },
+  "grid": {
+    "layout": {
+      "rows": 1,
+      "cols": 1,
+      "headers": {}
+    },
+    "cells": [
+      {
+        "row": 0,
+        "col": 0,
+        "scene": {
+          "id": "scene-0",
+          "frame": {
+            "x": 0,
+            "y": 0,
+            "w": 800,
+            "h": 600
+          },
+          "plot": {
+            "x": 40,
+            "y": 50,
+            "w": 740,
+            "h": 510
+          },
+          "title": {
+            "content": "Daily score (x-axis brush)",
+            "x": 410,
+            "y": 20,
+            "style": {}
+          },
+          "axes": [
+            {
+              "id": "x-axis",
+              "channel": "x",
+              "position": "bottom",
+              "scale": {
+                "type": "linear",
+                "domain": [
+                  0,
+                  30
+                ],
+                "range": [
+                  40,
+                  780
+                ]
+              },
+              "ticks": [
+                {
+                  "value": 0,
+                  "pixel": 40,
+                  "label": "0"
+                },
+                {
+                  "value": 2.5,
+                  "pixel": 101.66666666666666,
+                  "label": "",
+                  "minor": true
+                },
+                {
+                  "value": 5,
+                  "pixel": 163.33333333333331,
+                  "label": "5"
+                },
+                {
+                  "value": 7.5,
+                  "pixel": 225,
+                  "label": "",
+                  "minor": true
+                },
+                {
+                  "value": 10,
+                  "pixel": 286.66666666666663,
+                  "label": "10"
+                },
+                {
+                  "value": 12.5,
+                  "pixel": 348.33333333333337,
+                  "label": "",
+                  "minor": true
+                },
+                {
+                  "value": 15,
+                  "pixel": 410,
+                  "label": "15"
+                },
+                {
+                  "value": 17.5,
+                  "pixel": 471.6666666666667,
+                  "label": "",
+                  "minor": true
+                },
+                {
+                  "value": 20,
+                  "pixel": 533.3333333333333,
+                  "label": "20"
+                },
+                {
+                  "value": 22.5,
+                  "pixel": 595,
+                  "label": "",
+                  "minor": true
+                },
+                {
+                  "value": 25,
+                  "pixel": 656.6666666666667,
+                  "label": "25"
+                },
+                {
+                  "value": 27.5,
+                  "pixel": 718.3333333333333,
+                  "label": "",
+                  "minor": true
+                },
+                {
+                  "value": 30,
+                  "pixel": 780,
+                  "label": "30"
+                }
+              ],
+              "title": "day",
+              "domain": {
+                "x1": 40,
+                "y1": 560,
+                "x2": 780,
+                "y2": 560
+              },
+              "grid": [
+                {
+                  "x1": 40,
+                  "y1": 50,
+                  "x2": 40,
+                  "y2": 560
+                },
+                {
+                  "x1": 163.33333333333331,
+                  "y1": 50,
+                  "x2": 163.33333333333331,
+                  "y2": 560
+                },
+                {
+                  "x1": 286.66666666666663,
+                  "y1": 50,
+                  "x2": 286.66666666666663,
+                  "y2": 560
+                },
+                {
+                  "x1": 410,
+                  "y1": 50,
+                  "x2": 410,
+                  "y2": 560
+                },
+                {
+                  "x1": 533.3333333333333,
+                  "y1": 50,
+                  "x2": 533.3333333333333,
+                  "y2": 560
+                },
+                {
+                  "x1": 656.6666666666667,
+                  "y1": 50,
+                  "x2": 656.6666666666667,
+                  "y2": 560
+                },
+                {
+                  "x1": 780,
+                  "y1": 50,
+                  "x2": 780,
+                  "y2": 560
+                }
+              ],
+              "label_style": {},
+              "title_style": {}
+            },
+            {
+              "id": "y-axis",
+              "channel": "y",
+              "position": "left",
+              "scale": {
+                "type": "linear",
+                "domain": [
+                  0,
+                  0.94
+                ],
+                "range": [
+                  560,
+                  50
+                ]
+              },
+              "ticks": [
+                {
+                  "value": 0,
+                  "pixel": 560,
+                  "label": "0"
+                },
+                {
+                  "value": 0.1,
+                  "pixel": 505.74468085106383,
+                  "label": "",
+                  "minor": true
+                },
+                {
+                  "value": 0.2,
+                  "pixel": 451.48936170212767,
+                  "label": "0.2",
+                  "label_hidden": true
+                },
+                {
+                  "value": 0.30000000000000004,
+                  "pixel": 397.23404255319144,
+                  "label": "",
+                  "minor": true
+                },
+                {
+                  "value": 0.4,
+                  "pixel": 342.9787234042553,
+                  "label": "0.4"
+                },
+                {
+                  "value": 0.5,
+                  "pixel": 288.72340425531917,
+                  "label": "",
+                  "minor": true
+                },
+                {
+                  "value": 0.6,
+                  "pixel": 234.46808510638297,
+                  "label": "0.6",
+                  "label_hidden": true
+                },
+                {
+                  "value": 0.7,
+                  "pixel": 180.21276595744683,
+                  "label": "",
+                  "minor": true
+                },
+                {
+                  "value": 0.8,
+                  "pixel": 125.95744680851058,
+                  "label": "0.8"
+                }
+              ],
+              "title": "score",
+              "domain": {
+                "x1": 40,
+                "y1": 50,
+                "x2": 40,
+                "y2": 560
+              },
+              "grid": [
+                {
+                  "x1": 40,
+                  "y1": 560,
+                  "x2": 780,
+                  "y2": 560
+                },
+                {
+                  "x1": 40,
+                  "y1": 451.48936170212767,
+                  "x2": 780,
+                  "y2": 451.48936170212767
+                },
+                {
+                  "x1": 40,
+                  "y1": 342.9787234042553,
+                  "x2": 780,
+                  "y2": 342.9787234042553
+                },
+                {
+                  "x1": 40,
+                  "y1": 234.46808510638297,
+                  "x2": 780,
+                  "y2": 234.46808510638297
+                },
+                {
+                  "x1": 40,
+                  "y1": 125.95744680851058,
+                  "x2": 780,
+                  "y2": 125.95744680851058
+                }
+              ],
+              "label_style": {},
+              "title_style": {}
+            }
+          ],
+          "layers": [
+            {
+              "id": "layer-0",
+              "mark": "line",
+              "marks": [
+                {
+                  "type": "line",
+                  "id": "line-0",
+                  "style": {
+                    "stroke": {
+                      "r": 59,
+                      "g": 130,
+                      "b": 246,
+                      "a": 255
+                    },
+                    "stroke_width": 1.5
+                  },
+                  "datum": {
+                    "layer_id": "layer-0",
+                    "row_id": 0
+                  },
+                  "line": {
+                    "points": [
+                      [
+                        64.66666666666667,
+                        337.55319148936167
+                      ],
+                      [
+                        89.33333333333333,
+                        299.5744680851064
+                      ],
+                      [
+                        114,
+                        277.8723404255319
+                      ],
+                      [
+                        138.66666666666666,
+                        261.595744680851
+                      ],
+                      [
+                        163.33333333333331,
+                        229.04255319148936
+                      ],
+                      [
+                        188,
+                        245.31914893617022
+                      ],
+                      [
+                        212.66666666666666,
+                        212.76595744680847
+                      ],
+                      [
+                        237.33333333333334,
+                        185.63829787234042
+                      ],
+                      [
+                        262,
+                        169.36170212765958
+                      ],
+                      [
+                        286.66666666666663,
+                        191.06382978723403
+                      ],
+                      [
+                        311.3333333333333,
+                        174.78723404255317
+                      ],
+                      [
+                        336,
+                        158.51063829787233
+                      ],
+                      [
+                        360.6666666666667,
+                        142.23404255319147
+                      ],
+                      [
+                        385.3333333333333,
+                        125.95744680851058
+                      ],
+                      [
+                        410,
+                        147.65957446808508
+                      ],
+                      [
+                        434.6666666666667,
+                        136.80851063829783
+                      ],
+                      [
+                        459.3333333333333,
+                        115.10638297872339
+                      ],
+                      [
+                        484,
+                        104.25531914893614
+                      ],
+                      [
+                        508.66666666666663,
+                        120.53191489361699
+                      ],
+                      [
+                        533.3333333333333,
+                        98.82978723404254
+                      ],
+                      [
+                        558,
+                        109.68085106382979
+                      ],
+                      [
+                        582.6666666666666,
+                        87.97872340425529
+                      ],
+                      [
+                        607.3333333333334,
+                        77.12765957446804
+                      ],
+                      [
+                        632,
+                        93.40425531914894
+                      ],
+                      [
+                        656.6666666666667,
+                        71.70212765957444
+                      ],
+                      [
+                        681.3333333333334,
+                        82.5531914893617
+                      ],
+                      [
+                        706,
+                        60.85106382978719
+                      ],
+                      [
+                        730.6666666666666,
+                        66.27659574468079
+                      ],
+                      [
+                        755.3333333333334,
+                        55.42553191489354
+                      ],
+                      [
+                        780,
+                        50
+                      ]
+                    ],
+                    "curve": "linear"
+                  }
+                }
+              ]
+            }
+          ],
+          "selections": [
+            {
+              "id": "brush",
+              "kind": "interval",
+              "channels": [
+                "x"
+              ],
+              "on": "brush",
+              "resolve": "global",
+              "encodings": [
+                "x"
+              ],
+              "reactive": "client"
+            }
+          ]
+        }
+      }
+    ],
+    "shared": {}
+  }
+}

@@ -1,0 +1,106 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Prism selections demo (P13)</title>
+  <style>
+    body {
+      font-family: Inter, system-ui, -apple-system, sans-serif;
+      max-width: 1100px;
+      margin: 2rem auto;
+      padding: 0 1rem;
+      color: #111827;
+    }
+    h1 { margin-bottom: 0.25rem; }
+    .subtitle { color: #6b7280; margin-top: 0; }
+    section { margin: 2rem 0; }
+    h2 { margin-bottom: 0.5rem; }
+    prism-chart {
+      display: block;
+      margin: 1rem 0;
+      border: 1px solid #e5e7eb;
+      border-radius: 6px;
+      padding: 1rem;
+      background: white;
+    }
+    .info {
+      background: #f3f4f6;
+      border-left: 3px solid #6366f1;
+      padding: 0.75rem 1rem;
+      margin: 1rem 0;
+      font-size: 0.9rem;
+    }
+    code {
+      background: #fef3c7;
+      padding: 0.1rem 0.3rem;
+      border-radius: 3px;
+      font-size: 0.9rem;
+    }
+    .coordinator-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1rem;
+    }
+    #event-log {
+      max-height: 160px;
+      overflow: auto;
+      background: #1f2937;
+      color: #e5e7eb;
+      font-family: ui-monospace, monospace;
+      font-size: 0.78rem;
+      padding: 0.5rem;
+      border-radius: 4px;
+      margin-top: 1rem;
+    }
+  </style>
+  <script type="module" src="../../static/vendor/prism/prism-element.mjs"></script>
+</head>
+<body>
+  <h1>Prism selections demo</h1>
+  <p class="subtitle">P13 — point + interval selections, cross-chart broadcast, URL state.</p>
+
+  <div class="info">
+    Serve from the repo root (e.g. <code>python3 -m http.server</code>) and
+    visit <code>/testdata/browser/selections-demo.html</code>. Selection
+    events fire as <code>prism:select</code> CustomEvents (see the log at the
+    bottom). The browser hash updates with the active selection state
+    so the URL is shareable.
+  </div>
+
+  <section>
+    <h2>1. Point selection (click bars to toggle highlight)</h2>
+    <prism-chart id="point-bar" src="selections-scenes/selection_point_bar.json"></prism-chart>
+  </section>
+
+  <section>
+    <h2>2. Interval brush (drag across the time series)</h2>
+    <prism-chart id="interval-brush" src="selections-scenes/selection_interval_brush.json"></prism-chart>
+  </section>
+
+  <section>
+    <h2>3. Cross-chart filter via <code>&lt;prism-coordinator&gt;</code></h2>
+    <p>Click a brand in the overview → detail chart highlights matching points (shared selection ID <code>brand_focus</code>).</p>
+    <prism-coordinator>
+      <div class="coordinator-grid">
+        <prism-chart id="overview" src="selections-scenes/selection_cross_chart_overview.json"></prism-chart>
+        <prism-chart id="detail"   src="selections-scenes/selection_cross_chart_detail.json"></prism-chart>
+      </div>
+    </prism-coordinator>
+  </section>
+
+  <h2>Event log</h2>
+  <pre id="event-log"></pre>
+
+  <script type="module">
+    const log = document.getElementById("event-log");
+    function logEvent(src, ev) {
+      const line = `[${new Date().toISOString().slice(11,19)}] ${src} → ${JSON.stringify(ev.detail)}`;
+      log.textContent = line + "\n" + log.textContent;
+    }
+    document.querySelectorAll("prism-chart").forEach((c) => {
+      c.addEventListener("prism:select", (e) => logEvent(c.id || "(unknown)", e));
+    });
+  </script>
+</body>
+</html>

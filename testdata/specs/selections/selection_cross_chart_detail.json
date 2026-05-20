@@ -1,0 +1,33 @@
+{
+  "$schema": "urn:prism:schema:v1:spec",
+  "title": "Brand detail (filtered by overview's brand_focus)",
+  "data": {
+    "name": "brand_history",
+    "values": [
+      {"brand_id": "alpha",   "month": 1, "value": 0.40},
+      {"brand_id": "alpha",   "month": 2, "value": 0.42},
+      {"brand_id": "alpha",   "month": 3, "value": 0.45},
+      {"brand_id": "beta",    "month": 1, "value": 0.65},
+      {"brand_id": "beta",    "month": 2, "value": 0.68},
+      {"brand_id": "beta",    "month": 3, "value": 0.71},
+      {"brand_id": "gamma",   "month": 1, "value": 0.55},
+      {"brand_id": "gamma",   "month": 2, "value": 0.56},
+      {"brand_id": "gamma",   "month": 3, "value": 0.58},
+      {"brand_id": "delta",   "month": 1, "value": 0.30},
+      {"brand_id": "delta",   "month": 2, "value": 0.32},
+      {"brand_id": "delta",   "month": 3, "value": 0.34},
+      {"brand_id": "epsilon", "month": 1, "value": 0.62},
+      {"brand_id": "epsilon", "month": 2, "value": 0.64},
+      {"brand_id": "epsilon", "month": 3, "value": 0.66}
+    ]
+  },
+  "selection": {
+    "brand_focus": {"type": "point", "fields": ["brand_id"], "toggle": true}
+  },
+  "mark": "point",
+  "encoding": {
+    "x":     {"field": "month",    "type": "quantitative"},
+    "y":     {"field": "value",    "type": "quantitative"},
+    "color": {"field": "brand_id", "type": "nominal"}
+  }
+}

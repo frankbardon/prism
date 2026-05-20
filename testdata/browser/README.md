@@ -6,6 +6,13 @@ cross-impl parity harness gates on (`testdata/cross_impl/<fixture>/scene.json`)
 so what you see in the browser is exactly what the byte-diff test
 sees from the JS port.
 
+`selections-demo.html` is the P13 demoable artifact. It exercises
+the four mandatory selection acceptance criteria: point click,
+interval brush, cross-chart broadcast via `<prism-coordinator>`,
+and URL hash state. Scene JSON inputs live under
+`selections-scenes/` (regenerate via the helper in
+`testdata/specs/selections/README.md`).
+
 ## Running locally
 
 From the repo root:
@@ -14,7 +21,8 @@ From the repo root:
 python3 -m http.server 8080
 ```
 
-Then open <http://localhost:8080/testdata/browser/demo.html>.
+Then open <http://localhost:8080/testdata/browser/demo.html>
+or <http://localhost:8080/testdata/browser/selections-demo.html>.
 
 You should see five charts (bar / line / layered / pie /
 sankey) plus three more using a shared dataset registry.
