@@ -324,6 +324,10 @@ func renderScene(w *Writer, s scene.Scene) {
 		if layer.ID != "" {
 			w.Attr("data-layer-id", layer.ID)
 		}
+		// Hit-test scope per D077: always emit data-prism-layer (empty
+		// string when ID unset) so selector queries stay stable across
+		// the Go + JS ports.
+		w.Attr("data-prism-layer", layer.ID)
 		w.CloseTagOpen()
 		w.Newline()
 		for _, m := range layer.Marks {

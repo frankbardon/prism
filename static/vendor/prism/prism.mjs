@@ -312,12 +312,17 @@ function _appendStyleBlock(svg, theme, doc) {
   } else {
     inner = css;
   }
-  // Append D078 selection defaults. Theme authors override via the
-  // documented CSS-variable contract; the JS port stamps the defaults
-  // verbatim so unstyled charts get a sensible look out of the box.
-  const selectionDefaults = `.prism-selected{opacity:var(--prism-selected-opacity,1);}.prism-deselected{opacity:var(--prism-deselected-opacity,0.3);}`;
+  // Append D078 selection defaults ONLY when the theme block doesn't
+  // already carry them. theme.CSSVariables (Go side) ships them as of
+  // P13, so SceneDocs encoded by recent prism builds need no extra
+  // append. Standalone SceneDocs built by user code without a theme
+  // benefit from the safety net.
+  let inner2 = inner;
+  if (!inner2.includes(".prism-selected")) {
+    inner2 += `.prism-selected{opacity:var(--prism-selected-opacity,1);}.prism-deselected{opacity:var(--prism-deselected-opacity,0.3);}`;
+  }
   const styleEl = doc.createElementNS(SVG_NS, "style");
-  styleEl.textContent = inner + selectionDefaults;
+  styleEl.textContent = inner2;
   svg.appendChild(styleEl);
 }
 
@@ -814,13 +819,13 @@ function _renderRect(parent, m, doc) {
   const el = doc.createElementNS(SVG_NS, "rect");
   el.setAttribute("class", "prism-mark-bar");
   if (m.id) el.setAttribute("data-prism-id", m.id);
+  _setDatum(el, m);
   el.setAttribute("x", fmt(g.x));
   el.setAttribute("y", fmt(g.y));
   el.setAttribute("width",  fmt(g.w));
   el.setAttribute("height", fmt(g.h));
   if (g.corner_r) el.setAttribute("rx", fmt(g.corner_r));
   _styleAttrs(el, m.style);
-  _setDatum(el, m);
   _maybeTooltip(el, m, doc);
   parent.appendChild(el);
 }
@@ -832,11 +837,11 @@ function _renderLine(parent, m, doc) {
   const el = doc.createElementNS(SVG_NS, "polyline");
   el.setAttribute("class", "prism-mark-line");
   if (m.id) el.setAttribute("data-prism-id", m.id);
+  _setDatum(el, m);
   const ptsStr = pts.map(p => `${fmt(p[0])},${fmt(p[1])}`).join(" ");
   el.setAttribute("points", ptsStr);
   el.setAttribute("fill", "none");
   _styleAttrs(el, m.style);
-  _setDatum(el, m);
   _maybeTooltip(el, m, doc);
   parent.appendChild(el);
 }
@@ -848,6 +853,7 @@ function _renderArea(parent, m, doc) {
   const el = doc.createElementNS(SVG_NS, "path");
   el.setAttribute("class", "prism-mark-area");
   if (m.id) el.setAttribute("data-prism-id", m.id);
+  _setDatum(el, m);
   let d = `M${fmt(upper[0][0])},${fmt(upper[0][1])}`;
   for (let i = 1; i < upper.length; i++) {
     d += ` L${fmt(upper[i][0])},${fmt(upper[i][1])}`;
@@ -867,7 +873,6 @@ function _renderArea(parent, m, doc) {
   d += " Z";
   el.setAttribute("d", d);
   _styleAttrs(el, m.style);
-  _setDatum(el, m);
   _maybeTooltip(el, m, doc);
   parent.appendChild(el);
 }
@@ -877,11 +882,11 @@ function _renderPoint(parent, m, doc) {
   const el = doc.createElementNS(SVG_NS, "circle");
   el.setAttribute("class", "prism-mark-point");
   if (m.id) el.setAttribute("data-prism-id", m.id);
+  _setDatum(el, m);
   el.setAttribute("cx", fmt(g.cx));
   el.setAttribute("cy", fmt(g.cy));
   el.setAttribute("r",  fmt(g.r));
   _styleAttrs(el, m.style);
-  _setDatum(el, m);
   _maybeTooltip(el, m, doc);
   parent.appendChild(el);
 }
@@ -891,12 +896,12 @@ function _renderRule(parent, m, doc) {
   const el = doc.createElementNS(SVG_NS, "line");
   el.setAttribute("class", "prism-mark-rule");
   if (m.id) el.setAttribute("data-prism-id", m.id);
+  _setDatum(el, m);
   el.setAttribute("x1", fmt(g.x1));
   el.setAttribute("y1", fmt(g.y1));
   el.setAttribute("x2", fmt(g.x2));
   el.setAttribute("y2", fmt(g.y2));
   _styleAttrs(el, m.style);
-  _setDatum(el, m);
   _maybeTooltip(el, m, doc);
   parent.appendChild(el);
 }
@@ -906,6 +911,7 @@ function _renderTextMark(parent, m, doc) {
   const el = doc.createElementNS(SVG_NS, "text");
   el.setAttribute("class", "prism-mark-text");
   if (m.id) el.setAttribute("data-prism-id", m.id);
+  _setDatum(el, m);
   el.setAttribute("x", fmt(g.x));
   el.setAttribute("y", fmt(g.y));
   const anchor = g.anchor === "start" ? "start" : g.anchor === "end" ? "end" : "middle";
@@ -923,9 +929,9 @@ function _renderArc(parent, m, doc) {
   const el = doc.createElementNS(SVG_NS, "path");
   el.setAttribute("class", "prism-mark-arc");
   if (m.id) el.setAttribute("data-prism-id", m.id);
+  _setDatum(el, m);
   el.setAttribute("d", _arcPath(g));
   _styleAttrs(el, m.style);
-  _setDatum(el, m);
   _maybeTooltip(el, m, doc);
   parent.appendChild(el);
 }
@@ -966,9 +972,9 @@ function _renderPath(parent, m, doc) {
   const el = doc.createElementNS(SVG_NS, "path");
   el.setAttribute("class", "prism-mark-path");
   if (m.id) el.setAttribute("data-prism-id", m.id);
+  _setDatum(el, m);
   el.setAttribute("d", g.d || "");
   _styleAttrs(el, m.style);
-  _setDatum(el, m);
   _maybeTooltip(el, m, doc);
   parent.appendChild(el);
 }
@@ -978,6 +984,7 @@ function _renderImage(parent, m, doc) {
   const el = doc.createElementNS(SVG_NS, "image");
   el.setAttribute("class", "prism-mark-image");
   if (m.id) el.setAttribute("data-prism-id", m.id);
+  _setDatum(el, m);
   el.setAttribute("x", fmt(g.x));
   el.setAttribute("y", fmt(g.y));
   el.setAttribute("width", fmt(g.w));
@@ -985,7 +992,6 @@ function _renderImage(parent, m, doc) {
   // SVG2 uses href; SVG1 used xlink:href. Match Go (which emits href).
   el.setAttribute("href", g.href || "");
   _styleAttrs(el, m.style);
-  _setDatum(el, m);
   _maybeTooltip(el, m, doc);
   parent.appendChild(el);
   void XHTML_NS;

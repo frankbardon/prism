@@ -50,6 +50,9 @@ func writeStyleBlock(w *Writer, theme *scene.Theme) {
 	w.Raw(".prism-legend-title{fill:var(--prism-color-text);font-family:var(--prism-font-sans);font-size:12px;font-weight:600;}")
 	w.Raw(".prism-legend-label{fill:var(--prism-color-text);font-family:var(--prism-font-sans);font-size:11px;}")
 	w.Raw(".prism-legend-swatch{stroke:none;}")
+	// Selection defaults (D078) — kept in lock-step with theme/css.go.
+	w.Raw(".prism-selected{opacity:var(--prism-selected-opacity,1);}")
+	w.Raw(".prism-deselected{opacity:var(--prism-deselected-opacity,0.3);}")
 	w.Raw("</style>")
 	w.Newline()
 }

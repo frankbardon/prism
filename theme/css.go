@@ -67,6 +67,10 @@ func (t *Theme) CSSVariables() string {
 	b.WriteString(".prism-legend-title{fill:var(--prism-color-text);font-family:var(--prism-font-sans);font-size:12px;font-weight:600;}")
 	b.WriteString(".prism-legend-label{fill:var(--prism-color-text);font-family:var(--prism-font-sans);font-size:11px;}")
 	b.WriteString(".prism-legend-swatch{stroke:none;}")
+	// Selection-driven CSS classes (D078). Theme authors override via
+	// the documented CSS variables; defaults dim deselected marks.
+	b.WriteString(".prism-selected{opacity:var(--prism-selected-opacity,1);}")
+	b.WriteString(".prism-deselected{opacity:var(--prism-deselected-opacity,0.3);}")
 	b.WriteString("</style>")
 	return b.String()
 }
