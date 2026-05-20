@@ -109,9 +109,9 @@ func registerTools(s *server.MCPServer, opts Options) {
 
 // plotResult is the structured payload returned by prism_plot.
 type plotResult struct {
-	Bytes    string `json:"bytes"`   // base64-encoded
-	Mime     string `json:"mime"`
-	Caption  string `json:"caption"`
+	Bytes    string   `json:"bytes"` // base64-encoded
+	Mime     string   `json:"mime"`
+	Caption  string   `json:"caption"`
 	Warnings []string `json:"warnings,omitempty"`
 }
 

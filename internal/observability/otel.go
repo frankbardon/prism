@@ -85,8 +85,8 @@ func Hooks() plan.ExecOpts {
 		end func(error)
 	}
 	var (
-		lk       sync.Mutex
-		spans    = map[plan.NodeID]pending{}
+		lk    sync.Mutex
+		spans = map[plan.NodeID]pending{}
 	)
 
 	return plan.ExecOpts{

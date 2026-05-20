@@ -146,7 +146,7 @@ func TestPrismTwirpRoundTripErrorMapping(t *testing.T) {
 
 	client := rpc.NewPrismJSONClient(srv.URL, http.DefaultClient)
 	_, err := client.Plot(context.Background(), &rpc.PlotRequest{
-		Spec: `{"data":{"values":[{"x":1}]},"mark":"bar","encoding":{"x":{"field":"x","type":"quantitative"},"y":{"field":"x","type":"quantitative"}}}`,
+		Spec:   `{"data":{"values":[{"x":1}]},"mark":"bar","encoding":{"x":{"field":"x","type":"quantitative"},"y":{"field":"x","type":"quantitative"}}}`,
 		Format: "png",
 	})
 	if err == nil {
