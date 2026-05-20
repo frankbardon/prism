@@ -16,6 +16,7 @@
 - [Selections](concepts/selections.md)
 - [Themes](concepts/themes.md)
 - [Multi-source](concepts/multi-source.md)
+- [Browser / WASM](concepts/browser.md)
 
 # Cookbook
 
@@ -23,6 +24,7 @@
 - [Faceting](cookbook/faceting.md)
 - [Custom Themes](cookbook/custom-themes.md)
 - [MCP Agent Integration](cookbook/mcp-agent-integration.md)
+- [Embed in a Static Site](cookbook/embed-wasm.md)
 
 # Gallery
 

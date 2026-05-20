@@ -38,6 +38,17 @@ const (
 	// DefaultTableCacheSize is the LRU capacity used by plan.NewLRU
 	// when the env var is unset or invalid. See PRISM_TABLE_CACHE_SIZE.
 	DefaultTableCacheSize = 256
+
+	// DefaultWasmMaxBytes is the gzipped size ceiling enforced on the
+	// compiled `bin/prism.wasm` artifact by the P17 size-budget gate.
+	// See PRISM_WASM_MAX_BYTES.
+	DefaultWasmMaxBytes = 16 * 1024 * 1024
+
+	// SoftWarnWasmMaxBytes triggers a non-failing log message from the
+	// size-budget gate when the binary creeps past 75% of the ceiling.
+	// Crossing this threshold does not fail the build; only exceeding
+	// DefaultWasmMaxBytes (or the env override) does.
+	SoftWarnWasmMaxBytes = 12 * 1024 * 1024
 )
 
 // Env var names. Exported so callers (CLI help text, error fixups) can
@@ -48,6 +59,7 @@ const (
 	EnvRenderMaxMarks = "PRISM_RENDER_MAX_MARKS"
 	EnvQueryWorkers   = "PRISM_QUERY_WORKERS"
 	EnvTableCacheSize = "PRISM_TABLE_CACHE_SIZE"
+	EnvWasmMaxBytes   = "PRISM_WASM_MAX_BYTES"
 )
 
 // TableMaxRows returns the effective cap for any single Table. The
@@ -113,6 +125,20 @@ func TableCacheSize() (int, bool) {
 // MustTableCacheSize mirrors MustTableMaxRows.
 func MustTableCacheSize() int {
 	v, _ := TableCacheSize()
+	return v
+}
+
+// WasmMaxBytes returns the gzipped-size ceiling enforced on
+// `bin/prism.wasm`. The second return is false when the env var was
+// set but unparseable or non-positive; callers fall back to the
+// default value (also returned in that case).
+func WasmMaxBytes() (int, bool) {
+	return lookup(EnvWasmMaxBytes, DefaultWasmMaxBytes)
+}
+
+// MustWasmMaxBytes mirrors MustTableMaxRows.
+func MustWasmMaxBytes() int {
+	v, _ := WasmMaxBytes()
 	return v
 }
 

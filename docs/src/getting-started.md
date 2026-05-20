@@ -73,6 +73,28 @@ prism plot bar.json --theme=print > bar-print.svg
 Bundled themes: `light` (default), `dark`, `print`. Custom themes
 via `theme.json` — see [Themes concepts](concepts/themes.md).
 
+## Embed in a static page (no server)
+
+Prism ships as a WebAssembly module that renders client-side.
+Build the bundle, copy it into your site:
+
+```
+make build-wasm
+./bin/prism static-bundle --wasm ./public/prism
+```
+
+Then drop a `<prism-chart>` element into any HTML page:
+
+```html
+<script src="/prism/wasm_exec.js"></script>
+<script type="module" src="/prism/prism-element.mjs"></script>
+<prism-chart spec="/specs/my-chart.prism.json"></prism-chart>
+```
+
+See [Browser / WASM concepts](concepts/browser.md) and the
+[static-site cookbook](cookbook/embed-wasm.md) for mdBook /
+Astro / Hugo integration recipes.
+
 ## What's next
 
 - Browse the [gallery](gallery/index.md) for spec patterns.
@@ -80,5 +102,7 @@ via `theme.json` — see [Themes concepts](concepts/themes.md).
   → mark → encoding pipeline.
 - See [Multi-source](concepts/multi-source.md) to join multiple
   `.pulse` files in one chart.
+- See [Browser / WASM](concepts/browser.md) for the standalone
+  client-side rendering path.
 - Read [Migration from Vega-Lite](migration-from-vega-lite.md) if you
   already know Vega-Lite.

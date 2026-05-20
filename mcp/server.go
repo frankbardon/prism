@@ -1,3 +1,5 @@
+//go:build !js
+
 // Package mcp wires Prism into the Model Context Protocol via
 // mark3labs/mcp-go (D008 parity with Pulse, pinned at v0.54.0).
 //

@@ -35,8 +35,11 @@ globalThis.customElements = window.customElements;
 const scenePath = resolve(REPO, "testdata", "cross_impl", "bar_basic", "scene.json");
 const scene = JSON.parse(await readFile(scenePath, "utf-8"));
 
+import { bootstrapWasm, tick } from "./wasm-bootstrap.mjs";
+await bootstrapWasm(REPO);
+
 const { render } = await import(resolve(REPO, "static/vendor/prism/prism.mjs"));
-const handle = render(scene, document.body);
+const handle = await render(scene, document.body);
 if (!handle) fail("render returned no handle");
 
 const layers = document.querySelectorAll('g[data-prism-layer]');

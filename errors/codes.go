@@ -494,6 +494,46 @@ var Codes = map[string]CodeMetadata{
 		},
 		SeeAlso: []string{"PRISM_SPEC_019"},
 	},
+
+	// --- P17 WASM standalone runtime codes.
+	"PRISM_WASM_001": {
+		Code:    "PRISM_WASM_001",
+		Message: `Fetch-backed filesystem failed to load {{.URL}} (HTTP {{.Status}}: {{.Reason}}).`,
+		Fixups: []string{
+			`Confirm the URL is reachable from the page origin and the server allows CORS for cross-origin requests.`,
+			`If the dataset lives behind an authentication wall, expose it through a proxy that adds the credentials before the browser hits it.`,
+			`For local development serve the .pulse files via a static file server (e.g. ` + "`python -m http.server`" + `) rather than file:// URLs — fetch refuses file:// in most browsers.`,
+		},
+		SeeAlso: []string{"PRISM_RESOLVE_002", "PRISM_WASM_002"},
+	},
+	"PRISM_WASM_002": {
+		Code:    "PRISM_WASM_002",
+		Message: `Origin server for {{.URL}} does not honour Range: requests (status {{.Status}}); archive-shard random access is unavailable.`,
+		Fixups: []string{
+			`Serve archive shards from a static host that returns 206 Partial Content for Range requests (GitHub Pages, S3, Cloudflare R2, nginx with default config all do).`,
+			`If random access is impossible, materialise individual shards as standalone .pulse files at build time and reference them directly.`,
+			`Disable archive forms in the spec — load each shard via its own ` + "`<prism-dataset>`" + ` registration.`,
+		},
+		SeeAlso: []string{"PRISM_WASM_001", "PRISM_RESOLVE_003"},
+	},
+	"PRISM_WASM_BUDGET_EXCEEDED": {
+		Code:    "PRISM_WASM_BUDGET_EXCEEDED",
+		Message: `Compiled prism.wasm exceeds PRISM_WASM_MAX_BYTES={{.Limit}} (gzipped size: {{.Actual}}).`,
+		Fixups: []string{
+			`Raise the ceiling by setting ` + "`PRISM_WASM_MAX_BYTES`" + ` in the environment before running ` + "`make build-wasm`" + `.`,
+			`Drop newly-imported dependencies from the WASM entry — confirm cmd/prismwasm/main.go imports only library packages buildable under js,wasm.`,
+			`Check ` + "`go list -deps ./cmd/prismwasm | sort | uniq`" + ` for transitive imports that bloat the binary (apache/arrow-go and gonum dominate).`,
+		},
+	},
+	"PRISM_WARN_WASM_COLD_START": {
+		Code:    "PRISM_WARN_WASM_COLD_START",
+		Message: `WASM cold-start exceeded the soft timing budget ({{.Actual}}ms vs {{.Budget}}ms p95).`,
+		Fixups: []string{
+			`Cold-start variance is acceptable on first load; warm renders should fall well under the budget.`,
+			`Preload the wasm asset with ` + "`<link rel=\"preload\" as=\"fetch\" type=\"application/wasm\" crossorigin>`" + ` so the download starts in parallel with the loader parse.`,
+			`Confirm the host serves prism.wasm with ` + "`Content-Type: application/wasm`" + ` so the browser uses ` + "`WebAssembly.instantiateStreaming`" + `.`,
+		},
+	},
 }
 
 // CodesSorted returns the catalog keys in ascending order.

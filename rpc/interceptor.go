@@ -1,3 +1,5 @@
+//go:build !js
+
 // Error interceptor: maps *prismerrors.AppError and Pulse
 // *CodedError (and unknown errors) to Twirp status codes by code
 // prefix. See D085 for the full mapping table.

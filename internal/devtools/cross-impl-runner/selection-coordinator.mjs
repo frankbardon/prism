@@ -52,6 +52,9 @@ globalThis.fetch = async (url) => {
   };
 };
 
+import { bootstrapWasm, tick } from "./wasm-bootstrap.mjs";
+await bootstrapWasm(REPO);
+
 await import(resolve(REPO, "static/vendor/prism/prism-element.mjs"));
 
 const coord = document.createElement("prism-coordinator");

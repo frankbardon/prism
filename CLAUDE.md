@@ -6,7 +6,7 @@ Prism is a visualization library for `.pulse` files. Ships as a Go library (`git
 
 **Design principles:**
 
-- **Library-first.** Every public surface in `spec/`, `validate/`, `plan/`, `compile/`, `encode/`, `render/`, `resolve/`, `theme/`, `rpc/`, and `mcp/` is reachable as a Go API. `cmd/prism/` never contains business logic — parse flags, construct library objects, format output.
+- **Library-first.** Every public surface in `spec/`, `validate/`, `plan/`, `compile/`, `encode/`, `render/`, `resolve/`, `theme/`, `rpc/`, and `mcp/` is reachable as a Go API. `cmd/prism/` (host CLI) and `cmd/prismwasm/` (browser entry, `//go:build js && wasm`) never contain business logic — parse flags / marshal JSON, construct library objects, format output.
 - **Six-stage pipeline.** Spec (JSON) → Validate → Plan → Compile → Encode → Render → Bytes. Each stage is independently testable, and intermediate artifacts (Plan, Scene IR, Encoded bytes) are stable JSON shapes downstream consumers can pin.
 - **Vega-Lite vocabulary, snake_case keys.** Single-word terms (`mark`, `encoding`, `transform`, `layer`, `facet`, `concat`, `repeat`) match Vega-Lite verbatim. Multi-word keys are snake_case throughout (`stroke_width`, `corner_radius`, `font_size`).
 - **Pulse expression syntax** in `filter` predicates and `calculate` transforms. No `datum.` prefix, no JS function calls, no Vega expression eval. One expression language, executed by Pulse.
@@ -28,6 +28,8 @@ Any change to Prism code, configuration, spec vocabulary, schema bundle, or publ
 | A semantic validation rule | `validate/RULES.md` + new rule file under `validate/rules/` + register in `validate/semantic.go` + new `PRISM_SPEC_NNN` row in `errors/codes.go` |
 | A `PRISM_*` error code (added / removed / renamed) | `errors/codes.go` (canonical `Code`, `Message`, at least one fixup template or `SeeAlso`) + reachable via `prism errors lookup` |
 | A renderer backend (SVG / PDF / Canvas) | `docs/src/concepts/themes.md` (rendering notes if visual) + `render/<backend>/` + dispatch in `render/render.go` |
+| Anything reachable from `cmd/prismwasm/main.go` (WASM entry) | `docs/src/concepts/browser.md` + size-budget gate `internal/gates/wasm_size_test.go` + `cmd/prismwasm/wasm_smoke_test.go` if behaviour changes |
+| A new package import in the WASM entry, OR a new file under a `!js`-gated subtree (`render/pdf/`, `rpc/`, `mcp/`, `cmd/prism/cmd_serve.go`, `cmd_mcp.go`, `cmd_static_bundle.go`, `cmd_init.go`) | Re-run `make build-wasm` locally; CI gates verify (a) the WASM entry still compiles and (b) the gzipped binary is under `PRISM_WASM_MAX_BYTES` |
 | A CLI leaf (added / removed / flag added) | `cmd/prism/cmd_<name>.go` + `docs/src/getting-started.md` if user-visible + smoke test in `cmd/prism/*_smoke_test.go` |
 | The schema bundle (`schema/v1/`) | `schema/embed.go` (the `//go:embed` directives) + bump bundle version if breaking + `docs/src/concepts/spec.md` (`$schema` reference) |
 | A built-in dataset registry shape | `resolve/registry_dataset.go` + `docs/src/concepts/multi-source.md` + `PRISM_DATASETS` env var documentation below |
@@ -44,11 +46,14 @@ If you find yourself wanting to defer the doc update to "a follow-up PR," stop. 
 
 ```
 prism/
-├── cmd/prism/              # CLI binary — only binary
+├── cmd/prism/              # Host CLI binary (gated `//go:build !js` where needed)
 │   ├── main.go             # urfave/cli/v3 wiring
 │   ├── cmd_*.go            # one file per CLI leaf
 │   ├── templates/          # `prism init` payload (schemas + examples + editor configs)
 │   └── *_smoke_test.go     # per-command end-to-end checks
+├── cmd/prismwasm/          # WASM entry — `//go:build js && wasm`
+│   ├── main.go             # exports validate/plan/execute/render/errorsLookup/schemaBundle/version on globalThis.prism via syscall/js
+│   └── wasm_smoke_test.go  # Node + wasm_exec runner against committed fixtures
 ├── spec/                   # Spec types + decoders (Mark, Encoding, Transform, Selection, Composition)
 ├── validate/               # Shape + semantic validation (no row I/O)
 │   ├── shape.go            # Schema-aware structural checks
@@ -176,7 +181,9 @@ Three built-in themes ship: `light` (default), `dark`, `print`. Each lives in `t
 
 ## Build / Env
 
-`make build` (default), `make test`, `make test-race`, `make fmt`, `make fmt-check`, `make vet`, `make lint`, `make cover`, `make clean`, `make proto`, `make docs`, `make docs-serve`, `make docs-clean`. A `.env` at repo root is auto-loaded by the Makefile.
+`make build` (default), `make build-wasm`, `make test`, `make test-race`, `make fmt`, `make fmt-check`, `make vet`, `make lint`, `make cover`, `make clean`, `make proto`, `make docs`, `make docs-serve`, `make docs-clean`. A `.env` at repo root is auto-loaded by the Makefile.
+
+`make build-wasm` produces `bin/prism.wasm` from `cmd/prismwasm` under `GOOS=js GOARCH=wasm -ldflags="-s -w" -trimpath -buildvcs=false`. The companion `wasm_exec.js` is copied from `$(go env GOROOT)/lib/wasm/wasm_exec.js` and asserted byte-identical by `cmd/prism/static_bundle_smoke_test.go`.
 
 **Environment variables:**
 
@@ -186,8 +193,9 @@ Three built-in themes ship: `light` (default), `dark`, `print`. Each lives in `t
 - `PRISM_RENDER_MAX_MARKS` — cap on the number of marks the renderer emits before auto-`Sample` injection by the `SampleInjection` optimizer pass. Default 100,000.
 - `PRISM_QUERY_WORKERS` — bounded executor worker count for `plan.Execute`. 0 (or unset) ⇒ `runtime.NumCPU()`. 1 ⇒ serial. Positive integers cap the fan-out.
 - `PRISM_TABLE_CACHE_SIZE` — LRU capacity for the plan-level table cache. Default 256 entries.
-- `PRISM_CROSS_IMPL` — set to `1` to opt into the cross-implementation (Go vs JS scene IR) parity tests under `internal/devtools/`. Off by default — the runner needs `npm install` per `internal/devtools/cross-impl-runner/README.md`.
-- `PRISM_CROSS_IMPL_REGEN` — set to `1` to regenerate the JS-side scene fixtures during a cross-impl run.
+- `PRISM_CROSS_IMPL` — set to `1` to opt into the cross-implementation parity tests under `internal/devtools/`. After P17, the harness compares Go-native SVG vs Go-via-wasm SVG (was Go vs JS port). Needs `node` on `PATH`.
+- `PRISM_CROSS_IMPL_REGEN` — set to `1` to regenerate the WASM-side scene fixtures during a cross-impl run.
+- `PRISM_WASM_MAX_BYTES` — gzipped size ceiling for `bin/prism.wasm` enforced by `internal/gates/wasm_size_test.go`. Default 16,777,216 (16 MB); soft warning at 12 MB. Defined in `internal/limits/limits.go`.
 
 Numeric env vars parse loudly: a non-empty value that fails to parse, or that resolves to non-positive, is rejected by the lookup helpers in `internal/limits/limits.go` (returns default + `ok=false`). Callers may surface a config error or silently fall back via the `Must*` helpers.
 

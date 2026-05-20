@@ -1,3 +1,5 @@
+//go:build !js
+
 // Package rpc carries the Twirp service implementation for Prism.
 //
 // service.proto defines five RPCs (Plot, Validate, Scene, Plan,

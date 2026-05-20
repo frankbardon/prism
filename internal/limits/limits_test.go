@@ -129,3 +129,21 @@ func TestTableCacheSizeDefaultAndOverride(t *testing.T) {
 		t.Fatalf("zero accepted: got (%d, %v); want (default, false)", v, ok)
 	}
 }
+
+func TestWasmMaxBytesDefaultAndOverride(t *testing.T) {
+	t.Setenv(EnvWasmMaxBytes, "")
+	if v, ok := WasmMaxBytes(); !ok || v != DefaultWasmMaxBytes {
+		t.Fatalf("default: got (%d, %v); want (%d, true)", v, ok, DefaultWasmMaxBytes)
+	}
+	t.Setenv(EnvWasmMaxBytes, "20971520")
+	if v, ok := WasmMaxBytes(); !ok || v != 20971520 {
+		t.Fatalf("override: got (%d, %v); want (20971520, true)", v, ok)
+	}
+	t.Setenv(EnvWasmMaxBytes, "garbage")
+	if v, ok := WasmMaxBytes(); ok || v != DefaultWasmMaxBytes {
+		t.Fatalf("malformed accepted: got (%d, %v); want (default, false)", v, ok)
+	}
+	if v := MustWasmMaxBytes(); v != DefaultWasmMaxBytes {
+		t.Fatalf("MustWasmMaxBytes: got %d; want default %d", v, DefaultWasmMaxBytes)
+	}
+}

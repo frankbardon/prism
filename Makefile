@@ -1,10 +1,12 @@
-.PHONY: build clean test test-race cover fmt fmt-check vet lint proto docs docs-scenes docs-serve docs-clean
+.PHONY: build build-wasm clean test test-race cover fmt fmt-check vet lint proto docs docs-scenes docs-wasm-stage docs-serve docs-clean
 
 BINARY_NAME=prism
+WASM_BINARY=prism.wasm
 BUILD_DIR=bin
 GO=go
 LDFLAGS=-s -w
 BUILD_FLAGS=-trimpath -ldflags="$(LDFLAGS)"
+WASM_BUILD_FLAGS=-trimpath -buildvcs=false -ldflags="$(LDFLAGS)"
 
 # Prism is pure Go — no CGO dependency in the build graph. Disabling CGO
 # globally makes that a contract: any future import that pulls in a C
@@ -20,6 +22,22 @@ endif
 
 build:
 	$(GO) build $(BUILD_FLAGS) -o $(BUILD_DIR)/$(BINARY_NAME) ./cmd/prism
+
+# build-wasm cross-compiles cmd/prismwasm to GOOS=js GOARCH=wasm and
+# copies the toolchain's wasm_exec.js into bin/ alongside the binary
+# so `make build-wasm` produces both halves of a runnable bundle.
+# The companion wasm_exec.js path varies across Go releases (1.24+
+# lives under $GOROOT/lib/wasm/, earlier under $GOROOT/misc/wasm/);
+# we resolve it dynamically and fall back to the legacy location if
+# the new one is absent.
+build-wasm:
+	@mkdir -p $(BUILD_DIR)
+	GOOS=js GOARCH=wasm CGO_ENABLED=0 $(GO) build $(WASM_BUILD_FLAGS) -o $(BUILD_DIR)/$(WASM_BINARY) ./cmd/prismwasm
+	@WASM_EXEC="$$($(GO) env GOROOT)/lib/wasm/wasm_exec.js"; \
+	if [ ! -f "$$WASM_EXEC" ]; then WASM_EXEC="$$($(GO) env GOROOT)/misc/wasm/wasm_exec.js"; fi; \
+	if [ -f "$$WASM_EXEC" ]; then cp "$$WASM_EXEC" $(BUILD_DIR)/wasm_exec.js; \
+	else echo "build-wasm: warning — wasm_exec.js not found under GOROOT (looked at lib/wasm and misc/wasm)"; fi
+	@ls -lh $(BUILD_DIR)/$(WASM_BINARY)
 
 clean:
 	rm -rf $(BUILD_DIR) coverage.out
@@ -85,14 +103,27 @@ $(GALLERY_DIR)/%.scene.json: $(GALLERY_DIR)/%.prism.json $(BUILD_DIR)/$(BINARY_N
 		rm -f $@; \
 	}
 
-docs: build docs-scenes
+# docs-wasm-stage copies the WASM build outputs from bin/ into
+# static/vendor/prism/ so mdBook picks them up via the
+# docs/src/static symlink. The files are gitignored (P17): they
+# only exist locally to serve the live <prism-chart> gallery
+# (docs/src/gallery/index.html). docs/docs-serve depend on this
+# so a fresh checkout + `make docs-serve` works without manual
+# staging steps.
+docs-wasm-stage: build-wasm
+	@cp $(BUILD_DIR)/$(WASM_BINARY) static/vendor/prism/$(WASM_BINARY)
+	@cp $(BUILD_DIR)/wasm_exec.js   static/vendor/prism/wasm_exec.js
+	@echo "docs-wasm-stage: staged prism.wasm + wasm_exec.js into static/vendor/prism/"
+
+docs: build docs-scenes docs-wasm-stage
 	mdbook build docs
 
-docs-serve: build docs-scenes
+docs-serve: build docs-scenes docs-wasm-stage
 	mdbook serve docs --open
 
 docs-clean:
 	rm -rf docs/book
+	rm -f static/vendor/prism/$(WASM_BINARY) static/vendor/prism/wasm_exec.js
 	find $(GALLERY_DIR) -name '*.scene.json' -delete 2>/dev/null || true
 
 .DEFAULT_GOAL := build
