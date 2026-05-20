@@ -23,7 +23,7 @@ import (
 //
 // Default On event:
 //   - point     → click (default), hover (when p.On == "hover"),
-//                 dblclick (when p.On == "dblclick").
+//     dblclick (when p.On == "dblclick").
 //   - interval  → brush.
 //
 // Channels for interval selections derive from i.Encodings via
