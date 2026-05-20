@@ -1,10 +1,12 @@
-.PHONY: build clean test test-race cover fmt fmt-check vet lint proto docs docs-scenes docs-serve docs-clean
+.PHONY: build build-wasm clean test test-race cover fmt fmt-check vet lint proto docs docs-scenes docs-serve docs-clean
 
 BINARY_NAME=prism
+WASM_BINARY=prism.wasm
 BUILD_DIR=bin
 GO=go
 LDFLAGS=-s -w
 BUILD_FLAGS=-trimpath -ldflags="$(LDFLAGS)"
+WASM_BUILD_FLAGS=-trimpath -buildvcs=false -ldflags="$(LDFLAGS)"
 
 # Prism is pure Go — no CGO dependency in the build graph. Disabling CGO
 # globally makes that a contract: any future import that pulls in a C
@@ -20,6 +22,22 @@ endif
 
 build:
 	$(GO) build $(BUILD_FLAGS) -o $(BUILD_DIR)/$(BINARY_NAME) ./cmd/prism
+
+# build-wasm cross-compiles cmd/prismwasm to GOOS=js GOARCH=wasm and
+# copies the toolchain's wasm_exec.js into bin/ alongside the binary
+# so `make build-wasm` produces both halves of a runnable bundle.
+# The companion wasm_exec.js path varies across Go releases (1.24+
+# lives under $GOROOT/lib/wasm/, earlier under $GOROOT/misc/wasm/);
+# we resolve it dynamically and fall back to the legacy location if
+# the new one is absent.
+build-wasm:
+	@mkdir -p $(BUILD_DIR)
+	GOOS=js GOARCH=wasm CGO_ENABLED=0 $(GO) build $(WASM_BUILD_FLAGS) -o $(BUILD_DIR)/$(WASM_BINARY) ./cmd/prismwasm
+	@WASM_EXEC="$$($(GO) env GOROOT)/lib/wasm/wasm_exec.js"; \
+	if [ ! -f "$$WASM_EXEC" ]; then WASM_EXEC="$$($(GO) env GOROOT)/misc/wasm/wasm_exec.js"; fi; \
+	if [ -f "$$WASM_EXEC" ]; then cp "$$WASM_EXEC" $(BUILD_DIR)/wasm_exec.js; \
+	else echo "build-wasm: warning — wasm_exec.js not found under GOROOT (looked at lib/wasm and misc/wasm)"; fi
+	@ls -lh $(BUILD_DIR)/$(WASM_BINARY)
 
 clean:
 	rm -rf $(BUILD_DIR) coverage.out
