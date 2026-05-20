@@ -21,4 +21,7 @@ func init() {
 	validate.RegisterDefault(func() validate.SemanticRule { return ResolveScaleCompat{} })
 	validate.RegisterDefault(func() validate.SemanticRule { return RepeatSubstitution{} })
 	validate.RegisterDefault(func() validate.SemanticRule { return CompositeMarkEncoding{} })
+	validate.RegisterDefault(func() validate.SemanticRule { return ImageURLAllowed{} })
+	validate.RegisterDefault(func() validate.SemanticRule { return PathDNonEmpty{} })
+	validate.RegisterDefault(func() validate.SemanticRule { return SankeyChannels{} })
 }
