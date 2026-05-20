@@ -119,7 +119,9 @@ func Encode(markType string, in Inputs) ([]scene.Mark, *scene.Warning, error) {
 		marksOut, err = encodeImage(in)
 	case "sankey":
 		marksOut, err = encodeSankey(in)
-	case "funnel", "sparkline":
+	case "funnel":
+		marksOut, err = encodeFunnel(in)
+	case "sparkline":
 		return nil, &scene.Warning{
 			Code:    scene.WarnMarkNotImplemented,
 			Message: fmt.Sprintf("mark type %q lands later in P11; layer rendered without marks.", markType),
