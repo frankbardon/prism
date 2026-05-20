@@ -326,15 +326,16 @@ class PrismCoordinator extends HTMLElement {
         if (!sibling._handle) continue;
         const has = (sibling._handle._selections || []).some(s => s.id === detail.id);
         if (!has) continue;
+        // Apply state silently first so the visual response matches
+        // the new state without spawning a re-dispatch loop, then fire
+        // the marker event on the sibling so app-level listeners see
+        // the coordinated change.
+        try { setSelection(sibling._handle, detail.id, detail.state, { silent: true }); } catch {}
         sibling.dispatchEvent(new CustomEvent("prism:select", {
           detail: Object.assign({}, detail, { [_COORDINATED]: true }),
           bubbles: false,
           composed: true,
         }));
-        // Apply state to the sibling's handle directly so the cross-
-        // chart filter actually engages (the event alone is not enough
-        // — listeners on the host element need to call setSelection).
-        try { setSelection(sibling._handle, detail.id, detail.state); } catch {}
       }
     };
     this.addEventListener("prism:select", this._listener, true);

@@ -79,12 +79,19 @@ function _handleStore(handle) {
  * setSelection records the new selection state for the given handle
  * under the named selection ID, then broadcasts `prism:select` on
  * the handle's root target with detail `{id, state}`.
+ *
+ * Pass `opts.silent === true` to suppress the broadcast — the
+ * coordinator (D082) uses this to apply state to siblings without
+ * spawning a re-dispatch loop. Class-application still runs even when
+ * silent because the visual response should match the new state.
  */
-export function setSelection(handle, selectionID, state) {
+export function setSelection(handle, selectionID, state, opts) {
   const m = _handleStore(handle);
   m.set(selectionID, state);
-  const target = handle && (handle._root || handle._svg);
-  if (target) broadcast(target, "prism:select", { id: selectionID, state });
+  if (!opts || !opts.silent) {
+    const target = handle && (handle._root || handle._svg);
+    if (target) broadcast(target, "prism:select", { id: selectionID, state });
+  }
   // Apply client-reactive classes (D078). No-op when state lists no
   // marks (clearing selection). Best-effort: silently swallow DOM
   // hiccups so a bad selection ID can't crash the page.
