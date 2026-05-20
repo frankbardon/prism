@@ -1,0 +1,27 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 600" width="800" height="600">
+  <style>:root{--prism-color-axis:#6b7280;--prism-color-grid:#e5e7eb;--prism-color-text:#111827;--prism-color-bg:transparent;--prism-font-sans:Inter, system-ui, sans-serif;--prism-font-mono:ui-monospace, SF Mono, monospace;--prism-font-size-label:11px;--prism-font-size-title:16px;--prism-font-size-axis-title:12px;}.prism-axis-domain{stroke:var(--prism-color-axis);fill:none;}.prism-axis-tick{stroke:var(--prism-color-axis);}.prism-axis-label{fill:var(--prism-color-text);font-family:var(--prism-font-sans);font-size:var(--prism-font-size-label,11px);}.prism-axis-title{fill:var(--prism-color-text);font-family:var(--prism-font-sans);font-size:var(--prism-font-size-axis-title,12px);font-weight:600;}.prism-grid-line{stroke:var(--prism-color-grid);}.prism-title{fill:var(--prism-color-text);font-family:var(--prism-font-sans);font-size:var(--prism-font-size-title,16px);font-weight:600;}.prism-legend-title{fill:var(--prism-color-text);font-family:var(--prism-font-sans);font-size:12px;font-weight:600;}.prism-legend-label{fill:var(--prism-color-text);font-family:var(--prism-font-sans);font-size:11px;}.prism-legend-swatch{stroke:none;}.prism-selected{opacity:var(--prism-selected-opacity,1);}.prism-deselected{opacity:var(--prism-deselected-opacity,0.3);}</style>
+
+  <g class="prism-scene" data-scene-id="scene-0">
+    <g class="prism-plot">
+      <g class="prism-layer" data-layer-id="layer-0" data-prism-layer="layer-0">
+        <polyline class="prism-mark-line" data-prism-id="sparkline-line-0" data-prism-datum-row="0" points="103,126.833 202,93.333 301,115.667 400,59.833 499,82.167 598,26.333 697,48.667 796,4" fill="none" fill="#3b82f6"/>
+      </g>
+    </g>
+  </g>
+
+  <g class="prism-scene" data-scene-id="scene-1">
+    <g class="prism-plot">
+      <g class="prism-layer" data-layer-id="layer-0" data-prism-layer="layer-0">
+        <polyline class="prism-mark-line" data-prism-id="sparkline-line-0" data-prism-datum-row="0" points="103,243.753 202,263.605 301,223.901 400,256.988 499,230.519 598,270.222 697,237.136 796,210.667" fill="none" fill="#3b82f6"/>
+      </g>
+    </g>
+  </g>
+
+  <g class="prism-scene" data-scene-id="scene-2">
+    <g class="prism-plot">
+      <g class="prism-layer" data-layer-id="layer-0" data-prism-layer="layer-0">
+        <polyline class="prism-mark-line" data-prism-id="sparkline-line-0" data-prism-datum-row="0" points="103,484.333 202,473.167 301,489.917 400,462 499,450.833 598,456.417 697,434.083 796,417.333" fill="none" fill="#3b82f6"/>
+      </g>
+    </g>
+  </g>
+</svg>

@@ -1,0 +1,26 @@
+{
+  "$schema": "urn:prism:schema:v1:spec",
+  "title": "Weekly visits by source",
+  "data": {
+    "values": [
+      {"week": 1, "source": "organic", "visits": 1200},
+      {"week": 2, "source": "organic", "visits": 1290},
+      {"week": 3, "source": "organic", "visits": 1330},
+      {"week": 4, "source": "organic", "visits": 1410},
+      {"week": 1, "source": "paid", "visits": 600},
+      {"week": 2, "source": "paid", "visits": 730},
+      {"week": 3, "source": "paid", "visits": 720},
+      {"week": 4, "source": "paid", "visits": 800},
+      {"week": 1, "source": "referral", "visits": 220},
+      {"week": 2, "source": "referral", "visits": 245},
+      {"week": 3, "source": "referral", "visits": 280},
+      {"week": 4, "source": "referral", "visits": 310}
+    ]
+  },
+  "mark": "line",
+  "encoding": {
+    "x": {"field": "week", "type": "quantitative"},
+    "y": {"field": "visits", "type": "quantitative"},
+    "color": {"field": "source", "type": "nominal"}
+  }
+}

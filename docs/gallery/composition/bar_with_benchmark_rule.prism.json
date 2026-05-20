@@ -1,0 +1,30 @@
+{
+  "$schema": "urn:prism:schema:v1:spec",
+  "title": "Team velocity vs target",
+  "datasets": {
+    "actuals": {"values": [
+      {"team": "alpha", "velocity": 32},
+      {"team": "beta", "velocity": 41},
+      {"team": "gamma", "velocity": 28},
+      {"team": "delta", "velocity": 47}
+    ]},
+    "target": {"values": [{"velocity": 40}]}
+  },
+  "layer": [
+    {
+      "data": {"name": "actuals"},
+      "mark": "bar",
+      "encoding": {
+        "x": {"field": "team", "type": "nominal"},
+        "y": {"field": "velocity", "type": "quantitative"}
+      }
+    },
+    {
+      "data": {"name": "target"},
+      "mark": "rule",
+      "encoding": {
+        "y": {"field": "velocity", "type": "quantitative"}
+      }
+    }
+  ]
+}

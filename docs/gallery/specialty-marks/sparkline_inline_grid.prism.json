@@ -1,0 +1,39 @@
+{
+  "$schema": "urn:prism:schema:v1:spec",
+  "title": "Quarterly micro-trends",
+  "vconcat": [
+    {
+      "data": {"values": [
+        {"t": 1, "v": 5}, {"t": 2, "v": 8}, {"t": 3, "v": 6}, {"t": 4, "v": 11},
+        {"t": 5, "v": 9}, {"t": 6, "v": 14}, {"t": 7, "v": 12}, {"t": 8, "v": 16}
+      ]},
+      "mark": "sparkline",
+      "encoding": {
+        "x": {"field": "t", "type": "quantitative"},
+        "y": {"field": "v", "type": "quantitative"}
+      }
+    },
+    {
+      "data": {"values": [
+        {"t": 1, "v": 22}, {"t": 2, "v": 19}, {"t": 3, "v": 25}, {"t": 4, "v": 20},
+        {"t": 5, "v": 24}, {"t": 6, "v": 18}, {"t": 7, "v": 23}, {"t": 8, "v": 27}
+      ]},
+      "mark": "sparkline",
+      "encoding": {
+        "x": {"field": "t", "type": "quantitative"},
+        "y": {"field": "v", "type": "quantitative"}
+      }
+    },
+    {
+      "data": {"values": [
+        {"t": 1, "v": 100}, {"t": 2, "v": 110}, {"t": 3, "v": 95}, {"t": 4, "v": 120},
+        {"t": 5, "v": 130}, {"t": 6, "v": 125}, {"t": 7, "v": 145}, {"t": 8, "v": 160}
+      ]},
+      "mark": "sparkline",
+      "encoding": {
+        "x": {"field": "t", "type": "quantitative"},
+        "y": {"field": "v", "type": "quantitative"}
+      }
+    }
+  ]
+}

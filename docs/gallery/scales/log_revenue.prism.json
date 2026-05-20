@@ -1,0 +1,21 @@
+{
+  "$schema": "urn:prism:schema:v1:spec",
+  "title": "Customer revenue distribution (log scale)",
+  "description": "Revenue spans 4 orders of magnitude; log scale reveals long-tail.",
+  "data": {
+    "values": [
+      {"customer": "A", "revenue": 12},
+      {"customer": "B", "revenue": 95},
+      {"customer": "C", "revenue": 840},
+      {"customer": "D", "revenue": 2100},
+      {"customer": "E", "revenue": 8400},
+      {"customer": "F", "revenue": 31000},
+      {"customer": "G", "revenue": 96000}
+    ]
+  },
+  "mark": "bar",
+  "encoding": {
+    "x": {"field": "customer", "type": "nominal"},
+    "y": {"field": "revenue", "type": "quantitative", "scale": {"type": "log"}}
+  }
+}
