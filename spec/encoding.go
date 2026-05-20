@@ -6,6 +6,9 @@ import (
 )
 
 // Encoding is the map of channel name → channel binding for a leaf spec.
+//
+// Source / Target / Value (P11) are sankey-specific bindings carrying
+// a field name without an axis scale. See D064.
 type Encoding struct {
 	X       *PositionChannel `json:"x,omitempty"`
 	Y       *PositionChannel `json:"y,omitempty"`
@@ -25,6 +28,9 @@ type Encoding struct {
 	Detail  *DetailChannel   `json:"detail,omitempty"`
 	Row     *FacetChannel    `json:"row,omitempty"`
 	Column  *FacetChannel    `json:"column,omitempty"`
+	Source  *MarkChannel     `json:"source,omitempty"`
+	Target  *MarkChannel     `json:"target,omitempty"`
+	Value   *MarkChannel     `json:"value,omitempty"`
 }
 
 // ChannelCommon holds the fields shared by every channel class.

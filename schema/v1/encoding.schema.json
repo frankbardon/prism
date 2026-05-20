@@ -199,7 +199,10 @@
         "order":   {"$ref": "encoding.schema.json#/$defs/order_channel", "description": "Drawing order encoding."},
         "detail":  {"$ref": "encoding.schema.json#/$defs/detail_channel", "description": "Detail (grouping) encoding."},
         "row":     {"$ref": "encoding.schema.json#/$defs/facet_channel", "description": "Row facet channel."},
-        "column":  {"$ref": "encoding.schema.json#/$defs/facet_channel", "description": "Column facet channel."}
+        "column":  {"$ref": "encoding.schema.json#/$defs/facet_channel", "description": "Column facet channel."},
+        "source":  {"$ref": "encoding.schema.json#/$defs/mark_channel", "description": "Sankey source-node channel."},
+        "target":  {"$ref": "encoding.schema.json#/$defs/mark_channel", "description": "Sankey target-node channel."},
+        "value":   {"$ref": "encoding.schema.json#/$defs/mark_channel", "description": "Sankey flow-magnitude channel."}
       }
     }
   }

@@ -70,6 +70,7 @@ func presentChannels(enc *spec.Encoding) []string {
 		{"text", enc.Text != nil}, {"tooltip", enc.Tooltip != nil},
 		{"order", enc.Order != nil}, {"detail", enc.Detail != nil},
 		{"row", enc.Row != nil}, {"column", enc.Column != nil},
+		{"source", enc.Source != nil}, {"target", enc.Target != nil}, {"value", enc.Value != nil},
 	}
 	for _, e := range entries {
 		if e.present {
@@ -84,20 +85,31 @@ func presentChannels(enc *spec.Encoding) []string {
 //
 // Tooltip, order, detail, row, and column are universal across every
 // mark. The per-mark differences are mostly positional vs angular vs
-// text-only.
+// text-only. Sankey lives in its own tier (source/target/value per
+// D064); funnel lives in its own tier (x category + y quantity per
+// D066); sparkline mirrors line (D067).
 func allowedChannelsForMark(mark string) []string {
 	common := []string{"tooltip", "order", "detail", "row", "column"}
 	cartesianMark := []string{"x", "y", "x2", "y2", "color", "fill", "stroke", "opacity", "size", "shape"}
 	polarMark := []string{"theta", "radius", "color", "fill", "stroke", "opacity"}
 	textMark := []string{"x", "y", "text", "color", "fill", "stroke", "opacity", "size"}
+	sankeyMark := []string{"source", "target", "value", "color", "fill", "stroke", "opacity"}
+	funnelMark := []string{"x", "y", "color", "fill", "stroke", "opacity", "text"}
+	sparklineMark := []string{"x", "y", "color", "fill", "stroke", "opacity"}
 
 	var set []string
 	switch mark {
 	case "bar", "line", "area", "point", "circle", "square", "tick", "rect", "rule",
-		"histogram", "heatmap", "boxplot", "violin", "sparkline":
+		"histogram", "heatmap", "boxplot", "violin":
 		set = cartesianMark
-	case "arc", "pie", "donut", "sankey", "funnel":
+	case "arc", "pie", "donut":
 		set = polarMark
+	case "sankey":
+		set = sankeyMark
+	case "funnel":
+		set = funnelMark
+	case "sparkline":
+		set = sparklineMark
 	case "text":
 		set = textMark
 	case "image":
