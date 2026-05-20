@@ -24,4 +24,6 @@ func init() {
 	validate.RegisterDefault(func() validate.SemanticRule { return ImageURLAllowed{} })
 	validate.RegisterDefault(func() validate.SemanticRule { return PathDNonEmpty{} })
 	validate.RegisterDefault(func() validate.SemanticRule { return SankeyChannels{} })
+	validate.RegisterDefault(func() validate.SemanticRule { return SelectionEncodingChannel{} })
+	validate.RegisterDefault(func() validate.SemanticRule { return SelectionIntervalChannel{} })
 }

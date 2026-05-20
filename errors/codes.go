@@ -453,6 +453,28 @@ var Codes = map[string]CodeMetadata{
 		},
 		SeeAlso: []string{"PRISM_SPEC_013"},
 	},
+
+	// --- P13 selection codes.
+	"PRISM_SPEC_019": {
+		Code:    "PRISM_SPEC_019",
+		Message: `Selection {{.Selection}} encoding {{.Channel}} is not bound in the spec encoding block (available: {{.Available}}).`,
+		Fixups: []string{
+			`Bind the {{.Channel}} channel in the spec's "encoding" block — selections can only respond to channels that have a backing field.`,
+			`Remove "{{.Channel}}" from the selection's "encodings" list if the channel is intentionally unbound.`,
+			`Channel names are lowercase (x | y | x2 | y2 | theta | color | size | shape | opacity | fill | stroke); match the casing exactly.`,
+		},
+		SeeAlso: []string{"PRISM_SPEC_004", "PRISM_SPEC_020"},
+	},
+	"PRISM_SPEC_020": {
+		Code:    "PRISM_SPEC_020",
+		Message: `Interval selection {{.Selection}} uses non-position channel {{.Channel}} (intervals brush over position axes only).`,
+		Fixups: []string{
+			`Change "{{.Channel}}" to a position channel (x | y | x2 | y2 | theta); intervals brush over continuous axes only.`,
+			`For filtering by color / size / shape values, use a point selection on the underlying field instead of an interval brush.`,
+			`Theta intervals brush over polar position; valid for arc / pie / donut marks.`,
+		},
+		SeeAlso: []string{"PRISM_SPEC_019"},
+	},
 }
 
 // CodesSorted returns the catalog keys in ascending order.

@@ -43,8 +43,8 @@
         "type":      {"type": "string", "const": "interval", "description": "Discriminator."},
         "encodings": {
           "type": "array",
-          "items": {"type": "string", "enum": ["x", "y"]},
-          "description": "Channels to brush over."
+          "items": {"type": "string"},
+          "description": "Channels to brush over. Position channels (x | y | x2 | y2 | theta) are enforced semantically via PRISM_SPEC_020 — schema accepts any string so the semantic layer can render a useful fixup."
         },
         "mark": {
           "type": "object",

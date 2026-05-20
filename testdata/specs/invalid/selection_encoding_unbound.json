@@ -1,0 +1,17 @@
+{
+  "$schema": "urn:prism:schema:v1:spec",
+  "data": {
+    "name": "scores",
+    "values": [
+      {"brand_id": "alpha", "score": 0.42}
+    ]
+  },
+  "selection": {
+    "highlight": {"type": "point", "fields": ["brand_id"], "encodings": ["color"]}
+  },
+  "mark": "bar",
+  "encoding": {
+    "x": {"field": "brand_id", "type": "nominal"},
+    "y": {"field": "score",    "type": "quantitative"}
+  }
+}

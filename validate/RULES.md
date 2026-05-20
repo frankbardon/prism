@@ -34,6 +34,8 @@ rules assume well-formed structure.
 | `PRISM_SPEC_007` scale type compat with field type | Semantic | Needs field type lookup. |
 | `PRISM_SPEC_008` pie/donut requires theta + color | Semantic | Cross-field rule per mark type. |
 | `PRISM_SPEC_009` `$schema` references known schema | Semantic | Requires the bundle URN registry. |
+| `PRISM_SPEC_019` selection encoding channel is bound | Semantic | Cross-field check: walks selection.encodings and matches against bound channels. |
+| `PRISM_SPEC_020` interval selection encodings are position channels | Semantic | Spec-internal allowlist (x/y/x2/y2/theta). |
 
 ## $ref resolution strategy
 
