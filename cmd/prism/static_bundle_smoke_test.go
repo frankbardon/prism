@@ -16,22 +16,16 @@ func TestPrismCLIStaticBundleCopiesAllFiles(t *testing.T) {
 	if exit != 0 {
 		t.Fatalf("static-bundle exited %d", exit)
 	}
+	// D3 modules were removed in P17 — the WASM pipeline replaces the
+	// JS-side scale / axis / tick / format implementations they
+	// previously supported. The bundle is now a minimal four-file
+	// payload plus the README.
 	wantFiles := []string{
 		"prism.mjs",
 		"prism-element.mjs",
 		"prism-resolver.mjs",
 		"prism-selection.mjs",
 		"README.md",
-		"d3/README.md",
-		"d3/VERSIONS.json",
-		"d3/d3-array.mjs",
-		"d3/d3-axis.mjs",
-		"d3/d3-brush.mjs",
-		"d3/d3-format.mjs",
-		"d3/d3-scale.mjs",
-		"d3/d3-shape.mjs",
-		"d3/d3-time-format.mjs",
-		"d3/d3-zoom.mjs",
 	}
 	for _, rel := range wantFiles {
 		path := filepath.Join(dir, rel)
