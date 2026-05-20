@@ -27,8 +27,6 @@ import (
 	"github.com/mark3labs/mcp-go/server"
 	"github.com/spf13/afero"
 
-	"github.com/frankbardon/prism/render"
-	"github.com/frankbardon/prism/render/svg"
 	"github.com/frankbardon/prism/rpc"
 	prismspec "github.com/frankbardon/prism/spec"
 )
@@ -69,12 +67,12 @@ func New(opts Options) *server.MCPServer {
 func registerTools(s *server.MCPServer, opts Options) {
 	s.AddTool(
 		mcpgo.NewTool("prism_plot",
-			mcpgo.WithDescription("Compile a Prism spec and render to image bytes. SVG only in v0.1; PNG/PDF return PRISM_RENDER_FORMAT_UNAVAILABLE."),
+			mcpgo.WithDescription("Compile a Prism spec and render to image bytes. SVG (default) and PDF are supported; PNG returns PRISM_RENDER_FORMAT_UNAVAILABLE (V2)."),
 			mcpgo.WithString("spec",
 				mcpgo.Required(),
 				mcpgo.Description("Prism spec as a JSON string (matches the schemas under schema/v1/).")),
 			mcpgo.WithString("format",
-				mcpgo.Description("Output format: svg (default), png (P15), pdf (P16).")),
+				mcpgo.Description("Output format: svg (default) | pdf. PNG returns PRISM_RENDER_FORMAT_UNAVAILABLE.")),
 		),
 		plotHandler(opts.PrismServer),
 	)
@@ -333,9 +331,3 @@ func pluralS(n int) string {
 	return "s"
 }
 
-// _ keeps render/svg referenced so future tool additions (PDF / PNG
-// when P15 lands) don't need an import shuffle.
-var (
-	_ = svg.New
-	_ = render.RenderOpts{}
-)

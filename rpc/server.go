@@ -31,6 +31,7 @@ import (
 	"github.com/frankbardon/prism/plan"
 	"github.com/frankbardon/prism/plan/build"
 	"github.com/frankbardon/prism/render"
+	"github.com/frankbardon/prism/render/pdf"
 	"github.com/frankbardon/prism/render/svg"
 	"github.com/frankbardon/prism/resolve"
 	"github.com/frankbardon/prism/spec"
@@ -183,9 +184,11 @@ func dimsOrDefault(w, h int32) (float64, float64) {
 	return width, height
 }
 
-// Plot implements the Plot RPC. SVG renders inline; PNG and PDF
-// return PRISM_RENDER_FORMAT_UNAVAILABLE — the interceptor maps that
-// code to twirp.Unimplemented per D085.
+// Plot implements the Plot RPC. SVG and PDF render inline; PNG +
+// canvas-json return PRISM_RENDER_FORMAT_UNAVAILABLE — the interceptor
+// maps that code to twirp.Unimplemented per D085. PDF defaults to a
+// single page (Paginate=false); multi-page output over the wire
+// defers to a future proto-shape change.
 func (s *PrismServer) Plot(ctx context.Context, req *PlotRequest) (*PlotResponse, error) {
 	if req == nil {
 		req = &PlotRequest{}
@@ -195,17 +198,14 @@ func (s *PrismServer) Plot(ctx context.Context, req *PlotRequest) (*PlotResponse
 		format = "svg"
 	}
 	switch format {
-	case "svg":
+	case "svg", "pdf":
 		// handled below
-	case "png", "pdf", "canvas-json":
+	case "png", "canvas-json":
 		// Match the CLI's landing-phase message so users see the
 		// same fixup line regardless of surface.
-		phase := "P15"
+		phase := "V2"
 		if format == "canvas-json" {
 			phase = "P12"
-		}
-		if format == "png" {
-			phase = "P15"
 		}
 		return nil, prismerrors.New(
 			"PRISM_RENDER_FORMAT_UNAVAILABLE",
@@ -230,16 +230,32 @@ func (s *PrismServer) Plot(ctx context.Context, req *PlotRequest) (*PlotResponse
 	if err != nil {
 		return nil, err
 	}
-	rend := svg.New()
-	bytes, err := rend.Render(doc, render.RenderOpts{
-		Format: "svg",
-		Width:  width,
-		Height: height,
-	})
+	var (
+		bytes []byte
+		mime  string
+	)
+	switch format {
+	case "svg":
+		rend := svg.New()
+		bytes, err = rend.Render(doc, render.RenderOpts{
+			Format: "svg",
+			Width:  width,
+			Height: height,
+		})
+		mime = rend.MimeType()
+	case "pdf":
+		rend := pdf.New()
+		bytes, err = rend.Render(doc, render.RenderOpts{
+			Format: "pdf",
+			Width:  width,
+			Height: height,
+		})
+		mime = rend.MimeType()
+	}
 	if err != nil {
 		return nil, prismerrors.Wrap(
 			"PRISM_RENDER_FAILED",
-			"SVG render failed",
+			fmt.Sprintf("%s render failed", format),
 			map[string]any{"Reason": err.Error()},
 			err,
 		)
@@ -250,7 +266,7 @@ func (s *PrismServer) Plot(ctx context.Context, req *PlotRequest) (*PlotResponse
 	}
 	return &PlotResponse{
 		Bytes:    bytes,
-		Mime:     rend.MimeType(),
+		Mime:     mime,
 		Warnings: warnings,
 	}, nil
 }

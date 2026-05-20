@@ -139,6 +139,43 @@ func TestPrismMCPPlotTool(t *testing.T) {
 	}
 }
 
+// TestPrismMCPPlotToolPDF — PDF lands in P15. Round-trip the
+// prism_plot tool with format=pdf; verify the response carries
+// application/pdf mime + base64-decoded bytes start with %PDF-.
+func TestPrismMCPPlotToolPDF(t *testing.T) {
+	srv := newTestServer(t)
+	var req mcpgo.CallToolRequest
+	req.Params.Name = "prism_plot"
+	req.Params.Arguments = map[string]any{
+		"spec":   fixtureSpec,
+		"format": "pdf",
+	}
+	res, err := srv.Client().CallTool(context.Background(), req)
+	if err != nil {
+		t.Fatalf("CallTool prism_plot pdf: %v", err)
+	}
+	if res.IsError {
+		t.Fatalf("prism_plot pdf returned error: %s", textOf(res))
+	}
+	var payload plotResult
+	if err := json.Unmarshal([]byte(textOf(res)), &payload); err != nil {
+		t.Fatalf("plot result parse: %v\n%s", err, textOf(res))
+	}
+	if payload.Mime != "application/pdf" {
+		t.Errorf("mime = %q; want application/pdf", payload.Mime)
+	}
+	decoded, err := base64.StdEncoding.DecodeString(payload.Bytes)
+	if err != nil {
+		t.Fatalf("base64 decode: %v", err)
+	}
+	if !strings.HasPrefix(string(decoded), "%PDF-") {
+		t.Errorf("decoded bytes do not start with %%PDF-")
+	}
+	if len(decoded) < 1000 {
+		t.Errorf("decoded PDF unexpectedly small: %d bytes", len(decoded))
+	}
+}
+
 // TestPrismMCPValidateTool round-trips the prism_validate tool on
 // a valid + invalid spec.
 func TestPrismMCPValidateTool(t *testing.T) {

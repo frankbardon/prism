@@ -84,6 +84,27 @@ func TestPrismTwirpServerPlotPNGUnimplemented(t *testing.T) {
 	}
 }
 
+// TestPrismTwirpServerPlotPDF — PDF lands in P15. The handler should
+// return application/pdf bytes starting with the %PDF- magic.
+func TestPrismTwirpServerPlotPDF(t *testing.T) {
+	srv := newServer()
+	resp, err := srv.Plot(context.Background(), &PlotRequest{
+		Spec: minimalSpec, Format: "pdf",
+	})
+	if err != nil {
+		t.Fatalf("Plot(format=pdf): %v", err)
+	}
+	if resp.Mime != "application/pdf" {
+		t.Fatalf("Plot mime = %q, want application/pdf", resp.Mime)
+	}
+	if len(resp.Bytes) < 1000 {
+		t.Fatalf("Plot(format=pdf) returned %d bytes; want a non-trivial PDF", len(resp.Bytes))
+	}
+	if !strings.HasPrefix(string(resp.Bytes), "%PDF-") {
+		t.Fatalf("Plot(format=pdf) bytes do not start with %%PDF-: %q...", resp.Bytes[:min(len(resp.Bytes), 16)])
+	}
+}
+
 func TestPrismTwirpServerValidateOK(t *testing.T) {
 	srv := newServer()
 	resp, err := srv.Validate(context.Background(), &ValidateRequest{Spec: minimalSpec})
