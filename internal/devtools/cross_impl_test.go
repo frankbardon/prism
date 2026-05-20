@@ -27,18 +27,22 @@ var curatedFixtures = []string{
 	"sankey_user_flow",
 }
 
-// TestCrossImplSVGParity diffs Go-rendered SVG against JS-rendered
-// SVG byte-for-byte for each curated fixture (D076). Skips when:
-//   - PRISM_CROSS_IMPL != "1" (CI without node deps stays green)
+// TestCrossImplSVGParity diffs Go-native SVG against Go-via-wasm
+// SVG byte-for-byte for each curated fixture (D076 + P17). Skips
+// when:
+//   - PRISM_CROSS_IMPL != "1" (CI without node + wasm assets stays green)
 //   - `node` is not on PATH
-//   - happy-dom is not installed in the runner's node_modules/
+//   - bin/prism.wasm / bin/wasm_exec.js are absent (run `make build-wasm`)
 //
 // Set PRISM_CROSS_IMPL_REGEN=1 to refresh scene.json + go.svg under
 // testdata/cross_impl/<fixture>/ before diffing. Use this after a
-// Scene IR change.
+// Scene IR change. The harness no longer requires `npm install` —
+// post-P17 it loads the Go-compiled WASM module via the toolchain's
+// wasm_exec.js, so byte parity tests the same Go binary on both
+// sides rather than two separate implementations.
 func TestCrossImplSVGParity(t *testing.T) {
 	if os.Getenv("PRISM_CROSS_IMPL") != "1" {
-		t.Skip("set PRISM_CROSS_IMPL=1 + run `npm install` inside internal/devtools/cross-impl-runner/ to enable")
+		t.Skip("set PRISM_CROSS_IMPL=1 + run `make build-wasm` to enable")
 	}
 	nodePath, err := exec.LookPath("node")
 	if err != nil {
@@ -56,10 +60,13 @@ func TestCrossImplSVGParity(t *testing.T) {
 		}
 	}
 
-	// Check the runner is wired up (package.json + node_modules).
-	runnerDir := filepath.Join(root, "internal", "devtools", "cross-impl-runner")
-	if _, err := os.Stat(filepath.Join(runnerDir, "node_modules", "happy-dom")); err != nil {
-		t.Skipf("happy-dom not installed under %s/node_modules/ — run `npm install` per README", runnerDir)
+	// Ensure bin/prism.wasm + bin/wasm_exec.js exist; without them
+	// the harness can't run.
+	if _, err := os.Stat(filepath.Join(root, "bin", "prism.wasm")); err != nil {
+		t.Skipf("bin/prism.wasm not present (run `make build-wasm` first): %v", err)
+	}
+	if _, err := os.Stat(filepath.Join(root, "bin", "wasm_exec.js")); err != nil {
+		t.Skipf("bin/wasm_exec.js not present (run `make build-wasm` first): %v", err)
 	}
 
 	regen := os.Getenv("PRISM_CROSS_IMPL_REGEN") == "1"
@@ -73,7 +80,7 @@ func TestCrossImplSVGParity(t *testing.T) {
 			}
 			scenePath := filepath.Join(dir, "scene.json")
 			goSVGPath := filepath.Join(dir, "go.svg")
-			jsSVGPath := filepath.Join(dir, "js.svg")
+			wasmSVGPath := filepath.Join(dir, "wasm.svg")
 			specPath := filepath.Join(root, "testdata", "specs", fixture+".json")
 
 			if regen {
@@ -98,7 +105,7 @@ func TestCrossImplSVGParity(t *testing.T) {
 				}
 			}
 
-			// Run the Node harness — emits js.svg.
+			// Run the Node harness — emits wasm.svg.
 			cmd := exec.Command(nodePath, "internal/devtools/cross-impl-runner/main.mjs", fixture)
 			cmd.Dir = root
 			var stderr bytes.Buffer
@@ -111,23 +118,29 @@ func TestCrossImplSVGParity(t *testing.T) {
 			if err != nil {
 				t.Fatalf("read go.svg: %v", err)
 			}
-			jsSVG, err := os.ReadFile(jsSVGPath)
+			wasmSVG, err := os.ReadFile(wasmSVGPath)
 			if err != nil {
-				t.Fatalf("read js.svg: %v", err)
+				t.Fatalf("read wasm.svg: %v", err)
 			}
-			// Normalise both sides before diffing — see D076 +
-			// normaliseSVG comment.
-			goN := normaliseSVG(goSVG)
-			jsN := normaliseSVG(jsSVG)
-			if !bytes.Equal(goN, jsN) {
-				t.Errorf("cross-impl SVG drift for %s (go=%d bytes raw / %d normalised, js=%d bytes raw / %d normalised)\nfirst-diff context (normalised):\n%s",
-					fixture, len(goSVG), len(goN), len(jsSVG), len(jsN), diffContext(goN, jsN, 200))
-				// Always write a side-by-side debug artifact when
-				// drift is detected — speeds up triage.
+			// Both sides come from the same Go renderer (host build
+			// vs js/wasm build), so byte parity is expected without
+			// the normalisation pass that existed for the JS port.
+			// We keep normalisation behind a feature flag in case a
+			// future divergence appears (different Go toolchain
+			// stringification of floats, etc.).
+			goN := goSVG
+			wasmN := wasmSVG
+			if os.Getenv("PRISM_CROSS_IMPL_NORMALISE") == "1" {
+				goN = normaliseSVG(goSVG)
+				wasmN = normaliseSVG(wasmSVG)
+			}
+			if !bytes.Equal(goN, wasmN) {
+				t.Errorf("cross-impl SVG drift for %s (go=%d bytes, wasm=%d bytes)\nfirst-diff context:\n%s",
+					fixture, len(goSVG), len(wasmSVG), diffContext(goN, wasmN, 200))
 				diffPath := filepath.Join(dir, "diff.txt")
 				_ = os.WriteFile(diffPath, []byte(fmt.Sprintf(
-					"go bytes (raw): %d\njs bytes (raw): %d\ngo bytes (normalised): %d\njs bytes (normalised): %d\n\n--- go (normalised) ---\n%s\n\n--- js (normalised) ---\n%s\n",
-					len(goSVG), len(jsSVG), len(goN), len(jsN), goN, jsN,
+					"go bytes: %d\nwasm bytes: %d\n\n--- go ---\n%s\n\n--- wasm ---\n%s\n",
+					len(goSVG), len(wasmSVG), goN, wasmN,
 				)), 0o644)
 			}
 		})

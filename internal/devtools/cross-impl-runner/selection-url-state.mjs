@@ -58,6 +58,11 @@ globalThis.fetch = async () => ({
 });
 
 // ---- Test 1: serialise/deserialise round-trip ----
+// WASM must be live before prism-element imports (its transitive
+// prism.mjs lazy-loads prism.wasm on first render).
+const { bootstrapWasm } = await import("./wasm-bootstrap.mjs");
+await bootstrapWasm(REPO);
+
 const { serialiseStateMap, deserialiseStateMap } = await import(
   resolve(REPO, "static/vendor/prism/prism-element.mjs"),
 );

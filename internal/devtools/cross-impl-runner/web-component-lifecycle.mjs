@@ -61,6 +61,9 @@ globalThis.fetch = async (url) => {
 
 // Import the web component (auto-registers). Must happen AFTER
 // globals are wired.
+import { bootstrapWasm, tick } from "./wasm-bootstrap.mjs";
+await bootstrapWasm(REPO);
+
 await import(resolve(REPO, "static/vendor/prism/prism-element.mjs"));
 
 // ----- Test 1: connect -----

@@ -1,15 +1,17 @@
-// main.mjs — Node entrypoint for TestCrossImplSVGParity.
+// main.mjs — Node entrypoint for TestCrossImplSVGParity (P17).
 //
 // Usage:
 //   node main.mjs <fixture-name>
 //
 // Reads:    testdata/cross_impl/<fixture>/scene.json
-// Renders:  via static/vendor/prism/prism.mjs into happy-dom
-// Writes:   testdata/cross_impl/<fixture>/js.svg
+// Renders:  via bin/prism.wasm (loaded into Node through
+//           bin/wasm_exec.js)
+// Writes:   testdata/cross_impl/<fixture>/wasm.svg
 //
-// happy-dom (>=15) provides enough DOM + CustomEvent + shadow-root
-// surface for SVG construction + serialisation via outerHTML.
-// Pixel parity is out of scope — we diff SVG text bytes (D076).
+// The harness replaced its P12 JS-port path in P17: now it loads
+// the same Go binary that runs in browsers and asserts byte-equal
+// SVG against `prism plot`. Drift signals a Go compiler regression
+// or a non-deterministic stage, not a JS port mistake.
 
 import { readFile, writeFile } from "node:fs/promises";
 import { fileURLToPath } from "node:url";
@@ -25,57 +27,44 @@ if (!fixture) {
 }
 
 const scenePath = resolve(REPO, "testdata", "cross_impl", fixture, "scene.json");
-const outPath   = resolve(REPO, "testdata", "cross_impl", fixture, "js.svg");
-
-// Wire happy-dom globals. Done before importing prism.mjs so the
-// module's references to document/HTMLElement resolve.
-let Window;
-try {
-  ({ Window } = await import("happy-dom"));
-} catch (err) {
-  console.error("main.mjs: happy-dom not installed. Run `npm install` inside internal/devtools/cross-impl-runner/.");
-  console.error(err.message);
-  process.exit(3);
-}
-
-const window = new Window({ url: "http://localhost/" });
-globalThis.window         = window;
-globalThis.document       = window.document;
-globalThis.HTMLElement    = window.HTMLElement;
-globalThis.CustomEvent    = window.CustomEvent;
-globalThis.customElements = window.customElements;
-globalThis.fetch          = window.fetch?.bind(window);
+const outPath   = resolve(REPO, "testdata", "cross_impl", fixture, "wasm.svg");
+const wasmPath  = resolve(REPO, "bin", "prism.wasm");
+const execPath  = resolve(REPO, "bin", "wasm_exec.js");
 
 const sceneText = await readFile(scenePath, "utf-8");
-const scene = JSON.parse(sceneText);
 
-const { render } = await import(resolve(REPO, "static/vendor/prism/prism.mjs"));
+// wasm_exec.js installs `globalThis.Go`. The harness loads it via
+// dynamic eval rather than `await import(...)` because Go ships it
+// as a classic script, not an ES module.
+const execSource = await readFile(execPath, "utf-8");
+new Function("globalThis", execSource)(globalThis);
 
-const handle = render(scene, document.body);
-const svg = document.body.querySelector("svg");
-if (!svg) {
-  console.error("main.mjs: render produced no <svg> child");
+const wasmBytes = await readFile(wasmPath);
+const go = new globalThis.Go();
+const { instance } = await WebAssembly.instantiate(wasmBytes, go.importObject);
+
+// go.run blocks until the WASM module returns. Our cmd/prismwasm
+// main() ends with `select{}` so the run promise never resolves;
+// we register a Promise that fulfils as soon as the exports show
+// up on globalThis.prism, and race them.
+const ready = new Promise((res, rej) => {
+  let attempts = 0;
+  const tick = () => {
+    if (globalThis.prism && typeof globalThis.prism.render === "function") return res();
+    if (++attempts > 100) return rej(new Error("prism.wasm loaded but globalThis.prism never populated"));
+    setTimeout(tick, 0);
+  };
+  tick();
+});
+go.run(instance); // fire and forget
+await ready;
+
+const svg = globalThis.prism.render(sceneText);
+if (typeof svg !== "string" || svg.startsWith(`{"ok":false`)) {
+  console.error("main.mjs: prism.render returned an error envelope:", svg);
   process.exit(4);
 }
 
-// Serialise via outerHTML. happy-dom returns lowercase tag names +
-// double-quoted attributes by default, matching the Go writer's
-// output. We post-process minimally for parity:
-//   - happy-dom doesn't emit the xmlns attribute on the SVG root
-//     unless we set it explicitly (we did via setAttribute, so it
-//     should be present).
-//   - happy-dom collapses self-closing tags differently; we run a
-//     small normaliser below.
-let out = svg.outerHTML;
-
-// Normalisation pass: collapse `></rect>` to `/>` for void-style
-// elements when Go uses the self-closing form. We can iterate this
-// further once the first parity run shows the actual diff shape;
-// keeping the initial pass minimal for visibility.
-
-await writeFile(outPath, out + "\n", "utf-8");
-console.error(`main.mjs: wrote ${outPath} (${out.length} bytes)`);
-
-// Tear down to keep the Node process exit quick.
-try { handle?.destroy?.(); } catch {}
-try { await window.happyDOM?.close(); } catch {}
+await writeFile(outPath, svg.endsWith("\n") ? svg : svg + "\n", "utf-8");
+console.error(`main.mjs: wrote ${outPath} (${svg.length} bytes)`);
+process.exit(0);
