@@ -181,6 +181,57 @@ func TestPrismTooltipMaterialized(t *testing.T) {
 	}
 }
 
+// TestPrismSparklineStripped — PHASE.md mandatory P11 gate. Loads
+// the sparkline fixture, runs through encode, and asserts the
+// resulting SceneDoc has zero axes / zero legends / nil title
+// across every cell (D067).
+func TestPrismSparklineStripped(t *testing.T) {
+	doc := loadAndEncodeFixture(t, "sparkline_inline.json")
+	for _, cell := range doc.Grid.Cells {
+		if len(cell.Scene.Axes) != 0 {
+			t.Errorf("sparkline scene has %d axes, want 0", len(cell.Scene.Axes))
+		}
+		if len(cell.Scene.Legends) != 0 {
+			t.Errorf("sparkline scene has %d legends, want 0", len(cell.Scene.Legends))
+		}
+		if cell.Scene.Title != nil {
+			t.Errorf("sparkline scene has title %+v, want nil", cell.Scene.Title)
+		}
+	}
+}
+
+// TestPrismPathPassthrough — PHASE.md mandatory P11 gate. Loads the
+// path fixture, runs through encode + render, and asserts the path
+// d-string round-trips byte-equal into the SVG output.
+func TestPrismPathPassthrough(t *testing.T) {
+	doc := loadAndEncodeFixture(t, "path_arbitrary.json")
+	wantD := "M 100 100 L 200 100 L 150 200 Z"
+	foundIR := false
+	for _, cell := range doc.Grid.Cells {
+		for _, layer := range cell.Scene.Layers {
+			for _, m := range layer.Marks {
+				if m.Path != nil {
+					if m.Path.D != wantD {
+						t.Errorf("PathGeom.D = %q, want %q", m.Path.D, wantD)
+					}
+					foundIR = true
+				}
+			}
+		}
+	}
+	if !foundIR {
+		t.Fatal("no PathGeom found in encoded SceneDoc")
+	}
+	got, err := renderFixture(t, "path_arbitrary.json")
+	if err != nil {
+		t.Fatalf("renderFixture: %v", err)
+	}
+	wantAttr := `d="M 100 100 L 200 100 L 150 200 Z"`
+	if !strings.Contains(string(got), wantAttr) {
+		t.Errorf("rendered SVG missing %q (got: %s)", wantAttr, string(got))
+	}
+}
+
 // loadAndEncodeFixture runs the full plot pipeline (build, execute,
 // encode) and returns the SceneDoc. Skips the SVG render step.
 // Used by the angle / count / tooltip gates that inspect IR shape.
