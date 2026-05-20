@@ -12,7 +12,7 @@ import (
 	"github.com/urfave/cli/v3"
 )
 
-const versionString = "prism v0.0.0-dev"
+const versionString = "prism v1.0.0"
 
 func main() {
 	app := newApp()

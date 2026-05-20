@@ -50,13 +50,13 @@ func TestPrismGalleryFixtures(t *testing.T) {
 	// or empty SVG today (PRISM_WARN flagged). They still validate; we
 	// only assert validate exit and skip the SVG assertion.
 	plotSkip := map[string]bool{
-		"selections/selection_point.prism.json":    true,
-		"selections/selection_interval.prism.json": true,
+		"selections/selection_point.prism.json":            true,
+		"selections/selection_interval.prism.json":         true,
 		"specialty-marks/sparkline_inline.prism.json":      true,
 		"specialty-marks/sparkline_inline_grid.prism.json": true,
-		"themes/bar_light.prism.json":                       true,
-		"themes/bar_dark.prism.json":                        true,
-		"themes/bar_print.prism.json":                       true,
+		"themes/bar_light.prism.json":                      true,
+		"themes/bar_dark.prism.json":                       true,
+		"themes/bar_print.prism.json":                      true,
 		// Pulse-backed fixtures reference testdata/cohorts/*.pulse with
 		// repo-root-relative paths; plot from the gallery cwd misses them.
 		"multi-source/actual_vs_benchmark.prism.json": true,
