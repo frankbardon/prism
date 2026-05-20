@@ -11,7 +11,7 @@ Prism is a visualization library for `.pulse` files. Ships as a Go library (`git
 - **Vega-Lite vocabulary, snake_case keys.** Single-word terms (`mark`, `encoding`, `transform`, `layer`, `facet`, `concat`, `repeat`) match Vega-Lite verbatim. Multi-word keys are snake_case throughout (`stroke_width`, `corner_radius`, `font_size`).
 - **Pulse expression syntax** in `filter` predicates and `calculate` transforms. No `datum.` prefix, no JS function calls, no Vega expression eval. One expression language, executed by Pulse.
 - **No-execute predict & validate.** `validate/` reads only the spec + optional schema (no row I/O); `plan` builds the DAG without executing it; `prism inspect` reads spec + Pulse headers only. Network and filesystem I/O happen only at `plan.Execute` time.
-- **Pulse relationship.** Prism depends on `github.com/frankbardon/pulse` for `.pulse` decoding, request compilation, and data ops. Pulse has no dependency on Prism. Custom cohort-analytics aliases (`wmean`, `ratio`, `lift`, `share`, `ci0`, `ci1`) are implemented client-side in `compile/` until Pulse upstreams them.
+- **Pulse relationship.** Prism depends on `github.com/frankbardon/pulse` for `.pulse` decoding, request compilation, and data ops. Pulse has no dependency on Prism. Custom cohort-analytics aliases `lift` and `share` are implemented client-side in `compile/inmem/` until Pulse upstreams them; `wmean`, `ratio`, `ci0`, `ci1` are first-class Pulse `AGG_*` ops as of Pulse v0.10.0.
 
 ## The Update Demand
 
