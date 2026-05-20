@@ -12,6 +12,7 @@
   },
   "layer": [
     {
+      "$schema": "urn:prism:schema:v1:spec",
       "data": {"name": "actuals"},
       "mark": "bar",
       "encoding": {
@@ -20,6 +21,7 @@
       }
     },
     {
+      "$schema": "urn:prism:schema:v1:spec",
       "data": {"name": "target"},
       "mark": "rule",
       "encoding": {
