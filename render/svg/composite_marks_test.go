@@ -12,11 +12,12 @@ import (
 )
 
 // TestPrismP10SVGGoldensStable runs spec -> build -> execute ->
-// encode -> render for each P10 composite mark fixture and diffs
-// against the committed golden under testdata/svgs/. Set
-// UPDATE_GOLDENS=1 to regenerate.
+// encode -> render for each P10 composite + P11 specialty mark
+// fixture and diffs against the committed golden under
+// testdata/svgs/. Set UPDATE_GOLDENS=1 to regenerate.
 func TestPrismP10SVGGoldensStable(t *testing.T) {
 	fixtures := []string{
+		// P10 composite marks.
 		"arc_basic.json",
 		"pie.json",
 		"donut.json",
@@ -24,6 +25,12 @@ func TestPrismP10SVGGoldensStable(t *testing.T) {
 		"heatmap.json",
 		"boxplot.json",
 		"violin_score.json",
+		// P11 specialty marks.
+		"sankey_user_flow.json",
+		"funnel_signup.json",
+		"sparkline_inline.json",
+		"image_logo.json",
+		"path_arbitrary.json",
 	}
 	update := os.Getenv("UPDATE_GOLDENS") == "1"
 	for _, fix := range fixtures {

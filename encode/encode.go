@@ -325,12 +325,12 @@ func Encode(s *spec.Spec, tables map[plan.NodeID]*table.Table, tipID plan.NodeID
 	// suppresses legends entirely.
 	var legends []scene.Legend
 	if markType != "sparkline" && colorChannel != nil && len(colorChannel.Categories) > 1 {
-		// Funnel binds color on the stage field which lines up 1:1 with
-		// the bars; build the legend over the source field for sankey,
-		// the color field otherwise.
-		title := enc.Color.Field
-		if title == "" && enc.Source != nil {
-			title = enc.Source.Field
+		// Sankey populates colorChannel from source ∪ target nodes when
+		// no explicit color binding exists (D064); use colorChannel.Field
+		// as the legend title in that case.
+		title := colorChannel.Field
+		if enc.Color != nil && enc.Color.Field != "" {
+			title = enc.Color.Field
 		}
 		legend := BuildSymbolLegend(LegendInputs{
 			Channel:    scene.ChannelColor,

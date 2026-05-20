@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 600" width="800" height="600">
+  <style>:root{--prism-color-axis:#6b7280;--prism-color-grid:#e5e7eb;--prism-color-text:#111827;--prism-color-bg:transparent;--prism-font-sans:Inter, system-ui, sans-serif;--prism-font-mono:ui-monospace, SF Mono, monospace;--prism-font-size-label:11px;--prism-font-size-title:16px;--prism-font-size-axis-title:12px;}.prism-axis-domain{stroke:var(--prism-color-axis);fill:none;}.prism-axis-tick{stroke:var(--prism-color-axis);}.prism-axis-label{fill:var(--prism-color-text);font-family:var(--prism-font-sans);font-size:var(--prism-font-size-label,11px);}.prism-axis-title{fill:var(--prism-color-text);font-family:var(--prism-font-sans);font-size:var(--prism-font-size-axis-title,12px);font-weight:600;}.prism-grid-line{stroke:var(--prism-color-grid);}.prism-title{fill:var(--prism-color-text);font-family:var(--prism-font-sans);font-size:var(--prism-font-size-title,16px);font-weight:600;}.prism-legend-title{fill:var(--prism-color-text);font-family:var(--prism-font-sans);font-size:12px;font-weight:600;}.prism-legend-label{fill:var(--prism-color-text);font-family:var(--prism-font-sans);font-size:11px;}.prism-legend-swatch{stroke:none;}</style>
+
+  <g class="prism-scene" data-scene-id="scene-0">
+    <g class="prism-plot">
+      <g class="prism-layer" data-layer-id="layer-0">
+        <polyline class="prism-mark-line" data-prism-id="sparkline-line-0" points="4,342.286 162.4,215.429 320.8,278.857 479.2,130.857 637.6,4 796,88.571" fill="none" fill="#3b82f6"/>
+      </g>
+    </g>
+  </g>
+</svg>
