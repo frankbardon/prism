@@ -43,6 +43,7 @@ func newApp() *cli.Command {
 			plotCommand(),
 			sceneCommand(),
 			staticBundleCommand(),
+			serveCommand(),
 		},
 		Action: func(_ context.Context, c *cli.Command) error {
 			if c.NArg() == 0 {
