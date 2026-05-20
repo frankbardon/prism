@@ -491,4 +491,3 @@ func appendWarning(doc *scene.SceneDoc, code, msg string) {
 	}
 	doc.Warnings = append(doc.Warnings, scene.Warning{Code: code, Message: msg})
 }
-
