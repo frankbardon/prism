@@ -14,6 +14,7 @@ import (
 	"github.com/twitchtv/twirp"
 	"github.com/urfave/cli/v3"
 
+	"github.com/frankbardon/prism/internal/observability"
 	"github.com/frankbardon/prism/rpc"
 	"github.com/frankbardon/prism/spec"
 )
@@ -79,6 +80,7 @@ func runServe(ctx context.Context, cmd *cli.Command) error {
 	impl := &rpc.PrismServer{
 		DatasetRegistry: registry,
 		Fs:              afero.NewOsFs(),
+		ExecOpts:        observability.Hooks(),
 	}
 	twirpHandler := rpc.NewPrismServer(impl, twirp.WithServerInterceptors(rpc.ErrorInterceptor))
 

@@ -8,6 +8,7 @@ import (
 	"github.com/spf13/afero"
 	"github.com/urfave/cli/v3"
 
+	"github.com/frankbardon/prism/internal/observability"
 	prismmcp "github.com/frankbardon/prism/mcp"
 	"github.com/frankbardon/prism/rpc"
 )
@@ -39,6 +40,7 @@ func runMCP(ctx context.Context, cmd *cli.Command) error {
 	impl := &rpc.PrismServer{
 		DatasetRegistry: registry,
 		Fs:              afero.NewOsFs(),
+		ExecOpts:        observability.Hooks(),
 	}
 	srv := prismmcp.New(prismmcp.Options{
 		PrismServer:  impl,
