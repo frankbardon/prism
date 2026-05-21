@@ -75,11 +75,12 @@ Select the tier the encoder pulls from:
 }
 ```
 
-The committed tier files ship a curated 16-country (admin-0) +
-5-state (admin-1) sample sufficient for the gallery and smoke tests.
-Regenerate from upstream Natural Earth shapefiles via the procedure in
-`internal/tools/build_geodata/README.md`; `make build` itself requires
-no network access since the artifacts are the input.
+The committed tier files carry 177 countries (110m), 242 countries
+(50m), and 294 admin-1 regions (50m) sourced from Natural Earth via
+`make geodata`. Tier files use a custom compact JSON shape with
+3-decimal quantization; `geodata/decoder.go` documents the wire
+format. `make build` itself requires no network — the committed
+artifacts are the input.
 
 ## Host CLI vs WASM
 

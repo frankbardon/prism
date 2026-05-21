@@ -3,6 +3,7 @@ bin/
 *.out
 *.wasm
 /prismwasm
+/build_geodata
 coverage.txt
 coverage.out
 

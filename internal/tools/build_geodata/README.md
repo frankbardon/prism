@@ -1,71 +1,45 @@
 # build_geodata
 
-Regenerates the committed `geodata/*.geo.json` + `geodata/manifest.json`
-artifacts from upstream Natural Earth source data. The committed
-artifacts are the only inputs `make build` needs; this tool exists to
-refresh them when:
+Fetches Natural Earth GeoJSON from the public-domain
+[nvkelso/natural-earth-vector](https://github.com/nvkelso/natural-earth-vector)
+GitHub mirror, quantizes to 3-decimal precision, strips properties to
+`{id, name, iso_a2}`, and writes the Prism geo-bundle artifacts under
+`geodata/`.
 
-- Natural Earth ships a new release.
-- An additional admin level (e.g. ZIP codes, census tracts) is
-  promoted from prototype to a committed tier.
-- The quantization factor or stripped-property set changes.
+## Usage
 
-## Manual procedure (v1)
+```sh
+make geodata
+```
 
-1. Download the Natural Earth shapefiles you want at the resolution
-   tier you target. Public domain, no attribution required:
-   - <https://www.naturalearthdata.com/downloads/110m-cultural-vectors/110m-admin-0-countries/>
-   - <https://www.naturalearthdata.com/downloads/50m-cultural-vectors/50m-admin-0-countries/>
-   - <https://www.naturalearthdata.com/downloads/50m-cultural-vectors/50m-admin-1-states-provinces/>
+Run from the repo root. Requires network access. Refreshes:
 
-2. Convert each shapefile to GeoJSON. Mapshaper (npm) is the
-   reference tool:
-   ```sh
-   npx mapshaper ne_110m_admin_0_countries.shp \
-     -filter-fields ISO_A3,NAME,ISO_A2 \
-     -clean \
-     -o format=geojson world-110m.geojson
-   ```
+| File | Source | Approx. size |
+|---|---|---|
+| `geodata/world-110m.geo.json` | `ne_110m_admin_0_countries.geojson` | 160 KB |
+| `geodata/world-50m.geo.json` | `ne_50m_admin_0_countries.geojson` | 1.5 MB |
+| `geodata/admin1-50m.geo.json` | `ne_50m_admin_1_states_provinces.geojson` | 1.0 MB |
+| `geodata/manifest.json` | aggregated from the three tier files | 125 KB |
 
-3. Quantize to 3-decimal precision (lon/lat × 1000 → int32) and
-   convert to the Prism geo-bundle format. The bundle shape lives in
-   `geodata/decoder.go` (`bundleV1` + `bundleFeature`).
+`make build` itself never needs network — the committed `geodata/*.json`
+files are the input, and the geodata package embeds them via
+`//go:embed`. Re-run `make geodata` only when:
 
-   For a single tier:
-   ```sh
-   # Pseudocode — real implementation pending.
-   prism-geodata-quantize \
-     --in world-110m.geojson \
-     --tier world-110m \
-     --id-field ISO_A3 \
-     --name-field NAME \
-     --out geodata/world-110m.geo.json
-   ```
+- Natural Earth ships a new release upstream.
+- A new admin tier or extra property needs to land in the manifest.
+- The quantization factor changes (currently 3 — matches
+  `render/precision.go`).
 
-4. Regenerate the manifest by aggregating every tier's bbox +
-   centroid + parent (for admin-1):
-   ```sh
-   prism-geodata-manifest \
-     --in geodata/world-110m.geo.json,geodata/world-50m.geo.json,geodata/admin1-50m.geo.json \
-     --out geodata/manifest.json
-   ```
+## ID conventions
 
-5. Commit the regenerated artifacts. `make test` runs the geo smoke
-   test which catches mismatches between manifest IDs and bundle
-   feature IDs.
+- Admin-0 features: ISO 3166-1 alpha-3 (`USA`, `CAN`, `GBR`), falling
+  back to Natural Earth's `ADM0_A3` for entities like Kosovo and
+  Antarctic territories.
+- Admin-1 features: ISO 3166-2 (`US-CA`, `CA-ON`, `GB-ENG`).
 
-## Automated pipeline (post-v1)
-
-A future PR replaces this README with a Go-based pipeline:
-
-- Fetch upstream shapefiles from `naturalearthdata.com`.
-- Decode shapefiles via a pure-Go reader.
-- Strip properties to `{id, name, iso_a2}` only.
-- Quantize coordinates.
-- Emit bundle + manifest in lockstep.
-
-The committed artifacts that ship today are a curated 16-country
-sample (admin-0) + 5-state sample (admin-1) sufficient for the gallery
-and smoke tests; downstream consumers wanting full Natural Earth
-coverage run the manual procedure above until the automated pipeline
-lands.
+Features without a usable ID are dropped — they wouldn't be addressable
+from a spec anyway. The 50m admin-1 source carries 294 features
+(covering every US state + DC, every Canadian province, and major
+admin-1 regions worldwide). Switching to the 10m admin-1 layer would
+multiply that to ~4 000 entries; the trade-off is binary growth + slower
+host CLI startup, so we ship the 50m tier as the default.

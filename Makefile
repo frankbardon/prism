@@ -64,14 +64,13 @@ vet:
 lint: vet
 	$(GO) run honnef.co/go/tools/cmd/staticcheck@latest ./...
 
-# Regenerate geodata bundles + manifest from upstream Natural Earth.
-# Currently a placeholder pointing at the documented manual procedure;
-# the committed `geodata/*.geo.json` + `geodata/manifest.json` artifacts
-# are usable as-is and refreshed via this target when admin levels
-# change. Full automated ingestion lands in a follow-up.
+# Regenerate the committed geodata/*.json artifacts from the upstream
+# Natural Earth GeoJSON mirror. Requires network access. `make build`
+# itself never fetches — the committed bundles + manifest are the
+# embed inputs. See internal/tools/build_geodata/README.md for source
+# URLs + quantization details.
 geodata:
-	@echo "geodata: see internal/tools/build_geodata/README.md for the regeneration procedure."
-	@echo "geodata: committed artifacts under geodata/ are the input to 'make build'; no network required."
+	$(GO) run ./internal/tools/build_geodata
 
 proto:
 	@if ! command -v protoc >/dev/null 2>&1; then \
