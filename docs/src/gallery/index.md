@@ -1,6 +1,6 @@
 # Prism Gallery
 
-62 fixture specs across 9 categories. Each entry pairs a `*.prism.json`
+64 fixture specs across 10 categories. Each entry pairs a `*.prism.json`
 spec with a rendered `*.svg`. Browse the source to learn the spec
 shapes; open the SVGs to see what they render.
 
@@ -115,3 +115,16 @@ below is identical; only the rendering theme differs.
 | [bar_light](themes/bar_light.prism.json) | <img src="themes/bar_light.svg" width="240"> |
 | [bar_dark](themes/bar_dark.prism.json) | <img src="themes/bar_dark.svg" width="240"> |
 | [bar_print](themes/bar_print.prism.json) | <img src="themes/bar_print.svg" width="240"> |
+
+## Animation
+
+Each spec declares an `animation` block plus a `key: true` channel; the
+SVG previews show the **initial frame**. The tween fires in the browser
+web component / WASM runtime when the spec swaps or a new dataset
+arrives — see [Spec › Animation](../concepts/spec.md#animation) and
+[Browser › Animation](../concepts/browser.md#animation).
+
+| Spec | Preview |
+|---|---|
+| [swap_bars](animation/swap_bars.prism.json) | <img src="animation/swap_bars.svg" width="240"> |
+| [race_bars](animation/race_bars.prism.json) | <img src="animation/race_bars.svg" width="240"> |

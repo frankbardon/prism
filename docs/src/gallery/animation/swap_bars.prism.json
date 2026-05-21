@@ -1,0 +1,22 @@
+{
+  "$schema": "urn:prism:schema:v1:spec",
+  "title": "Brand score (Q4) — swap dataset to animate to Q1",
+  "description": "Tween demo. Re-render with the Q1 dataset and the bars animate to their new heights, keyed on brand_id.",
+  "data": {
+    "name": "brand_scores_q4",
+    "values": [
+      {"brand_id": "alpha",   "score": 0.42},
+      {"brand_id": "beta",    "score": 0.71},
+      {"brand_id": "gamma",   "score": 0.58},
+      {"brand_id": "delta",   "score": 0.33},
+      {"brand_id": "epsilon", "score": 0.65}
+    ]
+  },
+  "mark": {"type": "bar", "corner_radius": 4},
+  "encoding": {
+    "x":     {"field": "brand_id", "type": "nominal", "key": true},
+    "y":     {"field": "score",    "type": "quantitative", "scale": {"domain": [0, 1]}},
+    "color": {"field": "brand_id", "type": "nominal"}
+  },
+  "animation": {"duration_ms": 600, "easing": "cubic_in_out"}
+}
