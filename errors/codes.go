@@ -601,6 +601,36 @@ var Codes = map[string]CodeMetadata{
 		},
 		SeeAlso: []string{"PRISM_SPEC_023"},
 	},
+	"PRISM_SPEC_025": {
+		Code:    "PRISM_SPEC_025",
+		Message: `Condition on channel {{.Channel}} references selection {{.Selection}} which is not declared.`,
+		Fixups: []string{
+			`Declare the selection in the spec's "selection" block before referencing it in a condition.`,
+			`Available selections: {{.Available}}.`,
+			`Use ` + "`{test: \"...\"}`" + ` for a Pulse-expression condition instead of a named selection.`,
+		},
+		SeeAlso: []string{"PRISM_SPEC_004", "PRISM_SPEC_026"},
+	},
+	"PRISM_SPEC_026": {
+		Code:    "PRISM_SPEC_026",
+		Message: `Condition on channel {{.Channel}}: test expression failed to parse: {{.Reason}}.`,
+		Fixups: []string{
+			`Check Pulse expression syntax. Expression: {{.Expression}}`,
+			`Quote string literals with single quotes ('value'), not double quotes.`,
+			`Use Pulse operators (and, or, not, ==, !=, <, <=, >, >=, +, -, *, /, %).`,
+		},
+		SeeAlso: []string{"PRISM_SPEC_006"},
+	},
+	"PRISM_SPEC_027": {
+		Code:    "PRISM_SPEC_027",
+		Message: `Condition entry on channel {{.Channel}} must carry exactly one of value or field (got: {{.Got}}).`,
+		Fixups: []string{
+			`Set ` + "`value`" + ` for a literal applied when the condition matches (e.g. ` + "`{\"selection\":\"brush\",\"value\":\"#22c55e\"}`" + `).`,
+			`Set ` + "`field`" + ` (+ ` + "`type`" + `) to bind the matching rows to a field-driven encoding.`,
+			`A selection-form entry without ` + "`value`" + ` is allowed only when no ` + "`field`" + ` is also set — it inherits the channel's own field binding.`,
+		},
+		SeeAlso: []string{"PRISM_SPEC_025", "PRISM_SPEC_026"},
+	},
 	"PRISM_WARN_ANIM_FALLBACK": {
 		Code:    "PRISM_WARN_ANIM_FALLBACK",
 		Message: `animation skipped: {{.Reason}}.`,
