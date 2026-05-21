@@ -64,6 +64,15 @@ vet:
 lint: vet
 	$(GO) run honnef.co/go/tools/cmd/staticcheck@latest ./...
 
+# Regenerate geodata bundles + manifest from upstream Natural Earth.
+# Currently a placeholder pointing at the documented manual procedure;
+# the committed `geodata/*.geo.json` + `geodata/manifest.json` artifacts
+# are usable as-is and refreshed via this target when admin levels
+# change. Full automated ingestion lands in a follow-up.
+geodata:
+	@echo "geodata: see internal/tools/build_geodata/README.md for the regeneration procedure."
+	@echo "geodata: committed artifacts under geodata/ are the input to 'make build'; no network required."
+
 proto:
 	@if ! command -v protoc >/dev/null 2>&1; then \
 		echo "proto: protoc not installed (brew install protobuf)."; \

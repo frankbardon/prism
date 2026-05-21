@@ -35,4 +35,5 @@ type Spec struct {
 	Title       *TextOrTextObj       `json:"title,omitempty"`
 	Subtitle    *TextOrTextObj       `json:"subtitle,omitempty"`
 	Description string               `json:"description,omitempty"`
+	Projection  *Projection          `json:"projection,omitempty"`
 }

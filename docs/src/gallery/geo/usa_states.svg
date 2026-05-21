@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 600">
+  <style>:root{--prism-color-axis:#6b7280;--prism-color-grid:#e5e7eb;--prism-color-text:#111827;--prism-color-bg:transparent;--prism-font-sans:Inter, system-ui, sans-serif;--prism-font-mono:ui-monospace, SF Mono, monospace;--prism-font-size-label:11px;--prism-font-size-title:16px;--prism-font-size-axis-title:12px;}.prism-axis-domain{stroke:var(--prism-color-axis);fill:none;}.prism-axis-tick{stroke:var(--prism-color-axis);}.prism-axis-label{fill:var(--prism-color-text);font-family:var(--prism-font-sans);font-size:var(--prism-font-size-label,11px);}.prism-axis-title{fill:var(--prism-color-text);font-family:var(--prism-font-sans);font-size:var(--prism-font-size-axis-title,12px);font-weight:600;}.prism-grid-line{stroke:var(--prism-color-grid);}.prism-title{fill:var(--prism-color-text);font-family:var(--prism-font-sans);font-size:var(--prism-font-size-title,16px);font-weight:600;}.prism-legend-title{fill:var(--prism-color-text);font-family:var(--prism-font-sans);font-size:12px;font-weight:600;}.prism-legend-label{fill:var(--prism-color-text);font-family:var(--prism-font-sans);font-size:11px;}.prism-legend-swatch{stroke:none;}.prism-selected{opacity:var(--prism-selected-opacity,1);}.prism-deselected{opacity:var(--prism-deselected-opacity,0.3);}</style>
+
+  <g class="prism-scene" data-scene-id="scene-0">
+    <text class="prism-title" x="410" y="20" text-anchor="middle">US states (admin-1)</text>
+    <g class="prism-plot">
+      <g class="prism-layer" data-layer-id="layer-0" data-prism-layer="layer-0">
+        <path class="prism-mark-geoshape" data-prism-id="geoshape-0-0" data-prism-datum-row="0" d="M39.057,334.683L84.564,321.914L72.457,274.991L126.05,196.513L118.251,156.949L78.846,165.365L44.283,265.831L39.057,334.683Z" fill-rule="evenodd" fill="#cbd5e1" stroke="#ffffff" stroke-width="0.5"/>
+        <path class="prism-mark-geoshape" data-prism-id="geoshape-1-0" data-prism-datum-row="1" d="M550.838,350.715L611.76,363.225L637.73,353.1L651.827,298.467L622.508,291.312L559.175,303.178L550.838,350.715Z" fill-rule="evenodd" fill="#cbd5e1" stroke="#ffffff" stroke-width="0.5"/>
+        <path class="prism-mark-geoshape" data-prism-id="geoshape-2-0" data-prism-datum-row="2" d="M231.543,204.797L314.176,198.482L391.862,141.178L399.802,93.121L350.645,28.92L246.85,89.948L223.537,132.624L231.543,204.797Z" fill-rule="evenodd" fill="#cbd5e1" stroke="#ffffff" stroke-width="0.5"/>
+        <path class="prism-mark-geoshape" data-prism-id="geoshape-3-0" data-prism-datum-row="3" d="M488.156,114.541L583.106,127.101L599.143,32.739L584.646,30.353L551.252,57.482L489.674,98.565L488.156,114.541Z" fill-rule="evenodd" fill="#cbd5e1" stroke="#ffffff" stroke-width="0.5"/>
+      </g>
+    </g>
+  </g>
+</svg>

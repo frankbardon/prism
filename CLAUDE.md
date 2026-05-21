@@ -40,6 +40,7 @@ Any change to Prism code, configuration, spec vocabulary, schema bundle, or publ
 | A `prism init` template (`.prism/`) | `cmd/prism/templates/` + smoke test in `cmd/prism/init_test.go` + `docs/src/getting-started.md` editor-setup paragraph |
 | `prism static-bundle` output shape | `cmd/prism/cmd_static_bundle.go` + `static/staticfs.go` + smoke test |
 | A playground example (`docs/src/playground/examples/`) | `docs/src/playground/examples/manifest.json` (id + title + file) + the new `<id>.json` spec file. Specs must use inline `data.values` or `datasets.*.values` — the playground has no `.pulse` fetch path |
+| A projection in `encode/projection/` or a feature in `geodata/` | `docs/src/concepts/geo.md` + `schema/v1/projection.schema.json` (the `type` enum) + manifest regeneration via `make geodata` when admin-level data changes |
 
 If you find yourself wanting to defer the doc update to "a follow-up PR," stop. The follow-up will not happen, the next Claude Code session will read stale guidance and produce wrong code. Update in the same PR or do not merge.
 
@@ -80,8 +81,9 @@ prism/
 │   ├── encode_facet.go encode_repeat.go encode_selection*.go
 │   ├── layout.go scale.go palette.go ticks*.go axis_build.go legend_build.go
 │   ├── selection_build.go  # Selection materialisation
-│   ├── marks/              # Per-mark encoders (bar, line, area, point, rule, text, tick, rect, arc, pie, donut, histogram, heatmap, boxplot, violin, sankey, funnel, sparkline, image, path)
+│   ├── marks/              # Per-mark encoders (bar, line, area, point, rule, text, tick, rect, arc, pie, donut, histogram, heatmap, boxplot, violin, sankey, funnel, sparkline, image, path, geoshape, geopoint)
 │   ├── scale/              # linear, log, pow, sqrt, time, band, point, ordinal
+│   ├── projection/         # Geographic projections (mercator, equirect, naturalearth, albers_usa, orthographic)
 │   ├── scene/              # Scene IR types (Mark, Geom, Axis, Legend, Theme, Selection, Annotation, …)
 │   ├── resolve/            # Cross-layer domain + scheme resolution
 │   └── format/             # d3-format subset
@@ -99,6 +101,7 @@ prism/
 │   ├── light.go dark.go print.go
 │   ├── css.go              # CSS variable manifest
 │   └── loader.go override.go
+├── geodata/                # Manifest (countries + admin-1 IDs / bbox) + tier bundles (TopoJSON-lite)
 ├── schema/v1/              # JSON Schema bundle (`urn:prism:schema:v1:spec`)
 ├── errors/                 # PRISM_* code catalogue + AppError envelope
 ├── rpc/                    # Twirp service (proto + generated + server)
@@ -179,6 +182,10 @@ The `datasets` block in a spec declares named cohorts. Per-layer / per-mark `dat
 ### Theming
 
 Three built-in themes ship: `light` (default), `dark`, `print`. Each lives in `theme/<name>.go` and supplies a `theme.Tokens` struct (colors, fonts, sizes). The renderer materialises tokens as CSS variables in the SVG output via `theme/css.go` — downstream consumers can theme post-hoc by overriding variables. Custom themes load from `theme.json` via `theme/loader.go`; sparse spec-level overrides merge through `theme/override.go`. Adding a token requires updating every built-in theme and `theme/css.go`'s manifest emitter.
+
+### Geographic marks
+
+`geoshape` (choropleth polygons) and `geopoint` (lon/lat overlays) live alongside the rest of the encoders in `encode/marks/`. Spec block `projection.type` selects the lon/lat → pixel map (`mercator`, `equirectangular`, `naturalearth`, `albers_usa`, `orthographic`); per-projection params live in `encode/projection/`. Feature geometry comes from the `geodata/` package: a small manifest (~100 KB) is embedded in every build for validate/inspect/plan; full tier bundles (`world-110m`, `world-50m`, `admin1-50m`) are embedded only in the host build via `//go:embed`. The WASM build fetches tiers from `${origin}/static/prism/geodata/` (override via `prism.geo.setBundleURL(url)` or `data-prism-geodata-url` attribute). `prism static-bundle` emits the geodata files alongside the JS bundle so the WASM runtime works out-of-the-box. `make geodata` regenerates the committed artifacts from upstream Natural Earth — `make build` itself requires no network access.
 
 ## Build / Env
 

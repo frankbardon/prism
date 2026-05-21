@@ -1,0 +1,27 @@
+{
+  "version": 1,
+  "features": {
+    "USA": {"id":"USA","name":"United States of America","iso_a2":"US","c":[-98.5,39.8],"bb":{"w":-125.0,"s":24.5,"e":-66.9,"n":49.4},"t":"world-110m"},
+    "CAN": {"id":"CAN","name":"Canada","iso_a2":"CA","c":[-106.3,56.1],"bb":{"w":-141.0,"s":41.7,"e":-52.6,"n":83.1},"t":"world-110m"},
+    "MEX": {"id":"MEX","name":"Mexico","iso_a2":"MX","c":[-102.5,23.6],"bb":{"w":-117.1,"s":14.5,"e":-86.7,"n":32.7},"t":"world-110m"},
+    "BRA": {"id":"BRA","name":"Brazil","iso_a2":"BR","c":[-51.9,-14.2],"bb":{"w":-73.9,"s":-33.7,"e":-34.7,"n":5.3},"t":"world-110m"},
+    "GBR": {"id":"GBR","name":"United Kingdom","iso_a2":"GB","c":[-3.4,55.4],"bb":{"w":-8.6,"s":49.9,"e":1.8,"n":58.7},"t":"world-110m"},
+    "FRA": {"id":"FRA","name":"France","iso_a2":"FR","c":[2.2,46.2],"bb":{"w":-5.1,"s":41.3,"e":9.6,"n":51.1},"t":"world-110m"},
+    "DEU": {"id":"DEU","name":"Germany","iso_a2":"DE","c":[10.5,51.2],"bb":{"w":5.9,"s":47.3,"e":15.0,"n":55.1},"t":"world-110m"},
+    "ITA": {"id":"ITA","name":"Italy","iso_a2":"IT","c":[12.6,41.9],"bb":{"w":6.6,"s":36.6,"e":18.5,"n":47.1},"t":"world-110m"},
+    "ESP": {"id":"ESP","name":"Spain","iso_a2":"ES","c":[-3.7,40.5],"bb":{"w":-9.4,"s":36.0,"e":4.3,"n":43.8},"t":"world-110m"},
+    "JPN": {"id":"JPN","name":"Japan","iso_a2":"JP","c":[138.3,36.2],"bb":{"w":129.4,"s":31.0,"e":145.8,"n":45.5},"t":"world-110m"},
+    "CHN": {"id":"CHN","name":"China","iso_a2":"CN","c":[104.2,35.9],"bb":{"w":73.5,"s":18.2,"e":135.0,"n":53.6},"t":"world-110m"},
+    "IND": {"id":"IND","name":"India","iso_a2":"IN","c":[78.7,20.6],"bb":{"w":68.2,"s":7.0,"e":97.4,"n":35.7},"t":"world-110m"},
+    "AUS": {"id":"AUS","name":"Australia","iso_a2":"AU","c":[133.8,-25.3],"bb":{"w":113.2,"s":-43.6,"e":153.7,"n":-10.7},"t":"world-110m"},
+    "RUS": {"id":"RUS","name":"Russia","iso_a2":"RU","c":[105.3,61.5],"bb":{"w":19.6,"s":41.2,"e":180.0,"n":81.9},"t":"world-110m"},
+    "ZAF": {"id":"ZAF","name":"South Africa","iso_a2":"ZA","c":[24.8,-30.6],"bb":{"w":16.5,"s":-34.8,"e":32.9,"n":-22.1},"t":"world-110m"},
+    "EGY": {"id":"EGY","name":"Egypt","iso_a2":"EG","c":[30.0,26.5],"bb":{"w":24.7,"s":21.7,"e":36.9,"n":31.7},"t":"world-110m"},
+
+    "US-CA": {"id":"US-CA","name":"California","iso_a2":"US","p":"USA","c":[-119.4,37.0],"bb":{"w":-124.5,"s":32.5,"e":-114.1,"n":42.0},"t":"admin1-50m"},
+    "US-NY": {"id":"US-NY","name":"New York","iso_a2":"US","p":"USA","c":[-75.5,42.9],"bb":{"w":-79.8,"s":40.5,"e":-71.9,"n":45.0},"t":"admin1-50m"},
+    "US-TX": {"id":"US-TX","name":"Texas","iso_a2":"US","p":"USA","c":[-99.3,31.5],"bb":{"w":-106.6,"s":25.8,"e":-93.5,"n":36.5},"t":"admin1-50m"},
+    "US-FL": {"id":"US-FL","name":"Florida","iso_a2":"US","p":"USA","c":[-81.5,27.8],"bb":{"w":-87.6,"s":24.5,"e":-80.0,"n":31.0},"t":"admin1-50m"},
+    "CA-ON": {"id":"CA-ON","name":"Ontario","iso_a2":"CA","p":"CAN","c":[-85.3,51.3],"bb":{"w":-95.2,"s":41.7,"e":-74.3,"n":56.9},"t":"admin1-50m"}
+  }
+}

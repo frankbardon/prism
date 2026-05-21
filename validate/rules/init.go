@@ -26,4 +26,5 @@ func init() {
 	validate.RegisterDefault(func() validate.SemanticRule { return SankeyChannels{} })
 	validate.RegisterDefault(func() validate.SemanticRule { return SelectionEncodingChannel{} })
 	validate.RegisterDefault(func() validate.SemanticRule { return SelectionIntervalChannel{} })
+	validate.RegisterDefault(func() validate.SemanticRule { return GeoProjection{} })
 }

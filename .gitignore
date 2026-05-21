@@ -1,6 +1,8 @@
 bin/
 *.test
 *.out
+*.wasm
+prismwasm
 coverage.txt
 coverage.out
 

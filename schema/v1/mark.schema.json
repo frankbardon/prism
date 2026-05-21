@@ -12,7 +12,8 @@
         "arc", "pie", "donut",
         "histogram", "heatmap", "boxplot", "violin",
         "sankey", "funnel", "sparkline",
-        "image", "path"
+        "image", "path",
+        "geoshape", "geopoint"
       ]
     },
     "mark": {

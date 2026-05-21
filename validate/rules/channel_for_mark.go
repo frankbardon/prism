@@ -71,6 +71,7 @@ func presentChannels(enc *spec.Encoding) []string {
 		{"order", enc.Order != nil}, {"detail", enc.Detail != nil},
 		{"row", enc.Row != nil}, {"column", enc.Column != nil},
 		{"source", enc.Source != nil}, {"target", enc.Target != nil}, {"value", enc.Value != nil},
+		{"longitude", enc.Longitude != nil}, {"latitude", enc.Latitude != nil}, {"feature", enc.Feature != nil},
 	}
 	for _, e := range entries {
 		if e.present {
@@ -96,6 +97,8 @@ func allowedChannelsForMark(mark string) []string {
 	sankeyMark := []string{"source", "target", "value", "color", "fill", "stroke", "opacity"}
 	funnelMark := []string{"x", "y", "color", "fill", "stroke", "opacity", "text"}
 	sparklineMark := []string{"x", "y", "color", "fill", "stroke", "opacity"}
+	geoshapeMark := []string{"feature", "color", "fill", "stroke", "opacity"}
+	geopointMark := []string{"longitude", "latitude", "color", "fill", "stroke", "opacity", "size", "shape"}
 
 	var set []string
 	switch mark {
@@ -116,6 +119,10 @@ func allowedChannelsForMark(mark string) []string {
 		set = []string{"x", "y", "x2", "y2", "opacity"}
 	case "path":
 		set = []string{"x", "y", "color", "fill", "stroke", "opacity"}
+	case "geoshape":
+		set = geoshapeMark
+	case "geopoint":
+		set = geopointMark
 	default:
 		set = append(cartesianMark, polarMark...)
 	}

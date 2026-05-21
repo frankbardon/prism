@@ -1,0 +1,18 @@
+{
+  "$schema": "urn:prism:schema:v1:spec",
+  "title": "US states (admin-1)",
+  "data": {
+    "name": "states",
+    "values": [
+      {"code": "US-CA"},
+      {"code": "US-NY"},
+      {"code": "US-TX"},
+      {"code": "US-FL"}
+    ]
+  },
+  "mark": "geoshape",
+  "projection": {"type": "albers_usa", "tier": "admin1-50m"},
+  "encoding": {
+    "feature": {"field": "code", "type": "nominal"}
+  }
+}

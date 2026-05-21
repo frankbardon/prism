@@ -41,6 +41,8 @@ arcs, etc. Specify via top-level `mark` (shorthand string) or
 | `sparkline` | Inline micro-line charts, no axes. |
 | `image` | Sprites / data-URL images at position. |
 | `path` | Raw SVG path data — escape hatch. |
+| `geoshape` | Country / admin-1 polygons (choropleth). See [Geographic Marks](geo.md). |
+| `geopoint` | Lon/lat → point overlay. See [Geographic Marks](geo.md). |
 
 ## Channel allowlists
 

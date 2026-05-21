@@ -1,0 +1,51 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:prism:schema:v1:projection",
+  "title": "Prism Projection",
+  "description": "Geographic projection configuration for geoshape and geopoint marks.",
+  "$defs": {
+    "projection": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["type"],
+      "properties": {
+        "type": {
+          "type": "string",
+          "enum": ["mercator", "equirectangular", "naturalearth", "albers_usa", "orthographic"],
+          "description": "Projection family. Mercator/equirectangular/naturalearth are world-friendly; albers_usa lays Alaska+Hawaii as insets; orthographic shows a globe view."
+        },
+        "scale": {
+          "type": "number",
+          "exclusiveMinimum": 0,
+          "description": "Projection scale (pixels per radian). Defaults to auto-fit when unset."
+        },
+        "center": {
+          "type": "array",
+          "items": {"type": "number"},
+          "minItems": 2,
+          "maxItems": 2,
+          "description": "[longitude, latitude] in degrees the projection centers on."
+        },
+        "rotate": {
+          "type": "array",
+          "items": {"type": "number"},
+          "minItems": 2,
+          "maxItems": 3,
+          "description": "[lambda, phi, gamma] rotation in degrees. Orthographic honours all three; others honour the first two."
+        },
+        "translate": {
+          "type": "array",
+          "items": {"type": "number"},
+          "minItems": 2,
+          "maxItems": 2,
+          "description": "[x, y] pixel-space origin. Defaults to the plot centre when unset."
+        },
+        "tier": {
+          "type": "string",
+          "enum": ["world-110m", "world-50m", "admin1-50m"],
+          "description": "Geodata resolution + admin tier the feature lookup pulls from. Defaults to world-110m."
+        }
+      }
+    }
+  }
+}

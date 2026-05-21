@@ -13,6 +13,7 @@ import (
 
 	"github.com/urfave/cli/v3"
 
+	"github.com/frankbardon/prism/geodata"
 	staticfs "github.com/frankbardon/prism/static"
 )
 
@@ -102,6 +103,37 @@ func runStaticBundle(_ context.Context, cmd *cli.Command) error {
 			return err
 		}
 	}
+	if err := emitGeodataBundle(cmd, outDir); err != nil {
+		return err
+	}
+	return nil
+}
+
+// emitGeodataBundle drops the embedded geodata artifacts into
+// <outDir>/geodata/. WASM consumers default to fetching from this
+// path; static-bundle always emits them so the geoshape mark is
+// usable out-of-the-box.
+func emitGeodataBundle(cmd *cli.Command, outDir string) error {
+	dir := filepath.Join(outDir, "geodata")
+	if err := os.MkdirAll(dir, 0o755); err != nil {
+		return cli.Exit(fmt.Sprintf("mkdir %s: %v", dir, err), 1)
+	}
+	if err := os.WriteFile(filepath.Join(dir, "manifest.json"), geodata.EmbeddedManifestBytes(), 0o644); err != nil {
+		return cli.Exit(fmt.Sprintf("write manifest.json: %v", err), 1)
+	}
+	count := 1
+	for _, tier := range geodata.AllTiers() {
+		body, err := geodata.EmbeddedTierBytes(tier)
+		if err != nil {
+			return cli.Exit(fmt.Sprintf("embed tier %s: %v", tier, err), 1)
+		}
+		dst := filepath.Join(dir, string(tier)+".geo.json")
+		if err := os.WriteFile(dst, body, 0o644); err != nil {
+			return cli.Exit(fmt.Sprintf("write %s: %v", dst, err), 1)
+		}
+		count++
+	}
+	fmt.Fprintf(cmd.Writer, "static-bundle: wrote %d geodata files to %s\n", count, dir)
 	return nil
 }
 

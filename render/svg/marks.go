@@ -39,6 +39,8 @@ func renderMark(w *Writer, m scene.Mark) {
 		renderPath(w, m)
 	case m.Image != nil:
 		renderImage(w, m)
+	case m.Geoshape != nil:
+		renderGeoshape(w, m)
 	default:
 		// Unknown geometry — defensive comment so the cause is visible.
 		w.Raw("<!-- mark type ")

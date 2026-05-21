@@ -45,7 +45,8 @@
     "background": {"$ref": "shared.schema.json#/$defs/color", "description": "Chart background color."},
     "title":    {"$ref": "shared.schema.json#/$defs/text_or_text_obj", "description": "Chart title."},
     "subtitle": {"$ref": "shared.schema.json#/$defs/text_or_text_obj", "description": "Chart subtitle."},
-    "description": {"type": "string", "description": "Free-form description / alt text."}
+    "description": {"type": "string", "description": "Free-form description / alt text."},
+    "projection": {"$ref": "projection.schema.json#/$defs/projection", "description": "Geographic projection for geoshape / geopoint marks."}
   },
   "oneOf": [
     {"required": ["mark"]},

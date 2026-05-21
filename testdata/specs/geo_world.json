@@ -1,0 +1,16 @@
+{
+  "$schema": "urn:prism:schema:v1:spec",
+  "data": {
+    "name": "countries",
+    "values": [
+      {"id": "USA"},
+      {"id": "GBR"},
+      {"id": "JPN"}
+    ]
+  },
+  "mark": "geoshape",
+  "projection": {"type": "naturalearth"},
+  "encoding": {
+    "feature": {"field": "id", "type": "nominal"}
+  }
+}
