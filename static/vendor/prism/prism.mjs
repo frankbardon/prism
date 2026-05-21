@@ -210,13 +210,24 @@ export class SceneHandle {
     try { _revalidateSelections(this, newSceneDoc); } catch (e) { /* defensive */ }
 
     const animBlock = _sceneAnimation(newSceneDoc);
+    const reducedMotion = prefersReducedMotion();
+    const compat = !!(animBlock && this._svg && structurallyCompatible(this._doc, newSceneDoc));
     const canAnimate = opts.animate !== false
       && animBlock
       && this._svg
-      && structurallyCompatible(this._doc, newSceneDoc)
-      && !prefersReducedMotion();
+      && compat
+      && !reducedMotion;
 
     if (!canAnimate) {
+      // Surface PRISM_WARN_ANIM_FALLBACK when the spec asked for a
+      // tween but the swap path declined for a structural reason.
+      // Stay silent for reduced-motion (that's the correct UX, not
+      // a fallback) and for the first-render case (no previous SVG
+      // means there's nothing to tween from).
+      if (animBlock && this._svg && !reducedMotion && !compat) {
+        this._emitWarn("PRISM_WARN_ANIM_FALLBACK",
+          "scene structure changed (layer count, mark family, or axis count differs); animation skipped");
+      }
       return this._swapInstant(newSceneDoc);
     }
 
@@ -249,6 +260,25 @@ export class SceneHandle {
     this._selections = replacement._selections;
     this._disposers = replacement._disposers;
     return this;
+  }
+
+  /**
+   * _emitWarn dispatches a `prism:warn` CustomEvent on the handle's
+   * root (shadowRoot when the chart lives inside `<prism-chart>`,
+   * the host element otherwise). `bubbles + composed` so listeners
+   * outside the shadow boundary receive the event.
+   */
+  _emitWarn(code, message) {
+    const target = this._root;
+    if (!target || typeof target.dispatchEvent !== "function") return;
+    try {
+      const ev = new CustomEvent("prism:warn", {
+        detail: { code, message },
+        bubbles: true,
+        composed: true,
+      });
+      target.dispatchEvent(ev);
+    } catch { /* defensive */ }
   }
 
   async _swapInstant(newSceneDoc) {
