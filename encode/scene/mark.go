@@ -9,15 +9,16 @@ type MarkType string
 // four are declared for JSON stability and round-trip parity but
 // raise PRISM_WARN_MARK_NOT_IMPLEMENTED at encode time today.
 const (
-	MarkRect  MarkType = "rect"
-	MarkLine  MarkType = "line"
-	MarkArea  MarkType = "area"
-	MarkPoint MarkType = "point"
-	MarkRule  MarkType = "rule"
-	MarkArc   MarkType = "arc"
-	MarkText  MarkType = "text"
-	MarkPath  MarkType = "path"
-	MarkImage MarkType = "image"
+	MarkRect     MarkType = "rect"
+	MarkLine     MarkType = "line"
+	MarkArea     MarkType = "area"
+	MarkPoint    MarkType = "point"
+	MarkRule     MarkType = "rule"
+	MarkArc      MarkType = "arc"
+	MarkText     MarkType = "text"
+	MarkPath     MarkType = "path"
+	MarkImage    MarkType = "image"
+	MarkGeoshape MarkType = "geoshape"
 )
 
 // Mark is the atomic visual primitive. Discriminated union: exactly
@@ -31,15 +32,16 @@ type Mark struct {
 	Tooltip *Tooltip `json:"tooltip,omitempty"`
 	Datum   *Datum   `json:"datum,omitempty"`
 
-	Rect  *RectGeom  `json:"rect,omitempty"`
-	Line  *LineGeom  `json:"line,omitempty"`
-	Area  *AreaGeom  `json:"area,omitempty"`
-	Point *PointGeom `json:"point,omitempty"`
-	Rule  *RuleGeom  `json:"rule,omitempty"`
-	Arc   *ArcGeom   `json:"arc,omitempty"`
-	Text  *TextGeom  `json:"text,omitempty"`
-	Path  *PathGeom  `json:"path,omitempty"`
-	Image *ImageGeom `json:"image,omitempty"`
+	Rect     *RectGeom    `json:"rect,omitempty"`
+	Line     *LineGeom    `json:"line,omitempty"`
+	Area     *AreaGeom    `json:"area,omitempty"`
+	Point    *PointGeom   `json:"point,omitempty"`
+	Rule     *RuleGeom    `json:"rule,omitempty"`
+	Arc      *ArcGeom     `json:"arc,omitempty"`
+	Text     *TextGeom    `json:"text,omitempty"`
+	Path     *PathGeom    `json:"path,omitempty"`
+	Image    *ImageGeom   `json:"image,omitempty"`
+	Geoshape *PolygonGeom `json:"geoshape,omitempty"`
 }
 
 // Validate confirms that exactly one geometry pointer is non-nil and
@@ -83,6 +85,10 @@ func (m *Mark) Validate() error {
 	if m.Image != nil {
 		count++
 		have = MarkImage
+	}
+	if m.Geoshape != nil {
+		count++
+		have = MarkGeoshape
 	}
 	if count == 0 {
 		return fmt.Errorf("Mark: no geometry populated")

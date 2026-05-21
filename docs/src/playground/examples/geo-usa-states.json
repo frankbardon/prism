@@ -1,0 +1,14 @@
+{
+  "$schema": "urn:prism:schema:v1:spec",
+  "title": "US states (Albers USA)",
+  "description": "data.feature_collection with tier=admin1-50m loads every admin-1 region in the catalog (US states + Canadian provinces + others). The filter transform narrows to features whose 'parent' (admin-0 ISO 3166-1 alpha-3) is USA. albers_usa lays Alaska + Hawaii into inset panels.",
+  "data": {"feature_collection": {"tier": "admin1-50m"}},
+  "transform": [
+    {"filter": "parent == \"USA\""}
+  ],
+  "mark": "geoshape",
+  "projection": {"type": "albers_usa", "tier": "admin1-50m"},
+  "encoding": {
+    "feature": {"field": "id", "type": "nominal"}
+  }
+}

@@ -64,6 +64,14 @@ vet:
 lint: vet
 	$(GO) run honnef.co/go/tools/cmd/staticcheck@latest ./...
 
+# Regenerate the committed geodata/*.json artifacts from the upstream
+# Natural Earth GeoJSON mirror. Requires network access. `make build`
+# itself never fetches — the committed bundles + manifest are the
+# embed inputs. See internal/tools/build_geodata/README.md for source
+# URLs + quantization details.
+geodata:
+	$(GO) run ./internal/tools/build_geodata
+
 proto:
 	@if ! command -v protoc >/dev/null 2>&1; then \
 		echo "proto: protoc not installed (brew install protobuf)."; \
@@ -113,7 +121,12 @@ $(GALLERY_DIR)/%.scene.json: $(GALLERY_DIR)/%.prism.json $(BUILD_DIR)/$(BINARY_N
 docs-wasm-stage: build-wasm
 	@cp $(BUILD_DIR)/$(WASM_BINARY) static/vendor/prism/$(WASM_BINARY)
 	@cp $(BUILD_DIR)/wasm_exec.js   static/vendor/prism/wasm_exec.js
-	@echo "docs-wasm-stage: staged prism.wasm + wasm_exec.js into static/vendor/prism/"
+	@mkdir -p docs/src/static/prism/geodata
+	@cp geodata/manifest.json        docs/src/static/prism/geodata/
+	@cp geodata/world-110m.geo.json  docs/src/static/prism/geodata/
+	@cp geodata/world-50m.geo.json   docs/src/static/prism/geodata/
+	@cp geodata/admin1-50m.geo.json  docs/src/static/prism/geodata/
+	@echo "docs-wasm-stage: staged prism.wasm + wasm_exec.js into static/vendor/prism/ + geodata into docs/src/static/prism/geodata/"
 
 docs: build docs-scenes docs-wasm-stage
 	mdbook build docs

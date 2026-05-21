@@ -544,6 +544,36 @@ var Codes = map[string]CodeMetadata{
 			`Confirm the host serves prism.wasm with ` + "`Content-Type: application/wasm`" + ` so the browser uses ` + "`WebAssembly.instantiateStreaming`" + `.`,
 		},
 	},
+	"PRISM_SPEC_021": {
+		Code:    "PRISM_SPEC_021",
+		Message: `Geo projection or geo-mark binding is invalid: {{.Field}}.`,
+		Fixups: []string{
+			`Set ` + "`projection.type`" + ` to one of: mercator | equirectangular | naturalearth | albers_usa | orthographic.`,
+			`Geoshape marks require ` + "`encoding.feature.field`" + `; geopoint marks require both ` + "`encoding.longitude.field`" + ` and ` + "`encoding.latitude.field`" + `.`,
+			`Tier values must be one of: world-110m | world-50m | admin1-50m.`,
+		},
+		SeeAlso: []string{"PRISM_GEO_001"},
+	},
+	"PRISM_GEO_001": {
+		Code:    "PRISM_GEO_001",
+		Message: `Feature {{.Field}} not found in geodata tier {{.Source}} (got id {{.Available}}).`,
+		Fixups: []string{
+			`Check that the feature id matches the manifest: admin-0 uses ISO 3166-1 alpha-3 (USA, CAN, GBR, ...); admin-1 uses ISO 3166-2 (US-CA, CA-ON, ...).`,
+			`Set ` + "`projection.tier`" + ` to ` + "`admin1-50m`" + ` when looking up state/province features; the default tier (world-110m) only carries countries.`,
+			`Run ` + "`prism inspect --geo`" + ` to list the feature ids present in the embedded manifest.`,
+		},
+		SeeAlso: []string{"PRISM_ENCODE_001"},
+	},
+	"PRISM_GEO_002": {
+		Code:    "PRISM_GEO_002",
+		Message: `Geo bundle could not be loaded for tier {{.Tier}}: {{.Reason}}.`,
+		Fixups: []string{
+			`Host build: this should never fail — regenerate the embedded artifact via ` + "`make geodata`" + `.`,
+			`WASM build: confirm ` + "`prism static-bundle`" + ` was run and the geodata/ directory is served at the URL passed to ` + "`prism.geo.setBundleURL`" + ` (default: /static/prism/geodata/).`,
+			`Check the browser console for a 404 on the missing tier file.`,
+		},
+		SeeAlso: []string{"PRISM_GEO_001"},
+	},
 }
 
 // CodesSorted returns the catalog keys in ascending order.

@@ -329,6 +329,30 @@ func (c *buildCtx) registerDataset(name string, ds *spec.Data) error {
 			}
 		}
 		return nil
+	case ds.FeatureCollection != nil:
+		values, fields, ferr := materializeFeatureCollection(ds.FeatureCollection)
+		if ferr != nil {
+			return ferr
+		}
+		id := c.nextID("feature_collection")
+		in := nodes.NewInline(id, name, values, fields)
+		if err := c.b.AddNode(in); err != nil {
+			return err
+		}
+		if err := c.b.MarkRoot(id); err != nil {
+			return err
+		}
+		if name != "" {
+			if err := c.bindAlias(name, id); err != nil {
+				return err
+			}
+		}
+		if ds.Name != "" && ds.Name != name {
+			if err := c.bindAlias(ds.Name, id); err != nil {
+				return err
+			}
+		}
+		return nil
 	case ds.Name != "":
 		// Name-only reference: alias for an already-registered dataset.
 		if name != "" && name != ds.Name {

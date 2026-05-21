@@ -202,7 +202,10 @@
         "column":  {"$ref": "encoding.schema.json#/$defs/facet_channel", "description": "Column facet channel."},
         "source":  {"$ref": "encoding.schema.json#/$defs/mark_channel", "description": "Sankey source-node channel."},
         "target":  {"$ref": "encoding.schema.json#/$defs/mark_channel", "description": "Sankey target-node channel."},
-        "value":   {"$ref": "encoding.schema.json#/$defs/mark_channel", "description": "Sankey flow-magnitude channel."}
+        "value":   {"$ref": "encoding.schema.json#/$defs/mark_channel", "description": "Sankey flow-magnitude channel."},
+        "longitude": {"$ref": "encoding.schema.json#/$defs/mark_channel", "description": "Longitude channel (degrees) for geopoint marks."},
+        "latitude":  {"$ref": "encoding.schema.json#/$defs/mark_channel", "description": "Latitude channel (degrees) for geopoint marks."},
+        "feature":   {"$ref": "encoding.schema.json#/$defs/mark_channel", "description": "Geodata feature-id channel for geoshape marks (e.g. \"USA\", \"US-CA\")."}
       }
     }
   }

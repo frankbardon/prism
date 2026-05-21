@@ -1,0 +1,10 @@
+{
+  "$schema": "urn:prism:schema:v1:spec",
+  "title": "World map (natural earth)",
+  "data": {"feature_collection": {"tier": "world-110m"}},
+  "mark": "geoshape",
+  "projection": {"type": "naturalearth"},
+  "encoding": {
+    "feature": {"field": "id", "type": "nominal"}
+  }
+}

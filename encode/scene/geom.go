@@ -118,3 +118,13 @@ type ImageGeom struct {
 	H    float64 `json:"h"`
 	Href string  `json:"href"`
 }
+
+// PolygonGeom is the geometry for a geoshape mark. Points are already
+// in plot-space pixels (the projection has been applied upstream).
+// Outer is the outer ring; Holes are inner rings (rendered with the
+// SVG fill-rule cutout). Multipolygon features emit one PolygonGeom
+// per disjoint piece on its own scene.Mark.
+type PolygonGeom struct {
+	Outer [][2]float64   `json:"outer"`
+	Holes [][][2]float64 `json:"holes,omitempty"`
+}

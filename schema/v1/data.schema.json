@@ -8,9 +8,10 @@
       "oneOf": [
         {"$ref": "data.schema.json#/$defs/data_source"},
         {"$ref": "data.schema.json#/$defs/data_named_ref"},
-        {"$ref": "data.schema.json#/$defs/data_inline"}
+        {"$ref": "data.schema.json#/$defs/data_inline"},
+        {"$ref": "data.schema.json#/$defs/data_feature_collection"}
       ],
-      "description": "Data binding: an external Pulse source, a named dataset reference, or inline values."
+      "description": "Data binding: an external Pulse source, a named dataset reference, inline values, or a synthesized geodata feature collection."
     },
     "data_source": {
       "type": "object",
@@ -87,6 +88,30 @@
               }
             }
           }
+        }
+      }
+    },
+    "data_feature_collection": {
+      "type": "object",
+      "description": "Synthesized data block: one row per feature in a geodata tier. Used for geoshape basemaps.",
+      "additionalProperties": false,
+      "required": ["feature_collection"],
+      "properties": {
+        "feature_collection": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "tier": {
+              "type": "string",
+              "enum": ["world-110m", "world-50m", "admin1-50m"],
+              "description": "Geodata tier to materialise as rows. Defaults to world-110m when omitted."
+            }
+          }
+        },
+        "name": {
+          "type": "string",
+          "description": "Optional logical name for the synthesized table.",
+          "minLength": 1
         }
       }
     },

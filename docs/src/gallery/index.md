@@ -1,6 +1,6 @@
 # Prism Gallery
 
-59 fixture specs across 8 categories. Each entry pairs a `*.prism.json`
+62 fixture specs across 9 categories. Each entry pairs a `*.prism.json`
 spec with a rendered `*.svg`. Browse the source to learn the spec
 shapes; open the SVGs to see what they render.
 
@@ -45,6 +45,14 @@ For live interactive rendering in a browser, see [`index.html`](index.html).
 | [sparkline_inline_grid](specialty-marks/sparkline_inline_grid.prism.json) | <img src="specialty-marks/sparkline_inline_grid.svg" width="240"> |
 | [image_logo](specialty-marks/image_logo.prism.json) | <img src="specialty-marks/image_logo.svg" width="240"> |
 | [path_arbitrary](specialty-marks/path_arbitrary.prism.json) | <img src="specialty-marks/path_arbitrary.svg" width="240"> |
+
+## Geographic marks
+
+| Spec | Preview |
+|---|---|
+| [world_basic](geo/world_basic.prism.json) | <img src="geo/world_basic.svg" width="240"> |
+| [world_choropleth](geo/world_choropleth.prism.json) | <img src="geo/world_choropleth.svg" width="240"> |
+| [usa_states](geo/usa_states.prism.json) | <img src="geo/usa_states.svg" width="240"> |
 
 ## Composition (layer / concat / facet / repeat)
 

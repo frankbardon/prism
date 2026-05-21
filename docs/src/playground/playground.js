@@ -79,6 +79,12 @@ async function main() {
     if (globalThis.prism && typeof globalThis.prism.version === "function") {
       els.versionLabel.textContent = globalThis.prism.version();
     }
+    // Geo bundle URL — geoshape / geopoint marks fetch from this path
+    // on first encode. Relative so it works under any mdBook nesting
+    // (local serve, GH Pages, custom subdomain).
+    if (globalThis.prism && globalThis.prism.geo && typeof globalThis.prism.geo.setBundleURL === "function") {
+      globalThis.prism.geo.setBundleURL(new URL("../static/prism/geodata/", document.baseURI).href);
+    }
     setLoading(false);
     scheduleRender(0);
   }).catch(err => {
@@ -310,6 +316,23 @@ async function runRender() {
   }
 
   if (token !== state.renderToken) return; // superseded
+
+  // Geo marks fetch tier bundles before render. Synchronous fetch
+  // inside execute() would deadlock the WASM runtime, so we preload
+  // the relevant tier(s) up front; subsequent renders against
+  // already-loaded tiers are no-ops.
+  try {
+    await ensureGeoTiersFor(spec);
+  } catch (err) {
+    showError({
+      code: "PRISM_WASM_001",
+      message: `Geo bundle preload failed: ${err.message || err}`,
+      fixups: ["Confirm /static/prism/geodata/ is reachable (run `make docs-wasm-stage` to stage)."],
+    });
+    setStatus("error", "geodata error");
+    return;
+  }
+  if (token !== state.renderToken) return;
 
   // Run the full pipeline via WASM.
   try {
@@ -573,6 +596,49 @@ function b64UrlDecode(s) {
   const bytes = new Uint8Array(bin.length);
   for (let i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
   return bytes;
+}
+
+// ---------------------------------------------------------------- //
+// Geo tier preload
+// ---------------------------------------------------------------- //
+
+// Tracks tiers we've already fetched + primed so retriggering a
+// render doesn't reissue the network roundtrip.
+const loadedGeoTiers = new Set();
+
+// ensureGeoTiersFor walks a spec (single-mark or composite) and
+// awaits prism.geo.preload for any tier the geoshape / geopoint marks
+// will need. Default tier when projection.tier is unset is "world-110m".
+async function ensureGeoTiersFor(spec) {
+  if (!globalThis.prism || !globalThis.prism.geo || typeof globalThis.prism.geo.preload !== "function") {
+    return;
+  }
+  const needed = new Set();
+  collectGeoTiers(spec, needed);
+  for (const tier of needed) {
+    if (loadedGeoTiers.has(tier)) continue;
+    await globalThis.prism.geo.preload(tier);
+    loadedGeoTiers.add(tier);
+  }
+}
+
+function collectGeoTiers(node, out) {
+  if (!node || typeof node !== "object") return;
+  const markType =
+    typeof node.mark === "string" ? node.mark :
+    node.mark && typeof node.mark === "object" ? node.mark.type :
+    null;
+  if (markType === "geoshape" || markType === "geopoint") {
+    const tier = (node.projection && node.projection.tier) || "world-110m";
+    out.add(tier);
+  }
+  for (const key of ["layer", "concat", "hconcat", "vconcat"]) {
+    if (Array.isArray(node[key])) {
+      for (const child of node[key]) collectGeoTiers(child, out);
+    }
+  }
+  if (node.spec) collectGeoTiers(node.spec, out);
+  if (node.facet && node.spec) collectGeoTiers(node.spec, out);
 }
 
 // ---------------------------------------------------------------- //

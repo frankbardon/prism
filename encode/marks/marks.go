@@ -8,8 +8,10 @@ package marks
 import (
 	"fmt"
 
+	"github.com/frankbardon/prism/encode/projection"
 	"github.com/frankbardon/prism/encode/scene"
 	prismerrors "github.com/frankbardon/prism/errors"
+	"github.com/frankbardon/prism/geodata"
 	"github.com/frankbardon/prism/spec"
 	"github.com/frankbardon/prism/table"
 )
@@ -65,6 +67,21 @@ type Inputs struct {
 	Source  Channel              // sankey source-node field (no scale)
 	Target  Channel              // sankey target-node field (no scale)
 	Value   Channel              // sankey flow-magnitude field (no scale)
+	// Feature (P18) is the geoshape feature-id binding — the table
+	// column whose values are geodata IDs (USA, US-CA, …).
+	Feature Channel
+	// Longitude / Latitude (P18) are geopoint bindings; field-only.
+	Longitude Channel
+	Latitude  Channel
+	// Projection (P18) maps lon/lat → pixel space for geoshape and
+	// geopoint marks. Nil for non-geo marks.
+	Projection projection.Projection
+	// GeoStore (P18) is the feature-geometry source. Defaults to
+	// geodata.DefaultStore() at dispatch time.
+	GeoStore geodata.Store
+	// GeoTier (P18) is the manifest tier the encoder pulls features
+	// from. Defaults to TierWorld110m.
+	GeoTier geodata.Tier
 	// LayerID is the scene-layer identifier stamped onto every
 	// per-row mark's Datum back-reference (D077). Empty defaults to
 	// "layer-0" — matches the flat-encoder hardcoded layer ID.
@@ -128,6 +145,10 @@ func Encode(markType string, in Inputs) ([]scene.Mark, *scene.Warning, error) {
 		marksOut, err = encodeFunnel(in)
 	case "sparkline":
 		marksOut, err = encodeSparkline(in)
+	case "geoshape":
+		marksOut, err = encodeGeoshape(in)
+	case "geopoint":
+		marksOut, err = encodeGeopoint(in)
 	default:
 		return nil, nil, prismerrors.New(
 			"PRISM_ENCODE_001",

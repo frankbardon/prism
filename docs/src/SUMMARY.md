@@ -16,6 +16,7 @@
 - [Selections](concepts/selections.md)
 - [Themes](concepts/themes.md)
 - [Multi-source](concepts/multi-source.md)
+- [Geographic Marks](concepts/geo.md)
 - [Browser / WASM](concepts/browser.md)
 
 # Cookbook

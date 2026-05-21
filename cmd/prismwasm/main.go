@@ -55,6 +55,7 @@ func main() {
 	api.Set("render", js.FuncOf(renderFunc))
 	api.Set("errorsLookup", js.FuncOf(errorsLookupFunc))
 	api.Set("schemaBundle", js.FuncOf(schemaBundleFunc))
+	api.Set("geo", buildGeoAPI())
 	js.Global().Set("prism", api)
 
 	// Signal readiness so the loader can resolve without polling.

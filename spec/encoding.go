@@ -10,27 +10,33 @@ import (
 // Source / Target / Value (P11) are sankey-specific bindings carrying
 // a field name without an axis scale. See D064.
 type Encoding struct {
-	X       *PositionChannel `json:"x,omitempty"`
-	Y       *PositionChannel `json:"y,omitempty"`
-	X2      *PositionChannel `json:"x2,omitempty"`
-	Y2      *PositionChannel `json:"y2,omitempty"`
-	Theta   *PositionChannel `json:"theta,omitempty"`
-	Radius  *PositionChannel `json:"radius,omitempty"`
-	Color   *MarkChannel     `json:"color,omitempty"`
-	Fill    *MarkChannel     `json:"fill,omitempty"`
-	Stroke  *MarkChannel     `json:"stroke,omitempty"`
-	Opacity *MarkChannel     `json:"opacity,omitempty"`
-	Size    *MarkChannel     `json:"size,omitempty"`
-	Shape   *MarkChannel     `json:"shape,omitempty"`
-	Text    *TextChannel     `json:"text,omitempty"`
-	Tooltip *TooltipChannel  `json:"tooltip,omitempty"`
-	Order   *OrderChannel    `json:"order,omitempty"`
-	Detail  *DetailChannel   `json:"detail,omitempty"`
-	Row     *FacetChannel    `json:"row,omitempty"`
-	Column  *FacetChannel    `json:"column,omitempty"`
-	Source  *MarkChannel     `json:"source,omitempty"`
-	Target  *MarkChannel     `json:"target,omitempty"`
-	Value   *MarkChannel     `json:"value,omitempty"`
+	X         *PositionChannel `json:"x,omitempty"`
+	Y         *PositionChannel `json:"y,omitempty"`
+	X2        *PositionChannel `json:"x2,omitempty"`
+	Y2        *PositionChannel `json:"y2,omitempty"`
+	Theta     *PositionChannel `json:"theta,omitempty"`
+	Radius    *PositionChannel `json:"radius,omitempty"`
+	Color     *MarkChannel     `json:"color,omitempty"`
+	Fill      *MarkChannel     `json:"fill,omitempty"`
+	Stroke    *MarkChannel     `json:"stroke,omitempty"`
+	Opacity   *MarkChannel     `json:"opacity,omitempty"`
+	Size      *MarkChannel     `json:"size,omitempty"`
+	Shape     *MarkChannel     `json:"shape,omitempty"`
+	Text      *TextChannel     `json:"text,omitempty"`
+	Tooltip   *TooltipChannel  `json:"tooltip,omitempty"`
+	Order     *OrderChannel    `json:"order,omitempty"`
+	Detail    *DetailChannel   `json:"detail,omitempty"`
+	Row       *FacetChannel    `json:"row,omitempty"`
+	Column    *FacetChannel    `json:"column,omitempty"`
+	Source    *MarkChannel     `json:"source,omitempty"`
+	Target    *MarkChannel     `json:"target,omitempty"`
+	Value     *MarkChannel     `json:"value,omitempty"`
+	Longitude *MarkChannel     `json:"longitude,omitempty"`
+	Latitude  *MarkChannel     `json:"latitude,omitempty"`
+	// Feature is the geoshape-specific binding: the table field whose
+	// values are geodata feature IDs (e.g. "USA", "US-CA"). Resolves
+	// to polygon geometry via the geodata.Store.
+	Feature *MarkChannel `json:"feature,omitempty"`
 }
 
 // ChannelCommon holds the fields shared by every channel class.

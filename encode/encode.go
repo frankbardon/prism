@@ -6,6 +6,7 @@ import (
 	"github.com/frankbardon/prism/encode/marks"
 	"github.com/frankbardon/prism/encode/scene"
 	prismerrors "github.com/frankbardon/prism/errors"
+	"github.com/frankbardon/prism/geodata"
 	"github.com/frankbardon/prism/plan"
 	"github.com/frankbardon/prism/spec"
 	"github.com/frankbardon/prism/table"
@@ -123,6 +124,7 @@ func Encode(s *spec.Spec, tables map[plan.NodeID]*table.Table, tipID plan.NodeID
 	polarMark := markType == "arc" || markType == "pie" || markType == "donut"
 	selfScaleMark := markType == "histogram"
 	specialtyMark := markType == "sankey" || markType == "funnel" || markType == "path"
+	geoMark := markType == "geoshape" || markType == "geopoint"
 
 	// Resolve x / y scales (composite caller may supply pre-computed
 	// shared overrides per P09 / D057; honour them when present so
@@ -133,7 +135,7 @@ func Encode(s *spec.Spec, tables map[plan.NodeID]*table.Table, tipID plan.NodeID
 		xWarn  *scene.Warning
 		yWarn  *scene.Warning
 	)
-	if !polarMark && !selfScaleMark && !specialtyMark {
+	if !polarMark && !selfScaleMark && !specialtyMark && !geoMark {
 		if opts.OverrideXScale != nil {
 			xScale = opts.OverrideXScale
 		} else {
@@ -164,7 +166,7 @@ func Encode(s *spec.Spec, tables map[plan.NodeID]*table.Table, tipID plan.NodeID
 	// Build axes (only when the channel was bound). Sparkline (D067)
 	// suppresses axes entirely — leave axes empty.
 	axes := make([]scene.Axis, 0, 2)
-	if markType != "sparkline" {
+	if markType != "sparkline" && !geoMark {
 		if xScale != nil {
 			axes = append(axes, BuildAxisWithOpts(xScale, scene.ChannelX, scene.AxisPositionBottom, layout.Plot, axisOptsFor(enc.X)))
 		}
@@ -227,6 +229,27 @@ func Encode(s *spec.Spec, tables map[plan.NodeID]*table.Table, tipID plan.NodeID
 	}
 	if s.Mark != nil {
 		markInputs.Mark = s.Mark.Def
+	}
+	// Geo marks (P18): build projection from spec + plot rect bbox.
+	// Feature / Longitude / Latitude channels carry field names only.
+	if geoMark {
+		proj, perr := buildProjection(s.Projection, layout.Plot)
+		if perr != nil {
+			return nil, perr
+		}
+		markInputs.Projection = proj
+		if s.Projection != nil && s.Projection.Tier != "" {
+			markInputs.GeoTier = geodata.Tier(s.Projection.Tier)
+		}
+		if enc.Feature != nil {
+			markInputs.Feature = marks.Channel{Field: enc.Feature.Field}
+		}
+		if enc.Longitude != nil {
+			markInputs.Longitude = marks.Channel{Field: enc.Longitude.Field}
+		}
+		if enc.Latitude != nil {
+			markInputs.Latitude = marks.Channel{Field: enc.Latitude.Field}
+		}
 	}
 	// Sankey: forward source/target/value channels (D064). These are
 	// field names only; sankey computes positions internally without
@@ -501,6 +524,16 @@ func defaultMarkStyle(markType string) scene.Style {
 			Fill:    defaultFill,
 			Opacity: 0.7,
 		}
+	case "geoshape":
+		// Geo polygons: muted neutral fill + thin stroke so country
+		// borders read cleanly without a color binding.
+		fill, _ := scene.ColorFromHex("#cbd5e1")
+		stroke, _ := scene.ColorFromHex("#ffffff")
+		return scene.Style{
+			Fill:        fill,
+			Stroke:      stroke,
+			StrokeWidth: 0.5,
+		}
 	default:
 		return scene.Style{Fill: defaultFill}
 	}
@@ -555,6 +588,10 @@ func specMarkToScene(markType string) scene.MarkType {
 		return scene.MarkPath
 	case "image":
 		return scene.MarkImage
+	case "geoshape":
+		return scene.MarkGeoshape
+	case "geopoint":
+		return scene.MarkPoint
 	}
 	return scene.MarkType(markType)
 }
