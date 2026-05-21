@@ -23,6 +23,7 @@ func renderGeoshape(w *Writer, m scene.Mark) {
 		w.Attr("data-prism-id", m.ID)
 	}
 	writeDatumAttr(w, m)
+	writeKeyAttr(w, m)
 	w.Attr("d", buildPolygonPath(g))
 	w.Attr("fill-rule", "evenodd")
 	writeStyleAttrs(w, m.Style)

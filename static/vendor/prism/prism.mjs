@@ -25,6 +25,11 @@ import {
   getAllSelections as _getAllSelections,
   revalidateSelections as _revalidateSelections,
 } from "./prism-selection.mjs";
+import {
+  PrismAnimator,
+  structurallyCompatible,
+  prefersReducedMotion,
+} from "./prism-animator.mjs";
 
 // ---------------------------------------------------------------- //
 // Lazy WASM bootstrap — the WASM module loads on first call to a
@@ -197,12 +202,56 @@ export class SceneHandle {
     this._disposers = [];
   }
 
-  async update(newSceneDoc) {
+  async update(newSceneDoc, opts = {}) {
     const errs = validate(newSceneDoc);
     if (errs.length > 0) {
       throw new Error("SceneHandle.update: invalid SceneDoc: " + errs.join("; "));
     }
     try { _revalidateSelections(this, newSceneDoc); } catch (e) { /* defensive */ }
+
+    const animBlock = _sceneAnimation(newSceneDoc);
+    const canAnimate = opts.animate !== false
+      && animBlock
+      && this._svg
+      && structurallyCompatible(this._doc, newSceneDoc)
+      && !prefersReducedMotion();
+
+    if (!canAnimate) {
+      return this._swapInstant(newSceneDoc);
+    }
+
+    const oldSvg = this._svg;
+    const replacement = await render(newSceneDoc, this._root);
+    // Hide the freshly mounted SVG until the tween completes so the
+    // user only sees the live tween on the old SVG; the new SVG
+    // reveals at t=1.
+    if (replacement._svg && replacement._svg.style) {
+      replacement._svg.style.visibility = "hidden";
+    }
+    const animator = new PrismAnimator(oldSvg, replacement._svg, animBlock, opts.animatorOpts || {});
+    try {
+      await animator.start();
+    } finally {
+      if (replacement._svg && replacement._svg.style) {
+        replacement._svg.style.visibility = "";
+      }
+      if (oldSvg && oldSvg.parentNode) {
+        oldSvg.parentNode.removeChild(oldSvg);
+      }
+      if (this._disposers && this._disposers.length > 0) {
+        for (const d of this._disposers) {
+          try { d(); } catch {}
+        }
+      }
+    }
+    this._svg = replacement._svg;
+    this._doc = replacement._doc;
+    this._selections = replacement._selections;
+    this._disposers = replacement._disposers;
+    return this;
+  }
+
+  async _swapInstant(newSceneDoc) {
     if (this._svg && this._svg.parentNode) {
       this._svg.parentNode.removeChild(this._svg);
     }
@@ -318,3 +367,18 @@ function _throwIfErrorEnvelope(payload, where) {
 // prism-selection.mjs that walked the legacy node tree continue to
 // resolve the constant.
 export { SVG_NS };
+
+// Re-export the animator surface so host pages can drive a tween on
+// a bare SVG without going through SceneHandle.
+export { PrismAnimator, structurallyCompatible, prefersReducedMotion };
+
+/**
+ * _sceneAnimation returns the animation block from the first cell's
+ * scene, or null when no block is set. Used by SceneHandle.update to
+ * decide whether to animate the swap.
+ */
+function _sceneAnimation(doc) {
+  const a = doc?.grid?.cells?.[0]?.scene?.animation;
+  if (!a || typeof a !== "object") return null;
+  return a;
+}
