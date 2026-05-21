@@ -301,10 +301,37 @@ var Codes = map[string]CodeMetadata{
 		Code:    "PRISM_WARN_PDF_GRADIENT_FLATTENED",
 		Message: `PDF renderer flattened a gradient fill to its first color stop (gradient {{.Gradient}}).`,
 		Fixups: []string{
-			`Use a solid color in your spec for byte-identical PDF rendering; gradient support arrives in V2 (D091).`,
-			`The SVG renderer preserves the gradient; only PDF flattens.`,
+			`Use a solid color in your spec for byte-identical PDF rendering across SVG and PDF.`,
+			`The SVG renderer preserves the gradient; the PDF backend currently only renders solid fills (gopdf lacks a public shading API).`,
 		},
-		SeeAlso: []string{"PRISM_RENDER_001"},
+		SeeAlso: []string{"PRISM_WARN_PDF_GRADIENT_TEXT_FLATTENED", "PRISM_WARN_PDF_GRADIENT_ANGULAR_FLATTENED", "PRISM_RENDER_001"},
+	},
+	"PRISM_WARN_PDF_GRADIENT_TEXT_FLATTENED": {
+		Code:    "PRISM_WARN_PDF_GRADIENT_TEXT_FLATTENED",
+		Message: `PDF renderer flattened a gradient fill on a text mark (gradient {{.Gradient}}).`,
+		Fixups: []string{
+			`Text marks use a solid fill in PDF output regardless of backend gradient support; this warning is informational.`,
+			`The SVG renderer preserves the gradient on text via inline <linearGradient> defs.`,
+		},
+		SeeAlso: []string{"PRISM_WARN_PDF_GRADIENT_FLATTENED"},
+	},
+	"PRISM_WARN_PDF_GRADIENT_ANGULAR_FLATTENED": {
+		Code:    "PRISM_WARN_PDF_GRADIENT_ANGULAR_FLATTENED",
+		Message: `PDF renderer flattened an angular / conic gradient (gradient {{.Gradient}}): the PDF backend supports only linear and radial.`,
+		Fixups: []string{
+			`Use linear / radial gradients in the spec, or accept the flattened output in PDF.`,
+			`The SVG renderer preserves angular gradients via inline <linearGradient> + transform.`,
+		},
+		SeeAlso: []string{"PRISM_WARN_PDF_GRADIENT_FLATTENED"},
+	},
+	"PRISM_WARN_PDF_CONDITION_FLATTENED": {
+		Code:    "PRISM_WARN_PDF_CONDITION_FLATTENED",
+		Message: `PDF renderer painted the fallback branch of a selection-driven condition on mark {{.Mark}}: PDFs are static.`,
+		Fixups: []string{
+			`Selection-driven conditions need an interactive renderer (SVG via prism-element). Static ` + "`{test: ...}`" + ` conditions render fine in PDF.`,
+			`See ` + "`docs/src/concepts/encoding.md#conditions`" + ` for details.`,
+		},
+		SeeAlso: []string{"PRISM_SPEC_025"},
 	},
 	"PRISM_RENDER_SCENE_EMPTY": {
 		Code:    "PRISM_RENDER_SCENE_EMPTY",
