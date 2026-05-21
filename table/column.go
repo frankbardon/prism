@@ -99,7 +99,6 @@ type Column interface {
 	NullCount() int
 }
 
-
 // IntColumn is the storage for KindInt columns. int64 is wide enough
 // to hold u64 values up to math.MaxInt64; values above that are
 // truncated at decode time and a warning surfaces in Source telemetry.
@@ -256,4 +255,3 @@ func (n NullableColumn) NullCount() int {
 // slice-backed reader (e.g. scale extent computation) can read the
 // inner column directly, then consult IsNull per row.
 func (n NullableColumn) Unwrap() Column { return n.Inner }
-
