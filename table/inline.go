@@ -103,25 +103,29 @@ func inferInlineSchema(values []map[string]any, fields []spec.FieldSpec) (*encod
 
 // buildInlineColumns walks values once and emits typed columns. Each
 // row is validated against the schema's field kinds; mismatches return
-// PRISM_RESOLVE_INLINE_TYPE_MISMATCH.
+// PRISM_RESOLVE_INLINE_TYPE_MISMATCH. Per-field null bitmaps track JSON
+// `null` values; the result wraps the underlying slice in a
+// NullableColumn whenever any nulls appeared so downstream IsNull
+// reports reflect the missing data.
 func buildInlineColumns(schema *encoding.Schema, fieldOrder []string, values []map[string]any) (map[string]Column, error) {
 	n := len(values)
-	out := map[string]Column{}
+	inner := map[string]Column{}
+	nulls := map[string]*NullBitmap{}
 
 	for i := range schema.Fields {
 		f := &schema.Fields[i]
 		kind := KindFromPulseFieldType(f.Type)
 		switch kind {
 		case KindInt:
-			out[f.Name] = make(IntColumn, n)
+			inner[f.Name] = make(IntColumn, n)
 		case KindFloat:
-			out[f.Name] = make(FloatColumn, n)
+			inner[f.Name] = make(FloatColumn, n)
 		case KindString:
-			out[f.Name] = make(StringColumn, n)
+			inner[f.Name] = make(StringColumn, n)
 		case KindBool:
-			out[f.Name] = make(BoolColumn, n)
+			inner[f.Name] = make(BoolColumn, n)
 		case KindDate:
-			out[f.Name] = make(DateColumn, n)
+			inner[f.Name] = make(DateColumn, n)
 		default:
 			return nil, fmt.Errorf("table: inline field %q has unknown kind for type %s", f.Name, f.Type)
 		}
@@ -131,7 +135,12 @@ func buildInlineColumns(schema *encoding.Schema, fieldOrder []string, values []m
 		for _, name := range fieldOrder {
 			val, present := row[name]
 			if !present {
-				// Treat missing keys as zero values per Kind.
+				// Missing keys: treat as null (the row supplied no value).
+				ensureNullBitmap(nulls, name, n).Set(rowIdx)
+				continue
+			}
+			if val == nil {
+				ensureNullBitmap(nulls, name, n).Set(rowIdx)
 				continue
 			}
 			f := schema.Field(name)
@@ -149,12 +158,32 @@ func buildInlineColumns(schema *encoding.Schema, fieldOrder []string, values []m
 					},
 				)
 			}
-			if err := assignInlineValue(out[name], rowIdx, kind, val, f); err != nil {
+			if err := assignInlineValue(inner[name], rowIdx, kind, val, f); err != nil {
 				return nil, err
 			}
 		}
 	}
+
+	// Wrap fields that observed at least one null.
+	out := make(map[string]Column, len(inner))
+	for name, col := range inner {
+		nb := nulls[name]
+		if nb != nil && nb.Count() > 0 {
+			out[name] = NullableColumn{Inner: col, Nulls: nb}
+		} else {
+			out[name] = col
+		}
+	}
 	return out, nil
+}
+
+func ensureNullBitmap(nulls map[string]*NullBitmap, name string, n int) *NullBitmap {
+	if nb, ok := nulls[name]; ok {
+		return nb
+	}
+	nb := NewNullBitmap(n)
+	nulls[name] = nb
+	return nb
 }
 
 // assignInlineValue places val into col[rowIdx] under the given kind.

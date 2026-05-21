@@ -212,7 +212,7 @@ func materialise(schema *encoding.Schema, r io.Reader, hash, ref string) (*table
 				map[string]any{"Actual": rowCount + 1, "Limit": cap},
 			)
 		}
-		appendRow(cols, schema, values)
+		appendRow(cols, schema, values, nulls)
 		rowCount++
 	}
 
@@ -222,14 +222,18 @@ func materialise(schema *encoding.Schema, r io.Reader, hash, ref string) (*table
 // columnBuilder is a per-field accumulator chosen by Kind. Storage is
 // the same as table.Column impls; we hold a pointer to the backing
 // slice so appendRow can grow it in place without re-allocating the
-// map entry on every iteration.
+// map entry on every iteration. `nulls` tracks per-row null markers
+// for nullable fields; nil otherwise so non-nullable columns stay
+// plain slice-backed Column impls.
 type columnBuilder struct {
-	kind   table.Kind
-	ints   *[]int64
-	floats *[]float64
-	strs   *[]string
-	bools  *[]bool
-	dates  *[]int64
+	kind     table.Kind
+	nullable bool
+	nulls    *table.NullBitmap
+	ints     *[]int64
+	floats   *[]float64
+	strs     *[]string
+	bools    *[]bool
+	dates    *[]int64
 }
 
 func newColumnBuilders(schema *encoding.Schema) map[string]*columnBuilder {
@@ -237,7 +241,10 @@ func newColumnBuilders(schema *encoding.Schema) map[string]*columnBuilder {
 	for i := range schema.Fields {
 		f := &schema.Fields[i]
 		kind := table.KindFromPulseFieldType(f.Type)
-		cb := &columnBuilder{kind: kind}
+		cb := &columnBuilder{kind: kind, nullable: f.Nullable}
+		if f.Nullable {
+			cb.nulls = table.NewNullBitmap(0)
+		}
 		switch kind {
 		case table.KindInt:
 			s := make([]int64, 0)
@@ -260,11 +267,17 @@ func newColumnBuilders(schema *encoding.Schema) map[string]*columnBuilder {
 	return out
 }
 
-func appendRow(cols map[string]*columnBuilder, schema *encoding.Schema, values map[string]float64) {
+func appendRow(cols map[string]*columnBuilder, schema *encoding.Schema, values map[string]float64, nulls map[string]bool) {
 	for i := range schema.Fields {
 		f := &schema.Fields[i]
 		cb := cols[f.Name]
 		v := values[f.Name]
+		isNull := cb.nullable && nulls[f.Name]
+		// Record the position once we know which row this is (which is
+		// the current per-column length before the append below).
+		if isNull && cb.nulls != nil {
+			cb.nulls.Set(currentLen(cb))
+		}
 		switch cb.kind {
 		case table.KindInt:
 			*cb.ints = append(*cb.ints, int64(v))
@@ -287,22 +300,44 @@ func appendRow(cols map[string]*columnBuilder, schema *encoding.Schema, values m
 	}
 }
 
+func currentLen(cb *columnBuilder) int {
+	switch cb.kind {
+	case table.KindInt:
+		return len(*cb.ints)
+	case table.KindFloat:
+		return len(*cb.floats)
+	case table.KindString:
+		return len(*cb.strs)
+	case table.KindBool:
+		return len(*cb.bools)
+	case table.KindDate:
+		return len(*cb.dates)
+	}
+	return 0
+}
+
 func finaliseColumns(cols map[string]*columnBuilder, schema *encoding.Schema) map[string]table.Column {
 	out := make(map[string]table.Column, len(cols))
 	for i := range schema.Fields {
 		name := schema.Fields[i].Name
 		cb := cols[name]
+		var inner table.Column
 		switch cb.kind {
 		case table.KindInt:
-			out[name] = table.IntColumn(*cb.ints)
+			inner = table.IntColumn(*cb.ints)
 		case table.KindFloat:
-			out[name] = table.FloatColumn(*cb.floats)
+			inner = table.FloatColumn(*cb.floats)
 		case table.KindString:
-			out[name] = table.StringColumn(*cb.strs)
+			inner = table.StringColumn(*cb.strs)
 		case table.KindBool:
-			out[name] = table.BoolColumn(*cb.bools)
+			inner = table.BoolColumn(*cb.bools)
 		case table.KindDate:
-			out[name] = table.DateColumn(*cb.dates)
+			inner = table.DateColumn(*cb.dates)
+		}
+		if cb.nulls != nil && cb.nulls.Count() > 0 {
+			out[name] = table.NullableColumn{Inner: inner, Nulls: cb.nulls}
+		} else {
+			out[name] = inner
 		}
 	}
 	return out
