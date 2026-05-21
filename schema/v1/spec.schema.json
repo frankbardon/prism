@@ -46,7 +46,8 @@
     "title":    {"$ref": "shared.schema.json#/$defs/text_or_text_obj", "description": "Chart title."},
     "subtitle": {"$ref": "shared.schema.json#/$defs/text_or_text_obj", "description": "Chart subtitle."},
     "description": {"type": "string", "description": "Free-form description / alt text."},
-    "projection": {"$ref": "projection.schema.json#/$defs/projection", "description": "Geographic projection for geoshape / geopoint marks."}
+    "projection": {"$ref": "projection.schema.json#/$defs/projection", "description": "Geographic projection for geoshape / geopoint marks."},
+    "animation": {"$ref": "animation.schema.json#/$defs/animation", "description": "Client-side tween configuration (browser only)."}
   },
   "oneOf": [
     {"required": ["mark"]},

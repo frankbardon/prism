@@ -48,7 +48,8 @@
           ]
         },
         "stack":     {"type": ["string", "null", "boolean"], "enum": ["zero", "normalize", "center", null, false, true], "description": "Stacking behavior for the position channel."},
-        "value":     {}
+        "value":     {},
+        "key":       {"type": "boolean", "description": "Marks this channel as the join key used by client-side tween for object-constancy. At most one channel per encoding may set this."}
       }
     },
     "mark_channel": {
@@ -71,7 +72,8 @@
             {"type": "null"}
           ]
         },
-        "value":     {}
+        "value":     {},
+        "key":       {"type": "boolean", "description": "Marks this channel as the join key used by client-side tween for object-constancy. At most one channel per encoding may set this."}
       }
     },
     "text_channel": {

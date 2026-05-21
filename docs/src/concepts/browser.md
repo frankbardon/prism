@@ -115,6 +115,19 @@ exist as a reimplementation of the Go pipeline in `prism.mjs` and
 were deleted in P17 once the WASM path landed. There is one
 implementation of every Prism stage now, written in Go.
 
+## Animation
+
+The spec [`animation`](spec.md#animation) block produces hints in the
+emitted Scene IR (`scene.animation` + `mark.key`). SVG and PDF
+renderers ignore these fields entirely; only the web component and
+the WASM runtime tween between successive scenes.
+
+Animation lives in JS, not Go — the WASM module emits the scene
+hints, and the in-page JS animator (shipped in a future PR alongside
+`prism-animator.mjs`) diffs old vs. new scene by `mark.key` and
+interpolates per-attr via `requestAnimationFrame`. `prefers-reduced-motion: reduce`
+disables the animator at the OS / browser level.
+
 ## Cross-implementation parity
 
 The cross-impl harness (`internal/devtools/cross-impl-runner/`)

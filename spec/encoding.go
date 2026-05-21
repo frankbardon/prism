@@ -58,6 +58,11 @@ type ChannelCommon struct {
 	Bin       any        `json:"bin,omitempty"`
 	Sort      any        `json:"sort,omitempty"`
 	Value     any        `json:"value,omitempty"`
+	// Key marks this channel as the join key used by the client-side
+	// animator to match marks across successive scenes (object
+	// constancy). At most one channel per encoding block may set this;
+	// the validator enforces uniqueness via PRISM_SPEC_024.
+	Key bool `json:"key,omitempty"`
 }
 
 // PositionChannel adds axis + stack to ChannelCommon.

@@ -11,7 +11,7 @@ import (
 // expectedSchemaCount is the count of schema/v1/*.schema.json files
 // committed in this repo. Bump in lockstep when schemas are added or
 // removed.
-const expectedSchemaCount = 14
+const expectedSchemaCount = 15
 
 // TestPrismSchemaList exercises `prism schema list`; asserts the
 // known names are present (spec, mark, encoding, ...).

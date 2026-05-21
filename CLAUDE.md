@@ -42,6 +42,7 @@ Any change to Prism code, configuration, spec vocabulary, schema bundle, or publ
 | A playground example (`docs/src/playground/examples/`) | `docs/src/playground/examples/manifest.json` (id + title + file) + the new `<id>.json` spec file. Specs must use inline `data.values` or `datasets.*.values` — the playground has no `.pulse` fetch path |
 | A projection in `encode/projection/` or a feature in `geodata/` | `docs/src/concepts/geo.md` + `schema/v1/projection.schema.json` (the `type` enum) + manifest regeneration via `make geodata` when admin-level data changes |
 | A `data` block variant (`source`, `name`, `values`, `feature_collection`) | `spec/data.go` (struct field + UnmarshalJSON discriminator) + `schema/v1/data.schema.json` (oneOf entry) + `plan/build/build.go` registerOne case + `docs/src/concepts/geo.md` for geo-specific variants |
+| An easing in `spec.AnimationEasings` or any field in `spec.Animation` | `spec/animation.go` (const list + struct) + `schema/v1/animation.schema.json` (enum / properties) + `docs/src/concepts/spec.md` (Animation table) + the upcoming `static/vendor/prism/prism-animator.mjs` (when PR 2 lands) |
 
 If you find yourself wanting to defer the doc update to "a follow-up PR," stop. The follow-up will not happen, the next Claude Code session will read stale guidance and produce wrong code. Update in the same PR or do not merge.
 

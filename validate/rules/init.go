@@ -27,4 +27,7 @@ func init() {
 	validate.RegisterDefault(func() validate.SemanticRule { return SelectionEncodingChannel{} })
 	validate.RegisterDefault(func() validate.SemanticRule { return SelectionIntervalChannel{} })
 	validate.RegisterDefault(func() validate.SemanticRule { return GeoProjection{} })
+	validate.RegisterDefault(func() validate.SemanticRule { return AnimationEasingKnown{} })
+	validate.RegisterDefault(func() validate.SemanticRule { return AnimationKeyPresent{} })
+	validate.RegisterDefault(func() validate.SemanticRule { return AnimationKeyUnique{} })
 }

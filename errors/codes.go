@@ -574,6 +574,42 @@ var Codes = map[string]CodeMetadata{
 		},
 		SeeAlso: []string{"PRISM_GEO_001"},
 	},
+	"PRISM_SPEC_022": {
+		Code:    "PRISM_SPEC_022",
+		Message: `animation.easing {{.Easing}} is not a known easing name.`,
+		Fixups: []string{
+			`Use one of the supported easings: linear, cubic_in, cubic_out, cubic_in_out, quad_in, quad_out, quad_in_out, sine_in, sine_out, sine_in_out, expo_in, expo_out, expo_in_out.`,
+			`Omit ` + "`animation.easing`" + ` to use the default (cubic_in_out).`,
+		},
+		SeeAlso: []string{"PRISM_SPEC_023"},
+	},
+	"PRISM_SPEC_023": {
+		Code:    "PRISM_SPEC_023",
+		Message: `animation block declared but no encoding channel carries ` + "`key: true`" + `.`,
+		Fixups: []string{
+			`Add ` + "`\"key\": true`" + ` to one position or mark channel so tweens can match marks across scene swaps (e.g. ` + "`encoding.x`" + ` for object-constancy on the x-axis category).`,
+			`Without a key, the animator falls back to positional matching, which is ambiguous when row counts change.`,
+		},
+		SeeAlso: []string{"PRISM_SPEC_024", "PRISM_WARN_ANIM_FALLBACK"},
+	},
+	"PRISM_SPEC_024": {
+		Code:    "PRISM_SPEC_024",
+		Message: `multiple encoding channels carry ` + "`key: true`" + ` (channels: {{.Channels}}); at most one is allowed.`,
+		Fixups: []string{
+			`Pick the single channel whose field provides stable per-row identity across scene swaps and remove ` + "`key: true`" + ` from the rest.`,
+			`Composite keys are not supported in v1.`,
+		},
+		SeeAlso: []string{"PRISM_SPEC_023"},
+	},
+	"PRISM_WARN_ANIM_FALLBACK": {
+		Code:    "PRISM_WARN_ANIM_FALLBACK",
+		Message: `animation skipped: {{.Reason}}.`,
+		Fixups: []string{
+			`Animation only runs when successive scenes share the same composition shape (layer count, mark families, axis types). Structural changes snap to the new scene instantly.`,
+			`Set ` + "`animation.enter`" + ` and ` + "`animation.exit`" + ` to ` + "`none`" + ` to suppress the fade on first render.`,
+		},
+		SeeAlso: []string{"PRISM_SPEC_023"},
+	},
 }
 
 // CodesSorted returns the catalog keys in ascending order.

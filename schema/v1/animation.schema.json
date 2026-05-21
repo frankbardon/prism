@@ -1,0 +1,47 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:prism:schema:v1:animation",
+  "title": "Prism Animation Block",
+  "description": "Client-side tween configuration. Honoured only by the browser web component and the WASM runtime; static SVG and PDF renderers ignore this block.",
+  "$defs": {
+    "animation": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "duration_ms": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 5000,
+          "description": "Total tween duration in milliseconds. Default 400."
+        },
+        "easing": {
+          "type": "string",
+          "enum": [
+            "linear",
+            "cubic_in", "cubic_out", "cubic_in_out",
+            "quad_in", "quad_out", "quad_in_out",
+            "sine_in", "sine_out", "sine_in_out",
+            "expo_in", "expo_out", "expo_in_out"
+          ],
+          "description": "Easing curve. Default cubic_in_out."
+        },
+        "stagger_ms": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 1000,
+          "description": "Per-mark offset applied in document order. Default 0."
+        },
+        "enter": {
+          "type": "string",
+          "enum": ["fade", "none"],
+          "description": "Enter transition for marks that appear. Default fade."
+        },
+        "exit": {
+          "type": "string",
+          "enum": ["fade", "none"],
+          "description": "Exit transition for marks that disappear. Default fade."
+        }
+      }
+    }
+  }
+}
