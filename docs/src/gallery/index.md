@@ -1,6 +1,6 @@
 # Prism Gallery
 
-66 fixture specs across 11 categories. Each entry pairs a `*.prism.json`
+68 fixture specs across 12 categories. Each entry pairs a `*.prism.json`
 spec with a rendered `*.svg`. Browse the source to learn the spec
 shapes; open the SVGs to see what they render.
 
@@ -115,6 +115,16 @@ selection or Pulse expression. See
 |---|---|
 | [brush_highlight](conditions/brush_highlight.prism.json) | <img src="conditions/brush_highlight.svg" width="240"> |
 | [test_predicate](conditions/test_predicate.prism.json) | <img src="conditions/test_predicate.svg" width="240"> |
+
+## Tree
+
+Rooted hierarchies laid out with tidy-tree. See
+[Marks › Tree](../concepts/marks.md#tree).
+
+| Spec | Preview |
+|---|---|
+| [org_chart](tree/org_chart.prism.json) | <img src="tree/org_chart.svg" width="240"> |
+| [decision_tree](tree/decision_tree.prism.json) | <img src="tree/decision_tree.svg" width="240"> |
 
 ## Themes
 

@@ -123,7 +123,8 @@ func Encode(s *spec.Spec, tables map[plan.NodeID]*table.Table, tipID plan.NodeID
 	// scales.
 	polarMark := markType == "arc" || markType == "pie" || markType == "donut"
 	selfScaleMark := markType == "histogram"
-	specialtyMark := markType == "sankey" || markType == "funnel" || markType == "path"
+	specialtyMark := markType == "sankey" || markType == "funnel" || markType == "path" ||
+		markType == "tree" || markType == "dendrogram" || markType == "network"
 	geoMark := markType == "geoshape" || markType == "geopoint"
 
 	// Resolve x / y scales (composite caller may supply pre-computed
@@ -250,6 +251,20 @@ func Encode(s *spec.Spec, tables map[plan.NodeID]*table.Table, tipID plan.NodeID
 		}
 		if enc.Latitude != nil {
 			markInputs.Latitude = marks.Channel{Field: enc.Latitude.Field}
+		}
+	}
+	// Tree / dendrogram / network (tier1-04): forward source / target
+	// channels (the parent / child identity fields). Field names
+	// only; the encoder computes positions via the layout subpkg.
+	if markType == "tree" || markType == "dendrogram" || markType == "network" {
+		if enc.Source != nil {
+			markInputs.Source = marks.Channel{Field: enc.Source.Field}
+		}
+		if enc.Target != nil {
+			markInputs.Target = marks.Channel{Field: enc.Target.Field}
+		}
+		if enc.Value != nil {
+			markInputs.Value = marks.Channel{Field: enc.Value.Field}
 		}
 	}
 	// Sankey: forward source/target/value channels (D064). These are

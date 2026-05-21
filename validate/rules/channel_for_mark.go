@@ -99,6 +99,7 @@ func allowedChannelsForMark(mark string) []string {
 	sparklineMark := []string{"x", "y", "color", "fill", "stroke", "opacity"}
 	geoshapeMark := []string{"feature", "color", "fill", "stroke", "opacity"}
 	geopointMark := []string{"longitude", "latitude", "color", "fill", "stroke", "opacity", "size", "shape"}
+	treeMark := []string{"source", "target", "value", "text", "color", "fill", "stroke", "opacity", "size"}
 
 	var set []string
 	switch mark {
@@ -123,6 +124,8 @@ func allowedChannelsForMark(mark string) []string {
 		set = geoshapeMark
 	case "geopoint":
 		set = geopointMark
+	case "tree", "dendrogram", "network":
+		set = treeMark
 	default:
 		set = append(cartesianMark, polarMark...)
 	}

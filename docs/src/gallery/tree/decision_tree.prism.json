@@ -1,0 +1,22 @@
+{
+  "$schema": "urn:prism:schema:v1:spec",
+  "title": "Binary decision tree",
+  "data": {
+    "name": "decisions",
+    "values": [
+      {"id": "root",   "parent": null,   "name": "score > 0.5?"},
+      {"id": "left",   "parent": "root", "name": "age > 30?"},
+      {"id": "right",  "parent": "root", "name": "premium"},
+      {"id": "ll",     "parent": "left", "name": "basic"},
+      {"id": "lr",     "parent": "left", "name": "trial"},
+      {"id": "rl",     "parent": "right","name": "annual"},
+      {"id": "rr",     "parent": "right","name": "monthly"}
+    ]
+  },
+  "mark": {"type": "tree", "node_shape": "rect", "node_size": 12, "link_shape": "curve"},
+  "encoding": {
+    "source": {"field": "parent"},
+    "target": {"field": "id"},
+    "text":   {"field": "name"}
+  }
+}

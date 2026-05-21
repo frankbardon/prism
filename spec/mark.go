@@ -43,6 +43,26 @@ type MarkDef struct {
 	// ViolinResolution (P10) sets the number of KDE sample points per
 	// violin group. nil = 64 (the D061 default).
 	ViolinResolution *int `json:"violin_resolution,omitempty"`
+	// LinkShape (tree / dendrogram, tier1-04) — "step" | "curve" |
+	// "straight". Default "step".
+	LinkShape string `json:"link_shape,omitempty"`
+	// NodeShape (tree / network) — "circle" | "rect" | "none".
+	// Default "circle".
+	NodeShape string `json:"node_shape,omitempty"`
+	// NodeSize (tree / network) — base node radius / side length.
+	// Default 6.
+	NodeSize *float64 `json:"node_size,omitempty"`
+	// Layout (network) — "force" | "random". Default "force".
+	Layout string `json:"layout,omitempty"`
+	// Iterations (network) — force iterations. Default 200, cap 2000.
+	Iterations *int `json:"iterations,omitempty"`
+	// LinkDistance (network) — preferred edge length. Default 30.
+	LinkDistance *float64 `json:"link_distance,omitempty"`
+	// Charge (network) — repulsion strength. Default -30.
+	Charge *float64 `json:"charge,omitempty"`
+	// Seed (network) — deterministic seed for the force layout.
+	// Default 42.
+	Seed *int64 `json:"seed,omitempty"`
 }
 
 // Mark is the discriminated mark form: string shorthand or full mark_def

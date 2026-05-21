@@ -648,6 +648,48 @@ var Codes = map[string]CodeMetadata{
 		},
 		SeeAlso: []string{"PRISM_SPEC_006"},
 	},
+	"PRISM_SPEC_028": {
+		Code:    "PRISM_SPEC_028",
+		Message: `Mark {{.Mark}} requires source + target channels (missing: {{.Missing}}).`,
+		Fixups: []string{
+			`Bind ` + "`encoding.source`" + ` to the parent-id field and ` + "`encoding.target`" + ` to the child-id field.`,
+			`The optional ` + "`encoding.text`" + ` channel supplies per-node labels.`,
+		},
+		SeeAlso: []string{"PRISM_SPEC_018"},
+	},
+	"PRISM_SPEC_029": {
+		Code:    "PRISM_SPEC_029",
+		Message: `tree mark expects exactly one root (parent field empty / null); got {{.Count}}.`,
+		Fixups: []string{
+			`Exactly one input row must have an empty / null parent field. Synthesise a single root if your data has multiple top-level entries.`,
+			`Multi-root forests render via ` + "`layer`" + ` (one tree per layer).`,
+		},
+		SeeAlso: []string{"PRISM_SPEC_028"},
+	},
+	"PRISM_WARN_NETWORK_CYCLE": {
+		Code:    "PRISM_WARN_NETWORK_CYCLE",
+		Message: `network input graph contains a cycle; force layout may produce a visually messy result.`,
+		Fixups: []string{
+			`Cycles are valid for the network mark — the layout converges but visually-clean output benefits from acyclic / DAG inputs.`,
+			`If the data is genuinely hierarchical, switch to the ` + "`tree`" + ` mark which enforces acyclicity (` + "`PRISM_ENCODE_TREE_CYCLE`" + `).`,
+		},
+		SeeAlso: []string{"PRISM_ENCODE_TREE_CYCLE"},
+	},
+	"PRISM_ENCODE_TREE_CYCLE": {
+		Code:    "PRISM_ENCODE_TREE_CYCLE",
+		Message: `tree mark cannot be laid out: input graph has a cycle.`,
+		Fixups: []string{
+			`Tree-style marks require a directed acyclic graph rooted at one parentless node. Break the cycle in the upstream data or switch to the ` + "`network`" + ` mark.`,
+		},
+	},
+	"PRISM_ENCODE_NETWORK_NONFINITE": {
+		Code:    "PRISM_ENCODE_NETWORK_NONFINITE",
+		Message: `network force layout failed to converge: a node position became non-finite (NaN / Inf).`,
+		Fixups: []string{
+			`Reduce ` + "`mark.charge`" + ` magnitude or shrink ` + "`mark.link_distance`" + `; very large repulsion forces can blow up the gradient.`,
+			`Disconnected components without any edges can also slip into Inf — keep at least one edge per component.`,
+		},
+	},
 	"PRISM_SPEC_027": {
 		Code:    "PRISM_SPEC_027",
 		Message: `Condition entry on channel {{.Channel}} must carry exactly one of value or field (got: {{.Got}}).`,

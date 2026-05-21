@@ -155,6 +155,12 @@ func Encode(markType string, in Inputs) ([]scene.Mark, *scene.Warning, error) {
 		marksOut, err = encodeGeoshape(in)
 	case "geopoint":
 		marksOut, err = encodeGeopoint(in)
+	case "tree":
+		marksOut, err = encodeTree(in)
+	case "dendrogram":
+		marksOut, err = encodeDendrogram(in)
+	case "network":
+		marksOut, err = encodeNetwork(in)
 	default:
 		return nil, nil, prismerrors.New(
 			"PRISM_ENCODE_001",
