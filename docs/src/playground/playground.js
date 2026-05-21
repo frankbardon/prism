@@ -79,6 +79,12 @@ async function main() {
     if (globalThis.prism && typeof globalThis.prism.version === "function") {
       els.versionLabel.textContent = globalThis.prism.version();
     }
+    // Geo bundle URL — geoshape / geopoint marks fetch from this path
+    // on first encode. Relative so it works under any mdBook nesting
+    // (local serve, GH Pages, custom subdomain).
+    if (globalThis.prism && globalThis.prism.geo && typeof globalThis.prism.geo.setBundleURL === "function") {
+      globalThis.prism.geo.setBundleURL(new URL("../static/prism/geodata/", document.baseURI).href);
+    }
     setLoading(false);
     scheduleRender(0);
   }).catch(err => {

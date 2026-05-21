@@ -61,6 +61,14 @@
         {"id": "time-scale",     "title": "Time scale",            "file": "time-scale.json"},
         {"id": "ordinal-color",  "title": "Ordinal color scheme",  "file": "ordinal-color.json"}
       ]
+    },
+    {
+      "name": "Geographic",
+      "examples": [
+        {"id": "geo-world",      "title": "World map",             "file": "geo-world.json"},
+        {"id": "geo-choropleth", "title": "World choropleth",      "file": "geo-choropleth.json"},
+        {"id": "geo-usa-states", "title": "US states (Albers)",    "file": "geo-usa-states.json"}
+      ]
     }
   ]
 }

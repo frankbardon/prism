@@ -60,9 +60,16 @@ func TestPrismJSPortSurfaceTrimmed(t *testing.T) {
 	// .gitignore keeps them out of source control. Allow but do not
 	// require their presence so the gate stays green whether or not
 	// docs have been built.
+	//
+	// The `geodata/` subdirectory is also a transient staged output
+	// (per make docs-wasm-stage) so the in-browser geoshape mark finds
+	// the tier bundles at ${origin}/static/prism/geodata/. Source of
+	// truth lives in the top-level geodata/ package; the gate allows
+	// either presence or absence here.
 	allowedTransient := map[string]bool{
 		"prism.wasm":   true,
 		"wasm_exec.js": true,
+		"geodata":      true,
 	}
 
 	for _, name := range got {

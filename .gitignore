@@ -11,6 +11,7 @@ coverage.out
 # in bin/ after `make build-wasm`; these are local build outputs.
 static/vendor/prism/prism.wasm
 static/vendor/prism/wasm_exec.js
+static/vendor/prism/geodata/
 
 # mdBook output — `make docs` builds into docs/book/, `make docs-clean` removes it.
 docs/book/
