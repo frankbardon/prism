@@ -2,7 +2,7 @@ bin/
 *.test
 *.out
 *.wasm
-prismwasm
+/prismwasm
 coverage.txt
 coverage.out
 
