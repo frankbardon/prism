@@ -88,3 +88,20 @@ func TestPrismAnimatorTween(t *testing.T) {
 		t.Logf("output:\n%s", out)
 	}
 }
+
+// TestPrismAnimatorWarnFallback asserts SceneHandle.update emits a
+// `prism:warn` CustomEvent with PRISM_WARN_ANIM_FALLBACK when the
+// new scene declares an animation block but the previous scene is
+// structurally incompatible — and stays silent on the legitimate
+// no-warn branches (matching shape, no block, reduced-motion,
+// first render).
+func TestPrismAnimatorWarnFallback(t *testing.T) {
+	root, nodePath := crossImplPreflight(t)
+	out, err := runHarness(t, root, nodePath, "animator-warn-fallback.mjs")
+	if err != nil {
+		t.Fatalf("animator-warn-fallback: %v\noutput:\n%s", err, out)
+	}
+	if testing.Verbose() {
+		t.Logf("output:\n%s", out)
+	}
+}

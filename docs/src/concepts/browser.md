@@ -151,13 +151,28 @@ The animator skips and snaps to the new scene when any of the
 following hold:
 
 - `prefers-reduced-motion: reduce` is set by the OS / browser.
+  (Silent — this is the correct UX, not a failure.)
 - The previous scene is structurally incompatible with the new
   scene (different layer count, different mark family per layer,
-  different axis count). The element emits a `prism:warn`
-  CustomEvent carrying `PRISM_WARN_ANIM_FALLBACK`.
+  different axis count). `SceneHandle` dispatches a `prism:warn`
+  CustomEvent carrying `{code: "PRISM_WARN_ANIM_FALLBACK", message}`
+  on its root (the shadow root inside `<prism-chart>`, otherwise the
+  host element). The event bubbles + composes through the shadow
+  boundary so listeners on the host page receive it without extra
+  plumbing.
 - The `animate` option is explicitly `false`
-  (`handle.update(doc, { animate: false })`).
-- The previous handle does not exist yet (first render).
+  (`handle.update(doc, { animate: false })`). (Silent.)
+- The previous handle does not exist yet (first render). (Silent.)
+
+Listening for the warning:
+
+```js
+chart.addEventListener("prism:warn", (e) => {
+  if (e.detail.code === "PRISM_WARN_ANIM_FALLBACK") {
+    console.warn(`tween skipped: ${e.detail.message}`);
+  }
+});
+```
 
 ### Public exports
 
