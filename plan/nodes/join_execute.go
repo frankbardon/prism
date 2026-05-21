@@ -232,13 +232,16 @@ func writeColValue(b *strings.Builder, c table.Column, i int) {
 }
 
 // newColumnBuildersFor allocates a builder per field in outSchema with
-// the appropriate slice type for the field's Kind.
+// the appropriate slice type for the field's Kind. Every join-output
+// column is created nullable so left / outer joins can write explicit
+// null markers for unmatched rows; finaliseColumnsFor unwraps fields
+// that never observed a null so the no-null path stays zero-cost.
 func newColumnBuildersFor(s *encoding.Schema) map[string]*columnBuilder {
 	out := make(map[string]*columnBuilder, len(s.Fields))
 	for i := range s.Fields {
 		f := &s.Fields[i]
 		kind := table.KindFromPulseFieldType(f.Type)
-		cb := &columnBuilder{kind: kind}
+		cb := &columnBuilder{kind: kind, nullable: true, nulls: table.NewNullBitmap(0)}
 		switch kind {
 		case table.KindInt:
 			s := make([]int64, 0)
@@ -262,22 +265,31 @@ func newColumnBuildersFor(s *encoding.Schema) map[string]*columnBuilder {
 }
 
 // finaliseColumnsFor materialises every builder into a typed Column.
+// Columns that observed at least one null marker wrap in NullableColumn;
+// fully-populated columns ship as plain slice-backed Columns so no-null
+// joins stay zero-overhead and the SVG golden goldens stay stable.
 func finaliseColumnsFor(cols map[string]*columnBuilder, s *encoding.Schema) map[string]table.Column {
 	out := make(map[string]table.Column, len(cols))
 	for i := range s.Fields {
 		name := s.Fields[i].Name
 		cb := cols[name]
+		var inner table.Column
 		switch cb.kind {
 		case table.KindInt:
-			out[name] = table.IntColumn(*cb.ints)
+			inner = table.IntColumn(*cb.ints)
 		case table.KindFloat:
-			out[name] = table.FloatColumn(*cb.floats)
+			inner = table.FloatColumn(*cb.floats)
 		case table.KindString:
-			out[name] = table.StringColumn(*cb.strs)
+			inner = table.StringColumn(*cb.strs)
 		case table.KindBool:
-			out[name] = table.BoolColumn(*cb.bools)
+			inner = table.BoolColumn(*cb.bools)
 		case table.KindDate:
-			out[name] = table.DateColumn(*cb.dates)
+			inner = table.DateColumn(*cb.dates)
+		}
+		if cb.nulls != nil && cb.nulls.Count() > 0 {
+			out[name] = table.NullableColumn{Inner: inner, Nulls: cb.nulls}
+		} else {
+			out[name] = inner
 		}
 	}
 	return out
@@ -385,8 +397,14 @@ func appendAntiRow(
 }
 
 // appendColValue copies the i-th value of src into the builder dst.
-// Caller has already established that src.Kind() == dst.kind.
+// Caller has already established that src.Kind() == dst.kind. When
+// src is a NullableColumn whose row is null, the helper propagates
+// the null marker into dst's bitmap and pads with the kind's zero.
 func appendColValue(dst *columnBuilder, src table.Column, i int) {
+	if src.IsNull(i) {
+		appendZeroValue(dst)
+		return
+	}
 	switch dst.kind {
 	case table.KindInt:
 		v := src.ValueAt(i).(int64)
@@ -406,10 +424,16 @@ func appendColValue(dst *columnBuilder, src table.Column, i int) {
 	}
 }
 
-// appendZeroValue appends the zero value of the builder's Kind. Used
-// for left-join / outer-join unmatched right-side fields. Future work
-// (null bitmap) replaces this with a proper null sentinel.
+// appendZeroValue appends a null marker at the next position of the
+// builder's column and pads the slice with the kind's zero value to
+// keep lengths in sync. Used for left-join / outer-join unmatched-side
+// fields so downstream callers can distinguish "no match" from
+// "matched with a zero".
 func appendZeroValue(dst *columnBuilder) {
+	pos := currentLen(dst)
+	if dst.nulls != nil {
+		dst.nulls.Set(pos)
+	}
 	switch dst.kind {
 	case table.KindInt:
 		*dst.ints = append(*dst.ints, 0)

@@ -31,6 +31,12 @@ func executeFilter(_ context.Context, n *nodes.FilterNode, ins []*table.Table) (
 	keep := 0
 	for i := 0; i < rows; i++ {
 		env := buildEnv(in, i)
+		// Predicates referencing null inputs evaluate to false (matches
+		// pandas / Vega-Lite); skip the row without surfacing the
+		// expression error.
+		if envHasNull(env) {
+			continue
+		}
 		ok, err := prog.EvalBool(env)
 		if err != nil {
 			return nil, err

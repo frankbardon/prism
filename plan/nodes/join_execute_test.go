@@ -92,6 +92,9 @@ func TestPrismJoinTypes(t *testing.T) {
 			}
 			seen := map[string]bool{}
 			for i := 0; i < brandCol.Len(); i++ {
+				if brandCol.IsNull(i) {
+					continue
+				}
 				seen[brandCol.ValueAt(i).(string)] = true
 			}
 			for _, want := range tc.wantBrandSet {
@@ -106,6 +109,9 @@ func TestPrismJoinTypes(t *testing.T) {
 				}
 				seenLabels := map[string]bool{}
 				for i := 0; i < labelCol.Len(); i++ {
+					if labelCol.IsNull(i) {
+						continue
+					}
 					seenLabels[labelCol.ValueAt(i).(string)] = true
 				}
 				for _, want := range tc.wantLabels {
