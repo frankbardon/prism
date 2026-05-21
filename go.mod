@@ -5,7 +5,7 @@ go 1.26.1
 require (
 	github.com/cespare/xxhash/v2 v2.3.0
 	github.com/expr-lang/expr v1.17.8
-	github.com/frankbardon/pulse v0.10.0
+	github.com/frankbardon/pulse v0.10.2
 	github.com/mark3labs/mcp-go v0.54.0
 	github.com/santhosh-tekuri/jsonschema/v6 v6.0.2
 	github.com/signintech/gopdf v0.36.1
