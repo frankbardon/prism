@@ -69,6 +69,12 @@ func (n *SourceNode) Fingerprint() string {
 // and plan-visualisation tooling.
 func (n *SourceNode) Ref() string { return n.ref }
 
+// FS returns the afero filesystem this source was constructed with.
+// Optimizer passes that rewrite a source-rooted subtree (e.g.
+// PulseChainFusionPass) reuse this fs so the replacement node still
+// honours an in-memory test environment.
+func (n *SourceNode) FS() afero.Fs { return n.fs }
+
 // Kind implements plan.Labeled.
 func (n *SourceNode) Kind() string { return "SourceNode" }
 

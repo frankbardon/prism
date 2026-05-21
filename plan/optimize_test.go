@@ -90,23 +90,27 @@ func TestPrismOptimizeIterationCap(t *testing.T) {
 	}
 }
 
-// TestPrismDefaultPassesPopulatedInP07 pins the canonical 5-pass list.
+// TestPrismDefaultPassesPopulatedInP07 pins the canonical pass list.
 // Order matters per D047: semantics-preserving passes first; sampling
-// last. The list is populated via plan/passes/register.go's init.
+// last. PulseChainFusion slots between AggregateFusion and
+// SampleInjection so chain-fused sources are no longer SourceNodes
+// when the sampler walks roots. The list is populated via
+// plan/passes/register.go's init.
 //
 // Importing plan/passes solely for the side-effect of init is fine —
 // the test file already lives in plan_test, so the explicit blank
 // import is the cleanest way to gate the init.
 func TestPrismDefaultPassesPopulatedInP07(t *testing.T) {
-	if len(plan.DefaultPasses) != 5 {
-		t.Fatalf("DefaultPasses len=%d; want 5", len(plan.DefaultPasses))
-	}
 	wantNames := []string{
 		"dedup_sources",
 		"filter_pushdown",
 		"projection_pruning",
 		"aggregate_fusion",
+		"pulse_chain_fusion",
 		"sample_injection",
+	}
+	if len(plan.DefaultPasses) != len(wantNames) {
+		t.Fatalf("DefaultPasses len=%d; want %d", len(plan.DefaultPasses), len(wantNames))
 	}
 	for i, p := range plan.DefaultPasses {
 		if p.Name() != wantNames[i] {
