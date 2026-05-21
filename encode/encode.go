@@ -317,6 +317,9 @@ func Encode(s *spec.Spec, tables map[plan.NodeID]*table.Table, tipID plan.NodeID
 			tooltips := marks.BuildTooltips(tbl, enc.Tooltip, tbl.NumRows())
 			marks.AttachTooltips(hr.Marks, tooltips)
 		}
+		if err := applyConditions(enc, tbl, hr.Marks); err != nil {
+			return nil, err
+		}
 		if hr.XScale != nil {
 			axes = append(axes, BuildAxisWithOpts(hr.XScale, scene.ChannelX, scene.AxisPositionBottom, layout.Plot, axisOptsFor(enc.X)))
 		}
@@ -336,6 +339,10 @@ func Encode(s *spec.Spec, tables map[plan.NodeID]*table.Table, tipID plan.NodeID
 	}
 	if markWarn != nil {
 		warnings = append(warnings, *markWarn)
+	}
+
+	if err := applyConditions(enc, tbl, markList); err != nil {
+		return nil, err
 	}
 
 	// Wrap into the full nesting. Map spec mark type ("bar", "line"…)
