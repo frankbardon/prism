@@ -1,0 +1,23 @@
+{
+  "$schema": "urn:prism:schema:v1:spec",
+  "title": "Race bars — animated re-rank on dataset swap",
+  "description": "Bars sort descending by score; swapping in a new month re-ranks them. With `key:true` on the brand identity channel, the animator tweens each bar to its new position instead of cross-fading.",
+  "data": {
+    "name": "leaderboard_jan",
+    "values": [
+      {"brand_id": "alpha",   "score": 0.82},
+      {"brand_id": "beta",    "score": 0.61},
+      {"brand_id": "gamma",   "score": 0.74},
+      {"brand_id": "delta",   "score": 0.45},
+      {"brand_id": "epsilon", "score": 0.55},
+      {"brand_id": "zeta",    "score": 0.38}
+    ]
+  },
+  "mark": {"type": "bar", "corner_radius": 3},
+  "encoding": {
+    "x":     {"field": "brand_id", "type": "nominal", "key": true, "sort": "-y"},
+    "y":     {"field": "score",    "type": "quantitative", "scale": {"domain": [0, 1]}},
+    "color": {"field": "brand_id", "type": "nominal"}
+  },
+  "animation": {"duration_ms": 800, "easing": "cubic_in_out", "stagger_ms": 40}
+}

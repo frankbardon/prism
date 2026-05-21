@@ -175,6 +175,17 @@ import {
 The tween engine has zero dependencies beyond `oklab.mjs`. The WASM
 binary size is unaffected — animation lives entirely in plain JS.
 
+### Where to see it
+
+- The [interactive playground](../playground/index.html) routes every
+  edit through `SceneHandle.update()`. Pick the **Animation › Swap
+  bars** example and change any score: the bars tween instead of
+  snapping.
+- The [`gallery/animation/`](../gallery/index.md#animation) entries
+  ship spec + initial-frame SVG; live `<prism-chart>` cards on the
+  gallery [`index.html`](../gallery/index.html) demonstrate the tween
+  when the scene-doc swaps.
+
 ## Cross-implementation parity
 
 The cross-impl harness (`internal/devtools/cross-impl-runner/`)

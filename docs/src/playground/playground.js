@@ -8,7 +8,7 @@
 // the URL hash via deflate-raw + base64url. The hash is the source
 // of truth on load; the example picker writes to it.
 
-import { executeSpec, ensureWasmReady } from "../static/prism/prism.mjs";
+import { executeSpec, ensureWasmReady, render as renderScene } from "../static/prism/prism.mjs";
 
 const $ = (sel) => document.querySelector(sel);
 const $$ = (sel) => Array.from(document.querySelectorAll(sel));
@@ -56,6 +56,7 @@ const state = {
   activeExample:  null,
   renderToken:    0,
   uiTheme:        "light",
+  sceneHandle:    null,
 };
 
 let renderTimer = null;
@@ -334,20 +335,20 @@ async function runRender() {
   }
   if (token !== state.renderToken) return;
 
-  // Run the full pipeline via WASM.
+  // Run the full pipeline via WASM, then mount through SceneHandle
+  // so successive edits flow through `handle.update()` and pick up
+  // the animation tween when the spec carries an `animation` block.
   try {
     const opts = { theme: state.chartTheme };
     const scene = await executeSpec(spec, undefined, opts);
     if (token !== state.renderToken) return;
-    const svg = globalThis.prism.render(JSON.stringify(scene), state.chartTheme);
-    if (typeof svg === "string" && svg.startsWith(`{"ok":false`)) {
-      const env = JSON.parse(svg);
-      throw envelopeError(env);
-    }
+    await mountScene(scene);
+    if (token !== state.renderToken) return;
     state.lastScene = scene;
-    state.lastSvg = svg;
+    state.lastSvg = state.sceneHandle && state.sceneHandle._svg
+      ? state.sceneHandle._svg.outerHTML
+      : "";
     state.lastError = null;
-    mountSvg(svg);
     clearError();
     setStatus("ok", "ok");
     refreshInspector();
@@ -363,18 +364,36 @@ async function runRender() {
   }
 }
 
-function mountSvg(svgString) {
-  els.preview.innerHTML = svgString;
-  const svg = els.preview.querySelector("svg");
-  if (svg) {
-    // Strip fixed width/height so the SVG scales responsively; the
-    // viewBox carries the aspect ratio. This matches the project's
-    // "SVG renderer responsive by default" memory.
-    svg.removeAttribute("width");
-    svg.removeAttribute("height");
-    svg.style.width = "100%";
-    svg.style.height = "auto";
+async function mountScene(scene) {
+  // First mount: render fresh into the preview container. Subsequent
+  // mounts: call handle.update(), which delegates to PrismAnimator
+  // when the new scene carries an `animation` block + matches the
+  // previous scene structurally. Otherwise it snaps instantly.
+  if (state.sceneHandle && els.preview.contains(state.sceneHandle._svg)) {
+    try {
+      await state.sceneHandle.update(scene);
+    } catch (err) {
+      // Fall back to a fresh mount on any animator / update error.
+      try { state.sceneHandle.destroy(); } catch {}
+      state.sceneHandle = null;
+    }
   }
+  if (!state.sceneHandle || !els.preview.contains(state.sceneHandle._svg)) {
+    els.preview.innerHTML = "";
+    state.sceneHandle = await renderScene(scene, els.preview);
+  }
+  _applyResponsiveStyle(state.sceneHandle && state.sceneHandle._svg);
+}
+
+function _applyResponsiveStyle(svg) {
+  if (!svg) return;
+  // Strip fixed width/height so the SVG scales responsively; the
+  // viewBox carries the aspect ratio. This matches the project's
+  // "SVG renderer responsive by default" memory.
+  svg.removeAttribute("width");
+  svg.removeAttribute("height");
+  svg.style.width = "100%";
+  svg.style.height = "auto";
 }
 
 // ---------------------------------------------------------------- //

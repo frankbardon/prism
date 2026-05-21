@@ -69,6 +69,12 @@
         {"id": "geo-choropleth", "title": "World choropleth",      "file": "geo-choropleth.json"},
         {"id": "geo-usa-states", "title": "US states (Albers)",    "file": "geo-usa-states.json"}
       ]
+    },
+    {
+      "name": "Animation",
+      "examples": [
+        {"id": "swap-bars",      "title": "Swap bars (tween)",     "file": "swap-bars.json"}
+      ]
     }
   ]
 }
