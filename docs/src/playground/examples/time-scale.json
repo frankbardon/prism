@@ -1,0 +1,22 @@
+{
+  "$schema": "urn:prism:schema:v1:spec",
+  "title": "Monthly active users",
+  "data": {
+    "name": "mau",
+    "values": [
+      {"month": "2025-08-01", "users":  4200},
+      {"month": "2025-09-01", "users":  5100},
+      {"month": "2025-10-01", "users":  6400},
+      {"month": "2025-11-01", "users":  7900},
+      {"month": "2025-12-01", "users":  9200},
+      {"month": "2026-01-01", "users": 11500},
+      {"month": "2026-02-01", "users": 13800},
+      {"month": "2026-03-01", "users": 16200}
+    ]
+  },
+  "mark": {"type": "area", "fill_opacity": 0.3, "stroke_width": 2},
+  "encoding": {
+    "x": {"field": "month", "type": "temporal"},
+    "y": {"field": "users", "type": "quantitative"}
+  }
+}

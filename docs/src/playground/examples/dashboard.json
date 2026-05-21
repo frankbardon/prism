@@ -1,0 +1,32 @@
+{
+  "$schema": "urn:prism:schema:v1:spec",
+  "title": "Weekly dashboard",
+  "data": {
+    "name": "samples",
+    "values": [
+      {"region": "NA",   "score": 0.42, "count": 320},
+      {"region": "EU",   "score": 0.55, "count": 240},
+      {"region": "APAC", "score": 0.48, "count": 410},
+      {"region": "LATAM","score": 0.39, "count": 110}
+    ]
+  },
+  "hconcat": [
+    {
+      "$schema": "urn:prism:schema:v1:spec",
+      "mark": {"type": "bar", "corner_radius": 4},
+      "encoding": {
+        "x":     {"field": "region", "type": "nominal"},
+        "y":     {"field": "score",  "type": "quantitative"},
+        "color": {"field": "region", "type": "nominal"}
+      }
+    },
+    {
+      "$schema": "urn:prism:schema:v1:spec",
+      "mark": {"type": "donut", "inner_radius": 40, "outer_radius": 80},
+      "encoding": {
+        "theta": {"field": "count",  "type": "quantitative"},
+        "color": {"field": "region", "type": "nominal"}
+      }
+    }
+  ]
+}

@@ -1,0 +1,22 @@
+{
+  "$schema": "urn:prism:schema:v1:spec",
+  "title": "Derived field (revenue / users)",
+  "data": {
+    "name": "metrics",
+    "values": [
+      {"region": "NA",   "revenue": 12400, "users": 320},
+      {"region": "EU",   "revenue":  8600, "users": 240},
+      {"region": "APAC", "revenue":  9200, "users": 410},
+      {"region": "LATAM","revenue":  3100, "users": 110}
+    ]
+  },
+  "transform": [
+    {"calculate": "revenue / users", "as": "arpu"}
+  ],
+  "mark": {"type": "bar", "corner_radius": 4},
+  "encoding": {
+    "x":     {"field": "region", "type": "nominal"},
+    "y":     {"field": "arpu",   "type": "quantitative"},
+    "color": {"field": "region", "type": "nominal"}
+  }
+}

@@ -1,0 +1,66 @@
+{
+  "groups": [
+    {
+      "name": "Basic marks",
+      "examples": [
+        {"id": "bar",            "title": "Bar chart",             "file": "bar.json"},
+        {"id": "line",           "title": "Line chart",            "file": "line.json"},
+        {"id": "area",           "title": "Area chart",            "file": "area.json"},
+        {"id": "scatter",        "title": "Scatter plot",          "file": "scatter.json"},
+        {"id": "rule",           "title": "Rule (reference line)", "file": "rule.json"},
+        {"id": "text-labels",    "title": "Text labels",           "file": "text.json"}
+      ]
+    },
+    {
+      "name": "Distributions",
+      "examples": [
+        {"id": "histogram",      "title": "Histogram",             "file": "histogram.json"},
+        {"id": "heatmap",        "title": "Heatmap",               "file": "heatmap.json"},
+        {"id": "boxplot",        "title": "Boxplot",               "file": "boxplot.json"},
+        {"id": "violin",         "title": "Violin plot",           "file": "violin.json"}
+      ]
+    },
+    {
+      "name": "Parts of a whole",
+      "examples": [
+        {"id": "pie",            "title": "Pie chart",             "file": "pie.json"},
+        {"id": "donut",          "title": "Donut chart",           "file": "donut.json"},
+        {"id": "stacked-bar",    "title": "Stacked bar",           "file": "stacked-bar.json"}
+      ]
+    },
+    {
+      "name": "Flows & funnels",
+      "examples": [
+        {"id": "sankey",         "title": "Sankey diagram",        "file": "sankey.json"},
+        {"id": "funnel",         "title": "Funnel chart",          "file": "funnel.json"}
+      ]
+    },
+    {
+      "name": "Composition",
+      "examples": [
+        {"id": "layer",          "title": "Layered (bar + rule)",  "file": "layer.json"},
+        {"id": "facet",          "title": "Facet grid",            "file": "facet.json"},
+        {"id": "repeat",         "title": "Repeat (small multiples)", "file": "repeat.json"},
+        {"id": "vconcat",        "title": "Vertical concat",       "file": "vconcat.json"},
+        {"id": "dashboard",      "title": "Dashboard",             "file": "dashboard.json"}
+      ]
+    },
+    {
+      "name": "Transforms",
+      "examples": [
+        {"id": "aggregate",      "title": "Aggregate (mean)",      "file": "aggregate.json"},
+        {"id": "filter",         "title": "Filter (Pulse expr)",   "file": "filter.json"},
+        {"id": "calculate",      "title": "Calculate (derived)",   "file": "calculate.json"},
+        {"id": "join",           "title": "Hash join",             "file": "join.json"}
+      ]
+    },
+    {
+      "name": "Scales & themes",
+      "examples": [
+        {"id": "log-scale",      "title": "Log scale",             "file": "log-scale.json"},
+        {"id": "time-scale",     "title": "Time scale",            "file": "time-scale.json"},
+        {"id": "ordinal-color",  "title": "Ordinal color scheme",  "file": "ordinal-color.json"}
+      ]
+    }
+  ]
+}

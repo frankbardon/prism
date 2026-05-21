@@ -21,9 +21,17 @@ prism serve --addr :8080            # Twirp + /prism/scene endpoint
 prism mcp                            # MCP server over stdio
 ```
 
+## Try it now
+
+- [**Interactive Playground**](playground/about.md) — edit a spec
+  and see it render live, entirely in your browser via WASM. ~25
+  curated examples covering marks, composition, transforms, and
+  themes.
+
 ## Where to go next
 
 - [Getting started](getting-started.md) — install, first chart, editor setup.
+- [Playground](playground/about.md) — live spec editor (WASM, no install).
 - [Gallery](gallery/index.md) — 59 fixture specs with rendered SVGs.
 - [Concepts](concepts/) — Spec, marks, encoding, composition, selections, themes, multi-source.
 - [Reference](reference/) — spec field reference + error code catalog.

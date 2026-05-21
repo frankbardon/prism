@@ -1,0 +1,19 @@
+{
+  "$schema": "urn:prism:schema:v1:spec",
+  "title": "Traffic source",
+  "data": {
+    "name": "traffic",
+    "values": [
+      {"source": "direct",   "share": 38},
+      {"source": "search",   "share": 27},
+      {"source": "social",   "share": 18},
+      {"source": "referral", "share": 12},
+      {"source": "email",    "share":  5}
+    ]
+  },
+  "mark": "pie",
+  "encoding": {
+    "theta": {"field": "share",  "type": "quantitative"},
+    "color": {"field": "source", "type": "nominal"}
+  }
+}

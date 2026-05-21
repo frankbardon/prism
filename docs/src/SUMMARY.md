@@ -26,6 +26,10 @@
 - [MCP Agent Integration](cookbook/mcp-agent-integration.md)
 - [Embed in a Static Site](cookbook/embed-wasm.md)
 
+# Playground
+
+- [Interactive Playground](playground/about.md)
+
 # Gallery
 
 - [Gallery Overview](gallery/index.md)

@@ -1,0 +1,19 @@
+{
+  "$schema": "urn:prism:schema:v1:spec",
+  "title": "Brand score by region",
+  "data": {
+    "name": "brand_scores",
+    "values": [
+      {"region": "NA",   "score": 0.42},
+      {"region": "EU",   "score": 0.71},
+      {"region": "APAC", "score": 0.58},
+      {"region": "LATAM","score": 0.49}
+    ]
+  },
+  "mark": {"type": "bar", "corner_radius": 4},
+  "encoding": {
+    "x":     {"field": "region", "type": "nominal"},
+    "y":     {"field": "score",  "type": "quantitative"},
+    "color": {"field": "region", "type": "nominal"}
+  }
+}

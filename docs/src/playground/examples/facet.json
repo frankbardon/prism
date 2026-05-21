@@ -1,0 +1,30 @@
+{
+  "$schema": "urn:prism:schema:v1:spec",
+  "title": "Score by region x brand",
+  "data": {
+    "name": "samples",
+    "values": [
+      {"region": "NA",   "brand": "alpha", "score": 0.42},
+      {"region": "NA",   "brand": "beta",  "score": 0.55},
+      {"region": "NA",   "brand": "gamma", "score": 0.48},
+      {"region": "EU",   "brand": "alpha", "score": 0.31},
+      {"region": "EU",   "brand": "beta",  "score": 0.49},
+      {"region": "EU",   "brand": "gamma", "score": 0.37},
+      {"region": "APAC", "brand": "alpha", "score": 0.51},
+      {"region": "APAC", "brand": "beta",  "score": 0.45},
+      {"region": "APAC", "brand": "gamma", "score": 0.39}
+    ]
+  },
+  "facet": {
+    "row":    {"field": "region", "type": "nominal"},
+    "column": {"field": "brand",  "type": "nominal"}
+  },
+  "spec": {
+    "$schema": "urn:prism:schema:v1:spec",
+    "mark": "bar",
+    "encoding": {
+      "x": {"field": "brand", "type": "nominal"},
+      "y": {"field": "score", "type": "quantitative"}
+    }
+  }
+}

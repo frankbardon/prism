@@ -1,0 +1,22 @@
+{
+  "$schema": "urn:prism:schema:v1:spec",
+  "title": "Score density by group",
+  "data": {
+    "name": "samples",
+    "values": [
+      {"group": "a", "score": 0.15}, {"group": "a", "score": 0.22},
+      {"group": "a", "score": 0.28}, {"group": "a", "score": 0.31},
+      {"group": "a", "score": 0.34}, {"group": "a", "score": 0.38},
+      {"group": "a", "score": 0.41}, {"group": "a", "score": 0.45},
+      {"group": "b", "score": 0.42}, {"group": "b", "score": 0.48},
+      {"group": "b", "score": 0.52}, {"group": "b", "score": 0.55},
+      {"group": "b", "score": 0.58}, {"group": "b", "score": 0.61},
+      {"group": "b", "score": 0.65}, {"group": "b", "score": 0.72}
+    ]
+  },
+  "mark": "violin",
+  "encoding": {
+    "x": {"field": "group", "type": "nominal"},
+    "y": {"field": "score", "type": "quantitative"}
+  }
+}
