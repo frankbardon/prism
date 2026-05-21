@@ -219,13 +219,14 @@ func Encode(s *spec.Spec, tables map[plan.NodeID]*table.Table, tipID plan.NodeID
 	}
 
 	markInputs := marks.Inputs{
-		Table:   tbl,
-		X:       markX,
-		Y:       markY,
-		Color:   colorChannel,
-		Layout:  layout.Plot,
-		Style:   style,
-		Tooltip: enc.Tooltip,
+		Table:    tbl,
+		X:        markX,
+		Y:        markY,
+		Color:    colorChannel,
+		Layout:   layout.Plot,
+		Style:    style,
+		Tooltip:  enc.Tooltip,
+		KeyField: keyFieldFromEncoding(enc),
 	}
 	if s.Mark != nil {
 		markInputs.Mark = s.Mark.Def
@@ -375,6 +376,7 @@ func Encode(s *spec.Spec, tables map[plan.NodeID]*table.Table, tipID plan.NodeID
 		Legends:    legends,
 		Layers:     []scene.SceneLayer{layer},
 		Selections: BuildSelections(s.Selection),
+		Animation:  animationFromSpec(s),
 	}
 	if hasTitle {
 		sceneObj.Title = &scene.TextElement{
@@ -431,6 +433,7 @@ func buildSceneDoc(
 		Legends:    legends,
 		Layers:     []scene.SceneLayer{layer},
 		Selections: BuildSelections(s.Selection),
+		Animation:  animationFromSpec(s),
 	}
 	if hasTitle {
 		sceneObj.Title = &scene.TextElement{

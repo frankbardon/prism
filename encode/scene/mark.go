@@ -26,8 +26,13 @@ const (
 // omitempty so unused slots disappear from the wire form even though
 // they are nullable.
 type Mark struct {
-	Type    MarkType `json:"type"`
-	ID      string   `json:"id,omitempty"`
+	Type MarkType `json:"type"`
+	ID   string   `json:"id,omitempty"`
+	// Key carries the resolved animation join-key string (e.g.
+	// "region=west") materialised from whichever encoding channel
+	// declared `key: true` in the spec. Empty when no animation is in
+	// play; SVG and PDF renderers ignore it.
+	Key     string   `json:"key,omitempty"`
 	Style   Style    `json:"style,omitempty"`
 	Tooltip *Tooltip `json:"tooltip,omitempty"`
 	Datum   *Datum   `json:"datum,omitempty"`

@@ -87,6 +87,12 @@ type Inputs struct {
 	// "layer-0" — matches the flat-encoder hardcoded layer ID.
 	// Composite callers (layer / facet / repeat) override per-cell.
 	LayerID string
+	// KeyField (animation) is the encoding-channel field name flagged
+	// with key:true in the spec. When non-empty, per-row marks get
+	// Mark.Key = "<field>=<value>" so the client-side animator can
+	// match marks across scene swaps. Empty (default) leaves Mark.Key
+	// blank; SVG and PDF renderers ignore Mark.Key either way.
+	KeyField string
 }
 
 // Encode dispatches markType to its per-mark helper. Returns the
@@ -166,6 +172,9 @@ func Encode(markType string, in Inputs) ([]scene.Mark, *scene.Warning, error) {
 	// data-prism-datum-row attribute (see D077).
 	if in.Table != nil && len(marksOut) > 0 {
 		AttachDatum(marksOut, in.LayerID, in.Table.NumRows())
+	}
+	if in.KeyField != "" && in.Table != nil && len(marksOut) > 0 {
+		AttachKeys(marksOut, in.Table, in.KeyField)
 	}
 	if in.Tooltip != nil && len(marksOut) > 0 {
 		tooltips := BuildTooltips(in.Table, in.Tooltip, in.Table.NumRows())

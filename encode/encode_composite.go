@@ -273,13 +273,14 @@ func encodeLayerComposite(s *spec.Spec, composite *plan.CompositeDAG, childTable
 		}
 
 		markInputs := marks.Inputs{
-			Table:   lc.tbl,
-			X:       marks.Channel{Field: fieldOf(childEnc.X), Scale: toMarkScale(xScale)},
-			Y:       marks.Channel{Field: fieldOf(childEnc.Y), Scale: toMarkScale(yScale)},
-			Color:   colorChannel,
-			Layout:  layout.Plot,
-			Style:   style,
-			Tooltip: childEnc.Tooltip,
+			Table:    lc.tbl,
+			X:        marks.Channel{Field: fieldOf(childEnc.X), Scale: toMarkScale(xScale)},
+			Y:        marks.Channel{Field: fieldOf(childEnc.Y), Scale: toMarkScale(yScale)},
+			Color:    colorChannel,
+			Layout:   layout.Plot,
+			Style:    style,
+			Tooltip:  childEnc.Tooltip,
+			KeyField: keyFieldFromEncoding(childEnc),
 		}
 		if lc.child.Spec.Mark != nil {
 			markInputs.Mark = lc.child.Spec.Mark.Def
@@ -310,6 +311,7 @@ func encodeLayerComposite(s *spec.Spec, composite *plan.CompositeDAG, childTable
 		Legends:    legends,
 		Layers:     sceneLayers,
 		Selections: BuildSelections(s.Selection),
+		Animation:  animationFromSpec(s),
 	}
 	if hasTitle {
 		sceneObj.Title = &scene.TextElement{

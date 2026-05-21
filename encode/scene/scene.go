@@ -14,6 +14,7 @@ type Scene struct {
 	Annotations []Annotation `json:"annotations,omitempty"`
 	Selections  []Selection  `json:"selections,omitempty"`
 	Defs        *Defs        `json:"defs,omitempty"`
+	Animation   *Animation   `json:"animation,omitempty"`
 }
 
 // Rect is a pixel-resolved bounding box.
