@@ -5,7 +5,6 @@ import (
 
 	"github.com/frankbardon/prism/encode/projection"
 	"github.com/frankbardon/prism/encode/scene"
-	"github.com/frankbardon/prism/geodata"
 	"github.com/frankbardon/prism/spec"
 )
 
@@ -45,86 +44,45 @@ func buildProjection(p *spec.Projection, plot scene.Rect) (projection.Projection
 	}
 
 	fitOpts := opts
-	switch name {
-	case "albers_usa", "albersUsa":
-		// AlbersUSA is a composite projection with hard-coded layout
-		// proportions (CONUS + AK + HI in a canonical ~960x500 viewport
-		// → scale 1070 per d3-geo). Generic bbox-fit destroys the
-		// internal scale relationships, so use the canonical aspect.
-		if needFitScale {
-			fitOpts.Scale = albersUSAScale(plot.W, plot.H)
-		}
-		if needFitTranslate {
-			fitOpts.Translate = [2]float64{plot.X + plot.W/2, plot.Y + plot.H/2}
-		}
-	case "orthographic":
-		// Globe view — fit a unit sphere into the plot square.
-		if needFitScale {
-			fitOpts.Scale = math.Min(plot.W, plot.H) * 0.45
-		}
-		if needFitTranslate {
-			fitOpts.Translate = [2]float64{plot.X + plot.W/2, plot.Y + plot.H/2}
-		}
-	default:
-		// Cylindrical / pseudocylindrical projections fit naturally
-		// from the data's lon/lat bbox.
-		tier := geodata.TierWorld110m
-		if p != nil && p.Tier != "" {
-			tier = geodata.Tier(p.Tier)
-		}
-		bbW, bbS, bbE, bbN := manifestBBox(tier)
-		scale, translate := projection.SizeFromBBox(proj, bbW, bbS, bbE, bbN, plot.W, plot.H)
-		if needFitScale {
-			fitOpts.Scale = scale
-		}
-		if needFitTranslate {
-			fitOpts.Translate = [2]float64{plot.X + translate[0], plot.Y + translate[1]}
-		}
+	if needFitScale {
+		fitOpts.Scale = canonicalScale(name, plot.W, plot.H)
+	}
+	if needFitTranslate {
+		fitOpts.Translate = [2]float64{plot.X + plot.W/2, plot.Y + plot.H/2}
 	}
 	proj.Configure(fitOpts)
 	return proj, nil
 }
 
-// albersUSAScale returns the canonical AlbersUSA scale for a given
-// plot rectangle. d3-geo's default is scale=1070 for a 960×500
-// viewport, so we scale linearly with whichever axis is the binding
-// constraint.
-func albersUSAScale(plotW, plotH float64) float64 {
-	const refScale = 1070.0
-	const refW = 960.0
-	const refH = 500.0
-	return math.Min(refScale*plotW/refW, refScale*plotH/refH)
-}
-
-// manifestBBox returns the union bounding box of every feature in the
-// manifest matching the given tier. Used to auto-fit projections.
-func manifestBBox(tier geodata.Tier) (w, s, e, n float64) {
-	m, err := geodata.LoadManifest()
-	if err != nil || m == nil {
-		return -180, -90, 180, 90
+// canonicalScale returns the d3-geo canonical scale for a projection
+// at the given plot rectangle. Each constant comes from d3-geo's
+// reference 960×500 viewport (or 960×600 for cylindrical), so a Prism
+// chart at any size gets a balanced world view that matches the
+// conventions readers are used to from d3 / Vega-Lite world maps.
+//
+// We avoid fit-to-data here on purpose — auto-fitting world maps to
+// the data bbox over-emphasises Antarctica (lat=-90) and yields a
+// squashed equator. The SVG's overflow:hidden clips the south-pole
+// overshoot so the visible result is a familiar "Atlas" framing.
+func canonicalScale(name string, plotW, plotH float64) float64 {
+	switch name {
+	case "albers_usa", "albersUsa":
+		// d3-geo: geoAlbersUsa default scale 1070 at 960×500.
+		return math.Min(1070*plotW/960, 1070*plotH/500)
+	case "orthographic":
+		// Fits the unit sphere snugly into the plot square.
+		return math.Min(plotW, plotH) * 0.45
+	case "mercator":
+		// d3-geo: geoMercator default scale 961/2π ≈ 152.96, for a
+		// world view at 960×500. We crop poles via SVG clip.
+		return math.Min(152.96*plotW/960, 152.96*plotH/500)
+	case "equirectangular":
+		// d3-geo: geoEquirectangular default scale 152.63 at 960×500.
+		return math.Min(152.63*plotW/960, 152.63*plotH/500)
+	case "naturalearth":
+		// d3-geo: geoNaturalEarth1 default scale 158.94 at 960×500.
+		return math.Min(158.94*plotW/960, 158.94*plotH/500)
 	}
-	w, s, e, n = 181, 91, -181, -91
-	any := false
-	for _, f := range m.Features {
-		if f.Tier != tier {
-			continue
-		}
-		any = true
-		if f.BBox.West < w {
-			w = f.BBox.West
-		}
-		if f.BBox.South < s {
-			s = f.BBox.South
-		}
-		if f.BBox.East > e {
-			e = f.BBox.East
-		}
-		if f.BBox.North > n {
-			n = f.BBox.North
-		}
-	}
-	if !any {
-		return -180, -90, 180, 90
-	}
-	return w, s, e, n
+	// Unknown projection — fall back to a conservative cylindrical fit.
+	return math.Min(150*plotW/960, 150*plotH/500)
 }

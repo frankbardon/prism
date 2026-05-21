@@ -73,6 +73,13 @@ func (r *Renderer) Render(doc *scene.SceneDoc, opts render.RenderOpts) ([]byte, 
 	w.Raw(" ")
 	w.Raw(render.FormatFloat(frame.H))
 	w.CloseAttr()
+	// Pin overflow:hidden on the root so marks that extend past the
+	// viewBox (e.g. Antarctica under a world projection clipped at the
+	// plot rect, or sparkline marks that overshoot by a half-pixel)
+	// don't leak into the surrounding page. Modern browsers default
+	// inline SVG to overflow:visible, so this attribute is required to
+	// get the spec-default clipping behaviour.
+	w.Attr("overflow", "hidden")
 	// Emit width/height only when explicitly requested. Default
 	// (both zero) is viewBox-only: the SVG fills its container and
 	// CSS / parent layout drives the rendered size.
