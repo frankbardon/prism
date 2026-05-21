@@ -14,6 +14,8 @@ preferred-dark-theme = "navy"
 git-repository-url = "https://github.com/frankbardon/prism"
 edit-url-template = "https://github.com/frankbardon/prism/edit/main/docs/src/{path}"
 no-section-label = false
+additional-js = ["theme/version-dropdown.js"]
+additional-css = ["theme/version-dropdown.css"]
 
 [output.html.search]
 enable = true
