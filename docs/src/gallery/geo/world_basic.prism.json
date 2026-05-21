@@ -1,17 +1,7 @@
 {
   "$schema": "urn:prism:schema:v1:spec",
   "title": "World map (natural earth)",
-  "data": {
-    "name": "countries",
-    "values": [
-      {"id": "USA"}, {"id": "CAN"}, {"id": "MEX"},
-      {"id": "BRA"}, {"id": "GBR"}, {"id": "FRA"},
-      {"id": "DEU"}, {"id": "ITA"}, {"id": "ESP"},
-      {"id": "JPN"}, {"id": "CHN"}, {"id": "IND"},
-      {"id": "AUS"}, {"id": "RUS"}, {"id": "ZAF"},
-      {"id": "EGY"}
-    ]
-  },
+  "data": {"feature_collection": {"tier": "world-110m"}},
   "mark": "geoshape",
   "projection": {"type": "naturalearth"},
   "encoding": {

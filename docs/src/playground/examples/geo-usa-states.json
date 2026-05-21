@@ -1,19 +1,14 @@
 {
   "$schema": "urn:prism:schema:v1:spec",
   "title": "US states (Albers USA)",
-  "description": "Admin-1 tier — set projection.tier to 'admin1-50m' to make the encoder look up state geometry (ISO 3166-2). The albers_usa projection lays Alaska + Hawaii into inset panels (when their geometries are present in the manifest tier).",
-  "data": {
-    "name": "states",
-    "values": [
-      {"code": "US-CA"},
-      {"code": "US-NY"},
-      {"code": "US-TX"},
-      {"code": "US-FL"}
-    ]
-  },
+  "description": "data.feature_collection with tier=admin1-50m loads every admin-1 region in the catalog (US states + Canadian provinces + others). The filter transform narrows to features whose 'parent' (admin-0 ISO 3166-1 alpha-3) is USA. albers_usa lays Alaska + Hawaii into inset panels.",
+  "data": {"feature_collection": {"tier": "admin1-50m"}},
+  "transform": [
+    {"filter": "parent == \"USA\""}
+  ],
   "mark": "geoshape",
   "projection": {"type": "albers_usa", "tier": "admin1-50m"},
   "encoding": {
-    "feature": {"field": "code", "type": "nominal"}
+    "feature": {"field": "id", "type": "nominal"}
   }
 }

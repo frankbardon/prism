@@ -1,18 +1,8 @@
 {
   "$schema": "urn:prism:schema:v1:spec",
   "title": "World map (Natural Earth projection)",
-  "description": "Geoshape mark over the embedded geodata catalog. The 'feature' channel binds a column of ISO 3166-1 alpha-3 codes; the encoder looks up polygon geometry from geodata.Store and projects through the chosen projection.",
-  "data": {
-    "name": "countries",
-    "values": [
-      {"id": "USA"}, {"id": "CAN"}, {"id": "MEX"},
-      {"id": "BRA"}, {"id": "GBR"}, {"id": "FRA"},
-      {"id": "DEU"}, {"id": "ITA"}, {"id": "ESP"},
-      {"id": "JPN"}, {"id": "CHN"}, {"id": "IND"},
-      {"id": "AUS"}, {"id": "RUS"}, {"id": "ZAF"},
-      {"id": "EGY"}
-    ]
-  },
+  "description": "Geoshape mark over the embedded geodata catalog. data.feature_collection synthesizes one row per feature in the requested tier; the 'feature' channel binds the 'id' column the synthesized table carries. Try switching projection.type to 'mercator', 'equirectangular', or 'orthographic' to see the same data through a different lens.",
+  "data": {"feature_collection": {"tier": "world-110m"}},
   "mark": "geoshape",
   "projection": {"type": "naturalearth"},
   "encoding": {

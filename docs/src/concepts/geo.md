@@ -14,9 +14,38 @@ server, no runtime network dependency for the host CLI.
 
 ## Spec shape
 
+A basemap (every country in the catalog, no data binding) is one
+line of data:
+
 ```json
 {
   "$schema": "urn:prism:schema:v1:spec",
+  "data": {"feature_collection": {"tier": "world-110m"}},
+  "mark": "geoshape",
+  "projection": {"type": "naturalearth"},
+  "encoding": {"feature": {"field": "id", "type": "nominal"}}
+}
+```
+
+`data.feature_collection` synthesizes one row per feature in the
+tier — the resulting table carries `id`, `name`, and `parent` columns
+(parent is the admin-0 ISO 3166-1 alpha-3 for admin-1 entries, empty
+otherwise). Combine with a filter transform to subset:
+
+```json
+{
+  "data": {"feature_collection": {"tier": "admin1-50m"}},
+  "transform": [{"filter": "parent == \"USA\""}],
+  "mark": "geoshape",
+  "projection": {"type": "albers_usa", "tier": "admin1-50m"},
+  "encoding": {"feature": {"field": "id", "type": "nominal"}}
+}
+```
+
+For a choropleth, bind your own data and a color channel:
+
+```json
+{
   "data": {"source": "country_metrics.pulse"},
   "mark": "geoshape",
   "projection": {"type": "naturalearth"},
@@ -30,7 +59,8 @@ server, no runtime network dependency for the host CLI.
 The `feature` channel binds a table column whose values are feature
 IDs from the geodata catalog. Admin-0 (countries) uses ISO 3166-1
 alpha-3 (`USA`, `CAN`, `GBR`); admin-1 (states/provinces) uses
-ISO 3166-2 (`US-CA`, `CA-ON`, `GB-ENG`).
+ISO 3166-2 (`US-CA`, `CA-ON`, `GB-ENG`). Rows whose `id` doesn't
+match a manifest entry raise `PRISM_GEO_001`.
 
 ## Projections
 

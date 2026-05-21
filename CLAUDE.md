@@ -41,6 +41,7 @@ Any change to Prism code, configuration, spec vocabulary, schema bundle, or publ
 | `prism static-bundle` output shape | `cmd/prism/cmd_static_bundle.go` + `static/staticfs.go` + smoke test |
 | A playground example (`docs/src/playground/examples/`) | `docs/src/playground/examples/manifest.json` (id + title + file) + the new `<id>.json` spec file. Specs must use inline `data.values` or `datasets.*.values` — the playground has no `.pulse` fetch path |
 | A projection in `encode/projection/` or a feature in `geodata/` | `docs/src/concepts/geo.md` + `schema/v1/projection.schema.json` (the `type` enum) + manifest regeneration via `make geodata` when admin-level data changes |
+| A `data` block variant (`source`, `name`, `values`, `feature_collection`) | `spec/data.go` (struct field + UnmarshalJSON discriminator) + `schema/v1/data.schema.json` (oneOf entry) + `plan/build/build.go` registerOne case + `docs/src/concepts/geo.md` for geo-specific variants |
 
 If you find yourself wanting to defer the doc update to "a follow-up PR," stop. The follow-up will not happen, the next Claude Code session will read stale guidance and produce wrong code. Update in the same PR or do not merge.
 

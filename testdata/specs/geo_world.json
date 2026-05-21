@@ -1,13 +1,6 @@
 {
   "$schema": "urn:prism:schema:v1:spec",
-  "data": {
-    "name": "countries",
-    "values": [
-      {"id": "USA"},
-      {"id": "GBR"},
-      {"id": "JPN"}
-    ]
-  },
+  "data": {"feature_collection": {"tier": "world-110m"}},
   "mark": "geoshape",
   "projection": {"type": "naturalearth"},
   "encoding": {
