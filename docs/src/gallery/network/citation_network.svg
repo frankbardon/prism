@@ -1,0 +1,24 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 600" overflow="hidden">
+  <style>:root{--prism-color-axis:#6b7280;--prism-color-grid:#e5e7eb;--prism-color-text:#111827;--prism-color-bg:transparent;--prism-font-sans:Inter, system-ui, sans-serif;--prism-font-mono:ui-monospace, SF Mono, monospace;--prism-font-size-label:11px;--prism-font-size-title:16px;--prism-font-size-axis-title:12px;}.prism-axis-domain{stroke:var(--prism-color-axis);fill:none;}.prism-axis-tick{stroke:var(--prism-color-axis);}.prism-axis-label{fill:var(--prism-color-text);font-family:var(--prism-font-sans);font-size:var(--prism-font-size-label,11px);}.prism-axis-title{fill:var(--prism-color-text);font-family:var(--prism-font-sans);font-size:var(--prism-font-size-axis-title,12px);font-weight:600;}.prism-grid-line{stroke:var(--prism-color-grid);}.prism-title{fill:var(--prism-color-text);font-family:var(--prism-font-sans);font-size:var(--prism-font-size-title,16px);font-weight:600;}.prism-legend-title{fill:var(--prism-color-text);font-family:var(--prism-font-sans);font-size:12px;font-weight:600;}.prism-legend-label{fill:var(--prism-color-text);font-family:var(--prism-font-sans);font-size:11px;}.prism-legend-swatch{stroke:none;}.prism-selected{opacity:var(--prism-selected-opacity,1);}.prism-deselected{opacity:var(--prism-deselected-opacity,0.3);}</style>
+
+  <g class="prism-scene" data-scene-id="scene-0">
+    <text class="prism-title" x="410" y="20" text-anchor="middle">Small citation network</text>
+    <g class="prism-plot">
+      <g class="prism-layer" data-layer-id="layer-0" data-prism-layer="layer-0">
+        <polyline class="prism-mark-line" data-prism-datum-row="0" points="435.487,149.309 291.815,50" fill="none" fill="#3b82f6"/>
+        <polyline class="prism-mark-line" data-prism-datum-row="1" points="435.487,149.309 302.771,294.107" fill="none" fill="#3b82f6"/>
+        <polyline class="prism-mark-line" data-prism-datum-row="2" points="291.815,50 171.413,199.438" fill="none" fill="#3b82f6"/>
+        <polyline class="prism-mark-line" data-prism-datum-row="3" points="302.771,294.107 171.413,199.438" fill="none" fill="#3b82f6"/>
+        <polyline class="prism-mark-line" data-prism-datum-row="4" points="171.413,199.438 132.5,389.047" fill="none" fill="#3b82f6"/>
+        <polyline class="prism-mark-line" data-prism-datum-row="5" points="302.771,294.107 132.5,389.047" fill="none" fill="#3b82f6"/>
+        <polyline class="prism-mark-line" data-prism-datum-row="6" points="132.5,389.047 40,560" fill="none" fill="#3b82f6"/>
+        <circle class="prism-mark-point" cx="435.487" cy="149.309" r="6" fill="#3b82f6"/>
+        <circle class="prism-mark-point" cx="291.815" cy="50" r="6" fill="#3b82f6"/>
+        <circle class="prism-mark-point" cx="302.771" cy="294.107" r="6" fill="#3b82f6"/>
+        <circle class="prism-mark-point" cx="171.413" cy="199.438" r="6" fill="#3b82f6"/>
+        <circle class="prism-mark-point" cx="132.5" cy="389.047" r="6" fill="#3b82f6"/>
+        <circle class="prism-mark-point" cx="40" cy="560" r="6" fill="#3b82f6"/>
+      </g>
+    </g>
+  </g>
+</svg>

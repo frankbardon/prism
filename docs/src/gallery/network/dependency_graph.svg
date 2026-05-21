@@ -1,0 +1,27 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 600" overflow="hidden">
+  <style>:root{--prism-color-axis:#6b7280;--prism-color-grid:#e5e7eb;--prism-color-text:#111827;--prism-color-bg:transparent;--prism-font-sans:Inter, system-ui, sans-serif;--prism-font-mono:ui-monospace, SF Mono, monospace;--prism-font-size-label:11px;--prism-font-size-title:16px;--prism-font-size-axis-title:12px;}.prism-axis-domain{stroke:var(--prism-color-axis);fill:none;}.prism-axis-tick{stroke:var(--prism-color-axis);}.prism-axis-label{fill:var(--prism-color-text);font-family:var(--prism-font-sans);font-size:var(--prism-font-size-label,11px);}.prism-axis-title{fill:var(--prism-color-text);font-family:var(--prism-font-sans);font-size:var(--prism-font-size-axis-title,12px);font-weight:600;}.prism-grid-line{stroke:var(--prism-color-grid);}.prism-title{fill:var(--prism-color-text);font-family:var(--prism-font-sans);font-size:var(--prism-font-size-title,16px);font-weight:600;}.prism-legend-title{fill:var(--prism-color-text);font-family:var(--prism-font-sans);font-size:12px;font-weight:600;}.prism-legend-label{fill:var(--prism-color-text);font-family:var(--prism-font-sans);font-size:11px;}.prism-legend-swatch{stroke:none;}.prism-selected{opacity:var(--prism-selected-opacity,1);}.prism-deselected{opacity:var(--prism-deselected-opacity,0.3);}</style>
+
+  <g class="prism-scene" data-scene-id="scene-0">
+    <text class="prism-title" x="410" y="20" text-anchor="middle">Dependency graph (deterministic seed)</text>
+    <g class="prism-plot">
+      <g class="prism-layer" data-layer-id="layer-0" data-prism-layer="layer-0">
+        <polyline class="prism-mark-line" data-prism-datum-row="0" points="416.203,191.924 581.791,291.579" fill="none" fill="#3b82f6"/>
+        <polyline class="prism-mark-line" data-prism-datum-row="1" points="416.203,191.924 195.972,195.633" fill="none" fill="#3b82f6"/>
+        <polyline class="prism-mark-line" data-prism-datum-row="2" points="416.203,191.924 579.721,87.913" fill="none" fill="#3b82f6"/>
+        <polyline class="prism-mark-line" data-prism-datum-row="3" points="581.791,291.579 757.277,267.715" fill="none" fill="#3b82f6"/>
+        <polyline class="prism-mark-line" data-prism-datum-row="4" points="195.972,195.633 50.124,90.479" fill="none" fill="#3b82f6"/>
+        <polyline class="prism-mark-line" data-prism-datum-row="5" points="195.972,195.633 53.148,305.368" fill="none" fill="#3b82f6"/>
+        <polyline class="prism-mark-line" data-prism-datum-row="6" points="579.721,87.913 756.147,107.365" fill="none" fill="#3b82f6"/>
+        <polyline class="prism-mark-line" data-prism-datum-row="7" points="756.147,107.365 757.277,267.715" fill="none" fill="#3b82f6"/>
+        <rect class="prism-mark-bar" x="412.203" y="187.924" width="8" height="8" fill="#3b82f6"/>
+        <rect class="prism-mark-bar" x="577.791" y="287.579" width="8" height="8" fill="#3b82f6"/>
+        <rect class="prism-mark-bar" x="191.972" y="191.633" width="8" height="8" fill="#3b82f6"/>
+        <rect class="prism-mark-bar" x="575.721" y="83.913" width="8" height="8" fill="#3b82f6"/>
+        <rect class="prism-mark-bar" x="753.277" y="263.715" width="8" height="8" fill="#3b82f6"/>
+        <rect class="prism-mark-bar" x="46.124" y="86.479" width="8" height="8" fill="#3b82f6"/>
+        <rect class="prism-mark-bar" x="49.148" y="301.368" width="8" height="8" fill="#3b82f6"/>
+        <rect class="prism-mark-bar" x="752.147" y="103.365" width="8" height="8" fill="#3b82f6"/>
+      </g>
+    </g>
+  </g>
+</svg>

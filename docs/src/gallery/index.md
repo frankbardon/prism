@@ -1,6 +1,6 @@
 # Prism Gallery
 
-68 fixture specs across 12 categories. Each entry pairs a `*.prism.json`
+70 fixture specs across 13 categories. Each entry pairs a `*.prism.json`
 spec with a rendered `*.svg`. Browse the source to learn the spec
 shapes; open the SVGs to see what they render.
 
@@ -125,6 +125,16 @@ Rooted hierarchies laid out with tidy-tree. See
 |---|---|
 | [org_chart](tree/org_chart.prism.json) | <img src="tree/org_chart.svg" width="240"> |
 | [decision_tree](tree/decision_tree.prism.json) | <img src="tree/decision_tree.svg" width="240"> |
+
+## Network
+
+Force-directed node-link diagrams with deterministic seeded layouts.
+See [Marks › Tree / dendrogram / network](../concepts/marks.md#tree--dendrogram--network).
+
+| Spec | Preview |
+|---|---|
+| [citation_network](network/citation_network.prism.json) | <img src="network/citation_network.svg" width="240"> |
+| [dependency_graph](network/dependency_graph.prism.json) | <img src="network/dependency_graph.svg" width="240"> |
 
 ## Themes
 
