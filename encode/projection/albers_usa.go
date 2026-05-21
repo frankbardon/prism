@@ -139,6 +139,9 @@ func (a *albers) project(lon, lat float64) (float64, float64, bool) {
 	phi := degToRad(lat)
 	rho := math.Sqrt(a.c-2*a.n*math.Sin(phi)) / a.n
 	x := rho * math.Sin(a.n*lambda) * a.p.scale
-	y := (a.rho - rho*math.Cos(a.n*lambda)) * a.p.scale
+	// Conic-equal-area raw y is positive northward (math convention).
+	// SVG y grows downward, so flip the sign here to match the other
+	// projections in this package.
+	y := -(a.rho - rho*math.Cos(a.n*lambda)) * a.p.scale
 	return x + a.p.translate[0], y + a.p.translate[1], true
 }
