@@ -397,6 +397,16 @@ var Codes = map[string]CodeMetadata{
 		},
 		SeeAlso: []string{"PRISM_PLAN_002", "PRISM_SPEC_007", "PRISM_RESOLVE_DUPLICATE_DATASET"},
 	},
+	"PRISM_PLAN_CHAIN_NOT_MERGEABLE": {
+		Code:    "PRISM_PLAN_CHAIN_NOT_MERGEABLE",
+		Message: `Pulse rejected a fused chain stage as non-mergeable for {{.Ref}}: {{.Reason}}.`,
+		Fixups: []string{
+			`Disable the Pulse-chain fusion pass and re-run; the chain falls back to per-node execution against the inmem backend.`,
+			`Check that every aggregate in the failing stage emits a scalar (mode/frequency are excluded by the v1 chain gate).`,
+			`Inspect the offending request via ` + "`prism plan <spec> --format json`" + ` to confirm which stage Pulse rejected.`,
+		},
+		SeeAlso: []string{"PRISM_PLAN_003"},
+	},
 	"PRISM_WARN_DOWNSAMPLE": {
 		Code:    "PRISM_WARN_DOWNSAMPLE",
 		Message: `Source {{.Source}} exceeds PRISM_RENDER_MAX_MARKS={{.Limit}} ({{.Actual}} rows); injected SampleNode({{.SampleN}}).`,

@@ -92,7 +92,7 @@ fail-fast via `ExecOpts.AbortOnError` (CI image diffs).
 
 ## Optimizer passes
 
-Five passes run to fixpoint after build:
+Six passes run to fixpoint after build:
 
 1. `DedupSources` — two reads of the same `.pulse` collapse to one.
 2. `FilterPushdown` — filters on joined output push to the side that
@@ -101,7 +101,19 @@ Five passes run to fixpoint after build:
    downstream.
 4. `AggregateFusion` — sibling group-aggregates on the same input
    merge into one call.
-5. `SampleInjection` — input rows > `PRISM_RENDER_MAX_MARKS` (100k
+5. `PulseChainFusion` — a source-rooted linear chain
+   (`Filter` / `Calculate` / `GroupAggregate` / `Sort`, in that order)
+   collapses into a single `pulse.ProcessChain` call. Pulse pushes
+   filters down at the source reader and returns only the final
+   aggregated rows, so Prism never materialises the full cohort into
+   a `table.Table`. The pass requires a `GroupAggregate` (the win
+   condition) and skips chains rooted at `cohort:<id>` or `gs://`
+   refs in v1. Aggregate aliases that are not Pulse-backed (`lift`,
+   `share`), not scalar-emitting (`mode`), or sibling-dependent
+   (`wmean`, `ratio`, `ci0`, `ci1`) keep the in-memory backend path.
+   If Pulse rejects a stage at execute time the chain node surfaces
+   `PRISM_PLAN_CHAIN_NOT_MERGEABLE`.
+6. `SampleInjection` — input rows > `PRISM_RENDER_MAX_MARKS` (100k
    default) → auto-sample with `PRISM_WARN_DOWNSAMPLE`.
 
 ## Worked examples

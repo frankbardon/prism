@@ -112,3 +112,46 @@ func filterID(ids []NodeID, drop NodeID) []NodeID {
 	}
 	return out
 }
+
+// WithRootAdded returns a new DAG with id appended to the root list
+// (idempotent — adding an id that is already a root is a no-op).
+// Optimizer passes that replace a source-rooted subtree call this on
+// the new replacement node so it inherits the original source's root
+// marker.
+func (d *DAG) WithRootAdded(id NodeID) *DAG {
+	for _, r := range d.roots {
+		if r == id {
+			return d
+		}
+	}
+	out := &DAG{
+		nodes: make(map[NodeID]Node, len(d.nodes)),
+		roots: append(append([]NodeID(nil), d.roots...), id),
+		sinks: append([]NodeID(nil), d.sinks...),
+	}
+	for k, v := range d.nodes {
+		out.nodes[k] = v
+	}
+	return out
+}
+
+// WithSinkAdded returns a new DAG with id appended to the sink list
+// (idempotent — adding an id that is already a sink is a no-op).
+// Passes that collapse a chain whose tail node was a sink call this so
+// the replacement node terminates the graph in the tail's place.
+func (d *DAG) WithSinkAdded(id NodeID) *DAG {
+	for _, s := range d.sinks {
+		if s == id {
+			return d
+		}
+	}
+	out := &DAG{
+		nodes: make(map[NodeID]Node, len(d.nodes)),
+		roots: append([]NodeID(nil), d.roots...),
+		sinks: append(append([]NodeID(nil), d.sinks...), id),
+	}
+	for k, v := range d.nodes {
+		out.nodes[k] = v
+	}
+	return out
+}
