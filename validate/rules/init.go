@@ -30,4 +30,8 @@ func init() {
 	validate.RegisterDefault(func() validate.SemanticRule { return AnimationEasingKnown{} })
 	validate.RegisterDefault(func() validate.SemanticRule { return AnimationKeyPresent{} })
 	validate.RegisterDefault(func() validate.SemanticRule { return AnimationKeyUnique{} })
+	validate.RegisterDefault(func() validate.SemanticRule { return ConditionSelectionRef{} })
+	validate.RegisterDefault(func() validate.SemanticRule { return ConditionTestParses{} })
+	validate.RegisterDefault(func() validate.SemanticRule { return ConditionValueOrBinding{} })
+	validate.RegisterDefault(func() validate.SemanticRule { return TreeChannels{} })
 }

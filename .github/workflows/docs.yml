@@ -14,7 +14,11 @@ on:
       - "spec/**"
       - "resolve/**"
       - "theme/**"
+      - "scripts/build-versions-manifest.sh"
+      - "scripts/build-root-redirect.sh"
       - ".github/workflows/docs.yml"
+    tags:
+      - "v*.*.*"
   workflow_dispatch:
 
 permissions:
@@ -31,6 +35,8 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v6
+        with:
+          fetch-depth: 0  # need all tags for the versions manifest.
 
       - name: Set up Go
         uses: actions/setup-go@v6
@@ -45,10 +51,26 @@ jobs:
       - name: Build prism + compile gallery scenes + render mdBook
         run: make docs
 
+      - name: Determine deploy slug
+        id: slug
+        run: |
+          if [[ "${GITHUB_REF}" == refs/tags/v* ]]; then
+            echo "slug=${GITHUB_REF#refs/tags/}" >> "$GITHUB_OUTPUT"
+          else
+            echo "slug=latest" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Stage versioned tree + manifest + root redirect
+        run: |
+          mkdir -p deploy/${{ steps.slug.outputs.slug }}
+          cp -r docs/book/* deploy/${{ steps.slug.outputs.slug }}/
+          ./scripts/build-versions-manifest.sh > deploy/versions.json
+          ./scripts/build-root-redirect.sh > deploy/index.html
+
       - name: Upload Pages artifact
         uses: actions/upload-pages-artifact@v5
         with:
-          path: docs/book
+          path: deploy
 
   deploy:
     needs: build

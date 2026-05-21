@@ -301,10 +301,37 @@ var Codes = map[string]CodeMetadata{
 		Code:    "PRISM_WARN_PDF_GRADIENT_FLATTENED",
 		Message: `PDF renderer flattened a gradient fill to its first color stop (gradient {{.Gradient}}).`,
 		Fixups: []string{
-			`Use a solid color in your spec for byte-identical PDF rendering; gradient support arrives in V2 (D091).`,
-			`The SVG renderer preserves the gradient; only PDF flattens.`,
+			`Use a solid color in your spec for byte-identical PDF rendering across SVG and PDF.`,
+			`The SVG renderer preserves the gradient; the PDF backend currently only renders solid fills (gopdf lacks a public shading API).`,
 		},
-		SeeAlso: []string{"PRISM_RENDER_001"},
+		SeeAlso: []string{"PRISM_WARN_PDF_GRADIENT_TEXT_FLATTENED", "PRISM_WARN_PDF_GRADIENT_ANGULAR_FLATTENED", "PRISM_RENDER_001"},
+	},
+	"PRISM_WARN_PDF_GRADIENT_TEXT_FLATTENED": {
+		Code:    "PRISM_WARN_PDF_GRADIENT_TEXT_FLATTENED",
+		Message: `PDF renderer flattened a gradient fill on a text mark (gradient {{.Gradient}}).`,
+		Fixups: []string{
+			`Text marks use a solid fill in PDF output regardless of backend gradient support; this warning is informational.`,
+			`The SVG renderer preserves the gradient on text via inline <linearGradient> defs.`,
+		},
+		SeeAlso: []string{"PRISM_WARN_PDF_GRADIENT_FLATTENED"},
+	},
+	"PRISM_WARN_PDF_GRADIENT_ANGULAR_FLATTENED": {
+		Code:    "PRISM_WARN_PDF_GRADIENT_ANGULAR_FLATTENED",
+		Message: `PDF renderer flattened an angular / conic gradient (gradient {{.Gradient}}): the PDF backend supports only linear and radial.`,
+		Fixups: []string{
+			`Use linear / radial gradients in the spec, or accept the flattened output in PDF.`,
+			`The SVG renderer preserves angular gradients via inline <linearGradient> + transform.`,
+		},
+		SeeAlso: []string{"PRISM_WARN_PDF_GRADIENT_FLATTENED"},
+	},
+	"PRISM_WARN_PDF_CONDITION_FLATTENED": {
+		Code:    "PRISM_WARN_PDF_CONDITION_FLATTENED",
+		Message: `PDF renderer painted the fallback branch of a selection-driven condition on mark {{.Mark}}: PDFs are static.`,
+		Fixups: []string{
+			`Selection-driven conditions need an interactive renderer (SVG via prism-element). Static ` + "`{test: ...}`" + ` conditions render fine in PDF.`,
+			`See ` + "`docs/src/concepts/encoding.md#conditions`" + ` for details.`,
+		},
+		SeeAlso: []string{"PRISM_SPEC_025"},
 	},
 	"PRISM_RENDER_SCENE_EMPTY": {
 		Code:    "PRISM_RENDER_SCENE_EMPTY",
@@ -600,6 +627,95 @@ var Codes = map[string]CodeMetadata{
 			`Composite keys are not supported in v1.`,
 		},
 		SeeAlso: []string{"PRISM_SPEC_023"},
+	},
+	"PRISM_SPEC_025": {
+		Code:    "PRISM_SPEC_025",
+		Message: `Condition on channel {{.Channel}} references selection {{.Selection}} which is not declared.`,
+		Fixups: []string{
+			`Declare the selection in the spec's "selection" block before referencing it in a condition.`,
+			`Available selections: {{.Available}}.`,
+			`Use ` + "`{test: \"...\"}`" + ` for a Pulse-expression condition instead of a named selection.`,
+		},
+		SeeAlso: []string{"PRISM_SPEC_004", "PRISM_SPEC_026"},
+	},
+	"PRISM_SPEC_026": {
+		Code:    "PRISM_SPEC_026",
+		Message: `Condition on channel {{.Channel}}: test expression failed to parse: {{.Reason}}.`,
+		Fixups: []string{
+			`Check Pulse expression syntax. Expression: {{.Expression}}`,
+			`Quote string literals with single quotes ('value'), not double quotes.`,
+			`Use Pulse operators (and, or, not, ==, !=, <, <=, >, >=, +, -, *, /, %).`,
+		},
+		SeeAlso: []string{"PRISM_SPEC_006"},
+	},
+	"PRISM_SPEC_028": {
+		Code:    "PRISM_SPEC_028",
+		Message: `Mark {{.Mark}} requires source + target channels (missing: {{.Missing}}).`,
+		Fixups: []string{
+			`Bind ` + "`encoding.source`" + ` to the parent-id field and ` + "`encoding.target`" + ` to the child-id field.`,
+			`The optional ` + "`encoding.text`" + ` channel supplies per-node labels.`,
+		},
+		SeeAlso: []string{"PRISM_SPEC_018"},
+	},
+	"PRISM_SPEC_029": {
+		Code:    "PRISM_SPEC_029",
+		Message: `tree mark expects exactly one root (parent field empty / null); got {{.Count}}.`,
+		Fixups: []string{
+			`Exactly one input row must have an empty / null parent field. Synthesise a single root if your data has multiple top-level entries.`,
+			`Multi-root forests render via ` + "`layer`" + ` (one tree per layer).`,
+		},
+		SeeAlso: []string{"PRISM_SPEC_028"},
+	},
+	"PRISM_WARN_NETWORK_CYCLE": {
+		Code:    "PRISM_WARN_NETWORK_CYCLE",
+		Message: `network input graph contains a cycle; force layout may produce a visually messy result.`,
+		Fixups: []string{
+			`Cycles are valid for the network mark — the layout converges but visually-clean output benefits from acyclic / DAG inputs.`,
+			`If the data is genuinely hierarchical, switch to the ` + "`tree`" + ` mark which enforces acyclicity (` + "`PRISM_ENCODE_TREE_CYCLE`" + `).`,
+		},
+		SeeAlso: []string{"PRISM_ENCODE_TREE_CYCLE"},
+	},
+	"PRISM_ENCODE_TREE_CYCLE": {
+		Code:    "PRISM_ENCODE_TREE_CYCLE",
+		Message: `tree mark cannot be laid out: input graph has a cycle.`,
+		Fixups: []string{
+			`Tree-style marks require a directed acyclic graph rooted at one parentless node. Break the cycle in the upstream data or switch to the ` + "`network`" + ` mark.`,
+		},
+	},
+	"PRISM_ENCODE_NETWORK_NONFINITE": {
+		Code:    "PRISM_ENCODE_NETWORK_NONFINITE",
+		Message: `network force layout failed to converge: a node position became non-finite (NaN / Inf).`,
+		Fixups: []string{
+			`Reduce ` + "`mark.charge`" + ` magnitude or shrink ` + "`mark.link_distance`" + `; very large repulsion forces can blow up the gradient.`,
+			`Disconnected components without any edges can also slip into Inf — keep at least one edge per component.`,
+		},
+	},
+	"PRISM_SPEC_027": {
+		Code:    "PRISM_SPEC_027",
+		Message: `Condition entry on channel {{.Channel}} must carry exactly one of value or field (got: {{.Got}}).`,
+		Fixups: []string{
+			`Set ` + "`value`" + ` for a literal applied when the condition matches (e.g. ` + "`{\"selection\":\"brush\",\"value\":\"#22c55e\"}`" + `).`,
+			`Set ` + "`field`" + ` (+ ` + "`type`" + `) to bind the matching rows to a field-driven encoding.`,
+			`A selection-form entry without ` + "`value`" + ` is allowed only when no ` + "`field`" + ` is also set — it inherits the channel's own field binding.`,
+		},
+		SeeAlso: []string{"PRISM_SPEC_025", "PRISM_SPEC_026"},
+	},
+	"PRISM_WARN_NULL_DROPPED": {
+		Code:    "PRISM_WARN_NULL_DROPPED",
+		Message: `{{.Count}} rows skipped: encoding channels {{.Channels}} carried null values.`,
+		Fixups: []string{
+			`Source data had {{.Count}} rows where one or more channel-bound fields were null (often from a left / outer join with no match on the right). Filter or impute those rows upstream to suppress the warning.`,
+			`See ` + "`docs/src/concepts/multi-source.md`" + ` for join null semantics.`,
+		},
+		SeeAlso: []string{"PRISM_JOIN_001"},
+	},
+	"PRISM_WARN_NULL_AGG_ALL": {
+		Code:    "PRISM_WARN_NULL_AGG_ALL",
+		Message: `Aggregate {{.Op}} over field {{.Field}} produced a null result: every input row was null.`,
+		Fixups: []string{
+			`The group has no non-null values for ` + "`{{.Field}}`" + `. Filter the empty group upstream or supply a default via a calculate transform.`,
+		},
+		SeeAlso: []string{"PRISM_WARN_NULL_DROPPED"},
 	},
 	"PRISM_WARN_ANIM_FALLBACK": {
 		Code:    "PRISM_WARN_ANIM_FALLBACK",

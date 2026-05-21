@@ -214,9 +214,27 @@ func computeAggregate(tbl *table.Table, op nodes.AggOp, idx []int, shareTotals m
 	}
 	_ = mapping // alias is supported; below we compute it client-side.
 
-	// "count" works even when Field is empty.
+	// "count" works even when Field is empty. count(*) counts every
+	// row in the group; count(field) skips nulls (matches PostgreSQL
+	// + pandas semantics). See tier1-02 PR3.
 	if alias == "count" {
-		return float64(len(idx)), nil
+		if op.Field == "" {
+			return float64(len(idx)), nil
+		}
+		col, ok := tbl.Column(op.Field)
+		if !ok {
+			return 0, prismerrors.New("PRISM_PLAN_003",
+				fmt.Sprintf("Aggregate %q references missing field %q.", op.Op, op.Field),
+				map[string]any{"Dataset": op.Field, "Available": strings.Join(tbl.FieldNames(), ", ")},
+			)
+		}
+		n := 0
+		for _, i := range idx {
+			if !col.IsNull(i) {
+				n++
+			}
+		}
+		return float64(n), nil
 	}
 
 	col, ok := tbl.Column(op.Field)
@@ -437,6 +455,9 @@ func mode(vals []float64) float64 {
 func distinct(idx []int, col table.Column) float64 {
 	seen := map[string]struct{}{}
 	for _, i := range idx {
+		if col.IsNull(i) {
+			continue
+		}
 		seen[keyFor(col.ValueAt(i))] = struct{}{}
 	}
 	return float64(len(seen))

@@ -37,6 +37,15 @@ type Mark struct {
 	Tooltip *Tooltip `json:"tooltip,omitempty"`
 	Datum   *Datum   `json:"datum,omitempty"`
 
+	// Conditions carries per-mark selection-driven conditional attrs
+	// resolved at encode time. The SVG / PDF renderers ignore this
+	// slice (it travels through scene JSON only); the browser-side
+	// selection module reacts to entries here when its selection state
+	// changes. Static `test`-based conditions are baked into Style
+	// directly and do not appear in this slice. See
+	// `.planning/tier1-01-condition-encodings-plan.md`.
+	Conditions []ConditionalAttr `json:"conditions,omitempty"`
+
 	Rect     *RectGeom    `json:"rect,omitempty"`
 	Line     *LineGeom    `json:"line,omitempty"`
 	Area     *AreaGeom    `json:"area,omitempty"`

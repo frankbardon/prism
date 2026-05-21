@@ -48,6 +48,27 @@ Memory ceiling: `PRISM_JOIN_MAX_ROWS = 5_000_000` (env-overridable).
 Exceeding it raises `PRISM_JOIN_003` with a fixup pointing at
 pre-aggregation, push-to-Pulse, or env override.
 
+### Null handling
+
+`left` and `outer` joins surface unmatched cells as **null**, not as
+the type's zero value. Downstream consumers see the absence of data
+instead of a silent `0.0` / `""` / `false` that would look like a
+genuine measurement:
+
+| Op | Null policy |
+|---|---|
+| `count` | `count(*)` counts every row; `count(field)` skips nulls. |
+| `sum`, `mean`, `min`, `max`, `median`, `q1`, `q3`, `stdev`, `variance`, `ci0`, `ci1` | Skip nulls. |
+| `distinct`, `mode` | Skip nulls. |
+| `wmean`, `ratio`, `lift`, `share` | Skip nulls. |
+| `filter` predicates | Rows where any input is null evaluate to false (matches pandas / Vega-Lite). |
+| `calculate` expressions | Any null input propagates to a null output. |
+
+The encoder collects null rows it drops and emits
+`PRISM_WARN_NULL_DROPPED` carrying the count + offending channels.
+An aggregate group whose every input is null returns null and
+surfaces `PRISM_WARN_NULL_AGG_ALL`.
+
 ## Server-side dataset registry
 
 Wire shared aliases via a JSON config file:

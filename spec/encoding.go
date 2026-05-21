@@ -58,6 +58,10 @@ type ChannelCommon struct {
 	Bin       any        `json:"bin,omitempty"`
 	Sort      any        `json:"sort,omitempty"`
 	Value     any        `json:"value,omitempty"`
+	// Condition carries a per-channel conditional encoding clause.
+	// nil for unconditional channels (the common case). See
+	// spec/condition.go and validate rules PRISM_SPEC_025/026/027.
+	Condition *Condition `json:"condition,omitempty"`
 	// Key marks this channel as the join key used by the client-side
 	// animator to match marks across successive scenes (object
 	// constancy). At most one channel per encoding block may set this;

@@ -32,6 +32,21 @@ func buildEnv(tbl *table.Table, i int) map[string]any {
 	return out
 }
 
+// envHasNull reports whether any field in env (excluding the
+// __row__ sentinel) is nil. Used by executeFilter / executeCalculate
+// to short-circuit rows with null inputs (PRISM_WARN_NULL_DROPPED).
+func envHasNull(env map[string]any) bool {
+	for k, v := range env {
+		if k == "__row__" {
+			continue
+		}
+		if v == nil {
+			return true
+		}
+	}
+	return false
+}
+
 // cloneSchemaShallow returns a shallow copy of s so callers can
 // extend Fields without mutating the input schema.
 func cloneSchemaShallow(s *encoding.Schema) *encoding.Schema {

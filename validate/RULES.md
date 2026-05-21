@@ -40,6 +40,9 @@ rules assume well-formed structure.
 | `PRISM_SPEC_022` animation easing name is known | Semantic | Enum check against `spec.AnimationEasings`. Lives at the semantic layer so the error message can suggest the full easing list. |
 | `PRISM_SPEC_023` animation declares a join key | Semantic | Cross-field rule: when `animation` is set, at least one descendant encoding channel must carry `key: true`. |
 | `PRISM_SPEC_024` animation join key is unique | Semantic | Cross-field rule: at most one encoding channel per spec node may carry `key: true`. Composite keys deferred. |
+| `PRISM_SPEC_025` condition selection reference | Semantic | Every `selection` name in a channel `condition` clause must resolve to a declared selection in the same spec scope. |
+| `PRISM_SPEC_026` condition test parses | Semantic | Every `test` expression in a channel `condition` clause must parse via the Pulse expression parser. Mirrors `PRISM_SPEC_006`. |
+| `PRISM_SPEC_027` condition value-or-binding | Semantic | A condition entry must carry exactly one of `value` or `field`; a `selection`-form entry with neither inherits the channel's own field binding. |
 
 ## $ref resolution strategy
 

@@ -44,6 +44,41 @@ arcs, etc. Specify via top-level `mark` (shorthand string) or
 | `geoshape` | Country / admin-1 polygons (choropleth). See [Geographic Marks](geo.md). |
 | `geopoint` | Lon/lat → point overlay. See [Geographic Marks](geo.md). |
 
+### Tree / dendrogram / network
+
+Hierarchical and relational marks share a small layout package
+(`encode/marks/layout`) and decompose to existing primitives (path,
+point, rect, text) so the SVG and PDF renderers handle them without
+new geometry types.
+
+| Mark | When to use |
+|---|---|
+| `tree` | Rooted hierarchy (org charts, decision trees). Reingold-Tilford tidy layout. |
+| `dendrogram` | Clustering tree — tree variant with `link_shape: step` + `node_shape: none` defaults. |
+| `network` | Undirected / directed node-link diagram. Force-directed layout (deterministic seed). |
+
+Channel bindings:
+
+- `source` — parent / from-node id field (required for tree/dendrogram/network).
+- `target` — child / to-node id field (required).
+- `value` — optional edge weight (network) / node size (tree).
+- `text` — optional per-node label.
+- `color`, `fill`, `stroke`, `opacity`, `size` — standard mark props.
+
+Mark-def options:
+
+- `orient` — `vertical` (default), `horizontal`, `radial`.
+- `link_shape` — `step` (default), `curve`, `straight`.
+- `node_shape` — `circle` (default), `rect`, `none`.
+- `node_size` — base radius / side length (default 6).
+- `layout` (network) — `force` (default), `random`.
+- `iterations`, `link_distance`, `charge`, `seed` (network).
+
+Validate rules: `PRISM_SPEC_028` (missing source/target),
+`PRISM_SPEC_029` (multi-root tree). Encode-time:
+`PRISM_ENCODE_TREE_CYCLE`, `PRISM_ENCODE_NETWORK_NONFINITE`,
+`PRISM_WARN_NETWORK_CYCLE`.
+
 ## Channel allowlists
 
 Not every channel is valid for every mark — `theta` only makes sense

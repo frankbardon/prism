@@ -96,6 +96,10 @@ export function setSelection(handle, selectionID, state, opts) {
   // marks (clearing selection). Best-effort: silently swallow DOM
   // hiccups so a bad selection ID can't crash the page.
   try { applySelection(handle, selectionID, state); } catch (e) { /* defensive */ }
+  // Apply condition-driven attribute switches for any mark whose
+  // scene-IR `conditions` slice references this selection. See
+  // tier1-01-condition-encodings-plan.md.
+  try { applyConditions(handle, selectionID, state); } catch (e) { /* defensive */ }
 }
 
 /**
@@ -402,6 +406,90 @@ function _markMatchesState(layerID, rowID, sel, state, handle) {
     return v >= state.range.min && v <= state.range.max;
   }
   return false;
+}
+
+// ---------------------------------------------------------------- //
+// applyConditions — selection-driven per-mark attribute switches
+// (tier1-01 condition encodings)
+// ---------------------------------------------------------------- //
+
+const _CONDITION_ATTRS = new Set(["fill", "stroke", "stroke_width", "opacity", "size"]);
+
+/**
+ * applyConditions walks every layer / mark in the handle's scene doc
+ * and, for any mark whose scene-IR `conditions` slice references the
+ * named selection, writes WhenValue while the selection is active and
+ * Otherwise when it clears.
+ *
+ * The encoder pre-resolved Otherwise from the channel's own fallback
+ * so the browser never needs to re-encode the spec.
+ */
+export function applyConditions(handle, selectionID, state) {
+  const svg = handle && handle._svg;
+  if (!svg || !selectionID) return;
+  const doc = handle && handle._doc;
+  if (!doc || !doc.grid || !Array.isArray(doc.grid.cells)) return;
+  const hasState = state && (
+    (Array.isArray(state.points) && state.points.length > 0) ||
+    (state.range && (state.range.min !== undefined || state.range.max !== undefined))
+  );
+  for (const cell of doc.grid.cells) {
+    const layers = (cell && cell.scene && cell.scene.layers) || [];
+    for (const layer of layers) {
+      const layerID = layer.id || "";
+      const layerSel = svg.querySelector
+        ? svg.querySelector(`g.prism-layer[data-prism-layer="${cssEscape(layerID)}"]`)
+        : null;
+      if (!layerSel) continue;
+      const marks = layer.marks || [];
+      for (const mark of marks) {
+        const conds = mark.conditions;
+        if (!Array.isArray(conds) || conds.length === 0) continue;
+        const rowID = mark.datum && mark.datum.row_id;
+        if (rowID === undefined || rowID === null) continue;
+        const el = layerSel.querySelector
+          ? layerSel.querySelector(`[data-prism-datum-row="${String(rowID)}"]`)
+          : null;
+        if (!el) continue;
+        for (const c of conds) {
+          if (!c || c.selection !== selectionID) continue;
+          if (!_CONDITION_ATTRS.has(c.attr)) continue;
+          const value = hasState ? c.when_value : c.otherwise;
+          if (value === undefined || value === null) continue;
+          _writeConditionAttr(el, c.attr, value);
+        }
+      }
+    }
+  }
+}
+
+function _writeConditionAttr(el, attr, value) {
+  if (!el) return;
+  const setter = el.setAttribute ? el.setAttribute.bind(el) : null;
+  if (!setter) return;
+  switch (attr) {
+    case "fill":
+    case "stroke":
+      setter(attr, String(value));
+      break;
+    case "stroke_width":
+      setter("stroke-width", String(value));
+      break;
+    case "opacity":
+      setter("opacity", String(value));
+      break;
+    case "size":
+      // Size maps to per-mark geometry (radius for point, etc.); skip
+      // until per-mark plumbing lands.
+      break;
+  }
+}
+
+function cssEscape(s) {
+  if (typeof CSS !== "undefined" && typeof CSS.escape === "function") {
+    return CSS.escape(s);
+  }
+  return String(s).replace(/[^a-zA-Z0-9_-]/g, ch => "\\" + ch);
 }
 
 function _toggleClass(el, cls, force) {

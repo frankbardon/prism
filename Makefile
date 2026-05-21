@@ -1,4 +1,4 @@
-.PHONY: build build-wasm clean test test-race cover fmt fmt-check vet lint proto docs docs-scenes docs-wasm-stage docs-serve docs-clean
+.PHONY: build build-wasm clean test test-race cover fmt fmt-check vet lint proto docs docs-scenes docs-wasm-stage docs-serve docs-clean docs-deploy-latest
 
 BINARY_NAME=prism
 WASM_BINARY=prism.wasm
@@ -138,5 +138,16 @@ docs-clean:
 	rm -rf docs/book
 	rm -f static/vendor/prism/$(WASM_BINARY) static/vendor/prism/wasm_exec.js
 	find $(GALLERY_DIR) -name '*.scene.json' -delete 2>/dev/null || true
+
+# Local rehearsal of the GitHub Pages deploy: stage docs/book at
+# deploy/latest/ + render versions.json + root redirect. Mirrors the
+# CI workflow so a contributor can sanity-check before pushing.
+docs-deploy-latest: docs
+	@rm -rf deploy
+	@mkdir -p deploy/latest
+	@cp -r docs/book/* deploy/latest/
+	@./scripts/build-versions-manifest.sh > deploy/versions.json
+	@./scripts/build-root-redirect.sh > deploy/index.html
+	@echo "docs-deploy-latest: staged at ./deploy/ (open deploy/index.html to test)"
 
 .DEFAULT_GOAL := build

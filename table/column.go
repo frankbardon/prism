@@ -88,6 +88,15 @@ type Column interface {
 	// ValueAt returns the i-th value as an interface{} (any). Returns
 	// nil if the column carries an explicit null sentinel at i.
 	ValueAt(i int) any
+	// IsNull reports whether row i carries an explicit null marker.
+	// Implementations that don't track nullability return false for
+	// every i (the safe backward-compatible answer).
+	IsNull(i int) bool
+	// NullCount returns the number of nulls in the column. Plain
+	// slice-backed columns return 0; nullable wrappers consult their
+	// bitmap. -1 is reserved for future implementations that defer
+	// the count until requested.
+	NullCount() int
 }
 
 // IntColumn is the storage for KindInt columns. int64 is wide enough
@@ -104,6 +113,13 @@ func (c IntColumn) Len() int { return len(c) }
 // ValueAt implements Column.
 func (c IntColumn) ValueAt(i int) any { return c[i] }
 
+// IsNull implements Column. Plain slice columns never report nulls;
+// nullable variants live behind NullableColumn.
+func (IntColumn) IsNull(int) bool { return false }
+
+// NullCount implements Column.
+func (IntColumn) NullCount() int { return 0 }
+
 // FloatColumn is the storage for KindFloat columns.
 type FloatColumn []float64
 
@@ -115,6 +131,12 @@ func (c FloatColumn) Len() int { return len(c) }
 
 // ValueAt implements Column.
 func (c FloatColumn) ValueAt(i int) any { return c[i] }
+
+// IsNull implements Column.
+func (FloatColumn) IsNull(int) bool { return false }
+
+// NullCount implements Column.
+func (FloatColumn) NullCount() int { return 0 }
 
 // StringColumn is the storage for KindString columns (categorical
 // values decoded against their Pulse dictionary at materialisation time).
@@ -129,6 +151,12 @@ func (c StringColumn) Len() int { return len(c) }
 // ValueAt implements Column.
 func (c StringColumn) ValueAt(i int) any { return c[i] }
 
+// IsNull implements Column.
+func (StringColumn) IsNull(int) bool { return false }
+
+// NullCount implements Column.
+func (StringColumn) NullCount() int { return 0 }
+
 // BoolColumn is the storage for KindBool columns.
 type BoolColumn []bool
 
@@ -140,6 +168,12 @@ func (c BoolColumn) Len() int { return len(c) }
 
 // ValueAt implements Column.
 func (c BoolColumn) ValueAt(i int) any { return c[i] }
+
+// IsNull implements Column.
+func (BoolColumn) IsNull(int) bool { return false }
+
+// NullCount implements Column.
+func (BoolColumn) NullCount() int { return 0 }
 
 // DateColumn is the storage for KindDate columns. Values are stored as
 // int64 "days since epoch" using Pulse's wire format; scales/encoders
@@ -154,3 +188,70 @@ func (c DateColumn) Len() int { return len(c) }
 
 // ValueAt implements Column.
 func (c DateColumn) ValueAt(i int) any { return c[i] }
+
+// IsNull implements Column.
+func (DateColumn) IsNull(int) bool { return false }
+
+// NullCount implements Column.
+func (DateColumn) NullCount() int { return 0 }
+
+// NullableColumn wraps any Column with an optional null bitmap. When
+// the bitmap is nil, the wrapper is transparent. When set, ValueAt
+// returns nil for marked positions and IsNull / NullCount consult the
+// bitmap.
+//
+// The plan-stage hash join allocates a NullableColumn per output
+// column that may receive unmatched rows; the resolver and inline
+// loader wrap nullable Pulse fields the same way.
+type NullableColumn struct {
+	Inner Column
+	Nulls *NullBitmap
+}
+
+// Kind implements Column by delegating to Inner.
+func (n NullableColumn) Kind() Kind {
+	if n.Inner == nil {
+		return KindUnknown
+	}
+	return n.Inner.Kind()
+}
+
+// Len implements Column.
+func (n NullableColumn) Len() int {
+	if n.Inner == nil {
+		return 0
+	}
+	return n.Inner.Len()
+}
+
+// ValueAt returns nil for null rows; otherwise delegates to Inner.
+func (n NullableColumn) ValueAt(i int) any {
+	if n.Inner == nil {
+		return nil
+	}
+	if n.Nulls != nil && n.Nulls.IsNull(i) {
+		return nil
+	}
+	return n.Inner.ValueAt(i)
+}
+
+// IsNull implements Column.
+func (n NullableColumn) IsNull(i int) bool {
+	if n.Nulls == nil {
+		return false
+	}
+	return n.Nulls.IsNull(i)
+}
+
+// NullCount implements Column.
+func (n NullableColumn) NullCount() int {
+	if n.Nulls == nil {
+		return 0
+	}
+	return n.Nulls.Count()
+}
+
+// Unwrap returns the underlying column. Callers that need to feed a
+// slice-backed reader (e.g. scale extent computation) can read the
+// inner column directly, then consult IsNull per row.
+func (n NullableColumn) Unwrap() Column { return n.Inner }
