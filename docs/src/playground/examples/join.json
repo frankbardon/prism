@@ -1,0 +1,33 @@
+{
+  "$schema": "urn:prism:schema:v1:spec",
+  "title": "Join orders + customers",
+  "datasets": {
+    "orders": {
+      "values": [
+        {"customer_id": "c1", "amount": 120},
+        {"customer_id": "c2", "amount":  80},
+        {"customer_id": "c1", "amount":  60},
+        {"customer_id": "c3", "amount": 200},
+        {"customer_id": "c2", "amount": 140},
+        {"customer_id": "c3", "amount":  90}
+      ]
+    },
+    "customers": {
+      "values": [
+        {"customer_id": "c1", "region": "NA"},
+        {"customer_id": "c2", "region": "EU"},
+        {"customer_id": "c3", "region": "APAC"}
+      ]
+    }
+  },
+  "data": {"name": "orders"},
+  "transform": [
+    {"join": "inner", "with": "customers", "on": "customer_id", "data": "orders", "as": "joined"}
+  ],
+  "mark": "bar",
+  "encoding": {
+    "x":     {"field": "region", "type": "nominal"},
+    "y":     {"field": "amount", "type": "quantitative", "aggregate": "sum"},
+    "color": {"field": "region", "type": "nominal"}
+  }
+}

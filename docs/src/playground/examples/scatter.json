@@ -1,0 +1,24 @@
+{
+  "$schema": "urn:prism:schema:v1:spec",
+  "title": "Latency vs throughput",
+  "data": {
+    "name": "samples",
+    "values": [
+      {"latency_ms":  45, "throughput": 1200, "tier": "small"},
+      {"latency_ms":  62, "throughput": 1850, "tier": "small"},
+      {"latency_ms":  88, "throughput": 2400, "tier": "medium"},
+      {"latency_ms": 110, "throughput": 3100, "tier": "medium"},
+      {"latency_ms": 145, "throughput": 4200, "tier": "large"},
+      {"latency_ms": 180, "throughput": 4900, "tier": "large"},
+      {"latency_ms": 220, "throughput": 5400, "tier": "large"},
+      {"latency_ms":  72, "throughput": 1600, "tier": "small"},
+      {"latency_ms": 130, "throughput": 3600, "tier": "medium"}
+    ]
+  },
+  "mark": {"type": "point", "size": 80, "fill_opacity": 0.7},
+  "encoding": {
+    "x":     {"field": "throughput", "type": "quantitative"},
+    "y":     {"field": "latency_ms", "type": "quantitative"},
+    "color": {"field": "tier",       "type": "nominal"}
+  }
+}

@@ -1,0 +1,34 @@
+{
+  "$schema": "urn:prism:schema:v1:spec",
+  "title": "Score labels",
+  "datasets": {
+    "scores": {
+      "values": [
+        {"region": "NA",   "score": 0.42},
+        {"region": "EU",   "score": 0.71},
+        {"region": "APAC", "score": 0.58}
+      ]
+    }
+  },
+  "layer": [
+    {
+      "$schema": "urn:prism:schema:v1:spec",
+      "data": {"name": "scores"},
+      "mark": {"type": "bar", "corner_radius": 4},
+      "encoding": {
+        "x": {"field": "region", "type": "nominal"},
+        "y": {"field": "score",  "type": "quantitative"}
+      }
+    },
+    {
+      "$schema": "urn:prism:schema:v1:spec",
+      "data": {"name": "scores"},
+      "mark": {"type": "text", "dy": -8, "font_size": 11},
+      "encoding": {
+        "x":    {"field": "region", "type": "nominal"},
+        "y":    {"field": "score",  "type": "quantitative"},
+        "text": {"field": "score",  "type": "quantitative"}
+      }
+    }
+  ]
+}

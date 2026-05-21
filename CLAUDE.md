@@ -39,6 +39,7 @@ Any change to Prism code, configuration, spec vocabulary, schema bundle, or publ
 | An optimizer pass | `plan/passes/register.go` + `docs/src/concepts/spec.md` (Plan section) + entry in `plan/optimize.go` |
 | A `prism init` template (`.prism/`) | `cmd/prism/templates/` + smoke test in `cmd/prism/init_test.go` + `docs/src/getting-started.md` editor-setup paragraph |
 | `prism static-bundle` output shape | `cmd/prism/cmd_static_bundle.go` + `static/staticfs.go` + smoke test |
+| A playground example (`docs/src/playground/examples/`) | `docs/src/playground/examples/manifest.json` (id + title + file) + the new `<id>.json` spec file. Specs must use inline `data.values` or `datasets.*.values` — the playground has no `.pulse` fetch path |
 
 If you find yourself wanting to defer the doc update to "a follow-up PR," stop. The follow-up will not happen, the next Claude Code session will read stale guidance and produce wrong code. Update in the same PR or do not merge.
 

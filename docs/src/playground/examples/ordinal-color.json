@@ -1,0 +1,21 @@
+{
+  "$schema": "urn:prism:schema:v1:spec",
+  "title": "Ordinal color scheme",
+  "data": {
+    "name": "samples",
+    "values": [
+      {"rank": "S",  "value": 95},
+      {"rank": "A",  "value": 82},
+      {"rank": "B",  "value": 68},
+      {"rank": "C",  "value": 54},
+      {"rank": "D",  "value": 38},
+      {"rank": "F",  "value": 18}
+    ]
+  },
+  "mark": {"type": "bar", "corner_radius": 4},
+  "encoding": {
+    "x":     {"field": "rank",  "type": "ordinal"},
+    "y":     {"field": "value", "type": "quantitative"},
+    "color": {"field": "rank",  "type": "ordinal", "scale": {"scheme": "viridis"}}
+  }
+}
