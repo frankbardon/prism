@@ -105,3 +105,18 @@ func TestPrismAnimatorWarnFallback(t *testing.T) {
 		t.Logf("output:\n%s", out)
 	}
 }
+
+// TestPrismConditionsBrush asserts setSelection wires through to the
+// new applyConditions helper: a selection-driven `fill` condition on
+// two marks flips to WhenValue while the brush is active and reverts
+// to Otherwise when the state clears. See tier1-01 PR4.
+func TestPrismConditionsBrush(t *testing.T) {
+	root, nodePath := crossImplPreflight(t)
+	out, err := runHarness(t, root, nodePath, "conditions-brush.mjs")
+	if err != nil {
+		t.Fatalf("conditions-brush: %v\noutput:\n%s", err, out)
+	}
+	if testing.Verbose() {
+		t.Logf("output:\n%s", out)
+	}
+}

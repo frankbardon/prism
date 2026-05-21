@@ -72,6 +72,14 @@ Every SVG mark carries:
 
 The JS port reads these to resolve clicks back to source rows.
 
+## Driving conditional encodings
+
+A selection name can drive a per-channel
+[`condition`](encoding.md#conditions) clause so marks switch fills,
+strokes, or opacities live as the selection state changes. See the
+[brush_highlight gallery fixture](../gallery/conditions/brush_highlight.prism.json)
+and the [highlight-on-brush cookbook recipe](../cookbook/highlight-on-brush.md).
+
 ## Worked examples
 
 - [selection_point_bar](../gallery/selections/selection_point_bar.prism.json)

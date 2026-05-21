@@ -38,6 +38,52 @@ The `encoding` object binds data fields to visual channels.
 | `sort` | `"ascending"` / `"descending"` / `"-y"` / `[explicit, order, ...]`. |
 | `key` | `true` to mark this channel as the animation join key — see [Spec › Animation](spec.md#animation). At most one channel per encoding may set this; only valid on position channels (`x`, `y`, `x2`, `y2`, `theta`, `radius`) and mark channels (`color`, `fill`, `stroke`, `opacity`, `size`, `shape`, sankey `source`/`target`/`value`, geo `longitude`/`latitude`/`feature`). |
 
+## Conditions
+
+A channel can carry a `condition` clause that switches its visual
+value based on a declared [selection](selections.md) or a Pulse
+expression `test`. The channel's own `value` / `field` supplies the
+fallback ("otherwise") branch.
+
+```json
+"color": {
+  "condition": [
+    {"selection": "brush", "value": "#22c55e"},
+    {"test": "score < 0",  "value": "#ef4444"}
+  ],
+  "value": "#94a3b8"
+}
+```
+
+Rules:
+
+- `selection` references a name declared in the spec's `selection`
+  block (validate rule `PRISM_SPEC_025`).
+- `test` is a Pulse expression evaluated at encode time
+  (`PRISM_SPEC_026`); the same parser that powers `filter` and
+  `calculate` transforms.
+- Each entry needs exactly one of `value` or `field`. A
+  `selection`-form entry without `value` inherits the channel's own
+  field binding (`PRISM_SPEC_027`).
+- Entries evaluate top-down; the first match wins.
+
+Where the work happens:
+
+- **`test`-driven entries** are evaluated server-side at encode time
+  and baked directly into the mark's resolved style. SVG and PDF
+  output reflect them with no client involvement.
+- **`selection`-driven entries** land in the scene-IR as a
+  `Mark.Conditions[]` slice. The browser-side `prism-selection`
+  module flips the matching SVG attribute when the named selection
+  becomes active, and reverts to the resolved "otherwise" branch
+  when it clears.
+- PDF renders the "otherwise" branch for selection entries (PDFs
+  are static); a `PRISM_WARN_PDF_CONDITION_FLATTENED` warning fires
+  when this would have changed the page.
+
+See the [conditions gallery](../gallery/conditions) and the
+[highlight-on-brush recipe](../cookbook/highlight-on-brush.md).
+
 ## Scales
 
 Eight types: `linear` (default for quantitative), `log`, `pow`, `sqrt`,

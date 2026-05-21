@@ -1,0 +1,26 @@
+{
+  "$schema": "urn:prism:schema:v1:spec",
+  "title": "Green for high scores, red for negatives",
+  "data": {
+    "name": "deltas",
+    "values": [
+      {"region": "west",    "delta": -0.12},
+      {"region": "east",     "delta":  0.34},
+      {"region": "north",    "delta":  0.78},
+      {"region": "south",    "delta": -0.05},
+      {"region": "central",  "delta":  0.18}
+    ]
+  },
+  "mark": "bar",
+  "encoding": {
+    "x": {"field": "region", "type": "nominal"},
+    "y": {"field": "delta",  "type": "quantitative"},
+    "color": {
+      "condition": [
+        {"test": "delta >= 0.5", "value": "#22c55e"},
+        {"test": "delta < 0",     "value": "#ef4444"}
+      ],
+      "value": "#94a3b8"
+    }
+  }
+}

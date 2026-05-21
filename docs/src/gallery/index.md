@@ -1,6 +1,6 @@
 # Prism Gallery
 
-64 fixture specs across 10 categories. Each entry pairs a `*.prism.json`
+66 fixture specs across 11 categories. Each entry pairs a `*.prism.json`
 spec with a rendered `*.svg`. Browse the source to learn the spec
 shapes; open the SVGs to see what they render.
 
@@ -104,6 +104,17 @@ For live interactive rendering in a browser, see [`index.html`](index.html).
 | [selection_interval_brush](selections/selection_interval_brush.prism.json) | <img src="selections/selection_interval_brush.svg" width="240"> |
 | [selection_cross_chart_overview](selections/selection_cross_chart_overview.prism.json) | <img src="selections/selection_cross_chart_overview.svg" width="240"> |
 | [selection_cross_chart_detail](selections/selection_cross_chart_detail.prism.json) | <img src="selections/selection_cross_chart_detail.svg" width="240"> |
+
+## Conditions
+
+Per-channel `condition` clauses switch a channel's value based on a
+selection or Pulse expression. See
+[Encoding › Conditions](../concepts/encoding.md#conditions).
+
+| Spec | Preview |
+|---|---|
+| [brush_highlight](conditions/brush_highlight.prism.json) | <img src="conditions/brush_highlight.svg" width="240"> |
+| [test_predicate](conditions/test_predicate.prism.json) | <img src="conditions/test_predicate.svg" width="240"> |
 
 ## Themes
 
