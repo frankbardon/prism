@@ -194,11 +194,12 @@ func renderScene(pdf *gopdf.GoPdf, s *scene.Scene, theme *scene.Theme, doc *scen
 		_ = renderTextElement(pdf, s.Subtitle, theme, FontSansRegular, 10)
 	}
 
-	// Axes — light-touch implementation: tick marks + labels via
-	// the same text-render path. Full axis polish (grid lines,
-	// titles) stays SVG-only in v1; document in SUMMARY.
+	// Grid lines paint behind marks so marks read on top of the
+	// gridded background. Axis line + tick glyphs + labels + titles
+	// paint after marks so labels stay legible (matches SVG render
+	// order).
 	for _, ax := range s.Axes {
-		renderAxis(pdf, ax, theme)
+		renderAxisGrid(pdf, ax, theme)
 	}
 
 	for _, layer := range s.Layers {
@@ -209,6 +210,12 @@ func renderScene(pdf *gopdf.GoPdf, s *scene.Scene, theme *scene.Theme, doc *scen
 				appendWarning(doc, "PRISM_RENDER_001", fmt.Sprintf("mark in layer %s skipped: %v", layer.ID, err))
 			}
 		}
+	}
+
+	for _, ax := range s.Axes {
+		renderAxis(pdf, ax, theme)
+		renderAxisTicks(pdf, ax, theme)
+		renderAxisTitle(pdf, ax, theme)
 	}
 	return nil
 }
@@ -312,6 +319,108 @@ func renderAxis(pdf *gopdf.GoPdf, ax scene.Axis, theme *scene.Theme) {
 		pdf.SetY(ly)
 		_ = pdf.Cell(nil, t.Label)
 	}
+}
+
+// renderAxisGrid paints the axis's pre-resolved grid lines behind
+// the marks. Each Line in ax.Grid spans the plot rect perpendicular
+// to the axis at the corresponding tick pixel. Skips silently when
+// the encoder didn't populate the grid (e.g. axis.grid: false).
+func renderAxisGrid(pdf *gopdf.GoPdf, ax scene.Axis, theme *scene.Theme) {
+	if len(ax.Grid) == 0 {
+		return
+	}
+	if theme != nil && theme.ColorGrid != nil {
+		pdf.SetStrokeColor(theme.ColorGrid.R, theme.ColorGrid.G, theme.ColorGrid.B)
+	}
+	pdf.SetLineWidth(0.25)
+	for _, g := range ax.Grid {
+		pdf.Line(g.X1, g.Y1, g.X2, g.Y2)
+	}
+}
+
+// renderAxisTicks paints a short stroke at every Tick.Pixel on the
+// outer side of the domain line. Major ticks get a 3pt glyph; minor
+// ticks 2pt. Skips ticks with empty / hidden labels so the visual
+// inventory matches what renderAxis printed.
+func renderAxisTicks(pdf *gopdf.GoPdf, ax scene.Axis, theme *scene.Theme) {
+	if len(ax.Ticks) == 0 {
+		return
+	}
+	if theme != nil && theme.ColorAxis != nil {
+		pdf.SetStrokeColor(theme.ColorAxis.R, theme.ColorAxis.G, theme.ColorAxis.B)
+	}
+	pdf.SetLineWidth(0.5)
+	for _, t := range ax.Ticks {
+		length := 3.0
+		if t.Minor {
+			length = 2.0
+		}
+		switch ax.Position {
+		case scene.AxisPositionBottom:
+			pdf.Line(t.Pixel, ax.Domain.Y1, t.Pixel, ax.Domain.Y1+length)
+		case scene.AxisPositionTop:
+			pdf.Line(t.Pixel, ax.Domain.Y1, t.Pixel, ax.Domain.Y1-length)
+		case scene.AxisPositionLeft:
+			pdf.Line(ax.Domain.X1, t.Pixel, ax.Domain.X1-length, t.Pixel)
+		case scene.AxisPositionRight:
+			pdf.Line(ax.Domain.X1, t.Pixel, ax.Domain.X1+length, t.Pixel)
+		}
+	}
+}
+
+// renderAxisTitle paints the axis title at the far edge of the
+// labels. Left / right axes rotate the title 90° via gopdf.Rotate
+// (wrapped in graphics-state save/restore so rotation doesn't leak
+// into subsequent draws). No-op when the encoder left the title
+// empty.
+func renderAxisTitle(pdf *gopdf.GoPdf, ax scene.Axis, theme *scene.Theme) {
+	if ax.Title == "" {
+		return
+	}
+	if theme != nil && theme.ColorText != nil {
+		pdf.SetTextColor(theme.ColorText.R, theme.ColorText.G, theme.ColorText.B)
+	}
+	_ = pdf.SetFont(FontSansRegular, "", 10)
+	const offset = 30.0
+	switch ax.Position {
+	case scene.AxisPositionBottom:
+		// Centred horizontally; sits below the deepest tick label.
+		cx := (ax.Domain.X1 + ax.Domain.X2) / 2
+		pdf.SetX(cx - estimateTextWidth(ax.Title, 10)/2)
+		pdf.SetY(ax.Domain.Y1 + offset)
+		_ = pdf.Cell(nil, ax.Title)
+	case scene.AxisPositionTop:
+		cx := (ax.Domain.X1 + ax.Domain.X2) / 2
+		pdf.SetX(cx - estimateTextWidth(ax.Title, 10)/2)
+		pdf.SetY(ax.Domain.Y1 - offset)
+		_ = pdf.Cell(nil, ax.Title)
+	case scene.AxisPositionLeft:
+		cy := (ax.Domain.Y1 + ax.Domain.Y2) / 2
+		x := ax.Domain.X1 - offset
+		// Save graphics state, rotate, draw, restore.
+		pdf.Rotate(90, x, cy)
+		pdf.SetX(x - estimateTextWidth(ax.Title, 10)/2)
+		pdf.SetY(cy)
+		_ = pdf.Cell(nil, ax.Title)
+		pdf.RotateReset()
+	case scene.AxisPositionRight:
+		cy := (ax.Domain.Y1 + ax.Domain.Y2) / 2
+		x := ax.Domain.X1 + offset
+		pdf.Rotate(-90, x, cy)
+		pdf.SetX(x - estimateTextWidth(ax.Title, 10)/2)
+		pdf.SetY(cy)
+		_ = pdf.Cell(nil, ax.Title)
+		pdf.RotateReset()
+	}
+}
+
+// estimateTextWidth is a coarse heuristic for centring axis titles.
+// gopdf provides MeasureTextWidth via the active font; we use a
+// fixed-pitch approximation because the font may not be set yet
+// when callers compute layout. ~0.55 of font size per character is
+// a reasonable Inter heuristic.
+func estimateTextWidth(s string, size float64) float64 {
+	return float64(len(s)) * size * 0.55
 }
 
 // outerFrame computes the bounding box of every cell in the grid.
