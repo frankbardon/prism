@@ -71,3 +71,20 @@ func TestPrismDatasetRegistryDedupe(t *testing.T) {
 		t.Logf("output:\n%s", out)
 	}
 }
+
+// TestPrismAnimatorTween exercises the client-side tween engine
+// under happy-dom: partition enter/update/exit by data-prism-mark-key,
+// drive a deterministic rAF clock through 0..1, verify numeric attrs
+// arrive at their target values, OKLab color interpolation lands in
+// the expected perceptual band, and structurallyCompatible accepts
+// matching scene shapes. No WASM required.
+func TestPrismAnimatorTween(t *testing.T) {
+	root, nodePath := crossImplPreflight(t)
+	out, err := runHarness(t, root, nodePath, "animator-tween.mjs")
+	if err != nil {
+		t.Fatalf("animator-tween: %v\noutput:\n%s", err, out)
+	}
+	if testing.Verbose() {
+		t.Logf("output:\n%s", out)
+	}
+}

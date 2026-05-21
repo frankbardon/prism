@@ -44,6 +44,8 @@ func TestPrismJSPortSurfaceTrimmed(t *testing.T) {
 
 	want := []string{
 		"README.md",
+		"oklab.mjs",
+		"prism-animator.mjs",
 		"prism-element.mjs",
 		"prism-resolver.mjs",
 		"prism-selection.mjs",

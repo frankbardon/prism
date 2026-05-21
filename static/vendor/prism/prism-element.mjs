@@ -162,7 +162,12 @@ class PrismChart extends HTMLElement {
 
   async _render() {
     const token = ++this._renderToken;
-    this._teardown();
+    // Hold the previous handle alive across the render so we can
+    // animate the swap when the new scene has an animation block.
+    // _teardown only runs after we know we're committing to an
+    // instant replace (no animation, fetch failure, etc.).
+    const previousHandle = this._handle;
+    this._handle = null;
 
     const src  = this.getAttribute("src");
     const spec = this.getAttribute("spec");
@@ -172,6 +177,8 @@ class PrismChart extends HTMLElement {
       try {
         sceneDoc = await PrismResolver.fetchJSON(src);
       } catch (err) {
+        this._handle = previousHandle;
+        this._teardown();
         this._renderError(`Failed to load scene from ${src}: ${err.message}`);
         return;
       }
@@ -185,12 +192,16 @@ class PrismChart extends HTMLElement {
       if (trimmed.startsWith("{")) {
         try { parsed = JSON.parse(trimmed); }
         catch (err) {
+          this._handle = previousHandle;
+          this._teardown();
           this._renderError(`Spec attribute is not valid JSON: ${err.message}`);
           return;
         }
       } else {
         try { parsed = await PrismResolver.fetchJSON(trimmed); }
         catch (err) {
+          this._handle = previousHandle;
+          this._teardown();
           this._renderError(`Failed to load spec from ${trimmed}: ${err.message}`);
           return;
         }
@@ -203,16 +214,61 @@ class PrismChart extends HTMLElement {
         sceneDoc = await executeSpec(parsed, datasets, opts);
       } catch (err) {
         const code = err.prismCode ? `${err.prismCode}: ` : "";
+        this._handle = previousHandle;
+        this._teardown();
         this._renderError(`Spec compile failed: ${code}${err.message}`);
         return;
       }
     } else {
+      this._handle = previousHandle;
+      this._teardown();
       this._renderError("No `src` or `spec` attribute provided.");
       return;
     }
 
-    if (token !== this._renderToken) return;
-    if (!this.isConnected) return;
+    if (token !== this._renderToken) {
+      this._handle = previousHandle;
+      this._teardown();
+      return;
+    }
+    if (!this.isConnected) {
+      this._handle = previousHandle;
+      this._teardown();
+      return;
+    }
+
+    // Animation path: when the previous render is still alive and the
+    // new sceneDoc declares an `animation` block, hand the swap off
+    // to SceneHandle.update which runs PrismAnimator. Otherwise fall
+    // through to the existing clear + render path.
+    const hasAnimation = !!sceneDoc?.grid?.cells?.[0]?.scene?.animation;
+    if (previousHandle && hasAnimation) {
+      try {
+        const updated = await previousHandle.update(sceneDoc);
+        if (token !== this._renderToken || !this.isConnected) {
+          try { updated.destroy(); } catch {}
+          return;
+        }
+        this._handle = updated;
+        // Detach previous selection listeners; new handle wires fresh.
+        for (const dispose of this._unsubscribers) {
+          try { dispose(); } catch {}
+        }
+        this._unsubscribers = [];
+        this._wireSelectionEvents();
+        try { this._restoreState(); } catch {}
+        return;
+      } catch (err) {
+        // Fall through to instant replace on animate failure.
+        try { previousHandle.destroy(); } catch {}
+      }
+    } else if (previousHandle) {
+      try { previousHandle.destroy(); } catch {}
+      for (const dispose of this._unsubscribers) {
+        try { dispose(); } catch {}
+      }
+      this._unsubscribers = [];
+    }
 
     while (this.shadowRoot.firstChild) {
       this.shadowRoot.removeChild(this.shadowRoot.firstChild);
@@ -227,22 +283,24 @@ class PrismChart extends HTMLElement {
     if (token !== this._renderToken) return; // newer render started while WASM resolved
     if (!this.isConnected) return;
 
-    // Forward selection events from the SceneHandle's root onto the
-    // host element. Use composed:true so listeners outside the shadow
-    // boundary receive the event (matches D073).
+    this._wireSelectionEvents();
+    // Seed initial selection state from URL hash / localStorage (D079).
+    try { this._restoreState(); } catch { /* defensive */ }
+  }
+
+  // _wireSelectionEvents attaches a single `prism:select` re-emitter
+  // on the shadow root and remembers the disposer. Called from
+  // _render after a fresh mount AND after an animated handle swap.
+  _wireSelectionEvents() {
     const dispose = listen(this.shadowRoot, "prism:select", (e) => {
       this.dispatchEvent(new CustomEvent("prism:select", {
         detail: e.detail,
         bubbles: true,
         composed: true,
       }));
-      // Persist updated state to the URL hash / localStorage (D079).
       try { this._persistState(); } catch { /* defensive */ }
     });
     this._unsubscribers.push(dispose);
-
-    // Seed initial selection state from URL hash / localStorage (D079).
-    try { this._restoreState(); } catch { /* defensive */ }
   }
 
   _restoreState() {

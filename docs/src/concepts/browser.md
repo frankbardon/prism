@@ -122,11 +122,58 @@ emitted Scene IR (`scene.animation` + `mark.key`). SVG and PDF
 renderers ignore these fields entirely; only the web component and
 the WASM runtime tween between successive scenes.
 
-Animation lives in JS, not Go — the WASM module emits the scene
-hints, and the in-page JS animator (shipped in a future PR alongside
-`prism-animator.mjs`) diffs old vs. new scene by `mark.key` and
-interpolates per-attr via `requestAnimationFrame`. `prefers-reduced-motion: reduce`
-disables the animator at the OS / browser level.
+### How the animator works
+
+When `<prism-chart>`'s `spec` or `src` attribute changes and the new
+scene declares an `animation` block, the element holds the previous
+`SceneHandle` alive and calls `handle.update(newSceneDoc)` instead of
+the default clear-and-replace path.
+
+`SceneHandle.update` defers to `PrismAnimator` (vendored in
+`static/vendor/prism/prism-animator.mjs`):
+
+1. The new scene is rendered through the WASM module into a detached
+   SVG; its `visibility` is set to `hidden` so the user keeps seeing
+   the live (previous) SVG.
+2. `PrismAnimator` indexes both SVGs by `data-prism-mark-key` and
+   partitions marks into **enter / update / exit** sets.
+3. A `requestAnimationFrame` loop interpolates numeric attrs
+   (`x`/`y`/`width`/`height`/`cx`/`cy`/`r`/`opacity`/...) on the
+   **live** SVG, writing target values read from the staged SVG.
+   Color attrs (`fill`, `stroke`) interpolate through OKLab via
+   `oklab.mjs` for perceptually smooth transitions.
+4. At `t = 1` the previous SVG is removed and the staged SVG becomes
+   visible. The exit set fades to `opacity=0` along the way.
+
+### Fallbacks
+
+The animator skips and snaps to the new scene when any of the
+following hold:
+
+- `prefers-reduced-motion: reduce` is set by the OS / browser.
+- The previous scene is structurally incompatible with the new
+  scene (different layer count, different mark family per layer,
+  different axis count). The element emits a `prism:warn`
+  CustomEvent carrying `PRISM_WARN_ANIM_FALLBACK`.
+- The `animate` option is explicitly `false`
+  (`handle.update(doc, { animate: false })`).
+- The previous handle does not exist yet (first render).
+
+### Public exports
+
+`prism.mjs` re-exports the animator surface so embedders can drive a
+tween on a bare SVG without going through `SceneHandle`:
+
+```js
+import {
+  PrismAnimator,
+  structurallyCompatible,
+  prefersReducedMotion,
+} from "/static/vendor/prism/prism.mjs";
+```
+
+The tween engine has zero dependencies beyond `oklab.mjs`. The WASM
+binary size is unaffected — animation lives entirely in plain JS.
 
 ## Cross-implementation parity
 

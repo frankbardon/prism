@@ -69,6 +69,17 @@ func writeDatumAttr(w *Writer, m scene.Mark) {
 	w.Attr("data-prism-datum-row", formatInt64(m.Datum.RowID))
 }
 
+// writeKeyAttr writes data-prism-mark-key="<key>" when the mark
+// carries the animation join key (PR animation-1). Empty keys
+// (the default) emit nothing, preserving existing SVG goldens
+// byte-for-byte for non-animated specs.
+func writeKeyAttr(w *Writer, m scene.Mark) {
+	if m.Key == "" {
+		return
+	}
+	w.Attr("data-prism-mark-key", m.Key)
+}
+
 // writeTooltipChild emits a `<title>` child element carrying the
 // joined tooltip lines (newline-separated). Called after the
 // mark's opening tag has been closed with CloseTagOpen. Caller is
@@ -96,6 +107,7 @@ func renderRect(w *Writer, m scene.Mark) {
 		w.Attr("data-prism-id", m.ID)
 	}
 	writeDatumAttr(w, m)
+	writeKeyAttr(w, m)
 	w.AttrFloat("x", g.X)
 	w.AttrFloat("y", g.Y)
 	w.AttrFloat("width", g.W)
@@ -127,6 +139,7 @@ func renderLine(w *Writer, m scene.Mark) {
 		w.Attr("data-prism-id", m.ID)
 	}
 	writeDatumAttr(w, m)
+	writeKeyAttr(w, m)
 	w.OpenAttr("points")
 	for i, p := range g.Points {
 		if i > 0 {
@@ -163,6 +176,7 @@ func renderArea(w *Writer, m scene.Mark) {
 		w.Attr("data-prism-id", m.ID)
 	}
 	writeDatumAttr(w, m)
+	writeKeyAttr(w, m)
 	w.OpenAttr("d")
 	// Upper edge: M x0,y0 L x1,y1 L x2,y2 ...
 	w.Raw("M")
@@ -237,6 +251,7 @@ func renderPoint(w *Writer, m scene.Mark) {
 		w.Attr("data-prism-id", m.ID)
 	}
 	writeDatumAttr(w, m)
+	writeKeyAttr(w, m)
 	w.AttrFloat("cx", g.Cx)
 	w.AttrFloat("cy", g.Cy)
 	w.AttrFloat("r", g.R)
@@ -258,6 +273,7 @@ func renderTextMark(w *Writer, m scene.Mark) {
 		w.Attr("data-prism-id", m.ID)
 	}
 	writeDatumAttr(w, m)
+	writeKeyAttr(w, m)
 	w.AttrFloat("x", g.X)
 	w.AttrFloat("y", g.Y)
 	switch g.Anchor {
@@ -293,6 +309,7 @@ func renderArc(w *Writer, m scene.Mark) {
 		w.Attr("data-prism-id", m.ID)
 	}
 	writeDatumAttr(w, m)
+	writeKeyAttr(w, m)
 	w.Attr("d", arcPath(g))
 	writeStyleAttrs(w, m.Style)
 	if hasTooltip(m) {
@@ -370,6 +387,7 @@ func renderPath(w *Writer, m scene.Mark) {
 		w.Attr("data-prism-id", m.ID)
 	}
 	writeDatumAttr(w, m)
+	writeKeyAttr(w, m)
 	w.Attr("d", g.D)
 	writeStyleAttrs(w, m.Style)
 	if hasTooltip(m) {
@@ -393,6 +411,7 @@ func renderImage(w *Writer, m scene.Mark) {
 		w.Attr("data-prism-id", m.ID)
 	}
 	writeDatumAttr(w, m)
+	writeKeyAttr(w, m)
 	w.AttrFloat("x", g.X)
 	w.AttrFloat("y", g.Y)
 	w.AttrFloat("width", g.W)
@@ -416,6 +435,7 @@ func renderRule(w *Writer, m scene.Mark) {
 		w.Attr("data-prism-id", m.ID)
 	}
 	writeDatumAttr(w, m)
+	writeKeyAttr(w, m)
 	w.AttrFloat("x1", g.X1)
 	w.AttrFloat("y1", g.Y1)
 	w.AttrFloat("x2", g.X2)
