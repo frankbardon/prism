@@ -4,6 +4,30 @@
   "title": "Prism Encoding Channels",
   "description": "Channel-to-field bindings driving how data is encoded onto a mark.",
   "$defs": {
+    "condition_test": {
+      "type": "object",
+      "additionalProperties": false,
+      "description": "One entry in a channel's `condition` clause. Exactly one of `selection` or `test` must be set; exactly one of `value` or `field` must be set (a selection-form entry without `value` inherits the channel's own field binding).",
+      "oneOf": [
+        {"required": ["selection"]},
+        {"required": ["test"]}
+      ],
+      "properties": {
+        "selection": {"type": "string", "description": "Name of a declared selection. The entry's value applies while the selection is active."},
+        "test":      {"type": "string", "description": "Pulse expression evaluated at encode time."},
+        "field":     {"$ref": "shared.schema.json#/$defs/field_ref"},
+        "type":      {"$ref": "shared.schema.json#/$defs/measure_type"},
+        "value":     {"description": "Constant literal applied when the entry matches."},
+        "scale":     {"$ref": "scale.schema.json#/$defs/scale"}
+      }
+    },
+    "condition": {
+      "oneOf": [
+        {"$ref": "encoding.schema.json#/$defs/condition_test"},
+        {"type": "array", "items": {"$ref": "encoding.schema.json#/$defs/condition_test"}}
+      ],
+      "description": "Per-channel conditional encoding clause. Single object or ordered list; first match wins. Fallback uses the channel's own `value` or `field`."
+    },
     "channel_base": {
       "type": "object",
       "description": "Common channel properties shared by every encoding channel class.",
@@ -24,7 +48,7 @@
           "description": "Sort spec for the channel domain."
         },
         "value":     {"description": "Constant literal value; alternative to field for a constant encoding."},
-        "condition": {"type": "object", "description": "Reserved for future conditional encoding (v2)."}
+        "condition": {"$ref": "encoding.schema.json#/$defs/condition"}
       }
     },
     "position_channel": {
@@ -49,6 +73,7 @@
         },
         "stack":     {"type": ["string", "null", "boolean"], "enum": ["zero", "normalize", "center", null, false, true], "description": "Stacking behavior for the position channel."},
         "value":     {},
+        "condition": {"$ref": "encoding.schema.json#/$defs/condition"},
         "key":       {"type": "boolean", "description": "Marks this channel as the join key used by client-side tween for object-constancy. At most one channel per encoding may set this."}
       }
     },
@@ -73,6 +98,7 @@
           ]
         },
         "value":     {},
+        "condition": {"$ref": "encoding.schema.json#/$defs/condition"},
         "key":       {"type": "boolean", "description": "Marks this channel as the join key used by client-side tween for object-constancy. At most one channel per encoding may set this."}
       }
     },
