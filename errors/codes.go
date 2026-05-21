@@ -631,6 +631,23 @@ var Codes = map[string]CodeMetadata{
 		},
 		SeeAlso: []string{"PRISM_SPEC_025", "PRISM_SPEC_026"},
 	},
+	"PRISM_WARN_NULL_DROPPED": {
+		Code:    "PRISM_WARN_NULL_DROPPED",
+		Message: `{{.Count}} rows skipped: encoding channels {{.Channels}} carried null values.`,
+		Fixups: []string{
+			`Source data had {{.Count}} rows where one or more channel-bound fields were null (often from a left / outer join with no match on the right). Filter or impute those rows upstream to suppress the warning.`,
+			`See ` + "`docs/src/concepts/multi-source.md`" + ` for join null semantics.`,
+		},
+		SeeAlso: []string{"PRISM_JOIN_001"},
+	},
+	"PRISM_WARN_NULL_AGG_ALL": {
+		Code:    "PRISM_WARN_NULL_AGG_ALL",
+		Message: `Aggregate {{.Op}} over field {{.Field}} produced a null result: every input row was null.`,
+		Fixups: []string{
+			`The group has no non-null values for ` + "`{{.Field}}`" + `. Filter the empty group upstream or supply a default via a calculate transform.`,
+		},
+		SeeAlso: []string{"PRISM_WARN_NULL_DROPPED"},
+	},
 	"PRISM_WARN_ANIM_FALLBACK": {
 		Code:    "PRISM_WARN_ANIM_FALLBACK",
 		Message: `animation skipped: {{.Reason}}.`,
