@@ -6,7 +6,7 @@ import (
 	"github.com/frankbardon/prism/encode/scene"
 )
 
-// applyGradientFlatten paints a flattened-to-first-stop solid fill and
+// ApplyGradientFlatten paints a flattened-to-first-stop solid fill and
 // returns the canonical warning code so the caller can attach it to
 // SceneDoc.Warnings. PDF backend (signintech/gopdf v0.36) lacks a
 // public axial / radial gradient API, so every gradient flattens.
@@ -14,7 +14,11 @@ import (
 // Warning code is chosen based on the gradient shape so consumers can
 // distinguish the "expected" linear/radial flatten path from the
 // "unsupported geometry" angular / text paths.
-func applyGradientFlatten(pdf *gopdf.GoPdf, g scene.Gradient, markType scene.MarkType) (code, gradientID string) {
+//
+// Exported so per-mark renderers can opt in incrementally as their
+// fill resolvers gain gradient awareness; the marks dispatcher does
+// not call it directly yet.
+func ApplyGradientFlatten(pdf *gopdf.GoPdf, g scene.Gradient, markType scene.MarkType) (code, gradientID string) {
 	if len(g.Stops) > 0 {
 		first := g.Stops[0].Color
 		pdf.SetFillColor(first.R, first.G, first.B)
