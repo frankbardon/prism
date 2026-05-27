@@ -90,7 +90,10 @@ export function setSelection(handle, selectionID, state, opts) {
   m.set(selectionID, state);
   if (!opts || !opts.silent) {
     const target = handle && (handle._root || handle._svg);
-    if (target) broadcast(target, "prism:select", { id: selectionID, state });
+    if (target) {
+      const event = buildSelectionEvent(handle, selectionID, state, opts);
+      broadcast(target, "prism:select", event);
+    }
   }
   // Apply client-reactive classes (D078). No-op when state lists no
   // marks (clearing selection). Best-effort: silently swallow DOM
@@ -276,10 +279,15 @@ function _installIntervalHandler(handle, sel) {
     // For y axes pixel→domain is inverted; ensure min < max in value space.
     const lo = Math.min(p1, p2);
     const hi = Math.max(p1, p2);
+    const pxMin = Math.min(startPx, endPx);
+    const pxMax = Math.max(startPx, endPx);
+    const pixelExtent = channel === "y"
+      ? { y: { min: pxMin, max: pxMax } }
+      : { x: { min: pxMin, max: pxMax } };
     setSelection(handle, sel.id, {
       points: [],
       range: { channel, min: lo, max: hi },
-    });
+    }, { pixelExtent });
     dragStart = null;
     if (brushRect && brushRect.parentNode) {
       brushRect.parentNode.removeChild(brushRect);
@@ -545,7 +553,10 @@ export function revalidateSelections(handle, newDoc) {
       // Selection no longer declared in new doc → drop entirely.
       m.delete(id);
       const target = handle._root || handle._svg;
-      if (target) broadcast(target, "prism:select", { id, state: newSelectionState() });
+      if (target) {
+        const cleared = newSelectionState();
+        broadcast(target, "prism:select", buildSelectionEvent(handle, id, cleared));
+      }
       continue;
     }
     let changed = false;
@@ -577,7 +588,100 @@ export function revalidateSelections(handle, newDoc) {
       const nextState = { points: nextPoints, range: nextRange };
       m.set(id, nextState);
       const target = handle._root || handle._svg;
-      if (target) broadcast(target, "prism:select", { id, state: nextState });
+      if (target) {
+        broadcast(target, "prism:select", buildSelectionEvent(handle, id, nextState));
+      }
     }
   }
+}
+
+// ---------------------------------------------------------------- //
+// buildSelectionEvent — canonical structured event payload
+//
+// Mirrors the Go `selection.Event` struct (selection/event.go). Every
+// `prism:select` CustomEvent.detail carries this shape so a single
+// consumer handler works against any rendering context (browser, Go,
+// Twirp). Legacy `id` / `state` keys are kept on the event for
+// back-compat with existing handlers that pre-date the structured
+// event upgrade.
+// ---------------------------------------------------------------- //
+
+/**
+ * buildSelectionEvent assembles the structured selection event payload
+ * from the handle's current scene doc + the new selection state.
+ *
+ * - Mark and DataRow resolution walks the handle's scene doc to map
+ *   each point hit's (layer_id, row_id) → SelectedMark + DataRowRef.
+ * - Interval/range selections carry data_extent (and pixel_extent
+ *   when the caller passed opts.pixelExtent — the brush handler
+ *   wires this when emitting the gesture-final setSelection call).
+ * - spec_path is `/selection/<id>` per the Prism v1 selection schema.
+ *
+ * @returns {object} the SelectionEvent payload + back-compat keys.
+ */
+export function buildSelectionEvent(handle, selectionID, state, opts) {
+  const doc = handle && handle._doc;
+  const cell = doc && doc.grid && doc.grid.cells ? doc.grid.cells[0] : null;
+  const sceneObj = cell && cell.scene ? cell.scene : null;
+  const sceneID = sceneObj && sceneObj.id ? sceneObj.id : "";
+
+  const descriptor = (handle && Array.isArray(handle._selections))
+    ? handle._selections.find(s => s.id === selectionID)
+    : null;
+  const kind = descriptor ? descriptor.kind : (state && state.range ? "interval" : "point");
+
+  const points = Array.isArray(state && state.points) ? state.points : [];
+  const marks = [];
+  const data_rows = [];
+
+  for (const p of points) {
+    const layerInfo = _locateLayer(sceneObj, p.layer_id);
+    const instanceKey = `${p.layer_id || ""}:${p.row_id}`;
+    marks.push({
+      mark_index: layerInfo ? layerInfo.index : -1,
+      instance_key: instanceKey,
+    });
+    data_rows.push({
+      dataset_name: layerInfo ? (layerInfo.source || "") : "",
+      row_index: typeof p.row_id === "number" ? p.row_id : Number(p.row_id),
+    });
+  }
+
+  let data_extent;
+  if (state && state.range) {
+    const r = state.range;
+    const min = typeof r.min === "number" ? r.min : Number(r.min);
+    const max = typeof r.max === "number" ? r.max : Number(r.max);
+    const axisExtent = (Number.isFinite(min) || Number.isFinite(max))
+      ? { min: Number.isFinite(min) ? min : undefined, max: Number.isFinite(max) ? max : undefined }
+      : { categories: r.categories || [] };
+    data_extent = (r.channel === "y") ? { y: axisExtent } : { x: axisExtent };
+  }
+
+  const pixel_extent = (opts && opts.pixelExtent) ? opts.pixelExtent : undefined;
+
+  return {
+    scene_id: sceneID,
+    selection_id: selectionID,
+    kind,
+    timestamp: Date.now(),
+    marks,
+    data_rows,
+    data_extent,
+    pixel_extent,
+    spec_path: `/selection/${selectionID}`,
+    // Back-compat — handlers written against the original event shape:
+    id: selectionID,
+    state,
+  };
+}
+
+function _locateLayer(sceneObj, layerID) {
+  if (!sceneObj || !Array.isArray(sceneObj.layers)) return null;
+  for (let i = 0; i < sceneObj.layers.length; i++) {
+    if (sceneObj.layers[i].id === layerID) {
+      return { index: i, source: sceneObj.layers[i].source || "" };
+    }
+  }
+  return null;
 }

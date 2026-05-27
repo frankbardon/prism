@@ -35,6 +35,7 @@
 package build
 
 import (
+	"context"
 	"fmt"
 	"strconv"
 
@@ -65,6 +66,12 @@ type Options struct {
 	Resolver        resolve.Resolver
 	Backend         plan.Backend
 	DatasetRegistry resolve.DatasetRegistry
+	// DataResolver handles the `{data: {ref: "<name>"}}` spec variant.
+	// Nil means refs are unresolvable (any ref-form dataset surfaces
+	// PRISM_RESOLVE_REF_UNRESOLVED at build time). Sync only — callers
+	// expecting async resolution must pre-resolve the dataset and
+	// register a synchronous getter that returns the cached value.
+	DataResolver resolve.DataResolver
 }
 
 // Build translates a *spec.Spec into a *plan.DAG. The returned
@@ -281,6 +288,30 @@ func (c *buildCtx) registerDataset(name string, ds *spec.Data) error {
 		}
 	}
 	switch {
+	case ds.Ref != "":
+		dataset, err := c.resolveDataRef(ds.Ref)
+		if err != nil {
+			return err
+		}
+		id := c.nextID("ref")
+		in := nodes.NewInline(id, name, dataset.Values, dataset.Fields)
+		if err := c.b.AddNode(in); err != nil {
+			return err
+		}
+		if err := c.b.MarkRoot(id); err != nil {
+			return err
+		}
+		if name != "" {
+			if err := c.bindAlias(name, id); err != nil {
+				return err
+			}
+		}
+		if ds.Name != "" && ds.Name != name {
+			if err := c.bindAlias(ds.Name, id); err != nil {
+				return err
+			}
+		}
+		return nil
 	case ds.Source != "":
 		if id, ok := c.leafBySource[ds.Source]; ok {
 			if name != "" {
@@ -365,6 +396,40 @@ func (c *buildCtx) registerDataset(name string, ds *spec.Data) error {
 		return nil
 	}
 	return nil
+}
+
+// resolveDataRef calls the configured DataResolver and returns the
+// resulting Dataset. When no resolver is configured, or when the
+// resolver reports an unresolved ref, PRISM_RESOLVE_REF_UNRESOLVED
+// is returned. Sync-only — Build does not spawn goroutines; async
+// resolvers must pre-resolve and surface a synchronous getter.
+func (c *buildCtx) resolveDataRef(ref string) (*resolve.Dataset, error) {
+	if c.opts.DataResolver == nil {
+		return nil, prismerrors.New(
+			"PRISM_RESOLVE_REF_UNRESOLVED",
+			fmt.Sprintf("Data ref %q was not resolved by the active DataResolver.", ref),
+			map[string]any{"Ref": ref},
+		)
+	}
+	ds, err := c.opts.DataResolver.ResolveData(context.Background(), ref)
+	if err != nil {
+		if _, ok := err.(resolve.ErrDataRefUnresolved); ok {
+			return nil, prismerrors.New(
+				"PRISM_RESOLVE_REF_UNRESOLVED",
+				fmt.Sprintf("Data ref %q was not resolved by the active DataResolver.", ref),
+				map[string]any{"Ref": ref},
+			)
+		}
+		return nil, err
+	}
+	if ds == nil {
+		return nil, prismerrors.New(
+			"PRISM_RESOLVE_REF_UNRESOLVED",
+			fmt.Sprintf("Data ref %q resolver returned nil dataset.", ref),
+			map[string]any{"Ref": ref},
+		)
+	}
+	return ds, nil
 }
 
 // bindAlias publishes alias → id under c.leafByName. Binding the same

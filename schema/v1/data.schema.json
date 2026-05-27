@@ -8,10 +8,11 @@
       "oneOf": [
         {"$ref": "data.schema.json#/$defs/data_source"},
         {"$ref": "data.schema.json#/$defs/data_named_ref"},
+        {"$ref": "data.schema.json#/$defs/data_runtime_ref"},
         {"$ref": "data.schema.json#/$defs/data_inline"},
         {"$ref": "data.schema.json#/$defs/data_feature_collection"}
       ],
-      "description": "Data binding: an external Pulse source, a named dataset reference, inline values, or a synthesized geodata feature collection."
+      "description": "Data binding: an external Pulse source, a named dataset reference, a runtime resolver reference, inline values, or a synthesized geodata feature collection."
     },
     "data_source": {
       "type": "object",
@@ -45,6 +46,24 @@
         "name": {
           "type": "string",
           "description": "Logical dataset name to look up.",
+          "minLength": 1
+        }
+      }
+    },
+    "data_runtime_ref": {
+      "type": "object",
+      "description": "Runtime data reference resolved by the caller-supplied DataResolver. Lets a spec stay portable across environments (server, browser, test) — the spec describes what to draw; the resolver provides the data to draw it with.",
+      "additionalProperties": false,
+      "required": ["ref"],
+      "properties": {
+        "ref": {
+          "type": "string",
+          "description": "Opaque identifier handed to the DataResolver at compile time.",
+          "minLength": 1
+        },
+        "name": {
+          "type": "string",
+          "description": "Optional logical name for the resolved binding.",
           "minLength": 1
         }
       }

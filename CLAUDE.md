@@ -41,7 +41,7 @@ Any change to Prism code, configuration, spec vocabulary, schema bundle, or publ
 | `prism static-bundle` output shape | `cmd/prism/cmd_static_bundle.go` + `static/staticfs.go` + smoke test |
 | A playground example (`docs/src/playground/examples/`) | `docs/src/playground/examples/manifest.json` (id + title + file) + the new `<id>.json` spec file. Specs must use inline `data.values` or `datasets.*.values` — the playground has no `.pulse` fetch path |
 | A projection in `encode/projection/` or a feature in `geodata/` | `docs/src/concepts/geo.md` + `schema/v1/projection.schema.json` (the `type` enum) + manifest regeneration via `make geodata` when admin-level data changes |
-| A `data` block variant (`source`, `name`, `values`, `feature_collection`) | `spec/data.go` (struct field + UnmarshalJSON discriminator) + `schema/v1/data.schema.json` (oneOf entry) + `plan/build/build.go` registerOne case + `docs/src/concepts/geo.md` for geo-specific variants |
+| A `data` block variant (`source`, `name`, `ref`, `values`, `feature_collection`) | `spec/data.go` (struct field + UnmarshalJSON discriminator) + `schema/v1/data.schema.json` (oneOf entry) + `plan/build/build.go` registerDataset case + `docs/src/concepts/geo.md` for geo-specific variants + `docs/src/concepts/multi-source.md` for runtime-ref variants (caller-supplied `DataResolver` in `resolve/data_resolver.go`) |
 | An easing in `spec.AnimationEasings` or any field in `spec.Animation` | `spec/animation.go` (const list + struct) + `schema/v1/animation.schema.json` (enum / properties) + `docs/src/concepts/spec.md` (Animation table) + `static/vendor/prism/prism-animator.mjs` (`EASINGS` table + `_normaliseAnimation`) + `internal/devtools/cross-impl-runner/animator-tween.mjs` if behaviour changes |
 | A numeric or color SVG attr the animator should tween | `static/vendor/prism/prism-animator.mjs` (`NUMERIC_ATTRS` or `COLOR_ATTRS`) + `docs/src/concepts/browser.md` (Animation section) + `internal/devtools/cross-impl-runner/animator-tween.mjs` fixture coverage |
 | A gallery fixture under `docs/src/gallery/animation/` | new `<name>.prism.json` + golden `<name>.svg` (regen via `UPDATE_GOLDENS=1 go test ./cmd/prism/ -run TestPrismGalleryFixtures`) + entry in `docs/src/gallery/index.md` Animation section + `<prism-chart>` card in `docs/src/gallery/index.html`. `.scene.json` is built by `make docs-scenes` and gitignored |
@@ -55,13 +55,16 @@ If you find yourself wanting to defer the doc update to "a follow-up PR," stop. 
 
 ```
 prism/
+├── prism.go                # Root Go API: Compile, RenderPlan, CompiledPlan
+├── patch.go scene.go       # RFC 6902 patch (Patch/PatchOp/ApplyPatch/DiffSpecs) + Scene wrapper
+├── selection/              # Structured selection event (Event, SelectedMark, DataRowRef)
 ├── cmd/prism/              # Host CLI binary (gated `//go:build !js` where needed)
 │   ├── main.go             # urfave/cli/v3 wiring
 │   ├── cmd_*.go            # one file per CLI leaf
 │   ├── templates/          # `prism init` payload (schemas + examples + editor configs)
 │   └── *_smoke_test.go     # per-command end-to-end checks
 ├── cmd/prismwasm/          # WASM entry — `//go:build js && wasm`
-│   ├── main.go             # exports validate/plan/execute/render/errorsLookup/schemaBundle/version on globalThis.prism via syscall/js
+│   ├── main.go             # exports validate/plan/execute/compile/render/errorsLookup/schemaBundle/version/setDataResolver/applyPatch/diffSpecs on globalThis.prism via syscall/js
 │   └── wasm_smoke_test.go  # Node + wasm_exec runner against committed fixtures
 ├── spec/                   # Spec types + decoders (Mark, Encoding, Transform, Selection, Composition)
 ├── validate/               # Shape + semantic validation (no row I/O)
@@ -103,6 +106,7 @@ prism/
 ├── resolve/                # Data source resolution
 │   ├── default.go          # Pulse-backed + file / archive / shard
 │   ├── registry_dataset.go # `datasets` block + `PRISM_DATASETS` env
+│   ├── data_resolver.go    # DataResolver interface + Dataset (runtime `data: {ref}` variant)
 │   └── resolver.go         # Resolver interface
 ├── theme/                  # Theme registry + loader
 │   ├── light.go dark.go print.go
