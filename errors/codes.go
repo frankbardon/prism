@@ -251,6 +251,26 @@ var Codes = map[string]CodeMetadata{
 		},
 		SeeAlso: []string{"PRISM_SPEC_001"},
 	},
+	"PRISM_SPEC_PATCH_001": {
+		Code:    "PRISM_SPEC_PATCH_001",
+		Message: `Spec patch operation failed: {{.Op}} on {{.Path}}.`,
+		Fixups: []string{
+			`Inspect the failing operation index ({{.OpIndex}}) in the returned envelope — operations are applied left-to-right and the first failure stops the patch.`,
+			`Confirm the JSON Pointer in {{.Path}} resolves against the current spec (use ` + "`prism plan`" + ` or ` + "`prism scene`" + ` to dump the live shape).`,
+			`Atomic semantics: a failing op leaves the original spec unchanged. Re-apply with corrected ops or rebuild from a known baseline.`,
+		},
+		SeeAlso: []string{"PRISM_SPEC_009"},
+	},
+	"PRISM_RESOLVE_REF_UNRESOLVED": {
+		Code:    "PRISM_RESOLVE_REF_UNRESOLVED",
+		Message: `Data ref "{{.Ref}}" was not resolved by the active DataResolver.`,
+		Fixups: []string{
+			`Pass a DataResolver via ` + "`build.Options.DataResolver`" + ` that handles this ref.`,
+			`In the browser, register a callback with ` + "`prism.setDataResolver((ref) => …)`" + ` before calling ` + "`prism.execute`" + `/` + "`prism.compile`" + `.`,
+			`Pre-resolve and inject the dataset under the same name via ` + "`datasets`" + ` if a static binding suffices.`,
+		},
+		SeeAlso: []string{"PRISM_RESOLVE_001", "PRISM_RESOLVE_004"},
+	},
 	"PRISM_SPEC_010": {
 		Code:    "PRISM_SPEC_010",
 		Message: `Log scale on channel {{.Channel}} requires a strictly positive domain (got {{.Value}}).`,

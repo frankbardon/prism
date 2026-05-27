@@ -5,11 +5,17 @@ import (
 	"fmt"
 )
 
-// Data is the data binding: source path, named ref, inline values, or
-// a synthesized feature_collection (geoshape basemap mode). The
-// discriminator is which key is present.
+// Data is the data binding: source path, named ref, runtime resolver
+// ref, inline values, or a synthesized feature_collection (geoshape
+// basemap mode). The discriminator is which key is present.
 type Data struct {
 	Source string `json:"source,omitempty"`
+	// Ref is an opaque identifier resolved at compile time by the
+	// caller-supplied DataResolver (see resolve.DataResolver / the
+	// WASM `prism.setDataResolver` hook). Lets a spec stay portable
+	// across rendering environments: the spec describes *what to
+	// draw*; the resolver supplies *the data to draw it with*.
+	Ref    string `json:"ref,omitempty"`
 	Format string `json:"format,omitempty"`
 	Name   string `json:"name,omitempty"`
 
@@ -46,6 +52,7 @@ func (d *Data) UnmarshalJSON(data []byte) error {
 	}
 	hasSource := keyPresent(probe, "source")
 	hasName := keyPresent(probe, "name")
+	hasRef := keyPresent(probe, "ref")
 	hasValues := keyPresent(probe, "values")
 	hasFeatures := keyPresent(probe, "feature_collection")
 
@@ -55,10 +62,10 @@ func (d *Data) UnmarshalJSON(data []byte) error {
 		return fmt.Errorf("data: %w", err)
 	}
 	switch {
-	case hasSource, hasValues, hasName, hasFeatures:
+	case hasSource, hasValues, hasName, hasRef, hasFeatures:
 		*d = Data(r)
 	default:
-		return fmt.Errorf("data: must declare one of source, name, values, or feature_collection")
+		return fmt.Errorf("data: must declare one of source, name, ref, values, or feature_collection")
 	}
 	return nil
 }

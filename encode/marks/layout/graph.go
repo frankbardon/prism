@@ -155,7 +155,7 @@ func (g *Graph) BuildTree() (string, error) {
 		return "", fmt.Errorf("tree: no root found (every node has a parent — cycle or self-loop?)")
 	}
 	if len(roots) > 1 {
-		return "", fmt.Errorf("tree: %d roots found (multi-root forests not supported in v1.1)", len(roots))
+		return "", fmt.Errorf("tree: %d roots found (multi-root forests not supported in v0.2)", len(roots))
 	}
 	return roots[0], nil
 }

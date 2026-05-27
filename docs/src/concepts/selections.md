@@ -72,6 +72,51 @@ Every SVG mark carries:
 
 The JS port reads these to resolve clicks back to source rows.
 
+## Structured event shape
+
+Every `prism:select` CustomEvent carries the same structured payload
+across browser, Go, and Twirp contexts. The shape mirrors the Go
+`selection.Event` struct (package `github.com/frankbardon/prism/selection`):
+
+```jsonc
+{
+  "scene_id":     "scene-0",
+  "selection_id": "brush",
+  "kind":         "point",          // "point" | "interval" | "lasso"
+  "timestamp":    1716826200000,    // ms since epoch
+  "marks": [
+    { "mark_index": 0, "instance_key": "layer-0:42" }
+  ],
+  "data_rows": [
+    { "dataset_name": "cohort.pulse", "row_index": 42 }
+  ],
+  "data_extent": { "x": { "min": 10, "max": 50 } },   // interval/lasso
+  "pixel_extent": { "x": { "min": 120, "max": 480 } },// interval/lasso, optional
+  "spec_path": "/selection/brush"
+}
+```
+
+`mark_index` is the index of the layer in the spec's `layer` array
+(or `0` for a single-mark spec). `instance_key` is `<layer_id>:<row_id>`
+and is stable across re-renders for the same source row. `data_extent`
+is the canonical (renderer-size-independent) representation of an
+interval brush; `pixel_extent` is best-effort UI-overlay info.
+
+The browser handler:
+
+```js
+chart.addEventListener("prism:select", (ev) => {
+  for (const mark of ev.detail.marks) {
+    // mark.mark_index, mark.instance_key
+  }
+});
+```
+
+The Go side builds the same shape from raw input via
+`selection.Build(...)`. Legacy `id` and `state` keys are retained on
+the event payload for back-compat with handlers written before the
+structured-event upgrade.
+
 ## Driving conditional encodings
 
 A selection name can drive a per-channel

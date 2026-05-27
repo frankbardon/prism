@@ -25,6 +25,7 @@ import (
 	"fmt"
 	"syscall/js"
 
+	prism "github.com/frankbardon/prism"
 	"github.com/frankbardon/prism/compile/inmem"
 	"github.com/frankbardon/prism/encode"
 	"github.com/frankbardon/prism/encode/scene"
@@ -44,7 +45,7 @@ import (
 
 // versionString matches cmd/prism/main.go so JS callers can identify
 // the wasm build against the host CLI.
-const versionString = "prism v1.0.0"
+const versionString = "prism v0.2.0"
 
 func main() {
 	api := js.Global().Get("Object").New()
@@ -52,6 +53,10 @@ func main() {
 	api.Set("validate", js.FuncOf(validateFunc))
 	api.Set("plan", js.FuncOf(planFunc))
 	api.Set("execute", js.FuncOf(executeFunc))
+	api.Set("compile", js.FuncOf(compileFunc))
+	api.Set("setDataResolver", js.FuncOf(setDataResolverFunc))
+	api.Set("applyPatch", js.FuncOf(applyPatchFunc))
+	api.Set("diffSpecs", js.FuncOf(diffSpecsFunc))
 	api.Set("render", js.FuncOf(renderFunc))
 	api.Set("errorsLookup", js.FuncOf(errorsLookupFunc))
 	api.Set("schemaBundle", js.FuncOf(schemaBundleFunc))
@@ -284,6 +289,192 @@ func executePipeline(
 	return encode.Encode(s, res.Tables, tipID, encOpts)
 }
 
+// compileFunc shape: prism.compile(specJSON, datasetsJSON?, optsJSON?)
+// → CompiledPlan JSON. Same pipeline as execute, with the result
+// flattened into the structured CompiledPlan view (marks / scales /
+// data / layout / diagnostics + the canonical scene). The render
+// stage is skipped — substantially cheaper than a full prism.execute
+// + prism.render pair.
+func compileFunc(_ js.Value, args []js.Value) any {
+	if len(args) < 1 || args[0].IsUndefined() {
+		return errEnvelope("PRISM_WASM_001", "compile(specJSON, datasetsJSON?, optsJSON?): missing specJSON argument")
+	}
+	specJSON := args[0].String()
+	datasetsJSON := ""
+	if len(args) >= 2 && args[1].Type() == js.TypeString {
+		datasetsJSON = args[1].String()
+	}
+	optsJSON := ""
+	if len(args) >= 3 && args[2].Type() == js.TypeString {
+		optsJSON = args[2].String()
+	}
+	out, err := doCompile(specJSON, datasetsJSON, optsJSON)
+	if err != nil {
+		return errFromError(err)
+	}
+	return out
+}
+
+func doCompile(specJSON, datasetsJSON, optsJSON string) (string, error) {
+	s, err := spec.DecodeBytes([]byte(specJSON))
+	if err != nil {
+		return "", prismerrors.New("PRISM_SPEC_009",
+			fmt.Sprintf("Spec failed to decode: %v.", err),
+			map[string]any{"Schema": "(decode failed)"})
+	}
+	buildOpts, err := newBuildOptions(datasetsJSON)
+	if err != nil {
+		return "", err
+	}
+	encOpts, err := decodeEncodeOpts(optsJSON)
+	if err != nil {
+		return "", err
+	}
+	cp, err := prism.Compile(context.Background(), s, prism.CompileOptions{
+		Build:  buildOpts,
+		Exec:   plan.ExecOpts{Workers: 1, AbortOnError: false},
+		Encode: encOpts,
+	})
+	if err != nil {
+		return "", err
+	}
+	body, mErr := json.Marshal(cp)
+	return string(body), mErr
+}
+
+// applyPatchFunc shape: prism.applyPatch(specJSON, patchJSON) →
+// patched-spec JSON, or an error envelope. The patch is RFC 6902 —
+// an array of `{op, path, value?, from?}` objects.
+//
+// Atomic semantics: a failure on any op leaves the input spec
+// untouched. The error envelope carries PRISM_SPEC_PATCH_001 with
+// the failing op index in details.
+func applyPatchFunc(_ js.Value, args []js.Value) any {
+	if len(args) < 2 || args[0].IsUndefined() || args[1].IsUndefined() {
+		return errEnvelope("PRISM_WASM_001", "applyPatch(specJSON, patchJSON): missing arguments")
+	}
+	specJSON := args[0].String()
+	patchJSON := args[1].String()
+	out, err := doApplyPatch(specJSON, patchJSON)
+	if err != nil {
+		return errFromError(err)
+	}
+	return out
+}
+
+func doApplyPatch(specJSON, patchJSON string) (string, error) {
+	s, err := spec.DecodeBytes([]byte(specJSON))
+	if err != nil {
+		return "", prismerrors.New("PRISM_SPEC_009",
+			fmt.Sprintf("Spec failed to decode: %v.", err),
+			map[string]any{"Schema": "(decode failed)"})
+	}
+	var patch prism.Patch
+	if err := json.Unmarshal([]byte(patchJSON), &patch); err != nil {
+		return "", prismerrors.New("PRISM_SPEC_PATCH_001",
+			fmt.Sprintf("Patch JSON failed to decode: %v.", err),
+			map[string]any{"OpIndex": -1})
+	}
+	next, err := prism.ApplyPatch(s, patch)
+	if err != nil {
+		return "", err
+	}
+	body, mErr := json.Marshal(next)
+	return string(body), mErr
+}
+
+// diffSpecsFunc shape: prism.diffSpecs(beforeJSON, afterJSON) →
+// patchJSON. Produces an RFC 6902 patch that transforms before
+// into after.
+func diffSpecsFunc(_ js.Value, args []js.Value) any {
+	if len(args) < 2 || args[0].IsUndefined() || args[1].IsUndefined() {
+		return errEnvelope("PRISM_WASM_001", "diffSpecs(beforeJSON, afterJSON): missing arguments")
+	}
+	beforeJSON := args[0].String()
+	afterJSON := args[1].String()
+	out, err := doDiffSpecs(beforeJSON, afterJSON)
+	if err != nil {
+		return errFromError(err)
+	}
+	return out
+}
+
+func doDiffSpecs(beforeJSON, afterJSON string) (string, error) {
+	before, err := spec.DecodeBytes([]byte(beforeJSON))
+	if err != nil {
+		return "", prismerrors.New("PRISM_SPEC_009",
+			fmt.Sprintf("before spec failed to decode: %v.", err),
+			map[string]any{"Schema": "(decode failed)"})
+	}
+	after, err := spec.DecodeBytes([]byte(afterJSON))
+	if err != nil {
+		return "", prismerrors.New("PRISM_SPEC_009",
+			fmt.Sprintf("after spec failed to decode: %v.", err),
+			map[string]any{"Schema": "(decode failed)"})
+	}
+	patch, err := prism.DiffSpecs(before, after)
+	if err != nil {
+		return "", prismerrors.New("PRISM_SPEC_PATCH_001",
+			fmt.Sprintf("diff: %v.", err),
+			map[string]any{"OpIndex": -1})
+	}
+	body, mErr := json.Marshal(patch)
+	return string(body), mErr
+}
+
+// jsDataResolver is the JS-side callback registered via
+// prism.setDataResolver. Sync only: the JS function must return the
+// Dataset object directly (no Promise). Promise returns are not
+// awaitable from synchronous Go-WASM code and surface as an
+// unresolved-ref error.
+var jsDataResolver js.Value
+
+// setDataResolverFunc shape: prism.setDataResolver(fn) — fn must be a
+// synchronous (ref: string) → {values, fields?} | null function.
+// Passing null/undefined clears the resolver. Returns the empty string
+// on success or an error envelope on bad input.
+func setDataResolverFunc(_ js.Value, args []js.Value) any {
+	if len(args) < 1 || args[0].IsNull() || args[0].IsUndefined() {
+		jsDataResolver = js.Undefined()
+		return ""
+	}
+	fn := args[0]
+	if fn.Type() != js.TypeFunction {
+		return errEnvelope("PRISM_WASM_001", "setDataResolver(fn): argument must be a function or null")
+	}
+	jsDataResolver = fn
+	return ""
+}
+
+// wasmDataResolver implements resolve.DataResolver by invoking the
+// installed JS callback. Result-to-Go marshalling goes through
+// JSON.stringify so the inline-data shape (values, fields) round-trips
+// cleanly. If the JS side returns null/undefined or no callback is
+// installed, the ref surfaces as resolve.ErrDataRefUnresolved and the
+// build stage emits PRISM_RESOLVE_REF_UNRESOLVED.
+type wasmDataResolver struct{}
+
+func (wasmDataResolver) ResolveData(_ context.Context, ref string) (*resolve.Dataset, error) {
+	if jsDataResolver.IsUndefined() || jsDataResolver.Type() != js.TypeFunction {
+		return nil, resolve.ErrDataRefUnresolved{Ref: ref}
+	}
+	res := jsDataResolver.Invoke(ref)
+	if res.IsNull() || res.IsUndefined() {
+		return nil, resolve.ErrDataRefUnresolved{Ref: ref}
+	}
+	jsonStr := js.Global().Get("JSON").Call("stringify", res).String()
+	var raw struct {
+		Values []map[string]any `json:"values"`
+		Fields []spec.FieldSpec `json:"fields"`
+	}
+	if err := json.Unmarshal([]byte(jsonStr), &raw); err != nil {
+		return nil, prismerrors.New("PRISM_RESOLVE_REF_UNRESOLVED",
+			fmt.Sprintf("Data ref %q resolver callback returned undecodable value: %v.", ref, err),
+			map[string]any{"Ref": ref})
+	}
+	return &resolve.Dataset{Values: raw.Values, Fields: raw.Fields}, nil
+}
+
 // renderFunc shape: prism.render(sceneJSON, themeName?) → SVG
 // string. The themeName overrides the SceneDoc.Theme name; empty
 // or omitted uses the SceneDoc's resolved theme.
@@ -386,6 +577,7 @@ func newBuildOptions(datasetsJSON string) (build.Options, error) {
 		Resolver:        resolve.New(nil),
 		Backend:         inmem.New(),
 		DatasetRegistry: reg,
+		DataResolver:    wasmDataResolver{},
 	}, nil
 }
 

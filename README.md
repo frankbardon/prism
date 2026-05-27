@@ -12,7 +12,7 @@ expression syntax.
 
 ```
 go install github.com/frankbardon/prism/cmd/prism@latest
-prism version   # prism v1.0.0
+prism version   # prism v0.2.0
 ```
 
 ## First chart in 5 lines
@@ -24,7 +24,7 @@ prism plot my-chart.prism.json > chart.svg
 open chart.svg
 ```
 
-## What ships in v1.0
+## What ships in v0.1
 
 - **Six-stage pipeline** — Spec → Validate → Plan → Compile → Encode → Render.
 - **20+ marks** — bar, line, area, point, rule, text, tick, rect, arc,

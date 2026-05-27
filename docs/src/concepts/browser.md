@@ -74,6 +74,47 @@ serve` Twirp endpoint from P14) and gets back the resolved Scene
 IR. WASM still does the final SVG render; the network round-trip
 only covers compile.
 
+## Compile-only mode
+
+Callers (particularly programmatic ones constructing specs from
+logic) can ask Prism "what would this render produce?" without
+paying the cost of rasterising. The WASM module exposes a
+`compile` export that returns the structured `CompiledPlan` —
+the same intermediate representation the render stage consumes,
+just exposed publicly:
+
+```js
+const planJSON = globalThis.prism.compile(specJSON, datasetsJSON, optsJSON);
+const plan = JSON.parse(planJSON);
+// plan.marks         — flattened mark summary (per layer)
+// plan.scales        — resolved scales (channel, type, domain, range)
+// plan.data          — dataset bindings (named + resolved)
+// plan.layout        — width/height + grid rows/cols
+// plan.diagnostics   — PRISM_WARN_* warnings
+// plan.scene         — full Scene IR (same as `prism.execute` output)
+```
+
+Cost is dominated by data I/O + aggregation (the executor); the
+flattened plan view itself is light. For specs whose data fits
+in memory, compile-only typically runs 10–50× faster than a
+full `prism.execute` + `prism.render` pair, since the encode +
+SVG-emit stages are skipped.
+
+The Go-native API exposes the same surface:
+
+```go
+plan, err := prism.Compile(ctx, spec, prism.CompileOptions{})
+```
+
+Use cases:
+
+- **Programmatic introspection** — verify that the color
+  encoding bound the field you expected.
+- **Plan diffing** — compare two CompiledPlans to know what
+  changed between spec edits without rendering both.
+- **Pre-render previews** — show the user "3 marks across
+  2 facets" before committing to a render.
+
 ## Fetch-backed Fs
 
 Dataset references resolve through an `afero.Fs` adapter backed

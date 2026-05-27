@@ -16,7 +16,7 @@ import (
 //   - text:   optional per-node label.
 //
 // Mark-level options (spec.MarkDef): orient (horizontal / vertical /
-// radial — vertical default in v1.1), link_shape (step / curve /
+// radial — vertical default in v0.2), link_shape (step / curve /
 // straight), node_shape (circle / rect / none), node_size.
 //
 // Output decomposes into existing scene-IR primitives so SVG / PDF
@@ -47,7 +47,7 @@ func encodeTree(in Inputs) ([]scene.Mark, error) {
 		return nil, err
 	}
 	var labels []any
-	// Best-effort: a text channel feed could be wired in here; v1.1
+	// Best-effort: a text channel feed could be wired in here; v0.2
 	// uses the target id verbatim as the label.
 
 	g := layout.NewGraph()

@@ -104,6 +104,72 @@ the registry. Server-side cache deduplicates fetches across requests.
 the same dataset share fetches (3 charts × 2 datasets = 2 fetches,
 not 6).
 
+## Runtime data references (`data: {ref}`)
+
+A runtime ref is an opaque identifier resolved by a caller-supplied
+`DataResolver` at compile time. The spec describes *what to draw*;
+the resolver supplies *the data to draw it with*. Lets the same
+spec render in multiple environments (server, browser, test)
+without modification:
+
+```json
+{
+  "$schema": "urn:prism:schema:v1:spec",
+  "data": {"ref": "current_window"},
+  "mark": "line",
+  "encoding": { "x": {"field": "ts", "type": "temporal"},
+                "y": {"field": "rate", "type": "quantitative"} }
+}
+```
+
+Resolver wiring per environment:
+
+**Browser.** Register a synchronous callback via
+`prism.setDataResolver`:
+
+```js
+const data = await fetch("/api/window.json").then(r => r.json());
+prism.setDataResolver((ref) => ref === "current_window" ? { values: data } : null);
+const svg = prism.execute(specJSON);
+```
+
+The callback must be synchronous — return the dataset object
+directly (no Promise). Pre-resolve any asynchronous fetches before
+registering the callback.
+
+**Go-native.** Pass `build.Options.DataResolver`:
+
+```go
+resolver := resolve.MapDataResolver{
+    "current_window": {Values: rows},
+}
+dag, tip, _ := build.Build(s, build.Options{
+    DataResolver: resolver,
+    /* ... */
+})
+```
+
+`resolve.DataResolver` is the interface:
+
+```go
+type DataResolver interface {
+    ResolveData(ctx context.Context, ref string) (*Dataset, error)
+}
+```
+
+`resolve.MapDataResolver` is a map-backed in-memory implementation
+useful for tests and small fixture data; chain multiple resolvers
+via `resolve.ChainDataResolvers`. An unresolved ref surfaces as
+`PRISM_RESOLVE_REF_UNRESOLVED` at build time.
+
+| Variant | Discriminator key | Use when |
+|---|---|---|
+| `data: {source: "…"}` | `source` | Static Pulse path / archive shard |
+| `data: {name: "…"}` | `name` | Datasets-block alias |
+| `data: {ref: "…"}` | `ref` | Caller-resolved opaque identifier |
+| `data: {values: […]}` | `values` | Inline literal rows |
+| `data: {feature_collection: {…}}` | `feature_collection` | Geodata basemap |
+
 ## Partial failure
 
 One Source failing doesn't kill the whole render. Dependents skip;

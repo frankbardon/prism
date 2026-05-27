@@ -4,7 +4,7 @@
 
 ```
 go install github.com/frankbardon/prism/cmd/prism@latest
-prism version    # prism v1.0.0
+prism version    # prism v0.2.0
 ```
 
 ## Bootstrap a project
