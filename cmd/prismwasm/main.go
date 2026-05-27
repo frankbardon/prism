@@ -45,7 +45,7 @@ import (
 
 // versionString matches cmd/prism/main.go so JS callers can identify
 // the wasm build against the host CLI.
-const versionString = "prism v1.0.0"
+const versionString = "prism v1.1.0"
 
 func main() {
 	api := js.Global().Get("Object").New()

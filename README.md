@@ -12,7 +12,7 @@ expression syntax.
 
 ```
 go install github.com/frankbardon/prism/cmd/prism@latest
-prism version   # prism v1.0.0
+prism version   # prism v1.1.0
 ```
 
 ## First chart in 5 lines
