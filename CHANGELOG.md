@@ -1,8 +1,8 @@
 # Changelog
 
-## v1.1.0 — 2026-05-27
+## v0.2.0 — 2026-05-27
 
-Additive feature release. All v1.0 spec and rendering semantics preserved.
+Additive feature release. All v0.1 spec and rendering semantics preserved.
 
 ### New marks + transforms
 
@@ -77,7 +77,7 @@ Additive feature release. All v1.0 spec and rendering semantics preserved.
   `concepts/multi-source.md` (nulls + runtime refs), `concepts/geo.md`,
   `concepts/browser.md` (animation + data resolver).
 
-## v1.0.0 — 2026-05-20
+## v0.1.0 — 2026-05-20
 
 First public release. Seventeen phases of work delivering:
 
