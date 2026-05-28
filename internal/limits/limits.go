@@ -49,17 +49,31 @@ const (
 	// Crossing this threshold does not fail the build; only exceeding
 	// DefaultWasmMaxBytes (or the env override) does.
 	SoftWarnWasmMaxBytes = 12 * 1024 * 1024
+
+	// DefaultWasmRawMaxBytes is the uncompressed size ceiling on
+	// `bin/prism.wasm`. The gzipped gate alone is blind to the raw size
+	// that downstream static hosts serve when they do not negotiate
+	// Content-Encoding, so this guards against the raw artifact growing
+	// unnoticed. See PRISM_WASM_RAW_MAX_BYTES.
+	DefaultWasmRawMaxBytes = 80 * 1024 * 1024
+
+	// SoftWarnWasmRawMaxBytes triggers a non-failing log message when
+	// the raw binary creeps toward the raw ceiling. Crossing it does
+	// not fail the build; only exceeding DefaultWasmRawMaxBytes (or the
+	// env override) does.
+	SoftWarnWasmRawMaxBytes = 72 * 1024 * 1024
 )
 
 // Env var names. Exported so callers (CLI help text, error fixups) can
 // reference the canonical names without typo risk.
 const (
-	EnvTableMaxRows   = "PRISM_TABLE_MAX_ROWS"
-	EnvJoinMaxRows    = "PRISM_JOIN_MAX_ROWS"
-	EnvRenderMaxMarks = "PRISM_RENDER_MAX_MARKS"
-	EnvQueryWorkers   = "PRISM_QUERY_WORKERS"
-	EnvTableCacheSize = "PRISM_TABLE_CACHE_SIZE"
-	EnvWasmMaxBytes   = "PRISM_WASM_MAX_BYTES"
+	EnvTableMaxRows    = "PRISM_TABLE_MAX_ROWS"
+	EnvJoinMaxRows     = "PRISM_JOIN_MAX_ROWS"
+	EnvRenderMaxMarks  = "PRISM_RENDER_MAX_MARKS"
+	EnvQueryWorkers    = "PRISM_QUERY_WORKERS"
+	EnvTableCacheSize  = "PRISM_TABLE_CACHE_SIZE"
+	EnvWasmMaxBytes    = "PRISM_WASM_MAX_BYTES"
+	EnvWasmRawMaxBytes = "PRISM_WASM_RAW_MAX_BYTES"
 )
 
 // TableMaxRows returns the effective cap for any single Table. The
@@ -139,6 +153,20 @@ func WasmMaxBytes() (int, bool) {
 // MustWasmMaxBytes mirrors MustTableMaxRows.
 func MustWasmMaxBytes() int {
 	v, _ := WasmMaxBytes()
+	return v
+}
+
+// WasmRawMaxBytes returns the uncompressed-size ceiling enforced on
+// `bin/prism.wasm`. The second return is false when the env var was
+// set but unparseable or non-positive; callers fall back to the
+// default value (also returned in that case).
+func WasmRawMaxBytes() (int, bool) {
+	return lookup(EnvWasmRawMaxBytes, DefaultWasmRawMaxBytes)
+}
+
+// MustWasmRawMaxBytes mirrors MustTableMaxRows.
+func MustWasmRawMaxBytes() int {
+	v, _ := WasmRawMaxBytes()
 	return v
 }
 

@@ -215,6 +215,7 @@ Three built-in themes ship: `light` (default), `dark`, `print`. Each lives in `t
 - `PRISM_CROSS_IMPL` — set to `1` to opt into the cross-implementation parity tests under `internal/devtools/`. After P17, the harness compares Go-native SVG vs Go-via-wasm SVG (was Go vs JS port). Needs `node` on `PATH`.
 - `PRISM_CROSS_IMPL_REGEN` — set to `1` to regenerate the WASM-side scene fixtures during a cross-impl run.
 - `PRISM_WASM_MAX_BYTES` — gzipped size ceiling for `bin/prism.wasm` enforced by `internal/gates/wasm_size_test.go`. Default 16,777,216 (16 MB); soft warning at 12 MB. Defined in `internal/limits/limits.go`.
+- `PRISM_WASM_RAW_MAX_BYTES` — uncompressed size ceiling for `bin/prism.wasm`, enforced by the same gate. The gzipped check is blind to the raw size naive static hosts serve, so this guards the uncompressed artifact. Default 83,886,080 (80 MB); soft warning at 72 MB. `prism static-bundle --wasm` emits a `prism.wasm.gz` companion and the standalone loader fetches it via `DecompressionStream` so the wire payload stays ~12 MB. Defined in `internal/limits/limits.go`.
 
 Numeric env vars parse loudly: a non-empty value that fails to parse, or that resolves to non-positive, is rejected by the lookup helpers in `internal/limits/limits.go` (returns default + `ok=false`). Callers may surface a config error or silently fall back via the `Must*` helpers.
 

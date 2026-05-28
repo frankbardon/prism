@@ -12,7 +12,8 @@ bundle:
 
 ```
 <out-dir>/
-├── prism.wasm           # cmd/prismwasm binary (GOOS=js GOARCH=wasm)
+├── prism.wasm           # cmd/prismwasm binary (GOOS=js GOARCH=wasm), ~69 MiB raw
+├── prism.wasm.gz        # gzipped binary (~12 MiB) — what the loader fetches
 ├── wasm_exec.js         # toolchain-pinned WASM loader (Go runtime)
 ├── prism.mjs            # thin bootstrapper + SceneHandle facade
 ├── prism-element.mjs    # <prism-chart> / <prism-dataset> / <prism-coordinator>
@@ -21,11 +22,33 @@ bundle:
 └── index.html           # minimal loader example
 ```
 
-Total wire size at v1: ~12 MiB gzipped (`prism.wasm`) + ~17 KiB
-(`wasm_exec.js`) + ~10 KiB (the four `.mjs` files). A static host
-that serves the directory with `Content-Type: application/wasm`
-gets streaming instantiation; everything else falls back to the
-buffered `WebAssembly.instantiate` path automatically.
+### Wire size and the raw/gzip gap
+
+The Go WASM target is large uncompressed — **~69 MiB raw** — but
+compresses to **~12 MiB gzipped** (the runtime, reflection, and GC
+are all linked in; `-s -w -trimpath` are already applied and TinyGo
+is not used). The wire size you actually pay depends entirely on
+compression:
+
+- **The bundle ships both `prism.wasm` and `prism.wasm.gz`.** The
+  standalone loader fetches the `.gz` and decompresses it in-page via
+  `DecompressionStream("gzip")`, so the **~12 MiB** payload is what
+  crosses the wire even on a dumb static host that does no
+  content-negotiation. The raw `prism.wasm` stays as a fallback
+  (`WebAssembly.instantiateStreaming`) for environments without
+  `DecompressionStream` or where the `.gz` is absent.
+- **If you wire up your own loader**, either fetch `prism.wasm.gz`
+  and decompress as above, or serve `prism.wasm` with
+  `Content-Encoding: gzip`/`br` so the browser decompresses
+  transparently. Do **not** serve the raw `prism.wasm` uncompressed —
+  users download the full ~69 MiB. (nginx: add `application/wasm` to
+  `gzip_types`; most CDNs negotiate automatically but some skip files
+  over a size cap.)
+
+The CI size gate (`internal/gates/wasm_size_test.go`) now guards
+**both** the gzipped size (`PRISM_WASM_MAX_BYTES`, 16 MiB) and the
+raw size (`PRISM_WASM_RAW_MAX_BYTES`, 80 MiB) so the uncompressed
+artifact cannot balloon unnoticed behind the gzipped check.
 
 ## Load modes
 
@@ -270,7 +293,10 @@ cd ./public/prism && python -m http.server 8000
 # → open http://localhost:8000/
 ```
 
-The demo loads `prism.wasm`, then renders any `<prism-chart>` it
-finds. Replace the bundled `index.html` with your own page to
-embed Prism in mdBook, Astro, Hugo, or any other static-site
-generator.
+The demo fetches `prism.wasm.gz`, decompresses it in-page via
+`DecompressionStream("gzip")` (falling back to the raw `prism.wasm`
+when unavailable), then renders any `<prism-chart>` it finds.
+Replace the bundled `index.html` with your own page to embed Prism
+in mdBook, Astro, Hugo, or any other static-site generator — keep
+the `.gz` + `DecompressionStream` pattern (or serve the raw `.wasm`
+with `Content-Encoding`) so you ship ~12 MiB, not ~69 MiB.
