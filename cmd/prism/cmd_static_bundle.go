@@ -3,6 +3,8 @@
 package main
 
 import (
+	"bytes"
+	"compress/gzip"
 	"context"
 	"fmt"
 	"io/fs"
@@ -161,9 +163,27 @@ func emitWasmBundle(cmd *cli.Command, outDir string) error {
 		}
 		srcWasm = built
 	}
+	wasmBytes, err := os.ReadFile(srcWasm)
+	if err != nil {
+		return cli.Exit(fmt.Sprintf("read prism.wasm: %v", err), 1)
+	}
 	dstWasm := filepath.Join(outDir, "prism.wasm")
-	if err := copyFile(srcWasm, dstWasm); err != nil {
+	if err := os.WriteFile(dstWasm, wasmBytes, 0o644); err != nil {
 		return cli.Exit(fmt.Sprintf("copy prism.wasm: %v", err), 1)
+	}
+
+	// Emit a gzip companion next to the raw binary. The Go WASM target
+	// is ~69 MiB raw but ~12 MiB gzipped; the standalone loader fetches
+	// the .gz and decompresses via DecompressionStream so the wire size
+	// stays small even on static hosts that do not negotiate
+	// Content-Encoding. The raw .wasm remains as a fallback.
+	dstWasmGz := filepath.Join(outDir, "prism.wasm.gz")
+	gzBytes, err := gzipBytes(wasmBytes)
+	if err != nil {
+		return cli.Exit(fmt.Sprintf("gzip prism.wasm: %v", err), 1)
+	}
+	if err := os.WriteFile(dstWasmGz, gzBytes, 0o644); err != nil {
+		return cli.Exit(fmt.Sprintf("write prism.wasm.gz: %v", err), 1)
 	}
 
 	wasmExec, err := locateWasmExec()
@@ -180,8 +200,26 @@ func emitWasmBundle(cmd *cli.Command, outDir string) error {
 		return cli.Exit(fmt.Sprintf("write index.html: %v", err), 1)
 	}
 
-	fmt.Fprintf(cmd.Writer, "static-bundle: wrote prism.wasm, wasm_exec.js, index.html (standalone loader) to %s\n", outDir)
+	fmt.Fprintf(cmd.Writer, "static-bundle: wrote prism.wasm (%d B), prism.wasm.gz (%d B), wasm_exec.js, index.html (standalone loader) to %s\n", len(wasmBytes), len(gzBytes), outDir)
 	return nil
+}
+
+// gzipBytes returns the gzip (BestCompression) encoding of src. Used
+// to emit the prism.wasm.gz companion so the standalone loader can keep
+// the wire payload small without relying on server-side compression.
+func gzipBytes(src []byte) ([]byte, error) {
+	var buf bytes.Buffer
+	gz, err := gzip.NewWriterLevel(&buf, gzip.BestCompression)
+	if err != nil {
+		return nil, err
+	}
+	if _, err := gz.Write(src); err != nil {
+		return nil, err
+	}
+	if err := gz.Close(); err != nil {
+		return nil, err
+	}
+	return buf.Bytes(), nil
 }
 
 // buildWasmInline runs `go build -o <outDir>/prism.wasm
@@ -241,13 +279,31 @@ const standaloneLoaderHTML = `<!doctype html>
 <head>
   <meta charset="utf-8">
   <title>Prism — standalone</title>
-  <link rel="preload" as="fetch" type="application/wasm" href="prism.wasm" crossorigin>
+  <link rel="preload" as="fetch" href="prism.wasm.gz" crossorigin>
   <script src="wasm_exec.js"></script>
   <script type="module">
     const go = new Go();
-    const resp = fetch("prism.wasm");
-    const { instance } = await WebAssembly.instantiateStreaming(resp, go.importObject);
-    go.run(instance);
+    // Prefer the pre-compressed binary (~12 MiB vs ~69 MiB raw) so the
+    // bundle stays small on static hosts that do not negotiate
+    // Content-Encoding. DecompressionStream("gzip") ships in current
+    // Chrome/Firefox/Safari; fall back to the raw .wasm via
+    // instantiateStreaming when it is unavailable or the .gz is absent.
+    async function loadInstance() {
+      if (typeof DecompressionStream === "function") {
+        try {
+          const gz = await fetch("prism.wasm.gz");
+          if (gz.ok && gz.body) {
+            const stream = gz.body.pipeThrough(new DecompressionStream("gzip"));
+            const buf = await new Response(stream).arrayBuffer();
+            return (await WebAssembly.instantiate(buf, go.importObject)).instance;
+          }
+        } catch (e) {
+          console.warn("prism: gzip load failed, falling back to raw prism.wasm", e);
+        }
+      }
+      return (await WebAssembly.instantiateStreaming(fetch("prism.wasm"), go.importObject)).instance;
+    }
+    go.run(await loadInstance());
   </script>
   <script type="module" src="prism-element.mjs" defer></script>
   <style>

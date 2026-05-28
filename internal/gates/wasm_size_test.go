@@ -51,17 +51,29 @@ func TestPrismWasmBinaryUnderSizeBudget(t *testing.T) {
 	}
 	gzipped := buf.Len()
 	limit := limits.MustWasmMaxBytes()
+	rawLimit := limits.MustWasmRawMaxBytes()
 
-	t.Logf("bin/prism.wasm: raw=%d bytes (%.1f MiB), gzipped=%d bytes (%.1f MiB), limit=%d bytes (%.1f MiB)",
+	t.Logf("bin/prism.wasm: raw=%d bytes (%.1f MiB), gzipped=%d bytes (%.1f MiB), gzip-limit=%d bytes (%.1f MiB), raw-limit=%d bytes (%.1f MiB)",
 		len(raw), float64(len(raw))/(1024*1024),
 		gzipped, float64(gzipped)/(1024*1024),
-		limit, float64(limit)/(1024*1024))
+		limit, float64(limit)/(1024*1024),
+		rawLimit, float64(rawLimit)/(1024*1024))
 
 	if gzipped > limit {
 		t.Errorf("bin/prism.wasm gzipped size %d exceeds PRISM_WASM_MAX_BYTES=%d (PRISM_WASM_BUDGET_EXCEEDED)", gzipped, limit)
 	}
 	if gzipped > limits.SoftWarnWasmMaxBytes {
 		t.Logf("WARN: bin/prism.wasm gzipped size %d crossed the soft-warn threshold %d", gzipped, limits.SoftWarnWasmMaxBytes)
+	}
+
+	// The gzipped gate above is blind to the raw size that naive static
+	// hosts serve when they do not negotiate Content-Encoding. Guard the
+	// uncompressed artifact separately so it cannot balloon unnoticed.
+	if len(raw) > rawLimit {
+		t.Errorf("bin/prism.wasm raw size %d exceeds PRISM_WASM_RAW_MAX_BYTES=%d (PRISM_WASM_BUDGET_EXCEEDED)", len(raw), rawLimit)
+	}
+	if len(raw) > limits.SoftWarnWasmRawMaxBytes {
+		t.Logf("WARN: bin/prism.wasm raw size %d crossed the raw soft-warn threshold %d", len(raw), limits.SoftWarnWasmRawMaxBytes)
 	}
 }
 
