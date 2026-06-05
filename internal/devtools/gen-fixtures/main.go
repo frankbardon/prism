@@ -40,6 +40,10 @@ var fixtures = []fixture{
 		specPath:   "testdata/cohorts/benchmark.synth.json",
 		outputPath: "testdata/cohorts/benchmark.pulse",
 	},
+	{
+		specPath:   "testdata/cohorts/sales.synth.json",
+		outputPath: "testdata/cohorts/sales.pulse",
+	},
 }
 
 func main() {

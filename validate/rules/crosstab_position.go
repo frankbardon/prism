@@ -1,0 +1,113 @@
+package rules
+
+import (
+	"fmt"
+
+	"github.com/frankbardon/prism/errors"
+	"github.com/frankbardon/prism/spec"
+	"github.com/frankbardon/prism/validate"
+)
+
+// CrosstabPosition implements PRISM_SPEC_032 / PRISM_SPEC_033:
+//
+//   - PRISM_SPEC_032: a crosstab transform must declare rows[],
+//     columns[], cell.aggregate (and cell.field unless aggregate is
+//     "count"). The plan node enforces the same at build time; the
+//     validate rule surfaces the problem statically before any I/O.
+//   - PRISM_SPEC_033: a crosstab transform may only appear as the
+//     first transform on a chain — Pulse has no in-memory cohort
+//     constructor, so chaining it after a Prism filter / aggregate
+//     / join is impossible.
+type CrosstabPosition struct{}
+
+// Code returns PRISM_SPEC_032 (the broader of the two; PRISM_SPEC_033
+// fires only when the position rule trips).
+func (CrosstabPosition) Code() string { return "PRISM_SPEC_032" }
+
+// Check walks every spec node and reports crosstab transforms that
+// fail position or shape rules.
+func (CrosstabPosition) Check(s *spec.Spec, _ validate.SchemaLookup) []*errors.AppError {
+	if s == nil {
+		return nil
+	}
+	var out []*errors.AppError
+	walkCrosstab(s, "", &out)
+	return out
+}
+
+func walkCrosstab(s *spec.Spec, prefix string, out *[]*errors.AppError) {
+	if s == nil {
+		return
+	}
+	for i, t := range s.Transform {
+		if t.Crosstab == nil {
+			continue
+		}
+		path := fmt.Sprintf("%stransform[%d].crosstab", prefix, i)
+		// Position: must be the first transform on the chain (or
+		// reference a registered dataset via its `data` alias —
+		// dataset-level crosstab is also leaf-bound).
+		if i > 0 && t.Crosstab.Data == "" {
+			*out = append(*out, errors.New(
+				"PRISM_SPEC_033",
+				fmt.Sprintf("crosstab at %s must be the first transform on the chain.", path),
+				map[string]any{"Path": path, "Index": i},
+			))
+		}
+		// Shape: rows + columns + cell.aggregate required.
+		if len(t.Crosstab.Crosstab.Rows) == 0 {
+			*out = append(*out, errors.New(
+				"PRISM_SPEC_032",
+				fmt.Sprintf("crosstab.rows at %s requires at least one grouper.", path),
+				map[string]any{"Axis": "rows", "Path": path},
+			))
+		}
+		if len(t.Crosstab.Crosstab.Columns) == 0 {
+			*out = append(*out, errors.New(
+				"PRISM_SPEC_032",
+				fmt.Sprintf("crosstab.columns at %s requires at least one grouper.", path),
+				map[string]any{"Axis": "columns", "Path": path},
+			))
+		}
+		if t.Crosstab.Crosstab.Cell.Aggregate == "" {
+			*out = append(*out, errors.New(
+				"PRISM_SPEC_032",
+				fmt.Sprintf("crosstab.cell.aggregate at %s is required.", path),
+				map[string]any{"Path": path},
+			))
+		}
+		if t.Crosstab.Crosstab.Cell.Field == "" && t.Crosstab.Crosstab.Cell.Aggregate != "count" {
+			*out = append(*out, errors.New(
+				"PRISM_SPEC_032",
+				fmt.Sprintf("crosstab.cell.field at %s is required for aggregate %q.", path, t.Crosstab.Crosstab.Cell.Aggregate),
+				map[string]any{"Path": path, "Aggregate": t.Crosstab.Crosstab.Cell.Aggregate},
+			))
+		}
+		// Normalize: enum check.
+		switch t.Crosstab.Crosstab.Normalize {
+		case "", "none", "row", "column", "total":
+			// ok
+		default:
+			*out = append(*out, errors.New(
+				"PRISM_SPEC_034",
+				fmt.Sprintf("crosstab.normalize at %s must be one of none/row/column/total (got %q).", path, t.Crosstab.Crosstab.Normalize),
+				map[string]any{"Path": path, "Normalize": t.Crosstab.Crosstab.Normalize},
+			))
+		}
+	}
+	for i, layer := range s.Layer {
+		walkCrosstab(layer, fmt.Sprintf("%slayer[%d].", prefix, i), out)
+	}
+	for i, child := range s.Concat {
+		walkCrosstab(child, fmt.Sprintf("%sconcat[%d].", prefix, i), out)
+	}
+	for i, child := range s.HConcat {
+		walkCrosstab(child, fmt.Sprintf("%shconcat[%d].", prefix, i), out)
+	}
+	for i, child := range s.VConcat {
+		walkCrosstab(child, fmt.Sprintf("%svconcat[%d].", prefix, i), out)
+	}
+	if s.ChildSpec != nil {
+		walkCrosstab(s.ChildSpec, prefix+"spec.", out)
+	}
+}

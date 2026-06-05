@@ -16,6 +16,7 @@ type Transform struct {
 	Sample    *SampleTransform
 	Sort      *SortTransform
 	Limit     *LimitTransform
+	Crosstab  *CrosstabTransform
 }
 
 // FilterTransform: row predicate.

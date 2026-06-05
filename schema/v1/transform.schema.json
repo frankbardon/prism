@@ -43,9 +43,10 @@
         {"$ref": "transform.schema.json#/$defs/unpivot_transform"},
         {"$ref": "transform.schema.json#/$defs/sample_transform"},
         {"$ref": "transform.schema.json#/$defs/sort_transform"},
-        {"$ref": "transform.schema.json#/$defs/limit_transform"}
+        {"$ref": "transform.schema.json#/$defs/limit_transform"},
+        {"$ref": "transform.schema.json#/$defs/crosstab_transform"}
       ],
-      "description": "Single transform step; exactly one of the 12 variants identified by its discriminator key."
+      "description": "Single transform step; exactly one of the 13 variants identified by its discriminator key."
     },
     "filter_transform": {
       "type": "object",
@@ -318,6 +319,69 @@
         "offset": {"type": "integer", "minimum": 0, "description": "Optional starting offset."},
         "data":   {"type": "string", "minLength": 1, "description": "Optional input alias."},
         "as":     {"type": "string", "minLength": 1, "description": "Optional output alias."}
+      }
+    },
+
+    "crosstab_transform": {
+      "type": "object",
+      "description": "Cross-tabulation built by Pulse: rows x columns x cell aggregation, with optional margins and normalisation. Must be the first transform on the chain (it consumes the source cohort directly).",
+      "additionalProperties": false,
+      "required": ["crosstab"],
+      "properties": {
+        "crosstab": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["rows", "columns", "cell"],
+          "properties": {
+            "rows":    {"type": "array", "minItems": 1, "items": {"$ref": "#/$defs/crosstab_group"}, "description": "Row-axis groupers."},
+            "columns": {"type": "array", "minItems": 1, "items": {"$ref": "#/$defs/crosstab_group"}, "description": "Column-axis groupers."},
+            "cell":    {"$ref": "#/$defs/crosstab_cell", "description": "Cell aggregation."},
+            "margins": {"$ref": "#/$defs/crosstab_margins", "description": "Toggle emission of row / column / grand-total rows."},
+            "normalize": {
+              "type": "string",
+              "enum": ["none", "row", "column", "total"],
+              "description": "Cell normalisation mode. none (default), row (cells in each row sum to 1), column (cells in each column sum to 1), total (whole table sums to 1)."
+            },
+            "shape": {
+              "type": "string",
+              "enum": ["long", "matrix"],
+              "description": "Response shape. long (default) returns one row per (row-key, column-key) cell. matrix returns Pulse's structured payload on Response.Crosstab — reserved for a future encoder."
+            }
+          }
+        },
+        "data": {"type": "string", "minLength": 1, "description": "Optional input alias (must resolve to a registered .pulse dataset)."},
+        "as":   {"type": "string", "minLength": 1, "description": "Optional output alias."}
+      }
+    },
+
+    "crosstab_group": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["field"],
+      "properties": {
+        "field": {"type": "string", "minLength": 1, "description": "Cohort field to group on."},
+        "type":  {"type": "string", "enum": ["category"], "description": "Grouper kind. v1 supports category only (GROUP_CATEGORY)."}
+      }
+    },
+
+    "crosstab_cell": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["aggregate"],
+      "properties": {
+        "aggregate": {"$ref": "transform.schema.json#/$defs/aggregate_op", "description": "Per-cell aggregate (Pulse-backed alias)."},
+        "field":     {"type": "string", "minLength": 1, "description": "Cohort field to aggregate. Omit for count."},
+        "as":        {"type": "string", "minLength": 1, "description": "Output column name. Defaults to _value."}
+      }
+    },
+
+    "crosstab_margins": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "rows":    {"type": "boolean", "description": "Emit per-row totals as additional rows with _margin = \"rows\"."},
+        "columns": {"type": "boolean", "description": "Emit per-column totals as additional rows with _margin = \"columns\"."},
+        "grand":   {"type": "boolean", "description": "Emit the grand-total row with _margin = \"grand\"."}
       }
     }
   }

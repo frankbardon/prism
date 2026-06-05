@@ -43,9 +43,9 @@ $schema       data            datasets        transform
 mark          encoding        layer           concat
 hconcat       vconcat         facet           repeat
 spec          selection       resolve         theme
-config        width           height          padding
-background    title           subtitle        description
-projection    animation
+width         height          padding         background
+title         subtitle        description     projection
+animation
 ```
 
 Exactly one of `mark | layer | concat | hconcat | vconcat | facet | repeat`
@@ -100,6 +100,62 @@ Spec rules that govern `animation`:
 - `PRISM_SPEC_022` — unknown easing name.
 - `PRISM_SPEC_023` — block declared but no channel has `key: true`.
 - `PRISM_SPEC_024` — more than one channel carries `key: true`.
+
+## Crosstab transform
+
+The `crosstab` transform delegates a contingency-table computation to
+Pulse v0.13+. Pulse's engine composes the cell aggregation across the
+row × column grouper grid, applies the configured normalisation, and
+returns long-form rows ready for a heatmap encoder.
+
+```json
+{
+  "$schema": "urn:prism:schema:v1:spec",
+  "data": {"source": "sales.pulse"},
+  "transform": [{
+    "crosstab": {
+      "rows":    [{"field": "region"}],
+      "columns": [{"field": "quarter"}],
+      "cell":    {"aggregate": "mean", "field": "revenue", "as": "mean_revenue"},
+      "margins": {"rows": true, "columns": true},
+      "normalize": "none"
+    }
+  }],
+  "mark": "heatmap",
+  "encoding": {
+    "x":     {"field": "quarter", "type": "nominal"},
+    "y":     {"field": "region",  "type": "nominal"},
+    "color": {"field": "mean_revenue", "type": "quantitative"}
+  }
+}
+```
+
+Body:
+
+| Field | Required | Notes |
+|---|---|---|
+| `rows`      | yes | Row-axis groupers. v1: one or more `{field: "..."}` (GROUP_CATEGORY). |
+| `columns`   | yes | Column-axis groupers. Same shape. |
+| `cell`      | yes | `{aggregate, field, as}` — Pulse-backed alias (sum, mean, count, ...). |
+| `margins`   |     | `{rows, columns, grand}` — emit total rows with `_margin` sentinel. |
+| `normalize` |     | `none` (default), `row`, `column`, `total`. |
+| `shape`     |     | `long` (default) returns one row per cell; `matrix` is reserved. |
+
+Constraints:
+
+- Crosstab must be the **first** transform on the chain. Pulse has no
+  in-memory cohort constructor, so chaining it after another Prism
+  transform is structurally impossible (`PRISM_SPEC_033`).
+- Grouper type is `category` only in v1; date / range / quantile
+  groupers land in a follow-up.
+- Margin rows carry a `_margin` column the encoder leaves on the table
+  — filter them out at the chart level by upstream `filter`-after
+  composition or by avoiding the `margins` flag for the visual
+  rendering use case.
+
+Cells are evenly numbered through `PRISM_SPEC_032` (shape rule),
+`PRISM_SPEC_033` (position rule), `PRISM_SPEC_034` (normalize enum).
+Run `prism errors lookup <code>` for details + fixups.
 
 ## Strict by default
 

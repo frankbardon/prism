@@ -686,6 +686,51 @@ var Codes = map[string]CodeMetadata{
 		},
 		SeeAlso: []string{"PRISM_SPEC_028"},
 	},
+	"PRISM_SPEC_032": {
+		Code:    "PRISM_SPEC_032",
+		Message: `Crosstab transform malformed (at {{.Axis}}{{if .Aggregate}} / cell {{.Aggregate}}{{end}}{{if .Field}} / field {{.Field}}{{end}}).`,
+		Fixups: []string{
+			`Required: ` + "`crosstab.rows`" + ` (>=1 grouper), ` + "`crosstab.columns`" + ` (>=1 grouper), ` + "`crosstab.cell.aggregate`" + ` (e.g. sum, mean, count), ` + "`crosstab.cell.field`" + ` (omit only for count). Example: ` + "`{crosstab: {rows: [{field: \"region\"}], columns: [{field: \"quarter\"}], cell: {aggregate: \"sum\", field: \"revenue\", as: \"revenue\"}}}`" + `.`,
+			`Grouper type defaults to "category" (GROUP_CATEGORY). Date / range / quantile groupers land in a follow-up.`,
+			`Cell aggregate must be a Pulse-backed alias (count, sum, mean, median, min, max, stdev, variance, q1, q3, ci0, ci1, wmean, ratio). lift + share are client-side only and not yet wired into crosstab.`,
+		},
+		SeeAlso: []string{"PRISM_SPEC_033", "PRISM_SPEC_034"},
+	},
+	"PRISM_SPEC_033": {
+		Code:    "PRISM_SPEC_033",
+		Message: `crosstab transform must consume a source ref; it cannot follow a Prism transform.`,
+		Fixups: []string{
+			`Place ` + "`crosstab`" + ` as the FIRST transform on the chain, immediately downstream of ` + "`data`" + `. Prior filter / aggregate / join transforms materialise an in-memory table that Pulse cannot re-cohort.`,
+			`If you need to filter rows before the crosstab, push the filter into the spec via ` + "`crosstab.cell`" + `'s aggregate options or pre-aggregate the cohort upstream (e.g. emit a derived .pulse file).`,
+		},
+		SeeAlso: []string{"PRISM_SPEC_032", "PRISM_PLAN_CROSSTAB_REQUIRES_SOURCE"},
+	},
+	"PRISM_SPEC_034": {
+		Code:    "PRISM_SPEC_034",
+		Message: `crosstab.normalize must be one of none/row/column/total (got {{.Normalize}}).`,
+		Fixups: []string{
+			`Pick one of "none" (default — raw cell aggregations), "row" (cells in each row sum to 1), "column" (cells in each column sum to 1), "total" (whole table sums to 1).`,
+			`Margins are computed internally when normalize is row / column / total; their emission is independent — set ` + "`crosstab.margins.{rows,columns,grand}`" + ` to surface them on the response.`,
+		},
+		SeeAlso: []string{"PRISM_SPEC_032"},
+	},
+	"PRISM_PLAN_CROSSTAB_REQUIRES_SOURCE": {
+		Code:    "PRISM_PLAN_CROSSTAB_REQUIRES_SOURCE",
+		Message: `crosstab plan node could not link to a SourceNode upstream.`,
+		Fixups: []string{
+			`Crosstab opens the .pulse cohort directly via pulse.Process — there is no in-memory cohort handoff. The build must see a SourceNode as the immediate input.`,
+			`Check that the spec places ` + "`crosstab`" + ` as the first transform on a top-level dataset, not on a derived alias.`,
+		},
+		SeeAlso: []string{"PRISM_SPEC_033"},
+	},
+	"PRISM_PLAN_CROSSTAB_PROCESS": {
+		Code:    "PRISM_PLAN_CROSSTAB_PROCESS",
+		Message: `Pulse rejected the crosstab request for {{.Ref}}: {{.Reason}}.`,
+		Fixups: []string{
+			`The Pulse error envelope includes the precise rule — check that every grouper field exists in the cohort schema, that the cell field's column type is numeric for sum / mean / etc., and that no aggregator alias was promoted from client-side (lift, share).`,
+			`Run ` + "`prism inspect`" + ` to view the cohort schema without re-executing.`,
+		},
+	},
 	"PRISM_SPEC_030": {
 		Code:    "PRISM_SPEC_030",
 		Message: `Unknown color scheme {{.Scheme}} (at {{.Path}}).`,

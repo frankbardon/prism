@@ -1,0 +1,18 @@
+{
+  "$schema": "urn:prism:schema:v1:spec",
+  "title": "Mean revenue by region x quarter (crosstab heatmap)",
+  "data": {"source": "testdata/cohorts/sales.pulse"},
+  "transform": [{
+    "crosstab": {
+      "rows":    [{"field": "region"}],
+      "columns": [{"field": "quarter"}],
+      "cell":    {"aggregate": "mean", "field": "revenue", "as": "mean_revenue"}
+    }
+  }],
+  "mark": "heatmap",
+  "encoding": {
+    "x":     {"field": "quarter", "type": "nominal"},
+    "y":     {"field": "region",  "type": "nominal"},
+    "color": {"field": "mean_revenue", "type": "quantitative"}
+  }
+}

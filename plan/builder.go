@@ -35,6 +35,41 @@ func (b *Builder) NodeIDs() map[NodeID]struct{} {
 	return out
 }
 
+// Node returns the registered node for id (or nil + false). Used by
+// build helpers that need to inspect upstream node kinds before
+// rewriting the DAG (e.g. the crosstab transform consumes a
+// SourceNode directly).
+func (b *Builder) Node(id NodeID) (Node, bool) {
+	n, ok := b.nodes[id]
+	return n, ok
+}
+
+// RemoveNode deletes id from the builder's pending node set + any
+// root / sink marker that references it. Used by builders that swap
+// a leaf for an upstream replacement (e.g. crosstab consuming a
+// SourceNode directly). No-op when id is not registered.
+func (b *Builder) RemoveNode(id NodeID) {
+	delete(b.nodes, id)
+	if len(b.roots) > 0 {
+		filtered := b.roots[:0]
+		for _, r := range b.roots {
+			if r != id {
+				filtered = append(filtered, r)
+			}
+		}
+		b.roots = filtered
+	}
+	if len(b.sinks) > 0 {
+		filtered := b.sinks[:0]
+		for _, s := range b.sinks {
+			if s != id {
+				filtered = append(filtered, s)
+			}
+		}
+		b.sinks = filtered
+	}
+}
+
 // AddNode registers n. Returns an error if a node with the same id is
 // already present (duplicates are always a bug in the spec → DAG
 // translator).
