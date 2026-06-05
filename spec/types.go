@@ -27,7 +27,6 @@ type Spec struct {
 	Selection   map[string]Selection `json:"selection,omitempty"`
 	Resolve     *Resolve             `json:"resolve,omitempty"`
 	Theme       *ThemeOverride       `json:"theme,omitempty"`
-	Config      *Config              `json:"config,omitempty"`
 	Width       *Dimension           `json:"width,omitempty"`
 	Height      *Dimension           `json:"height,omitempty"`
 	Padding     *Padding             `json:"padding,omitempty"`

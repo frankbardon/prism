@@ -34,4 +34,6 @@ func init() {
 	validate.RegisterDefault(func() validate.SemanticRule { return ConditionTestParses{} })
 	validate.RegisterDefault(func() validate.SemanticRule { return ConditionValueOrBinding{} })
 	validate.RegisterDefault(func() validate.SemanticRule { return TreeChannels{} })
+	validate.RegisterDefault(func() validate.SemanticRule { return ThemeSchemeKnown{} })
+	validate.RegisterDefault(func() validate.SemanticRule { return ThemeMarkTypeKnown{} })
 }

@@ -38,10 +38,15 @@ type BandScaler interface {
 }
 
 // ColorChannel binds a color encoding (categorical field + palette).
+// SequentialPalette is consulted by quantitative-color encoders
+// (heatmap, choropleth) — when non-empty, the encoder interpolates
+// within the stops rather than calling SequentialColor's hardcoded
+// blue gradient.
 type ColorChannel struct {
-	Field      string
-	Categories []string
-	Palette    []*scene.Color
+	Field             string
+	Categories        []string
+	Palette           []*scene.Color
+	SequentialPalette []*scene.Color
 }
 
 // Inputs carries the per-Encode-call context: table, encoded

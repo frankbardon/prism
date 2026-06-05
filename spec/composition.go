@@ -37,18 +37,32 @@ type ResolveChannelMap struct {
 }
 
 // ThemeOverride is a sparse override on top of a registered theme.
+// Name selects the registered base (light/dark/print/etc.); the
+// other fields layer over it. The nested blocks mirror theme.Theme
+// 1:1 — see spec/theme.go for the typed shape.
+//
+// Legacy flat fields (Background, Font, FontSize, Color, Palette,
+// Scheme, Padding) remain for back-compat with v1 specs; they seed
+// the nested blocks via theme.ApplyOverride.
 type ThemeOverride struct {
-	Name       string         `json:"name,omitempty"`
-	Background string         `json:"background,omitempty"`
-	Font       string         `json:"font,omitempty"`
-	FontSize   float64        `json:"font_size,omitempty"`
-	Color      string         `json:"color,omitempty"`
-	Palette    []string       `json:"palette,omitempty"`
-	Scheme     string         `json:"scheme,omitempty"`
-	Padding    *Padding       `json:"padding,omitempty"`
-	Mark       map[string]any `json:"mark,omitempty"`
-	Axis       map[string]any `json:"axis,omitempty"`
-	Legend     map[string]any `json:"legend,omitempty"`
-	Scale      map[string]any `json:"scale,omitempty"`
-	Title      map[string]any `json:"title,omitempty"`
+	Name       string   `json:"name,omitempty"`
+	Background string   `json:"background,omitempty"`
+	Font       string   `json:"font,omitempty"`
+	FontSize   float64  `json:"font_size,omitempty"`
+	Color      string   `json:"color,omitempty"`
+	Palette    []string `json:"palette,omitempty"`
+	Scheme     string   `json:"scheme,omitempty"`
+	Padding    *Padding `json:"padding,omitempty"`
+
+	// v2 nested blocks. Each is a pointer so JSON merges sparsely.
+	Mark    *MarkStyle             `json:"mark,omitempty"`
+	Marks   map[string]*MarkStyle  `json:"marks,omitempty"`
+	Axis    *AxisStyle             `json:"axis,omitempty"`
+	Legend  *LegendStyle           `json:"legend,omitempty"`
+	Title   *TitleStyle            `json:"title,omitempty"`
+	View    *ViewStyle             `json:"view,omitempty"`
+	Range   *Range                 `json:"range,omitempty"`
+	States  map[string]*StateStyle `json:"states,omitempty"`
+	Schemes map[string][]string    `json:"schemes,omitempty"`
+	Style   map[string]*MarkStyle  `json:"style,omitempty"`
 }

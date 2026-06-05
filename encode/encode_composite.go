@@ -77,7 +77,7 @@ func encodeLayerComposite(s *spec.Spec, composite *plan.CompositeDAG, childTable
 	if height == 0 {
 		height = 600
 	}
-	sceneTheme, err := resolveTheme(opts, s.Theme)
+	sceneTheme, fullTheme, err := resolveThemeFull(opts, s.Theme)
 	if err != nil {
 		return nil, err
 	}
@@ -251,7 +251,7 @@ func encodeLayerComposite(s *spec.Spec, composite *plan.CompositeDAG, childTable
 			colorChannel = &marks.ColorChannel{
 				Field:      childEnc.Color.Field,
 				Categories: cats,
-				Palette:    DefaultPalette(),
+				Palette:    ResolveCategoricalPalette(fullTheme, schemeNameOf(childEnc.Color)),
 			}
 			if len(cats) > 1 {
 				legend := BuildSymbolLegend(LegendInputs{
@@ -267,7 +267,7 @@ func encodeLayerComposite(s *spec.Spec, composite *plan.CompositeDAG, childTable
 			}
 		}
 
-		style := defaultMarkStyle(markType)
+		style := defaultMarkStyle(fullTheme, markType)
 		if lc.child.Spec.Mark != nil && lc.child.Spec.Mark.Def != nil {
 			applyMarkDef(lc.child.Spec.Mark.Def, &style)
 		}
@@ -572,7 +572,7 @@ func encodeConcatComposite(s *spec.Spec, composite *plan.CompositeDAG, childTabl
 	if outerH == 0 {
 		outerH = 600
 	}
-	sceneTheme, err := resolveTheme(opts, s.Theme)
+	sceneTheme, _, err := resolveThemeFull(opts, s.Theme)
 	if err != nil {
 		return nil, err
 	}

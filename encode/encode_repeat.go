@@ -42,7 +42,7 @@ func encodeRepeatComposite(s *spec.Spec, composite *plan.CompositeDAG, childTabl
 	if outerH == 0 {
 		outerH = 600
 	}
-	sceneTheme, err := resolveTheme(opts, s.Theme)
+	sceneTheme, fullTheme, err := resolveThemeFull(opts, s.Theme)
 	if err != nil {
 		return nil, err
 	}
@@ -96,6 +96,8 @@ func encodeRepeatComposite(s *spec.Spec, composite *plan.CompositeDAG, childTabl
 		childOpts := opts
 		childOpts.Width = cellW
 		childOpts.Height = cellH
+		childOpts.Theme = sceneTheme
+		childOpts.FullTheme = fullTheme
 		// No shared-scale override under independent defaults.
 		childOpts.OverrideXScale = nil
 		childOpts.OverrideYScale = nil

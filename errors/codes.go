@@ -686,6 +686,23 @@ var Codes = map[string]CodeMetadata{
 		},
 		SeeAlso: []string{"PRISM_SPEC_028"},
 	},
+	"PRISM_SPEC_030": {
+		Code:    "PRISM_SPEC_030",
+		Message: `Unknown color scheme {{.Scheme}} (at {{.Path}}).`,
+		Fixups: []string{
+			`Pick a registered scheme. Built-in categoricals: tableau10, category10, observable10, set1/2/3, dark2, paired, pastel1/2, accent, okabe_ito, tol_bright, tol_vibrant, tol_muted. Sequentials: viridis, magma, plasma, inferno, cividis, blues/greens/greys/oranges/purples/reds, turbo. Divergings: rdbu, rdylbu, brbg, prgn, piyg, puor, rdgy, rdylgn, spectral.`,
+			`Or define a custom scheme under ` + "`theme.schemes`" + `: ` + "`{schemes: {brand: [\"#001eff\", \"#33ffaa\"]}}`" + `.`,
+			`Run ` + "`prism schema show theme.schema.json`" + ` to inspect the full scheme catalogue.`,
+		},
+	},
+	"PRISM_SPEC_031": {
+		Code:    "PRISM_SPEC_031",
+		Message: `Theme defines defaults for unknown mark type {{.Mark}} (at theme.marks.{{.Mark}}).`,
+		Fixups: []string{
+			`Mark type must match a registered mark: bar, line, area, point, rule, text, tick, rect, arc, pie, donut, histogram, heatmap, boxplot, violin, sankey, funnel, sparkline, image, path, geoshape, geopoint, tree, dendrogram, network.`,
+			`Typos like ` + "`bars`" + ` or ` + "`Bar`" + ` (with capital) fail this rule — mark names are lowercase, singular.`,
+		},
+	},
 	"PRISM_WARN_NETWORK_CYCLE": {
 		Code:    "PRISM_WARN_NETWORK_CYCLE",
 		Message: `network input graph contains a cycle; force layout may produce a visually messy result.`,

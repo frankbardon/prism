@@ -25,9 +25,14 @@ import (
 // any future composite that wants to share a scale across cells
 // without restating the spec.
 type EncodeOpts struct {
-	Width          float64
-	Height         float64
-	Theme          *scene.Theme
+	Width  float64
+	Height float64
+	Theme  *scene.Theme
+	// FullTheme carries the resolved *theme.Theme (per-mark blocks,
+	// scheme registry, range slots) so composite cells reuse the
+	// parent's full theme rather than rebuilding from ThemeName.
+	// When nil, resolveThemeFull rebuilds from ThemeName / spec.Theme.
+	FullTheme      *theme.Theme
 	ThemeName      string
 	OverrideXScale Scale
 	OverrideYScale Scale
@@ -60,7 +65,7 @@ func Encode(s *spec.Spec, tables map[plan.NodeID]*table.Table, tipID plan.NodeID
 	if height == 0 {
 		height = 600
 	}
-	sceneTheme, err := resolveTheme(opts, s.Theme)
+	sceneTheme, fullTheme, err := resolveThemeFull(opts, s.Theme)
 	if err != nil {
 		return nil, err
 	}
@@ -198,14 +203,15 @@ func Encode(s *spec.Spec, tables map[plan.NodeID]*table.Table, tipID plan.NodeID
 			cats = append(cats, s)
 		}
 		colorChannel = &marks.ColorChannel{
-			Field:      enc.Color.Field,
-			Categories: cats,
-			Palette:    DefaultPalette(),
+			Field:             enc.Color.Field,
+			Categories:        cats,
+			Palette:           ResolveCategoricalPalette(fullTheme, schemeNameOf(enc.Color)),
+			SequentialPalette: ResolveSequentialPalette(fullTheme, schemeNameOf(enc.Color)),
 		}
 	}
 
 	// Mark-level style overrides.
-	style := defaultMarkStyle(markType)
+	style := defaultMarkStyle(fullTheme, markType)
 	if s.Mark != nil && s.Mark.Def != nil {
 		applyMarkDef(s.Mark.Def, &style)
 	}
@@ -311,7 +317,7 @@ func Encode(s *spec.Spec, tables map[plan.NodeID]*table.Table, tipID plan.NodeID
 				markInputs.Color = &marks.ColorChannel{
 					Field:      enc.Source.Field,
 					Categories: cats,
-					Palette:    DefaultPalette(),
+					Palette:    ResolveCategoricalPalette(fullTheme, ""),
 				}
 				// Update local colorChannel ref so legend builder picks it up later.
 				colorChannel = markInputs.Color
@@ -531,36 +537,70 @@ func fieldOf(ch *spec.PositionChannel) string {
 	return ch.Field
 }
 
-// defaultMarkStyle returns the P05-default style for a mark type.
-// All marks pick up the theme's category-1 fill unless the spec's
-// MarkDef overrides.
-func defaultMarkStyle(markType string) scene.Style {
+// defaultMarkStyle returns the resolved default style for a mark
+// type. Cascade order:
+//
+//  1. Hardcoded fallback (matches the P05 palette so a nil theme
+//     still renders a usable chart).
+//  2. theme.Mark — global default for all marks.
+//  3. theme.Marks[markType] — per-type override.
+//
+// Theme values shadow the hardcoded fallback per field; spec.MarkDef
+// applies on top via applyMarkDef.
+func defaultMarkStyle(t *theme.Theme, markType string) scene.Style {
+	style := hardcodedDefaultStyle(markType)
+	if t == nil {
+		return style
+	}
+	if ms := t.MarkDefault(markType); ms != nil {
+		applyThemeMarkStyle(&style, ms)
+	}
+	return style
+}
+
+// hardcodedDefaultStyle is the last-resort fallback used when a
+// theme leaves a token nil. Matches the original P05 defaults so
+// a fresh repo with no built-in theme tokens still produces an
+// identifiable chart.
+func hardcodedDefaultStyle(markType string) scene.Style {
 	defaultFill, _ := scene.ColorFromHex("#3b82f6")
 	switch markType {
 	case "line", "rule":
-		// Lines / rules use stroke, not fill.
-		return scene.Style{
-			Stroke:      defaultFill,
-			StrokeWidth: 1.5,
-		}
+		return scene.Style{Stroke: defaultFill, StrokeWidth: 1.5}
 	case "area":
-		// Area uses fill + a lighter stroke.
-		return scene.Style{
-			Fill:    defaultFill,
-			Opacity: 0.7,
-		}
+		return scene.Style{Fill: defaultFill, Opacity: 0.7}
 	case "geoshape":
-		// Geo polygons: muted neutral fill + thin stroke so country
-		// borders read cleanly without a color binding.
 		fill, _ := scene.ColorFromHex("#cbd5e1")
 		stroke, _ := scene.ColorFromHex("#ffffff")
-		return scene.Style{
-			Fill:        fill,
-			Stroke:      stroke,
-			StrokeWidth: 0.5,
-		}
+		return scene.Style{Fill: fill, Stroke: stroke, StrokeWidth: 0.5}
 	default:
 		return scene.Style{Fill: defaultFill}
+	}
+}
+
+// applyThemeMarkStyle folds a theme.MarkStyle into a scene.Style.
+// Hex parse failures degrade silently (the hardcoded fallback held
+// before this call, so the user gets a chart even if a theme ships
+// a malformed color).
+func applyThemeMarkStyle(style *scene.Style, ms *theme.MarkStyle) {
+	if ms.Fill != "" {
+		if c, err := scene.ColorFromHex(ms.Fill); err == nil {
+			style.Fill = c
+		}
+	}
+	if ms.Stroke != "" {
+		if c, err := scene.ColorFromHex(ms.Stroke); err == nil {
+			style.Stroke = c
+		}
+	}
+	if ms.StrokeWidth != nil {
+		style.StrokeWidth = *ms.StrokeWidth
+	}
+	if ms.StrokeDash != nil {
+		style.StrokeDash = append([]float64(nil), ms.StrokeDash...)
+	}
+	if ms.Opacity != nil {
+		style.Opacity = *ms.Opacity
 	}
 }
 
@@ -661,6 +701,15 @@ func joinNodeIDs(tables map[plan.NodeID]*table.Table) string {
 	return out
 }
 
+// schemeNameOf returns the scheme name from a color-channel
+// scale block, or "" when absent.
+func schemeNameOf(ch *spec.MarkChannel) string {
+	if ch == nil || ch.Scale == nil {
+		return ""
+	}
+	return ch.Scale.Scheme
+}
+
 // resolveTheme picks the active theme. Precedence:
 //  1. opts.Theme — explicit scene-IR override (CSS string carried).
 //  2. opts.ThemeName + spec.theme — registry lookup + sparse override.
@@ -669,9 +718,21 @@ func joinNodeIDs(tables map[plan.NodeID]*table.Table) string {
 //
 // Returns PRISM_RENDER_THEME_UNKNOWN when ThemeName / spec.theme.name
 // references an unregistered theme.
-func resolveTheme(opts EncodeOpts, override *spec.ThemeOverride) (*scene.Theme, error) {
+// resolveThemeFull returns both the wire-shape *scene.Theme and the
+// full *theme.Theme. Encoders that need to read per-mark defaults,
+// range slots, or named schemes hold onto the full struct; the
+// scene theme stays the source of CSS bytes that ride into SceneDoc.
+func resolveThemeFull(opts EncodeOpts, override *spec.ThemeOverride) (*scene.Theme, *theme.Theme, error) {
 	if opts.Theme != nil {
-		return opts.Theme, nil
+		// Pre-resolved scene theme path (composite cells, RPC). When
+		// the parent also handed us the full theme, reuse it so
+		// per-cell encoding still consults theme.Marks; otherwise
+		// fall back to a name-only stub.
+		full := opts.FullTheme
+		if full == nil {
+			full = &theme.Theme{Name: opts.Theme.Name}
+		}
+		return opts.Theme, full, nil
 	}
 	name := opts.ThemeName
 	if override != nil && override.Name != "" {
@@ -682,7 +743,7 @@ func resolveTheme(opts EncodeOpts, override *spec.ThemeOverride) (*scene.Theme, 
 	}
 	base, ok := theme.Get(name)
 	if !ok {
-		return nil, prismerrors.New(
+		return nil, nil, prismerrors.New(
 			"PRISM_RENDER_THEME_UNKNOWN",
 			fmt.Sprintf("Unknown theme %q.", name),
 			map[string]any{"Theme": name, "Available": joinNames(theme.Names())},
@@ -695,7 +756,7 @@ func resolveTheme(opts EncodeOpts, override *spec.ThemeOverride) (*scene.Theme, 
 	scn := merged.ToSceneTheme()
 	scn.Name = merged.Name
 	scn.CSS = merged.CSSVariables()
-	return scn, nil
+	return scn, merged, nil
 }
 
 // joinNames is the tiny comma-joiner used in error contexts.
