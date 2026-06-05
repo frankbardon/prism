@@ -2,30 +2,184 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "urn:prism:schema:v1:theme",
   "title": "Prism Theme Override",
-  "description": "Sparse theme override applied on top of a registered theme.",
+  "description": "Sparse theme override applied on top of a registered theme. v2 expands typed nested blocks (mark, marks, axis, legend, title, view, range, schemes, style, states); legacy flat fields (background, font, font_size, color, palette, scheme, padding) remain for back-compat with v1 specs.",
   "$defs": {
     "theme_override": {
       "type": "object",
       "description": "Theme override block. All keys are optional; only present keys override defaults.",
       "additionalProperties": false,
       "properties": {
-        "name":       {"type": "string", "description": "Name of a registered theme to inherit from (e.g. light, dark, print)."},
-        "background": {"$ref": "shared.schema.json#/$defs/color", "description": "Chart background color."},
-        "font":       {"type": "string", "description": "Default font family."},
-        "font_size":  {"type": "number", "minimum": 0, "description": "Default font size in pixels."},
-        "color":      {"$ref": "shared.schema.json#/$defs/color", "description": "Default foreground color."},
+        "name":       {"type": "string", "description": "Name of a registered theme to inherit from (light, dark, print, high_contrast, colorblind)."},
+        "background": {"$ref": "shared.schema.json#/$defs/color", "description": "Chart background color (legacy alias for view.background)."},
+        "font":       {"type": "string", "description": "Default font family (legacy)."},
+        "font_size":  {"type": "number", "minimum": 0, "description": "Default font size in pixels (legacy)."},
+        "color":      {"$ref": "shared.schema.json#/$defs/color", "description": "Default foreground color (legacy)."},
         "palette":    {
           "type": "array",
           "items": {"$ref": "shared.schema.json#/$defs/color"},
-          "description": "Categorical color palette override."
+          "description": "Categorical color palette override (legacy alias for range.category.colors)."
         },
-        "scheme":     {"type": "string", "description": "Sequential or diverging color scheme name."},
+        "scheme":     {"type": "string", "description": "Named color scheme (legacy alias for range.category.scheme)."},
         "padding":    {"$ref": "shared.schema.json#/$defs/padding", "description": "Default chart padding."},
-        "mark":       {"type": "object", "description": "Mark property overrides."},
-        "axis":       {"type": "object", "description": "Axis property overrides."},
-        "legend":     {"type": "object", "description": "Legend property overrides."},
-        "scale":      {"type": "object", "description": "Scale property overrides."},
-        "title":      {"type": "object", "description": "Title property overrides."}
+
+        "mark":   {"$ref": "#/$defs/mark_style", "description": "Global default for all marks."},
+        "marks":  {
+          "type": "object",
+          "additionalProperties": {"$ref": "#/$defs/mark_style"},
+          "description": "Per-mark-type defaults keyed by mark type (bar, line, area, point, ...)."
+        },
+        "axis":   {"$ref": "#/$defs/axis_style", "description": "Axis token overrides."},
+        "legend": {"$ref": "#/$defs/legend_style", "description": "Legend token overrides."},
+        "title":  {"$ref": "#/$defs/title_style", "description": "Title block tokens."},
+        "view":   {"$ref": "#/$defs/view_style", "description": "Chart-rect tokens."},
+        "range":  {"$ref": "#/$defs/range_block", "description": "Default color schemes per scale role."},
+        "schemes": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "array",
+            "items": {"$ref": "shared.schema.json#/$defs/color"}
+          },
+          "description": "Per-theme custom named-scheme registry. Entries shadow the global catalogue."
+        },
+        "style": {
+          "type": "object",
+          "additionalProperties": {"$ref": "#/$defs/mark_style"},
+          "description": "Named-style registry. Marks reference an entry via the mark's style attr."
+        },
+        "states": {
+          "type": "object",
+          "additionalProperties": {"$ref": "#/$defs/state_style"},
+          "description": "State overlays (selected, deselected, hover, focus)."
+        }
+      }
+    },
+
+    "mark_style": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "fill":         {"$ref": "shared.schema.json#/$defs/color"},
+        "stroke":       {"$ref": "shared.schema.json#/$defs/color"},
+        "stroke_width": {"type": "number", "minimum": 0},
+        "stroke_dash":  {"type": "array", "items": {"type": "number", "minimum": 0}},
+        "opacity":      {"type": "number", "minimum": 0, "maximum": 1},
+        "fill_opacity": {"type": "number", "minimum": 0, "maximum": 1},
+        "corner_radius":{"type": "number", "minimum": 0},
+        "size":         {"type": "number", "minimum": 0},
+        "shape":        {"type": "string"},
+        "font_size":    {"type": "number", "minimum": 0},
+        "font_weight":  {"type": ["string", "number"]},
+        "font_style":   {"type": "string", "enum": ["normal", "italic", "oblique"]},
+        "align":        {"type": "string", "enum": ["left", "center", "right"]},
+        "baseline":     {"type": "string", "enum": ["alphabetic", "top", "middle", "bottom"]}
+      }
+    },
+
+    "axis_style": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "domain_color":       {"$ref": "shared.schema.json#/$defs/color"},
+        "domain_width":       {"type": "number", "minimum": 0},
+        "tick_color":         {"$ref": "shared.schema.json#/$defs/color"},
+        "tick_width":         {"type": "number", "minimum": 0},
+        "tick_size":          {"type": "number", "minimum": 0},
+        "tick_opacity":       {"type": "number", "minimum": 0, "maximum": 1},
+        "grid_color":         {"$ref": "shared.schema.json#/$defs/color"},
+        "grid_width":         {"type": "number", "minimum": 0},
+        "grid_dash":          {"type": "array", "items": {"type": "number", "minimum": 0}},
+        "grid_opacity":       {"type": "number", "minimum": 0, "maximum": 1},
+        "label_color":        {"$ref": "shared.schema.json#/$defs/color"},
+        "label_font_size":    {"type": "number", "minimum": 0},
+        "label_font_weight":  {"type": ["string", "number"]},
+        "label_padding":      {"type": "number", "minimum": 0},
+        "title_color":        {"$ref": "shared.schema.json#/$defs/color"},
+        "title_font_size":    {"type": "number", "minimum": 0},
+        "title_font_weight":  {"type": ["string", "number"]},
+        "title_padding":      {"type": "number", "minimum": 0}
+      }
+    },
+
+    "legend_style": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "fill_color":          {"$ref": "shared.schema.json#/$defs/color"},
+        "stroke_color":        {"$ref": "shared.schema.json#/$defs/color"},
+        "stroke_width":        {"type": "number", "minimum": 0},
+        "padding":             {"type": "number", "minimum": 0},
+        "symbol_size":         {"type": "number", "minimum": 0},
+        "symbol_stroke_width": {"type": "number", "minimum": 0},
+        "label_color":         {"$ref": "shared.schema.json#/$defs/color"},
+        "label_font_size":     {"type": "number", "minimum": 0},
+        "title_color":         {"$ref": "shared.schema.json#/$defs/color"},
+        "title_font_size":     {"type": "number", "minimum": 0},
+        "title_font_weight":   {"type": ["string", "number"]},
+        "row_padding":         {"type": "number", "minimum": 0},
+        "column_padding":      {"type": "number", "minimum": 0}
+      }
+    },
+
+    "title_style": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "color":       {"$ref": "shared.schema.json#/$defs/color"},
+        "font_size":   {"type": "number", "minimum": 0},
+        "font_weight": {"type": ["string", "number"]},
+        "align":       {"type": "string", "enum": ["left", "center", "right"]},
+        "anchor":      {"type": "string", "enum": ["start", "middle", "end"]},
+        "padding":     {"type": "number", "minimum": 0}
+      }
+    },
+
+    "view_style": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "background":   {"$ref": "shared.schema.json#/$defs/color"},
+        "stroke":       {"$ref": "shared.schema.json#/$defs/color"},
+        "stroke_width": {"type": "number", "minimum": 0},
+        "padding":      {"type": "number", "minimum": 0},
+        "corner_radius":{"type": "number", "minimum": 0}
+      }
+    },
+
+    "state_style": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "opacity":      {"type": "number", "minimum": 0, "maximum": 1},
+        "stroke_width": {"type": "number", "minimum": 0},
+        "stroke":       {"$ref": "shared.schema.json#/$defs/color"},
+        "fill":         {"$ref": "shared.schema.json#/$defs/color"}
+      }
+    },
+
+    "range_block": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "category":  {"$ref": "#/$defs/range_slot"},
+        "ordinal":   {"$ref": "#/$defs/range_slot"},
+        "ramp":      {"$ref": "#/$defs/range_slot"},
+        "heatmap":   {"$ref": "#/$defs/range_slot"},
+        "diverging": {"$ref": "#/$defs/range_slot"},
+        "symbol":    {"$ref": "#/$defs/range_slot"},
+        "cyclic":    {"$ref": "#/$defs/range_slot"}
+      }
+    },
+
+    "range_slot": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "scheme": {"type": "string", "description": "Name of a registered color scheme."},
+        "colors": {
+          "type": "array",
+          "items": {"$ref": "shared.schema.json#/$defs/color"},
+          "description": "Inline color list (wins over scheme when both set)."
+        }
       }
     }
   }

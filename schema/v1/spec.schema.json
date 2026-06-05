@@ -38,7 +38,6 @@
     },
     "resolve":  {"$ref": "resolve.schema.json#/$defs/resolve", "description": "Cross-layer resolution rules."},
     "theme":    {"$ref": "theme.schema.json#/$defs/theme_override", "description": "Spec-level theme override."},
-    "config":   {"$ref": "shared.schema.json#/$defs/config", "description": "Inline config block."},
     "width":    {"$ref": "shared.schema.json#/$defs/dimension", "description": "Chart width in pixels or token."},
     "height":   {"$ref": "shared.schema.json#/$defs/dimension", "description": "Chart height in pixels or token."},
     "padding":  {"$ref": "shared.schema.json#/$defs/padding", "description": "Chart padding."},

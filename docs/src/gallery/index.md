@@ -146,6 +146,8 @@ below is identical; only the rendering theme differs.
 | [bar_light](themes/bar_light.prism.json) | <img src="themes/bar_light.svg" width="240"> |
 | [bar_dark](themes/bar_dark.prism.json) | <img src="themes/bar_dark.svg" width="240"> |
 | [bar_print](themes/bar_print.prism.json) | <img src="themes/bar_print.svg" width="240"> |
+| [bar_high_contrast](themes/bar_high_contrast.prism.json) | <img src="themes/bar_high_contrast.svg" width="240"> |
+| [bar_colorblind](themes/bar_colorblind.prism.json) | <img src="themes/bar_colorblind.svg" width="240"> |
 
 ## Animation
 

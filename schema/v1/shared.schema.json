@@ -102,23 +102,6 @@
         }
       ],
       "description": "Text value that can be either a plain string or a rich text object."
-    },
-    "config": {
-      "type": "object",
-      "description": "Inline configuration block that overrides registered theme values.",
-      "additionalProperties": false,
-      "properties": {
-        "background": {"$ref": "shared.schema.json#/$defs/color", "description": "Default chart background."},
-        "padding":    {"$ref": "shared.schema.json#/$defs/padding", "description": "Default chart padding."},
-        "font":       {"type": "string", "description": "Default font family for all text."},
-        "font_size":  {"type": "number", "minimum": 0, "description": "Default font size in pixels."},
-        "color":      {"$ref": "shared.schema.json#/$defs/color", "description": "Default foreground color."},
-        "mark":       {"type": "object", "description": "Default mark property overrides."},
-        "axis":       {"type": "object", "description": "Default axis property overrides."},
-        "legend":     {"type": "object", "description": "Default legend property overrides."},
-        "scale":      {"type": "object", "description": "Default scale property overrides."},
-        "title":      {"type": "object", "description": "Default title property overrides."}
-      }
     }
   }
 }

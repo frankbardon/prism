@@ -124,18 +124,3 @@ func (t *TextOrTextObj) UnmarshalJSON(data []byte) error {
 	}
 	return fmt.Errorf("text: expected string or object, got %s", string(data))
 }
-
-// Config is the inline spec-level config block. Values override registered
-// theme defaults but lose to inline spec properties.
-type Config struct {
-	Background string         `json:"background,omitempty"`
-	Padding    *Padding       `json:"padding,omitempty"`
-	Font       string         `json:"font,omitempty"`
-	FontSize   float64        `json:"font_size,omitempty"`
-	Color      string         `json:"color,omitempty"`
-	Mark       map[string]any `json:"mark,omitempty"`
-	Axis       map[string]any `json:"axis,omitempty"`
-	Legend     map[string]any `json:"legend,omitempty"`
-	Scale      map[string]any `json:"scale,omitempty"`
-	Title      map[string]any `json:"title,omitempty"`
-}

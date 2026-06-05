@@ -50,4 +50,6 @@ func init() {
 	Register("light", lightTheme())
 	Register("dark", darkTheme())
 	Register("print", printTheme())
+	Register("high_contrast", highContrastTheme())
+	Register("colorblind", colorblindTheme())
 }

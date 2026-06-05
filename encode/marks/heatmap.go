@@ -96,7 +96,12 @@ func encodeHeatmap(in Inputs) ([]scene.Mark, error) {
 		}
 		style := in.Style
 		if len(colorValues) > 0 {
-			c := SequentialColor(colorValues[i], mn, mx)
+			var c *scene.Color
+			if in.Color != nil && len(in.Color.SequentialPalette) > 0 {
+				c = interpolateSequential(in.Color.SequentialPalette, colorValues[i], mn, mx)
+			} else {
+				c = SequentialColor(colorValues[i], mn, mx)
+			}
 			if c != nil {
 				style.Fill = c
 			}
@@ -114,6 +119,41 @@ func encodeHeatmap(in Inputs) ([]scene.Mark, error) {
 		})
 	}
 	return marks, nil
+}
+
+// interpolateSequential returns the color at position t = (v - mn) /
+// (mx - mn) along a sequential palette of color stops. Stops are
+// assumed evenly distributed in [0, 1]. Degenerate range returns
+// the middle stop.
+func interpolateSequential(stops []*scene.Color, v, mn, mx float64) *scene.Color {
+	if len(stops) == 0 {
+		return nil
+	}
+	if mx == mn {
+		return stops[len(stops)/2]
+	}
+	t := (v - mn) / (mx - mn)
+	if t < 0 {
+		t = 0
+	}
+	if t > 1 {
+		t = 1
+	}
+	if len(stops) == 1 {
+		return stops[0]
+	}
+	pos := t * float64(len(stops)-1)
+	idx := int(pos)
+	if idx >= len(stops)-1 {
+		return stops[len(stops)-1]
+	}
+	frac := pos - float64(idx)
+	a := stops[idx]
+	b := stops[idx+1]
+	lerp := func(x, y uint8) uint8 {
+		return uint8(float64(x) + frac*(float64(y)-float64(x)))
+	}
+	return &scene.Color{R: lerp(a.R, b.R), G: lerp(a.G, b.G), B: lerp(a.B, b.B), A: 0xff}
 }
 
 // SequentialColor returns a color along a light-blue → dark-blue

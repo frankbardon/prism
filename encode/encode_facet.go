@@ -60,7 +60,7 @@ func encodeFacetComposite(s *spec.Spec, composite *plan.CompositeDAG, childTable
 	if outerH == 0 {
 		outerH = 600
 	}
-	sceneTheme, err := resolveTheme(opts, s.Theme)
+	sceneTheme, fullTheme, err := resolveThemeFull(opts, s.Theme)
 	if err != nil {
 		return nil, err
 	}
@@ -143,6 +143,8 @@ func encodeFacetComposite(s *spec.Spec, composite *plan.CompositeDAG, childTable
 			cellOpts.Height = cellH
 			cellOpts.OverrideXScale = xShared
 			cellOpts.OverrideYScale = yShared
+			cellOpts.Theme = sceneTheme
+			cellOpts.FullTheme = fullTheme
 
 			cellDoc, err := encodeFacetCell(child.Spec, partTbl, cellOpts)
 			if err != nil {
