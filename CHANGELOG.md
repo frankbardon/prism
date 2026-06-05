@@ -1,5 +1,74 @@
 # Changelog
 
+## v0.3.0 — 2026-06-05
+
+Additive feature release. v0.2 spec and rendering semantics preserved
+where backwards-compatible; built-in theme defaults refreshed (see
+**Theme system v2** below) so SVG goldens drift by design.
+
+### Theme system v2
+
+- **Nested `theme.Theme` blocks** — `Mark` (global default), `Marks`
+  (per-mark-type), `Axis`, `Legend`, `Title`, `View`, `Range` (per
+  scale-role scheme defaults), `Schemes` (custom named-scheme
+  registry), `Style` (Vega-Lite-style named-style registry), `States`
+  (selected / deselected / hover overlays). Legacy flat fields kept
+  for back-compat with v0.2 theme JSON.
+- **49-scheme catalogue** — full d3-scale-chromatic taxonomy
+  (`tableau10`, `category10`, `observable10`, `viridis`, `magma`,
+  `plasma`, `inferno`, `cividis`, `rdbu`, `spectral`, ...) plus four
+  accessibility additions (`okabe_ito`, `tol_bright`, `tol_vibrant`,
+  `tol_muted`). Reference any scheme by name in `scale.scheme` or
+  `theme.range.*.scheme`.
+- **Two new built-in themes** — `high_contrast` (bold black/white,
+  no grid lines, projector / low-vision use) and `colorblind`
+  (Okabe-Ito categorical + Cividis sequential). `light` / `dark` /
+  `print` refreshed with full nested-block coverage.
+- **CSS variable surface ~4× wider** — every nested-block token
+  emits a `--prism-*` variable (e.g. `--prism-mark-bar-fill`,
+  `--prism-axis-tick-size`, `--prism-view-bg`). Post-hoc theming can
+  override any token without re-rendering.
+- **`spec.theme` retypes** — `ThemeOverride` mirrors the nested
+  `theme.Theme` shape 1:1 (typed `Mark`, `Marks`, `Axis`, `Legend`,
+  `Range`, etc.). The stub `spec.Config` is removed (was never
+  wired). `schema/v1/theme.schema.json` types every block.
+- **Two validate rules** — `PRISM_SPEC_030` (unknown scheme name in
+  `scale.scheme` or `theme.range.*`), `PRISM_SPEC_031` (unknown mark
+  type in `theme.marks`).
+
+### Crosstab transform
+
+- **`{transform: [{crosstab: {...}}]}`** delegates row × column ×
+  cell-aggregation to Pulse's new `Request.Crosstab` section
+  (Pulse v0.13). Margins (`rows`, `columns`, `grand`) + normalisation
+  (`none`, `row`, `column`, `total`) supported. Returns long-form
+  rows ready for the heatmap encoder.
+- **Position constraint** — crosstab must be the **first** transform
+  on the chain. Pulse has no in-memory cohort constructor, so it
+  cannot follow a Prism filter / aggregate / join. The plan node
+  opens the `.pulse` cohort directly (mirroring `PulseChainNode`).
+- **Three validate codes** — `PRISM_SPEC_032` (shape: rows/cols/cell
+  required), `PRISM_SPEC_033` (position rule), `PRISM_SPEC_034`
+  (normalize enum). Plus runtime `PRISM_PLAN_CROSSTAB_REQUIRES_SOURCE`
+  / `PRISM_PLAN_CROSSTAB_PROCESS`.
+
+### Mark fixes
+
+- **Bar mark consumes color channel** — previously every bar
+  rendered with the default `theme.Marks.bar.fill` regardless of the
+  categorical color binding, so bars + legend swatches disagreed.
+  Now mirrors the point / funnel pattern (per-row
+  `lookupCategoryColor`).
+- **Heatmap normalises rect bounds** — y-axis band step is negative
+  (range goes `plot.bottom → plot.top`), so cells were rendering
+  with negative `height` and SVG was skipping them. Heatmap now
+  flips origin + sign when `w/h < 0`; cells are visible.
+
+### Dependencies
+
+- `github.com/frankbardon/pulse` 0.10.2 → 0.13.1
+- `golang.org/x/sys` 0.44.0 → 0.45.0 (transitive)
+
 ## v0.2.0 — 2026-05-27
 
 Additive feature release. All v0.1 spec and rendering semantics preserved.
