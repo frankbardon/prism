@@ -10,10 +10,10 @@
     <g class="prism-plot">
       <g class="prism-layer" data-layer-id="layer-0" data-prism-layer="layer-0">
         <rect class="prism-mark-bar" data-prism-id="bar-0" data-prism-datum-row="0" x="47.4" y="258.31" width="133.2" height="301.69" fill="#4c78a8"/>
-        <rect class="prism-mark-bar" data-prism-id="bar-1" data-prism-datum-row="1" x="195.4" y="50" width="133.2" height="510" fill="#4c78a8"/>
-        <rect class="prism-mark-bar" data-prism-id="bar-2" data-prism-datum-row="2" x="343.4" y="143.38" width="133.2" height="416.62" fill="#4c78a8"/>
-        <rect class="prism-mark-bar" data-prism-id="bar-3" data-prism-datum-row="3" x="491.4" y="315.775" width="133.2" height="244.225" fill="#4c78a8"/>
-        <rect class="prism-mark-bar" data-prism-id="bar-4" data-prism-datum-row="4" x="639.4" y="85.915" width="133.2" height="474.085" fill="#4c78a8"/>
+        <rect class="prism-mark-bar" data-prism-id="bar-1" data-prism-datum-row="1" x="195.4" y="50" width="133.2" height="510" fill="#f58518"/>
+        <rect class="prism-mark-bar" data-prism-id="bar-2" data-prism-datum-row="2" x="343.4" y="143.38" width="133.2" height="416.62" fill="#e45756"/>
+        <rect class="prism-mark-bar" data-prism-id="bar-3" data-prism-datum-row="3" x="491.4" y="315.775" width="133.2" height="244.225" fill="#72b7b2"/>
+        <rect class="prism-mark-bar" data-prism-id="bar-4" data-prism-datum-row="4" x="639.4" y="85.915" width="133.2" height="474.085" fill="#54a24b"/>
       </g>
     </g>
     <g class="prism-legends"><g class="prism-legend prism-legend-color" data-prism-legend-id="legend-color"><text class="prism-legend-title" x="680" y="64">brand_id</text><rect class="prism-legend-swatch" x="680" y="76" width="12" height="12" fill="#4c78a8"/><text class="prism-legend-label" x="698" y="86">alpha</text><rect class="prism-legend-swatch" x="680" y="94" width="12" height="12" fill="#f58518"/><text class="prism-legend-label" x="698" y="104">beta</text><rect class="prism-legend-swatch" x="680" y="112" width="12" height="12" fill="#e45756"/><text class="prism-legend-label" x="698" y="122">gamma</text><rect class="prism-legend-swatch" x="680" y="130" width="12" height="12" fill="#72b7b2"/><text class="prism-legend-label" x="698" y="140">delta</text><rect class="prism-legend-swatch" x="680" y="148" width="12" height="12" fill="#54a24b"/><text class="prism-legend-label" x="698" y="158">epsilon</text></g></g>

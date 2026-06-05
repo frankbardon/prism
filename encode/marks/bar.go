@@ -23,6 +23,14 @@ func encodeBar(in Inputs) ([]scene.Mark, error) {
 	if len(xs) != len(ys) {
 		return nil, fmt.Errorf("encodeBar: column length mismatch (x=%d, y=%d)", len(xs), len(ys))
 	}
+	var colorVals []any
+	if in.Color != nil && in.Color.Field != "" {
+		cv, err := readField(in.Table, in.Color.Field)
+		if err != nil {
+			return nil, err
+		}
+		colorVals = cv
+	}
 
 	band, ok := in.X.Scale.(BandScaler)
 	if !ok {
@@ -66,10 +74,19 @@ func encodeBar(in Inputs) ([]scene.Mark, error) {
 			top = baseline
 			h = -h
 		}
+		style := in.Style
+		if len(colorVals) > 0 {
+			cat, ok := colorVals[i].(string)
+			if ok {
+				if c := lookupCategoryColor(cat, in.Color.Categories, in.Color.Palette); c != nil {
+					style.Fill = c
+				}
+			}
+		}
 		marks = append(marks, scene.Mark{
 			Type:  scene.MarkRect,
 			ID:    fmt.Sprintf("bar-%d", i),
-			Style: in.Style,
+			Style: style,
 			Rect: &scene.RectGeom{
 				X:       x,
 				Y:       top,

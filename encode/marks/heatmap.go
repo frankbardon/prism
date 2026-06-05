@@ -106,15 +106,29 @@ func encodeHeatmap(in Inputs) ([]scene.Mark, error) {
 				style.Fill = c
 			}
 		}
+		// Band step is signed: the y axis runs from plot.bottom to
+		// plot.top so yBand.BandWidth() is negative. SVG rejects rects
+		// with negative width/height, so we normalise here — the rect
+		// renders from (min, max) regardless of the band scale's
+		// direction.
+		w := xBand.BandWidth()
+		h := yBand.BandWidth()
+		rx, ry := x, y
+		if w < 0 {
+			rx, w = x+w, -w
+		}
+		if h < 0 {
+			ry, h = y+h, -h
+		}
 		marks = append(marks, scene.Mark{
 			Type:  scene.MarkRect,
 			ID:    fmt.Sprintf("heatmap-%d", i),
 			Style: style,
 			Rect: &scene.RectGeom{
-				X: x,
-				Y: y,
-				W: xBand.BandWidth(),
-				H: yBand.BandWidth(),
+				X: rx,
+				Y: ry,
+				W: w,
+				H: h,
 			},
 		})
 	}
