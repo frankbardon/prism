@@ -61,6 +61,7 @@ func TestPrismGalleryFixtures(t *testing.T) {
 		// repo-root-relative paths; plot from the gallery cwd misses them.
 		"multi-source/actual_vs_benchmark.prism.json": true,
 		"multi-source/bar_pulse_backed.prism.json":    true,
+		"composite-marks/crosstab_heatmap.prism.json": true,
 	}
 
 	updateGoldens := os.Getenv("UPDATE_GOLDENS") == "1"

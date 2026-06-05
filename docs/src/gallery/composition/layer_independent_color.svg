@@ -6,9 +6,9 @@
     <g class="prism-plot">
       <g class="prism-layer" data-layer-id="layer-0" data-prism-layer="layer-0">
         <rect class="prism-mark-bar" data-prism-id="bar-0" data-prism-datum-row="0" x="49.25" y="356" width="166.5" height="204" fill="#4c78a8"/>
-        <rect class="prism-mark-bar" data-prism-id="bar-1" data-prism-datum-row="1" x="234.25" y="254" width="166.5" height="306" fill="#4c78a8"/>
+        <rect class="prism-mark-bar" data-prism-id="bar-1" data-prism-datum-row="1" x="234.25" y="254" width="166.5" height="306" fill="#f58518"/>
         <rect class="prism-mark-bar" data-prism-id="bar-2" data-prism-datum-row="2" x="419.25" y="152" width="166.5" height="408" fill="#4c78a8"/>
-        <rect class="prism-mark-bar" data-prism-id="bar-3" data-prism-datum-row="3" x="604.25" y="50" width="166.5" height="510" fill="#4c78a8"/>
+        <rect class="prism-mark-bar" data-prism-id="bar-3" data-prism-datum-row="3" x="604.25" y="50" width="166.5" height="510" fill="#f58518"/>
       </g>
       <g class="prism-layer" data-layer-id="layer-1" data-prism-layer="layer-1">
         <circle class="prism-mark-point" data-prism-id="point-0" data-prism-datum-row="0" cx="49.25" cy="410.4" r="4" fill="#4c78a8"/>

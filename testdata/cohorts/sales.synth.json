@@ -1,0 +1,42 @@
+{
+  "row_count": 2000,
+  "fields": [
+    {
+      "name": "region",
+      "type": "categorical_u8",
+      "description": "Sales region. Four-level categorical with uneven weights.",
+      "distribution": "weighted_categorical",
+      "params": {
+        "values":  ["north", "south", "east", "west"],
+        "weights": [0.30, 0.25, 0.25, 0.20]
+      }
+    },
+    {
+      "name": "quarter",
+      "type": "categorical_u8",
+      "description": "Fiscal quarter. Uniformly distributed.",
+      "distribution": "weighted_categorical",
+      "params": {
+        "values":  ["Q1", "Q2", "Q3", "Q4"],
+        "weights": [0.25, 0.25, 0.25, 0.25]
+      }
+    },
+    {
+      "name": "channel",
+      "type": "categorical_u8",
+      "description": "Sales channel. Three-level categorical biased toward direct.",
+      "distribution": "weighted_categorical",
+      "params": {
+        "values":  ["direct", "partner", "online"],
+        "weights": [0.45, 0.30, 0.25]
+      }
+    },
+    {
+      "name": "revenue",
+      "type": "f64",
+      "description": "Per-order revenue (USD). Clipped normal centred at 12k with long tail.",
+      "distribution": "normal",
+      "params": { "mean": 12000, "std": 4000, "min": 100, "max": 50000 }
+    }
+  ]
+}

@@ -29,6 +29,7 @@ For live interactive rendering in a browser, see [`index.html`](index.html).
 | [histogram](composite-marks/histogram.prism.json) | <img src="composite-marks/histogram.svg" width="240"> |
 | [histogram_long_tail](composite-marks/histogram_long_tail.prism.json) | <img src="composite-marks/histogram_long_tail.svg" width="240"> |
 | [heatmap](composite-marks/heatmap.prism.json) | <img src="composite-marks/heatmap.svg" width="240"> |
+| [crosstab_heatmap](composite-marks/crosstab_heatmap.prism.json) | <img src="composite-marks/crosstab_heatmap.svg" width="240"> |
 | [boxplot](composite-marks/boxplot.prism.json) | <img src="composite-marks/boxplot.svg" width="240"> |
 | [violin_score](composite-marks/violin_score.prism.json) | <img src="composite-marks/violin_score.svg" width="240"> |
 | [pie](composite-marks/pie.prism.json) | <img src="composite-marks/pie.svg" width="240"> |

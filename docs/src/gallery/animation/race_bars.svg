@@ -10,11 +10,11 @@
     <g class="prism-plot">
       <g class="prism-layer" data-layer-id="layer-0" data-prism-layer="layer-0">
         <rect class="prism-mark-bar" data-prism-id="bar-0" data-prism-datum-row="0" data-prism-mark-key="brand_id=alpha" x="46.167" y="50" width="111" height="510" rx="3" fill="#4c78a8"/>
-        <rect class="prism-mark-bar" data-prism-id="bar-1" data-prism-datum-row="1" data-prism-mark-key="brand_id=beta" x="169.5" y="180.61" width="111" height="379.39" rx="3" fill="#4c78a8"/>
-        <rect class="prism-mark-bar" data-prism-id="bar-2" data-prism-datum-row="2" data-prism-mark-key="brand_id=gamma" x="292.833" y="99.756" width="111" height="460.244" rx="3" fill="#4c78a8"/>
-        <rect class="prism-mark-bar" data-prism-id="bar-3" data-prism-datum-row="3" data-prism-mark-key="brand_id=delta" x="416.167" y="280.122" width="111" height="279.878" rx="3" fill="#4c78a8"/>
-        <rect class="prism-mark-bar" data-prism-id="bar-4" data-prism-datum-row="4" data-prism-mark-key="brand_id=epsilon" x="539.5" y="217.927" width="111" height="342.073" rx="3" fill="#4c78a8"/>
-        <rect class="prism-mark-bar" data-prism-id="bar-5" data-prism-datum-row="5" data-prism-mark-key="brand_id=zeta" x="662.833" y="323.659" width="111" height="236.341" rx="3" fill="#4c78a8"/>
+        <rect class="prism-mark-bar" data-prism-id="bar-1" data-prism-datum-row="1" data-prism-mark-key="brand_id=beta" x="169.5" y="180.61" width="111" height="379.39" rx="3" fill="#f58518"/>
+        <rect class="prism-mark-bar" data-prism-id="bar-2" data-prism-datum-row="2" data-prism-mark-key="brand_id=gamma" x="292.833" y="99.756" width="111" height="460.244" rx="3" fill="#e45756"/>
+        <rect class="prism-mark-bar" data-prism-id="bar-3" data-prism-datum-row="3" data-prism-mark-key="brand_id=delta" x="416.167" y="280.122" width="111" height="279.878" rx="3" fill="#72b7b2"/>
+        <rect class="prism-mark-bar" data-prism-id="bar-4" data-prism-datum-row="4" data-prism-mark-key="brand_id=epsilon" x="539.5" y="217.927" width="111" height="342.073" rx="3" fill="#54a24b"/>
+        <rect class="prism-mark-bar" data-prism-id="bar-5" data-prism-datum-row="5" data-prism-mark-key="brand_id=zeta" x="662.833" y="323.659" width="111" height="236.341" rx="3" fill="#eeca3b"/>
       </g>
     </g>
     <g class="prism-legends"><g class="prism-legend prism-legend-color" data-prism-legend-id="legend-color"><text class="prism-legend-title" x="680" y="64">brand_id</text><rect class="prism-legend-swatch" x="680" y="76" width="12" height="12" fill="#4c78a8"/><text class="prism-legend-label" x="698" y="86">alpha</text><rect class="prism-legend-swatch" x="680" y="94" width="12" height="12" fill="#f58518"/><text class="prism-legend-label" x="698" y="104">beta</text><rect class="prism-legend-swatch" x="680" y="112" width="12" height="12" fill="#e45756"/><text class="prism-legend-label" x="698" y="122">gamma</text><rect class="prism-legend-swatch" x="680" y="130" width="12" height="12" fill="#72b7b2"/><text class="prism-legend-label" x="698" y="140">delta</text><rect class="prism-legend-swatch" x="680" y="148" width="12" height="12" fill="#54a24b"/><text class="prism-legend-label" x="698" y="158">epsilon</text><rect class="prism-legend-swatch" x="680" y="166" width="12" height="12" fill="#eeca3b"/><text class="prism-legend-label" x="698" y="176">zeta</text></g></g>

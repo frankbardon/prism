@@ -9,10 +9,10 @@
     </g>
     <g class="prism-plot">
       <g class="prism-layer" data-layer-id="layer-0" data-prism-layer="layer-0">
-        <rect class="prism-mark-bar" data-prism-id="heatmap-0" data-prism-datum-row="0" x="58.5" y="547.25" width="333" height="-229.5" fill="#423c82"/>
-        <rect class="prism-mark-bar" data-prism-id="heatmap-1" data-prism-datum-row="1" x="58.5" y="292.25" width="333" height="-229.5" fill="#32b37b"/>
-        <rect class="prism-mark-bar" data-prism-id="heatmap-2" data-prism-datum-row="2" x="428.5" y="547.25" width="333" height="-229.5" fill="#440154"/>
-        <rect class="prism-mark-bar" data-prism-id="heatmap-3" data-prism-datum-row="3" x="428.5" y="292.25" width="333" height="-229.5" fill="#fde725"/>
+        <rect class="prism-mark-bar" data-prism-id="heatmap-0" data-prism-datum-row="0" x="58.5" y="317.75" width="333" height="229.5" fill="#423c82"/>
+        <rect class="prism-mark-bar" data-prism-id="heatmap-1" data-prism-datum-row="1" x="58.5" y="62.75" width="333" height="229.5" fill="#32b37b"/>
+        <rect class="prism-mark-bar" data-prism-id="heatmap-2" data-prism-datum-row="2" x="428.5" y="317.75" width="333" height="229.5" fill="#440154"/>
+        <rect class="prism-mark-bar" data-prism-id="heatmap-3" data-prism-datum-row="3" x="428.5" y="62.75" width="333" height="229.5" fill="#fde725"/>
       </g>
     </g>
   </g>

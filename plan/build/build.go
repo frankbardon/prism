@@ -549,6 +549,8 @@ func transformAsName(t spec.Transform) string {
 		return t.Sort.As
 	case t.Limit != nil:
 		return t.Limit.As
+	case t.Crosstab != nil:
+		return t.Crosstab.As
 	}
 	return ""
 }
@@ -682,8 +684,77 @@ func (c *buildCtx) applyOneTransform(input plan.NodeID, t spec.Transform) (plan.
 			off = *t.Limit.Offset
 		}
 		return c.addAndReturn(nodes.NewLimit(id, in, t.Limit.Limit, off))
+	case t.Crosstab != nil:
+		return c.buildCrosstab(input, t.Crosstab)
 	}
 	return "", outOfScopeErr("transform:unknown", "P04")
+}
+
+// buildCrosstab walks back to the upstream SourceNode (the only legal
+// input for a crosstab transform — Pulse has no in-memory cohort
+// constructor) and emits a CrosstabNode as a fresh leaf. The
+// SourceNode is removed from the DAG, mirroring the PulseChainFusion
+// pattern. Returns PRISM_PLAN_CROSSTAB_REQUIRES_SOURCE when the
+// immediate input is not a SourceNode.
+func (c *buildCtx) buildCrosstab(input plan.NodeID, t *spec.CrosstabTransform) (plan.NodeID, error) {
+	in, err := func() (plan.NodeID, error) {
+		if t.Data == "" {
+			return input, nil
+		}
+		if id, ok := c.leafByName[t.Data]; ok {
+			return id, nil
+		}
+		return "", c.missingDatasetErr(t.Data)
+	}()
+	if err != nil {
+		return "", err
+	}
+	inNode, ok := c.b.Node(in)
+	if !ok {
+		return "", prismerrors.New(
+			"PRISM_PLAN_CROSSTAB_REQUIRES_SOURCE",
+			fmt.Sprintf("crosstab transform input %s not in plan.", in),
+			map[string]any{"Input": string(in)},
+		)
+	}
+	src, ok := inNode.(*nodes.SourceNode)
+	if !ok {
+		return "", prismerrors.New(
+			"PRISM_PLAN_CROSSTAB_REQUIRES_SOURCE",
+			fmt.Sprintf("crosstab transform must consume a source ref; got %T upstream (input id %s).", inNode, in),
+			map[string]any{"InputKind": fmt.Sprintf("%T", inNode), "Input": string(in)},
+		)
+	}
+	inSchema, err := src.OutputSchema()
+	if err != nil {
+		return "", err
+	}
+	id := nodes.DeriveCrosstabID(src.Ref(), t.Crosstab)
+	node, err := nodes.NewCrosstab(id, src.Ref(), src.FS(), inSchema, t.Crosstab)
+	if err != nil {
+		return "", err
+	}
+	if err := c.b.AddNode(node); err != nil {
+		return "", err
+	}
+	// Drop the now-unused SourceNode so the DAG executor doesn't
+	// materialise the cohort a second time.
+	c.b.RemoveNode(src.ID())
+	// Rewire any leafByName entries that pointed at the source.
+	for name, leafID := range c.leafByName {
+		if leafID == src.ID() {
+			c.leafByName[name] = id
+		}
+	}
+	if c.topLeaf == src.ID() {
+		c.topLeaf = id
+	}
+	for ref, leafID := range c.leafBySource {
+		if leafID == src.ID() {
+			c.leafBySource[ref] = id
+		}
+	}
+	return id, nil
 }
 
 // addAndReturn wraps b.AddNode + returns the new node's id. If the

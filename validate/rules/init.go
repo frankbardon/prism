@@ -36,4 +36,5 @@ func init() {
 	validate.RegisterDefault(func() validate.SemanticRule { return TreeChannels{} })
 	validate.RegisterDefault(func() validate.SemanticRule { return ThemeSchemeKnown{} })
 	validate.RegisterDefault(func() validate.SemanticRule { return ThemeMarkTypeKnown{} })
+	validate.RegisterDefault(func() validate.SemanticRule { return CrosstabPosition{} })
 }
