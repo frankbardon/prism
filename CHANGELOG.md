@@ -1,5 +1,49 @@
 # Changelog
 
+## v0.4.0 — 2026-06-18
+
+Additive feature release surfacing Pulse v0.22 capabilities as Prism
+visualization features (PR #27, seven slices). v0.3 spec and rendering
+semantics preserved; all new spec vocabulary is opt-in.
+
+### Aggregate aliases
+
+- **Distribution-shape scalars** — `range`, `skewness`, `kurtosis`,
+  `null_count` aliasing Pulse `AGG_RANGE/SKEWNESS/KURTOSIS/NULL_COUNT`.
+  skewness/kurtosis use the population (Fisher-Pearson, excess) forms;
+  `null_count` is universal (any field type). The in-memory backend
+  computes them client-side with parity against `pulse.Process`.
+- **`frequency`** — the scalar companion to `mode`: the modal count
+  (how many times the most frequent value occurs). Universal compat.
+  Rides the existing F64 pipeline; the per-value cardinality map stays
+  on Pulse's meta surface, so no new column kind is introduced.
+
+### Transforms
+
+- **`regression`** — source-rooted OLS leaf (`REG_OLS`). Synthesises the
+  two fitted endpoints (intercept + slope·x) so a trend line composes as
+  a `line` layer over a scatter. v1 single-predictor. New
+  `PRISM_SPEC_035` (must be the first transform) +
+  `PRISM_PLAN_REGRESSION_REQUIRES_SOURCE` / `_PROCESS` codes.
+- **`timeunit`** — client-side calendar truncation (year / quarter /
+  month / week-ISO / day → date period start) via epoch arithmetic.
+  Composes anywhere, no Pulse leaf.
+
+### Crosstab
+
+- **Date groupers** — `crosstab` group `type: "date"` + `period`
+  (year / quarter / month / week / day / day_of_week) emitting Pulse
+  `GROUP_DATE` calendar buckets.
+- **Overlays → color** — per-cell `share_of_row`, `share_of_col`,
+  `index_vs_margin`, `zscore_vs_margin` overlays joined coordinate-
+  aligned into long rows, bindable to the `color` channel.
+
+### Marks
+
+- **Heatmap opacity channel** — field-driven per-cell opacity
+  (linear over [min,max] → [0.15, 1.0]); pairs with the
+  `zscore_vs_margin` overlay for significance shading.
+
 ## v0.3.0 — 2026-06-05
 
 Additive feature release. v0.2 spec and rendering semantics preserved
