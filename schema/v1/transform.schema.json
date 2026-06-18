@@ -377,8 +377,8 @@
       "additionalProperties": false,
       "required": ["kind"],
       "properties": {
-        "kind": {"type": "string", "enum": ["share_of_row", "share_of_col", "index_vs_margin"], "description": "Overlay kind. share_of_row/col emit cell / axis-margin; index_vs_margin emits cell / margin * 100 (requires axis)."},
-        "axis": {"type": "string", "enum": ["row", "column"], "description": "Margin axis for index_vs_margin. Ignored for share_of_row/col."},
+        "kind": {"type": "string", "enum": ["share_of_row", "share_of_col", "index_vs_margin", "zscore_vs_margin"], "description": "Overlay kind. share_of_row/col emit cell / axis-margin; index_vs_margin emits cell / margin * 100; zscore_vs_margin emits the standardized (cell - margin)/sd. index_vs_margin and zscore_vs_margin require axis."},
+        "axis": {"type": "string", "enum": ["row", "column"], "description": "Margin axis for index_vs_margin / zscore_vs_margin. Ignored for share_of_row/col."},
         "as":   {"type": "string", "minLength": 1, "description": "Output column name (defaults to the kind)."}
       }
     },

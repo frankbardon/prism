@@ -84,6 +84,42 @@ func encodeHeatmap(in Inputs) ([]scene.Mark, error) {
 		}
 	}
 
+	// Opacity channel: when bound, read the numeric values + map each
+	// linearly over [omn, omx] to [OpacityFloor, 1] so low-value cells
+	// fade rather than vanish. Drives significance-style shading when
+	// paired with a crosstab overlay column (e.g. zscore_vs_margin).
+	var opacityValues []float64
+	omn, omx := 0.0, 0.0
+	if in.Opacity != nil && in.Opacity.Field != "" {
+		ov, err := readField(in.Table, in.Opacity.Field)
+		if err != nil {
+			return nil, err
+		}
+		opacityValues = make([]float64, len(ov))
+		for i, v := range ov {
+			f, ok := toFloat64(v)
+			if !ok {
+				return nil, prismerrors.New(
+					"PRISM_ENCODE_001",
+					fmt.Sprintf("heatmap opacity value at row %d is not numeric (got %T).", i, v),
+					map[string]any{"Field": in.Opacity.Field, "Source": "<opacity>", "Available": "numeric"},
+				)
+			}
+			opacityValues[i] = f
+		}
+		if len(opacityValues) > 0 {
+			omn, omx = opacityValues[0], opacityValues[0]
+			for _, v := range opacityValues[1:] {
+				if v < omn {
+					omn = v
+				}
+				if v > omx {
+					omx = v
+				}
+			}
+		}
+	}
+
 	marks := make([]scene.Mark, 0, len(xs))
 	for i := range xs {
 		x, err := in.X.Scale.Apply(xs[i])
@@ -105,6 +141,9 @@ func encodeHeatmap(in Inputs) ([]scene.Mark, error) {
 			if c != nil {
 				style.Fill = c
 			}
+		}
+		if len(opacityValues) > 0 {
+			style.Opacity = opacityFor(opacityValues[i], omn, omx)
 		}
 		// Band step is signed: the y axis runs from plot.bottom to
 		// plot.top so yBand.BandWidth() is negative. SVG rejects rects
@@ -168,6 +207,22 @@ func interpolateSequential(stops []*scene.Color, v, mn, mx float64) *scene.Color
 		return uint8(float64(x) + frac*(float64(y)-float64(x)))
 	}
 	return &scene.Color{R: lerp(a.R, b.R), G: lerp(a.G, b.G), B: lerp(a.B, b.B), A: 0xff}
+}
+
+// opacityFor maps v linearly over [mn, mx] to [OpacityFloor, 1].
+// A degenerate range (mn == mx) maps to full opacity.
+func opacityFor(v, mn, mx float64) float64 {
+	if mx == mn {
+		return 1.0
+	}
+	t := (v - mn) / (mx - mn)
+	if t < 0 {
+		t = 0
+	}
+	if t > 1 {
+		t = 1
+	}
+	return OpacityFloor + t*(1.0-OpacityFloor)
 }
 
 // SequentialColor returns a color along a light-blue → dark-blue

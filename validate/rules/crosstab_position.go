@@ -72,7 +72,14 @@ func checkCrosstabGroupers(groups []spec.CrosstabGroup, path string, out *[]*err
 // node supports (mirrors crosstabOverlayKinds in plan/nodes/crosstab.go).
 // index_vs_margin additionally requires axis row|column.
 var crosstabOverlayKinds = map[string]bool{
-	"share_of_row": true, "share_of_col": true, "index_vs_margin": true,
+	"share_of_row": true, "share_of_col": true,
+	"index_vs_margin": true, "zscore_vs_margin": true,
+}
+
+// crosstabOverlayUserAxis lists the overlay kinds that require an
+// explicit axis (row|column); the rest bake the axis into the kind.
+var crosstabOverlayUserAxis = map[string]bool{
+	"index_vs_margin": true, "zscore_vs_margin": true,
 }
 
 // checkCrosstabOverlays statically validates overlay kind + axis.
@@ -86,11 +93,11 @@ func checkCrosstabOverlays(overlays []spec.CrosstabOverlay, path string, out *[]
 			))
 			continue
 		}
-		if o.Kind == "index_vs_margin" && o.Axis != "row" && o.Axis != "column" {
+		if crosstabOverlayUserAxis[o.Kind] && o.Axis != "row" && o.Axis != "column" {
 			*out = append(*out, errors.New(
 				"PRISM_SPEC_032",
-				fmt.Sprintf("crosstab overlay index_vs_margin at %s[%d] requires axis row or column (got %q).", path, i, o.Axis),
-				map[string]any{"Path": path, "Index": i, "Axis": o.Axis},
+				fmt.Sprintf("crosstab overlay %s at %s[%d] requires axis row or column (got %q).", o.Kind, path, i, o.Axis),
+				map[string]any{"Path": path, "Index": i, "Kind": o.Kind, "Axis": o.Axis},
 			))
 		}
 	}

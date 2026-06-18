@@ -154,6 +154,7 @@ cell-scoped kinds that align one-to-one with heatmap cells:
 | `share_of_row` | cell / row-margin | cells along a row sum to 1.0 |
 | `share_of_col` | cell / column-margin | cells down a column sum to 1.0 |
 | `index_vs_margin` | cell / margin × 100 | requires `axis` (`row` or `column`); 100 = on-margin |
+| `zscore_vs_margin` | (cell − margin) / sd | requires `axis`; a significance proxy (\|z\| > 1.96 ≈ p < .05) — bind to `opacity` for significance shading |
 
 ```json
 "crosstab": {

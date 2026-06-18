@@ -26,7 +26,7 @@ arcs, etc. Specify via top-level `mark` (shorthand string) or
 | Mark | Internally expands to |
 |---|---|
 | `histogram` | `bar` + auto-bin transform. |
-| `heatmap` | `rect` + 2D bin + sequential color scale. |
+| `heatmap` | `rect` + 2D bin + sequential color scale. Binds an optional field-driven `opacity` channel for per-cell shading — pair it with a crosstab `zscore_vs_margin` overlay column to fade insignificant cells (significance shading). Opacity maps the field linearly over `[min, max]` to `[0.15, 1.0]`. |
 | `boxplot` | `rect` (IQR) + `rule` (whiskers) + `point` (outliers). |
 | `violin` | `area` symmetric around centerline (Epanechnikov KDE). |
 | `pie` | `arc` with theta computed from share. |

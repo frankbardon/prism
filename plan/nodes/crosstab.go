@@ -314,6 +314,10 @@ var crosstabOverlayKinds = map[string]overlayKindMapping{
 	"share_of_row":    {kind: pulsetypes.OverlayKindShareOfRow, fixedAxis: pulsetypes.MarginAxisRow},
 	"share_of_col":    {kind: pulsetypes.OverlayKindShareOfCol, fixedAxis: pulsetypes.MarginAxisColumn},
 	"index_vs_margin": {kind: pulsetypes.OverlayKindIndexVsMargin, userAxis: true},
+	// zscore_vs_margin emits a per-cell standardized z-score against the
+	// chosen axis margin — a single-request significance proxy (|z| >
+	// 1.96 ≈ p < .05) for opacity shading on a heatmap.
+	"zscore_vs_margin": {kind: pulsetypes.OverlayKindZScoreVsMargin, userAxis: true},
 }
 
 // builtOverlay carries one translated overlay plus its output column.
