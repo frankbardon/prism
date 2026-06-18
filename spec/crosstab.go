@@ -38,14 +38,44 @@ type CrosstabBody struct {
 	// Response.Crosstab — reserved for future encoders that consume
 	// the dense matrix.
 	Shape string `json:"shape,omitempty"`
+	// Overlays attaches Pulse post-result overlay layers to the cell
+	// grid. Each overlay adds one F64 column to the long-form output,
+	// index-aligned to the base cell, so it can drive a `color` /
+	// `opacity` channel. When any overlay is present the node runs the
+	// crosstab in matrix shape internally (overlays decorate body
+	// cells) — user `margins` flags are ignored for the visual output.
+	Overlays []CrosstabOverlay `json:"overlays,omitempty"`
 }
 
-// CrosstabGroup is one row / column grouper. v1 accepts a category
-// grouper (Field only); the Type field is reserved for date / range /
-// rounded / quantile groupers in a follow-up.
+// CrosstabOverlay is one post-result overlay layer on the cell grid.
+// v1 supports the cell-scoped, matrix-payload kinds that align
+// one-to-one with heatmap cells: share_of_row, share_of_col, and
+// index_vs_margin. Group/series-scoped kinds (index_vs_total,
+// share_of_total) land in a follow-up.
+type CrosstabOverlay struct {
+	// Kind is the friendly overlay name: share_of_row, share_of_col,
+	// index_vs_margin.
+	Kind string `json:"kind"`
+	// Axis selects the margin axis ("row" or "column") for
+	// index_vs_margin. Ignored by share_of_row/col (the axis is
+	// implied by the kind).
+	Axis string `json:"axis,omitempty"`
+	// As is the output column name. Defaults to the kind.
+	As string `json:"as,omitempty"`
+}
+
+// CrosstabGroup is one row / column grouper. Type defaults to
+// "category" (GROUP_CATEGORY, Field only). Type "date" buckets a
+// temporal field by calendar Period (GROUP_DATE) — the bucket keys are
+// string labels ("2024", "2024-Q1", "2024-03", ...). Range / rounded /
+// quantile groupers remain a follow-up.
 type CrosstabGroup struct {
 	Field string `json:"field"`
 	Type  string `json:"type,omitempty"`
+	// Period selects the calendar component for a date grouper: one of
+	// year, quarter, month (default), week, day, day_of_week. Ignored
+	// for category groupers.
+	Period string `json:"period,omitempty"`
 }
 
 // CrosstabCell describes the per-cell aggregation. Reuses the

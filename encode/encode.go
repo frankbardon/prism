@@ -210,6 +210,13 @@ func Encode(s *spec.Spec, tables map[plan.NodeID]*table.Table, tipID plan.NodeID
 		}
 	}
 
+	// Field-driven opacity channel (per-cell opacity from a numeric
+	// column; consumed by the heatmap encoder today).
+	var opacityChannel *marks.OpacityChannel
+	if enc.Opacity != nil && enc.Opacity.Field != "" {
+		opacityChannel = &marks.OpacityChannel{Field: enc.Opacity.Field}
+	}
+
 	// Mark-level style overrides.
 	style := defaultMarkStyle(fullTheme, markType)
 	if s.Mark != nil && s.Mark.Def != nil {
@@ -230,6 +237,7 @@ func Encode(s *spec.Spec, tables map[plan.NodeID]*table.Table, tipID plan.NodeID
 		X:        markX,
 		Y:        markY,
 		Color:    colorChannel,
+		Opacity:  opacityChannel,
 		Layout:   layout.Plot,
 		Style:    style,
 		Tooltip:  enc.Tooltip,

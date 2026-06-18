@@ -731,6 +731,32 @@ var Codes = map[string]CodeMetadata{
 			`Run ` + "`prism inspect`" + ` to view the cohort schema without re-executing.`,
 		},
 	},
+	"PRISM_SPEC_035": {
+		Code:    "PRISM_SPEC_035",
+		Message: `regression transform must be first and declare target + predictors (at {{.Path}}).`,
+		Fixups: []string{
+			`A ` + "`regression`" + ` transform fits the source cohort directly (Pulse ATTR_REG_FITTED), so it must be the first transform on the chain — not chained after a Prism filter / aggregate / join.`,
+			`Declare both ` + "`target`" + ` (the dependent variable) and a non-empty ` + "`predictors`" + ` list, e.g. ` + "`{regression: {target: \"sales\", predictors: [\"spend\"], as: \"fitted\"}}`" + `.`,
+		},
+		SeeAlso: []string{"PRISM_PLAN_REGRESSION_REQUIRES_SOURCE"},
+	},
+	"PRISM_PLAN_REGRESSION_REQUIRES_SOURCE": {
+		Code:    "PRISM_PLAN_REGRESSION_REQUIRES_SOURCE",
+		Message: `regression plan node could not link to a SourceNode upstream.`,
+		Fixups: []string{
+			`Regression fits the .pulse cohort directly via pulse.Process — there is no in-memory cohort handoff. The build must see a SourceNode as the immediate input.`,
+			`Check that the spec places ` + "`regression`" + ` as the first transform on a top-level dataset, not on a derived alias.`,
+		},
+		SeeAlso: []string{"PRISM_SPEC_035"},
+	},
+	"PRISM_PLAN_REGRESSION_PROCESS": {
+		Code:    "PRISM_PLAN_REGRESSION_PROCESS",
+		Message: `Pulse rejected the regression request for {{.Ref}}: {{.Reason}}.`,
+		Fixups: []string{
+			`The Pulse error envelope includes the precise rule — check that the target and every predictor exist in the cohort schema and are numeric columns.`,
+			`Run ` + "`prism inspect`" + ` to view the cohort schema without re-executing.`,
+		},
+	},
 	"PRISM_SPEC_030": {
 		Code:    "PRISM_SPEC_030",
 		Message: `Unknown color scheme {{.Scheme}} (at {{.Path}}).`,

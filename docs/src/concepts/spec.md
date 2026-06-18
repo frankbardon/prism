@@ -134,20 +134,52 @@ Body:
 
 | Field | Required | Notes |
 |---|---|---|
-| `rows`      | yes | Row-axis groupers. v1: one or more `{field: "..."}` (GROUP_CATEGORY). |
+| `rows`      | yes | Row-axis groupers. One or more `{field: "..."}` (category, default) or `{field: "...", type: "date", period: "..."}` (GROUP_DATE). |
 | `columns`   | yes | Column-axis groupers. Same shape. |
 | `cell`      | yes | `{aggregate, field, as}` — Pulse-backed alias (sum, mean, count, ...). |
 | `margins`   |     | `{rows, columns, grand}` — emit total rows with `_margin` sentinel. |
 | `normalize` |     | `none` (default), `row`, `column`, `total`. |
 | `shape`     |     | `long` (default) returns one row per cell; `matrix` is reserved. |
+| `overlays`  |     | Post-result overlay layers; each adds one F64 column aligned to the base cell. See below. |
+
+### Crosstab overlays
+
+`overlays` attaches Pulse post-result overlay layers to the cell grid.
+Each overlay adds one F64 column — index-aligned to the base cell — so
+it can drive a `color` or `opacity` channel. v1 supports the
+cell-scoped kinds that align one-to-one with heatmap cells:
+
+| `kind` | Column value | Notes |
+|---|---|---|
+| `share_of_row` | cell / row-margin | cells along a row sum to 1.0 |
+| `share_of_col` | cell / column-margin | cells down a column sum to 1.0 |
+| `index_vs_margin` | cell / margin × 100 | requires `axis` (`row` or `column`); 100 = on-margin |
+| `zscore_vs_margin` | (cell − margin) / sd | requires `axis`; a significance proxy (\|z\| > 1.96 ≈ p < .05) — bind to `opacity` for significance shading |
+
+```json
+"crosstab": {
+  "rows":    [{"field": "region"}],
+  "columns": [{"field": "quarter"}],
+  "cell":    {"aggregate": "sum", "field": "revenue", "as": "revenue"},
+  "overlays": [{"kind": "share_of_row", "as": "row_share"}]
+}
+```
+
+When any overlay is present the node runs the crosstab in matrix shape
+internally (overlays decorate body cells), so user `margins` flags are
+ignored for the visual output. Group/series-scoped kinds
+(`index_vs_total`, `share_of_total`) land in a follow-up.
 
 Constraints:
 
 - Crosstab must be the **first** transform on the chain. Pulse has no
   in-memory cohort constructor, so chaining it after another Prism
   transform is structurally impossible (`PRISM_SPEC_033`).
-- Grouper type is `category` only in v1; date / range / quantile
-  groupers land in a follow-up.
+- Grouper `type` is `category` (default) or `date`. A date grouper
+  buckets a temporal field by `period` — one of `year`, `quarter`,
+  `month` (default), `week`, `day`, `day_of_week` — emitting string
+  bucket-key labels (`"2024"`, `"2024-Q1"`, `"2024-03"`, ...). Range /
+  rounded / quantile groupers land in a follow-up.
 - Margin rows carry a `_margin` column the encoder leaves on the table
   — filter them out at the chart level by upstream `filter`-after
   composition or by avoiding the `margins` flag for the visual
@@ -156,6 +188,82 @@ Constraints:
 Cells are evenly numbered through `PRISM_SPEC_032` (shape rule),
 `PRISM_SPEC_033` (position rule), `PRISM_SPEC_034` (normalize enum).
 Run `prism errors lookup <code>` for details + fixups.
+
+## Regression transform
+
+The `regression` transform fits an OLS regression over the cohort
+(Pulse `REG_OLS`) and emits the two endpoints of the fitted trend line —
+`(min(x), ŷ)` and `(max(x), ŷ)`. Because every OLS fitted point is
+collinear, two endpoints draw the full line; layer a `line` mark over
+`(predictor, fitted)` on top of a `point` scatter of `(predictor,
+target)` for the classic regression overlay.
+
+```json
+{
+  "$schema": "urn:prism:schema:v1:spec",
+  "data": {"source": "sales.pulse"},
+  "layer": [
+    {"mark": "point", "encoding": {
+      "x": {"field": "spend", "type": "quantitative"},
+      "y": {"field": "revenue", "type": "quantitative"}
+    }},
+    {
+      "transform": [{"regression": {"target": "revenue", "predictors": ["spend"], "as": "fit"}}],
+      "mark": "line",
+      "encoding": {
+        "x": {"field": "spend", "type": "quantitative"},
+        "y": {"field": "fit", "type": "quantitative"}
+      }
+    }
+  ]
+}
+```
+
+Body:
+
+| Field | Required | Notes |
+|---|---|---|
+| `target`     | yes | Dependent variable (y). |
+| `predictors` | yes | Independent variable (x). Exactly one in v1 — the only shape that maps to a 2-D line. |
+| `as`         |     | Fitted-value output column name (default `fitted`). |
+
+Constraints:
+
+- Regression must be the **first** transform on the chain — the OLS
+  prepass fits the source cohort directly, like crosstab
+  (`PRISM_SPEC_035`, `PRISM_PLAN_REGRESSION_REQUIRES_SOURCE`).
+- v1 fits unpenalized OLS with a single predictor. Multiple predictors,
+  GLM/Bayesian families, and the per-row residual / leverage attributes
+  land in a follow-up.
+
+## TimeUnit transform
+
+The `timeunit` transform truncates a temporal field to a calendar
+period and appends the truncated date as a new column — the Vega-Lite
+`timeUnit` analogue. The output is a date (the period start), so the
+derived column stays temporal for axis / scale resolution and sorts
+chronologically. It runs client-side (pure epoch arithmetic), so —
+unlike `crosstab` / `regression` — it composes anywhere in a chain.
+
+```json
+{
+  "transform": [{"timeunit": "month", "field": "order_date", "as": "order_month"}],
+  "mark": "line",
+  "encoding": {
+    "x": {"field": "order_month", "type": "temporal"},
+    "y": {"aggregate": "sum", "field": "revenue", "type": "quantitative"}
+  }
+}
+```
+
+| Field | Required | Notes |
+|---|---|---|
+| `timeunit` | yes | Period: `year`, `quarter`, `month`, `week` (ISO / Monday start), `day`. Truncates to the period start. |
+| `field`    | yes | Temporal field to truncate. |
+| `as`       | yes | Output date column name. |
+
+`day_of_week` and other component-extraction units (which return an
+ordinal, not a date) land in a follow-up.
 
 ## Strict by default
 

@@ -9,8 +9,9 @@
       "description": "Friendly aggregate alias mapped to Pulse internals by the compiler.",
       "enum": [
         "count", "sum", "mean", "median", "min", "max", "stdev", "variance",
+        "range", "skewness", "kurtosis", "null_count",
         "q1", "q3", "ci0", "ci1",
-        "distinct", "mode",
+        "distinct", "mode", "frequency",
         "wmean", "ratio", "lift", "share"
       ]
     },
@@ -44,9 +45,11 @@
         {"$ref": "transform.schema.json#/$defs/sample_transform"},
         {"$ref": "transform.schema.json#/$defs/sort_transform"},
         {"$ref": "transform.schema.json#/$defs/limit_transform"},
-        {"$ref": "transform.schema.json#/$defs/crosstab_transform"}
+        {"$ref": "transform.schema.json#/$defs/crosstab_transform"},
+        {"$ref": "transform.schema.json#/$defs/regression_transform"},
+        {"$ref": "transform.schema.json#/$defs/timeunit_transform"}
       ],
-      "description": "Single transform step; exactly one of the 13 variants identified by its discriminator key."
+      "description": "Single transform step; exactly one of the 15 variants identified by its discriminator key."
     },
     "filter_transform": {
       "type": "object",
@@ -346,6 +349,11 @@
               "type": "string",
               "enum": ["long", "matrix"],
               "description": "Response shape. long (default) returns one row per (row-key, column-key) cell. matrix returns Pulse's structured payload on Response.Crosstab — reserved for a future encoder."
+            },
+            "overlays": {
+              "type": "array",
+              "items": {"$ref": "#/$defs/crosstab_overlay"},
+              "description": "Post-result overlay layers; each adds one F64 column aligned to the base cell, suitable for a color/opacity channel. Runs the crosstab in matrix shape internally."
             }
           }
         },
@@ -359,8 +367,54 @@
       "additionalProperties": false,
       "required": ["field"],
       "properties": {
-        "field": {"type": "string", "minLength": 1, "description": "Cohort field to group on."},
-        "type":  {"type": "string", "enum": ["category"], "description": "Grouper kind. v1 supports category only (GROUP_CATEGORY)."}
+        "field":  {"type": "string", "minLength": 1, "description": "Cohort field to group on."},
+        "type":   {"type": "string", "enum": ["category", "date"], "description": "Grouper kind. category (default, GROUP_CATEGORY) or date (GROUP_DATE, calendar bucketing of a temporal field)."},
+        "period": {"type": "string", "enum": ["year", "quarter", "month", "week", "day", "day_of_week"], "description": "Calendar component for a date grouper (default month). Ignored for category groupers."}
+      }
+    },
+
+    "crosstab_overlay": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["kind"],
+      "properties": {
+        "kind": {"type": "string", "enum": ["share_of_row", "share_of_col", "index_vs_margin", "zscore_vs_margin"], "description": "Overlay kind. share_of_row/col emit cell / axis-margin; index_vs_margin emits cell / margin * 100; zscore_vs_margin emits the standardized (cell - margin)/sd. index_vs_margin and zscore_vs_margin require axis."},
+        "axis": {"type": "string", "enum": ["row", "column"], "description": "Margin axis for index_vs_margin / zscore_vs_margin. Ignored for share_of_row/col."},
+        "as":   {"type": "string", "minLength": 1, "description": "Output column name (defaults to the kind)."}
+      }
+    },
+
+    "timeunit_transform": {
+      "type": "object",
+      "description": "Truncate a temporal field to a calendar period and append the truncated date (Vega-Lite timeUnit analogue). Client-side; composes anywhere.",
+      "additionalProperties": false,
+      "required": ["timeunit", "field", "as"],
+      "properties": {
+        "timeunit": {"type": "string", "enum": ["year", "quarter", "month", "week", "day"], "description": "Calendar period to truncate to (period start; week is ISO/Monday)."},
+        "field":    {"$ref": "shared.schema.json#/$defs/field_ref", "description": "Temporal field to truncate."},
+        "as":       {"type": "string", "minLength": 1, "description": "Output date column name."},
+        "data":     {"type": "string", "minLength": 1, "description": "Optional input alias."}
+      }
+    },
+
+    "regression_transform": {
+      "type": "object",
+      "description": "OLS regression fit (Pulse ATTR_REG_FITTED): augments each source row with a fitted ŷ column, sorted by the first predictor for trend-line rendering. Must be the first transform on the chain (it fits the source cohort directly).",
+      "additionalProperties": false,
+      "required": ["regression"],
+      "properties": {
+        "regression": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["target", "predictors"],
+          "properties": {
+            "target":     {"type": "string", "minLength": 1, "description": "Dependent variable (y)."},
+            "predictors": {"type": "array", "minItems": 1, "items": {"type": "string", "minLength": 1}, "description": "Independent variables (x). Multiple predictors fit a multiple regression."},
+            "as":         {"type": "string", "minLength": 1, "description": "Fitted-value output column name (defaults to fitted)."}
+          }
+        },
+        "data": {"type": "string", "minLength": 1, "description": "Optional input alias (must resolve to a registered .pulse dataset)."},
+        "as":   {"type": "string", "minLength": 1, "description": "Optional output alias."}
       }
     },
 

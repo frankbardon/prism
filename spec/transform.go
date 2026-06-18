@@ -4,19 +4,21 @@ package spec
 // pointer is non-nil after unmarshal. UnmarshalJSON is implemented in
 // transform_union.go (T01.14).
 type Transform struct {
-	Filter    *FilterTransform
-	Calculate *CalculateTransform
-	Aggregate *AggregateTransform
-	Bin       *BinTransform
-	Window    *WindowTransform
-	Join      *JoinTransform
-	Union     *UnionTransform
-	Pivot     *PivotTransform
-	Unpivot   *UnpivotTransform
-	Sample    *SampleTransform
-	Sort      *SortTransform
-	Limit     *LimitTransform
-	Crosstab  *CrosstabTransform
+	Filter     *FilterTransform
+	Calculate  *CalculateTransform
+	Aggregate  *AggregateTransform
+	Bin        *BinTransform
+	Window     *WindowTransform
+	Join       *JoinTransform
+	Union      *UnionTransform
+	Pivot      *PivotTransform
+	Unpivot    *UnpivotTransform
+	Sample     *SampleTransform
+	Sort       *SortTransform
+	Limit      *LimitTransform
+	Crosstab   *CrosstabTransform
+	Regression *RegressionTransform
+	TimeUnit   *TimeUnitTransform
 }
 
 // FilterTransform: row predicate.

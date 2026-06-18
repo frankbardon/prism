@@ -44,6 +44,46 @@ func TestPrismEncodeHeatmapCategorical(t *testing.T) {
 	}
 }
 
+func TestPrismEncodeHeatmapOpacityChannel(t *testing.T) {
+	tbl := buildTable(t, map[string]any{
+		"region": []string{"NA", "NA", "EU", "EU"},
+		"bucket": []string{"0-25", "26-50", "0-25", "26-50"},
+		"count":  []float64{10, 18, 7, 22},
+		"z":      []float64{0, 1, 2, 4},
+	})
+	xBand := &bandScaleT{cats: []string{"EU", "NA"}, rmin: 0, rmax: 400, padding: 0.1}
+	yBand := &bandScaleT{cats: []string{"0-25", "26-50"}, rmin: 0, rmax: 300, padding: 0.1}
+	in := Inputs{
+		Table:   tbl,
+		X:       Channel{Field: "region", Scale: xBand},
+		Y:       Channel{Field: "bucket", Scale: yBand},
+		Color:   &ColorChannel{Field: "count"},
+		Opacity: &OpacityChannel{Field: "z"},
+		Layout:  scene.Rect{W: 400, H: 300},
+		Style:   scene.Style{},
+	}
+	marks, err := encodeHeatmap(in)
+	if err != nil {
+		t.Fatalf("encodeHeatmap: %v", err)
+	}
+	if len(marks) != 4 {
+		t.Fatalf("len marks = %d, want 4", len(marks))
+	}
+	// z=0 (min) maps to the floor; z=4 (max) maps to full opacity.
+	if got := marks[0].Style.Opacity; got != OpacityFloor {
+		t.Errorf("min-z cell opacity = %v, want floor %v", got, OpacityFloor)
+	}
+	if got := marks[3].Style.Opacity; got != 1.0 {
+		t.Errorf("max-z cell opacity = %v, want 1.0", got)
+	}
+	// Monotonic in z across the four cells (0,1,2,4).
+	for i := 1; i < len(marks); i++ {
+		if marks[i].Style.Opacity < marks[i-1].Style.Opacity {
+			t.Errorf("opacity not monotonic with z at cell %d (%v < %v)", i, marks[i].Style.Opacity, marks[i-1].Style.Opacity)
+		}
+	}
+}
+
 func TestPrismEncodeHeatmapWithoutColor(t *testing.T) {
 	tbl := buildTable(t, map[string]any{
 		"region": []string{"NA", "EU"},

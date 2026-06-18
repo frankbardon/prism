@@ -171,6 +171,46 @@ func TestPrismInMemBackendDispatchGroupAggregate(t *testing.T) {
 	}
 }
 
+func TestPrismInMemBackendDispatchFrequency(t *testing.T) {
+	// alpha scores {1,1,2} → modal count 2; beta scores {3,4} → modal
+	// count 1 (all distinct). Confirms `frequency` returns the
+	// multiplicity of the most frequent value, not the value itself.
+	tbl, _, err := table.FromInline("test",
+		[]map[string]any{
+			{"brand_id": "alpha", "score": 1.0},
+			{"brand_id": "alpha", "score": 1.0},
+			{"brand_id": "alpha", "score": 2.0},
+			{"brand_id": "beta", "score": 3.0},
+			{"brand_id": "beta", "score": 4.0},
+		},
+		[]spec.FieldSpec{
+			{Name: "brand_id", Type: "string"},
+			{Name: "score", Type: "float64"},
+		})
+	if err != nil {
+		t.Fatalf("FromInline: %v", err)
+	}
+	b := New()
+	n := nodes.NewGroupAggregate("ga:freq", "src",
+		[]string{"brand_id"},
+		[]nodes.AggOp{{Op: "frequency", Field: "score", As: "freq"}},
+	)
+	out, err := b.Compile(context.Background(), n, []*table.Table{tbl})
+	if err != nil {
+		t.Fatalf("Compile: %v", err)
+	}
+	brandCol, _ := out.Column("brand_id")
+	freqCol, _ := out.Column("freq")
+	want := map[string]float64{"alpha": 2, "beta": 1}
+	for i := 0; i < out.NumRows(); i++ {
+		brand := brandCol.ValueAt(i).(string)
+		freq := freqCol.ValueAt(i).(float64)
+		if freq != want[brand] {
+			t.Errorf("%s frequency = %v, want %v", brand, freq, want[brand])
+		}
+	}
+}
+
 func TestPrismInMemBackendDispatchBin(t *testing.T) {
 	in := helperInlineTable(t)
 	b := New()

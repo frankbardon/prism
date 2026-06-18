@@ -49,6 +49,20 @@ type ColorChannel struct {
 	SequentialPalette []*scene.Color
 }
 
+// OpacityChannel is a field-driven per-mark opacity binding. The
+// heatmap encoder maps the field's numeric values linearly over
+// [min, max] to [OpacityFloor, 1.0] so low values stay faintly
+// visible. Pair it with a crosstab overlay column (e.g.
+// zscore_vs_margin) to shade cells by standardized deviation.
+type OpacityChannel struct {
+	Field string
+}
+
+// OpacityFloor is the minimum opacity a field-driven opacity channel
+// maps to, so the least-prominent cell still renders faintly rather
+// than vanishing entirely.
+const OpacityFloor = 0.15
+
 // Inputs carries the per-Encode-call context: table, encoded
 // channels, layout, mark style.
 //
@@ -65,6 +79,7 @@ type Inputs struct {
 	X       Channel
 	Y       Channel
 	Color   *ColorChannel
+	Opacity *OpacityChannel
 	Layout  scene.Rect // the Plot region
 	Style   scene.Style
 	Mark    *spec.MarkDef        // mark-level overrides; nil ok

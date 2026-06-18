@@ -59,9 +59,12 @@ func TestPrismGalleryFixtures(t *testing.T) {
 		"themes/bar_print.prism.json":                      true,
 		// Pulse-backed fixtures reference testdata/cohorts/*.pulse with
 		// repo-root-relative paths; plot from the gallery cwd misses them.
-		"multi-source/actual_vs_benchmark.prism.json": true,
-		"multi-source/bar_pulse_backed.prism.json":    true,
-		"composite-marks/crosstab_heatmap.prism.json": true,
+		"multi-source/actual_vs_benchmark.prism.json":              true,
+		"multi-source/bar_pulse_backed.prism.json":                 true,
+		"composite-marks/crosstab_heatmap.prism.json":              true,
+		"composite-marks/crosstab_overlay_share.prism.json":        true,
+		"composite-marks/regression_trend.prism.json":              true,
+		"composite-marks/crosstab_significance_shading.prism.json": true,
 	}
 
 	updateGoldens := os.Getenv("UPDATE_GOLDENS") == "1"

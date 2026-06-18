@@ -1,0 +1,20 @@
+{
+  "$schema": "urn:prism:schema:v1:spec",
+  "title": "Revenue by region x quarter, opacity = standardized deviation (significance shading)",
+  "data": {"source": "testdata/cohorts/sales.pulse"},
+  "transform": [{
+    "crosstab": {
+      "rows":    [{"field": "region"}],
+      "columns": [{"field": "quarter"}],
+      "cell":    {"aggregate": "sum", "field": "revenue", "as": "revenue"},
+      "overlays": [{"kind": "zscore_vs_margin", "axis": "column", "as": "z"}]
+    }
+  }],
+  "mark": "heatmap",
+  "encoding": {
+    "x":       {"field": "quarter", "type": "nominal"},
+    "y":       {"field": "region",  "type": "nominal"},
+    "color":   {"field": "revenue", "type": "quantitative"},
+    "opacity": {"field": "z",       "type": "quantitative"}
+  }
+}

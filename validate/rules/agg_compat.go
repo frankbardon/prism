@@ -163,9 +163,11 @@ func compatibleAgg(op, measureType string) bool {
 // measure type. Counting / distinct / mode work on anything; numeric and
 // quantile ops require quantitative or temporal.
 func opsForType(measureType string) []string {
-	universal := []string{"count", "distinct", "mode"}
+	// null_count counts null records regardless of measure type.
+	universal := []string{"count", "distinct", "mode", "frequency", "null_count"}
 	numeric := []string{
 		"sum", "mean", "median", "min", "max", "stdev", "variance",
+		"range", "skewness", "kurtosis",
 		"q1", "q3", "ci0", "ci1",
 		"wmean", "ratio", "lift", "share",
 	}
