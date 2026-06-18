@@ -11,7 +11,7 @@
         "count", "sum", "mean", "median", "min", "max", "stdev", "variance",
         "range", "skewness", "kurtosis", "null_count",
         "q1", "q3", "ci0", "ci1",
-        "distinct", "mode",
+        "distinct", "mode", "frequency",
         "wmean", "ratio", "lift", "share"
       ]
     },

@@ -7,14 +7,15 @@ import (
 	"github.com/frankbardon/pulse/types"
 )
 
-// expectedAliases mirrors the 22 friendly aliases the validator
+// expectedAliases mirrors the 23 friendly aliases the validator
 // accepts (see validate/rules/agg_compat.go). Drift between the
 // validator and this map breaks the alias passthrough —
 // TestPrismAggOpEnumCoverage catches it.
 var expectedAliases = []string{
-	"ci0", "ci1", "count", "distinct", "kurtosis", "lift", "max", "mean",
-	"median", "min", "mode", "null_count", "q1", "q3", "range", "ratio",
-	"share", "skewness", "stdev", "sum", "variance", "wmean",
+	"ci0", "ci1", "count", "distinct", "frequency", "kurtosis", "lift",
+	"max", "mean", "median", "min", "mode", "null_count", "q1", "q3",
+	"range", "ratio", "share", "skewness", "stdev", "sum", "variance",
+	"wmean",
 }
 
 // TestPrismAggOpEnumCoverage is the PHASE.md test gate: every Prism
@@ -90,6 +91,6 @@ func TestPrismPulseBackedAliasesSubset(t *testing.T) {
 		}
 	}
 	if len(backed)+2 != len(AllAliases()) {
-		t.Errorf("PulseBackedAliases len = %d; expected 20 (22 total - 2 deferred)", len(backed))
+		t.Errorf("PulseBackedAliases len = %d; expected 21 (23 total - 2 deferred)", len(backed))
 	}
 }

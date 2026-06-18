@@ -51,8 +51,17 @@ var AliasToPulse = map[string]AggregateMapping{
 	"variance": {Alias: "variance", Type: types.AGG_VARIANCE},
 	"mode":     {Alias: "mode", Type: types.AGG_MODE},
 	"distinct": {Alias: "distinct", Type: types.AGG_DISTINCT_COUNT},
-	"q1":       {Alias: "q1", Type: types.AGG_PERCENTILE, Params: []byte(`{"percentile":25}`)},
-	"q3":       {Alias: "q3", Type: types.AGG_PERCENTILE, Params: []byte(`{"percentile":75}`)},
+
+	// frequency is the SCALAR companion to mode: AGG_FREQUENCY's
+	// Finalize() return is the modal count (occurrences of the most
+	// frequent value), so it rides the F64 pipeline like every other
+	// scalar aggregate. The per-value cardinality map lives only on
+	// Pulse's MetaAggregator Components()/Rich() surface, which Prism's
+	// row-shaped Response.Data path does not consume — so no map column
+	// kind is required. Universal: counts occurrences of any field type.
+	"frequency": {Alias: "frequency", Type: types.AGG_FREQUENCY},
+	"q1":        {Alias: "q1", Type: types.AGG_PERCENTILE, Params: []byte(`{"percentile":25}`)},
+	"q3":        {Alias: "q3", Type: types.AGG_PERCENTILE, Params: []byte(`{"percentile":75}`)},
 
 	// Distribution-shape scalars promoted to first-class Pulse AGG_*
 	// ops by v0.22. range = max-min; skewness/kurtosis are the

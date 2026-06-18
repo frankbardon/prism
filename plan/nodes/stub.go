@@ -144,6 +144,11 @@ func aggregateOutputType(op string) encoding.FieldType {
 	case "range", "skewness", "kurtosis":
 		// Distribution-shape scalars; all F64.
 		return encoding.FieldTypeF64
+	case "frequency":
+		// Modal count (occurrences of the most frequent value). Scalar
+		// companion to `mode`; the per-value map stays on Pulse's meta
+		// surface and never reaches a column. F64 like the rest.
+		return encoding.FieldTypeF64
 	default:
 		return encoding.FieldTypeF64
 	}

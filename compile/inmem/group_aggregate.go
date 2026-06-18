@@ -306,6 +306,8 @@ func computeAggregate(tbl *table.Table, op nodes.AggOp, idx []int, shareTotals m
 		return percentile(vals, 75), nil
 	case "mode":
 		return mode(vals), nil
+	case "frequency":
+		return modalCount(vals), nil
 	case "distinct":
 		return distinct(idx, col), nil
 	case "ci0":
@@ -515,6 +517,26 @@ func mode(vals []float64) float64 {
 		}
 	}
 	return best
+}
+
+// modalCount mirrors Pulse's frequencyAggregator scalar return: the
+// number of occurrences of the most frequent value (the modal count).
+// Returns 0 for an empty group. The modal VALUE is mode()'s job; this
+// returns its multiplicity. Counts are tie-insensitive, so frequency
+// agrees with Pulse even when several values share the peak count.
+func modalCount(vals []float64) float64 {
+	if len(vals) == 0 {
+		return 0
+	}
+	count := map[float64]int{}
+	best := 0
+	for _, v := range vals {
+		count[v]++
+		if count[v] > best {
+			best = count[v]
+		}
+	}
+	return float64(best)
 }
 
 func distinct(idx []int, col table.Column) float64 {
