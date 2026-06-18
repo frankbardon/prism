@@ -46,9 +46,10 @@
         {"$ref": "transform.schema.json#/$defs/sort_transform"},
         {"$ref": "transform.schema.json#/$defs/limit_transform"},
         {"$ref": "transform.schema.json#/$defs/crosstab_transform"},
-        {"$ref": "transform.schema.json#/$defs/regression_transform"}
+        {"$ref": "transform.schema.json#/$defs/regression_transform"},
+        {"$ref": "transform.schema.json#/$defs/timeunit_transform"}
       ],
-      "description": "Single transform step; exactly one of the 14 variants identified by its discriminator key."
+      "description": "Single transform step; exactly one of the 15 variants identified by its discriminator key."
     },
     "filter_transform": {
       "type": "object",
@@ -380,6 +381,19 @@
         "kind": {"type": "string", "enum": ["share_of_row", "share_of_col", "index_vs_margin", "zscore_vs_margin"], "description": "Overlay kind. share_of_row/col emit cell / axis-margin; index_vs_margin emits cell / margin * 100; zscore_vs_margin emits the standardized (cell - margin)/sd. index_vs_margin and zscore_vs_margin require axis."},
         "axis": {"type": "string", "enum": ["row", "column"], "description": "Margin axis for index_vs_margin / zscore_vs_margin. Ignored for share_of_row/col."},
         "as":   {"type": "string", "minLength": 1, "description": "Output column name (defaults to the kind)."}
+      }
+    },
+
+    "timeunit_transform": {
+      "type": "object",
+      "description": "Truncate a temporal field to a calendar period and append the truncated date (Vega-Lite timeUnit analogue). Client-side; composes anywhere.",
+      "additionalProperties": false,
+      "required": ["timeunit", "field", "as"],
+      "properties": {
+        "timeunit": {"type": "string", "enum": ["year", "quarter", "month", "week", "day"], "description": "Calendar period to truncate to (period start; week is ISO/Monday)."},
+        "field":    {"$ref": "shared.schema.json#/$defs/field_ref", "description": "Temporal field to truncate."},
+        "as":       {"type": "string", "minLength": 1, "description": "Output date column name."},
+        "data":     {"type": "string", "minLength": 1, "description": "Optional input alias."}
       }
     },
 

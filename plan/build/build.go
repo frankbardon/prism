@@ -553,6 +553,9 @@ func transformAsName(t spec.Transform) string {
 		return t.Crosstab.As
 	case t.Regression != nil:
 		return t.Regression.As
+	case t.TimeUnit != nil:
+		// TimeUnit.As is the output column name, not a dataset alias.
+		return ""
 	}
 	return ""
 }
@@ -601,6 +604,13 @@ func (c *buildCtx) applyOneTransform(input plan.NodeID, t spec.Transform) (plan.
 		}
 		id := c.nextID("bin")
 		return c.addAndReturn(nodes.NewBin(id, in, t.Bin.Field, t.Bin.As, nodes.BinParams{Auto: true}))
+	case t.TimeUnit != nil:
+		in, err := resolveInput(t.TimeUnit.Data)
+		if err != nil {
+			return "", err
+		}
+		id := c.nextID("timeunit")
+		return c.addAndReturn(nodes.NewTimeUnit(id, in, t.TimeUnit.Field, t.TimeUnit.TimeUnit, t.TimeUnit.As))
 	case t.Window != nil:
 		in, err := resolveInput(t.Window.Data)
 		if err != nil {

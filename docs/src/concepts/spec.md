@@ -236,6 +236,35 @@ Constraints:
   GLM/Bayesian families, and the per-row residual / leverage attributes
   land in a follow-up.
 
+## TimeUnit transform
+
+The `timeunit` transform truncates a temporal field to a calendar
+period and appends the truncated date as a new column — the Vega-Lite
+`timeUnit` analogue. The output is a date (the period start), so the
+derived column stays temporal for axis / scale resolution and sorts
+chronologically. It runs client-side (pure epoch arithmetic), so —
+unlike `crosstab` / `regression` — it composes anywhere in a chain.
+
+```json
+{
+  "transform": [{"timeunit": "month", "field": "order_date", "as": "order_month"}],
+  "mark": "line",
+  "encoding": {
+    "x": {"field": "order_month", "type": "temporal"},
+    "y": {"aggregate": "sum", "field": "revenue", "type": "quantitative"}
+  }
+}
+```
+
+| Field | Required | Notes |
+|---|---|---|
+| `timeunit` | yes | Period: `year`, `quarter`, `month`, `week` (ISO / Monday start), `day`. Truncates to the period start. |
+| `field`    | yes | Temporal field to truncate. |
+| `as`       | yes | Output date column name. |
+
+`day_of_week` and other component-extraction units (which return an
+ordinal, not a date) land in a follow-up.
+
 ## Strict by default
 
 - Unknown fields error (typos like `xfield` vs `x.field` caught at parse).

@@ -18,6 +18,7 @@ type Transform struct {
 	Limit      *LimitTransform
 	Crosstab   *CrosstabTransform
 	Regression *RegressionTransform
+	TimeUnit   *TimeUnitTransform
 }
 
 // FilterTransform: row predicate.
