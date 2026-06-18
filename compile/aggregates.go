@@ -54,6 +54,18 @@ var AliasToPulse = map[string]AggregateMapping{
 	"q1":       {Alias: "q1", Type: types.AGG_PERCENTILE, Params: []byte(`{"percentile":25}`)},
 	"q3":       {Alias: "q3", Type: types.AGG_PERCENTILE, Params: []byte(`{"percentile":75}`)},
 
+	// Distribution-shape scalars promoted to first-class Pulse AGG_*
+	// ops by v0.22. range = max-min; skewness/kurtosis are the
+	// population (Fisher-Pearson) forms — kurtosis is excess (−3).
+	// null_count counts null records and so applies to any field type.
+	// AGG_ZSCORE is intentionally NOT aliased: its per-group scalar is
+	// the mean standardized score, which is 0 by definition (it is a
+	// per-row ATTR concept, not a group aggregate).
+	"range":      {Alias: "range", Type: types.AGG_RANGE},
+	"skewness":   {Alias: "skewness", Type: types.AGG_SKEWNESS},
+	"kurtosis":   {Alias: "kurtosis", Type: types.AGG_KURTOSIS},
+	"null_count": {Alias: "null_count", Type: types.AGG_NULL_COUNT},
+
 	// Cohort-analytics extensions (D003) promoted in pulse v0.10.0.
 	// Sibling-column conventions still bind the Pulse Params at
 	// request-build time: wmean uses <field>_weight; ratio uses

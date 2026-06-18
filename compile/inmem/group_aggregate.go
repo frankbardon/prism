@@ -245,6 +245,20 @@ func computeAggregate(tbl *table.Table, op nodes.AggOp, idx []int, shareTotals m
 		)
 	}
 
+	// "null_count" counts null records and so must run before the
+	// null-skipping value collection below (mirrors Pulse's
+	// nullCountAggregator, which counts records where the value is
+	// absent). Works on any field type.
+	if alias == "null_count" {
+		n := 0
+		for _, i := range idx {
+			if col.IsNull(i) {
+				n++
+			}
+		}
+		return float64(n), nil
+	}
+
 	vals := make([]float64, 0, len(idx))
 	for _, i := range idx {
 		v := col.ValueAt(i)
@@ -275,6 +289,15 @@ func computeAggregate(tbl *table.Table, op nodes.AggOp, idx []int, shareTotals m
 		return math.Sqrt(variance(vals)), nil
 	case "variance":
 		return variance(vals), nil
+	case "range":
+		if len(vals) == 0 {
+			return 0, nil
+		}
+		return maxOf(vals) - minOf(vals), nil
+	case "skewness":
+		return skewness(vals), nil
+	case "kurtosis":
+		return kurtosis(vals), nil
 	case "median":
 		return percentile(vals, 50), nil
 	case "q1":
@@ -431,6 +454,48 @@ func percentile(vals []float64, p float64) float64 {
 		return cp[low]
 	}
 	return cp[low] + (rank-float64(low))*(cp[high]-cp[low])
+}
+
+// skewness mirrors Pulse's buffered skewnessAggregator: the population
+// (Fisher-Pearson) form, mean of ((x-m)/sd)^3 with sd = population
+// stddev. Returns 0 when n <= 1 or the distribution has no spread.
+func skewness(vals []float64) float64 {
+	n := len(vals)
+	if n <= 1 {
+		return 0
+	}
+	m := mean(vals)
+	sd := math.Sqrt(variance(vals)) // variance is population
+	if sd == 0 {
+		return 0
+	}
+	sum := 0.0
+	for _, v := range vals {
+		d := (v - m) / sd
+		sum += d * d * d
+	}
+	return sum / float64(n)
+}
+
+// kurtosis mirrors Pulse's buffered kurtosisAggregator: excess kurtosis
+// m4 / (n * variance^2) - 3 over the population. Returns 0 when n <= 1
+// or the distribution has no spread.
+func kurtosis(vals []float64) float64 {
+	n := len(vals)
+	if n <= 1 {
+		return 0
+	}
+	m := mean(vals)
+	varp := variance(vals) // population
+	if varp == 0 {
+		return 0
+	}
+	m4 := 0.0
+	for _, v := range vals {
+		d := v - m
+		m4 += d * d * d * d
+	}
+	return m4/(float64(n)*varp*varp) - 3
 }
 
 func mode(vals []float64) float64 {

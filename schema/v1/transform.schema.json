@@ -9,6 +9,7 @@
       "description": "Friendly aggregate alias mapped to Pulse internals by the compiler.",
       "enum": [
         "count", "sum", "mean", "median", "min", "max", "stdev", "variance",
+        "range", "skewness", "kurtosis", "null_count",
         "q1", "q3", "ci0", "ci1",
         "distinct", "mode",
         "wmean", "ratio", "lift", "share"

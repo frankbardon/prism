@@ -30,7 +30,7 @@ The `encoding` object binds data fields to visual channels.
 |---|---|
 | `field` | Column from the source (or transform output). |
 | `type` | One of `nominal`, `ordinal`, `quantitative`, `temporal`. |
-| `aggregate` | Friendly alias: `mean`, `sum`, `count`, `median`, `q1`, `q3`, `min`, `max`, `stdev`, `variance`, `ci0`, `ci1`, `distinct`, `mode`, plus `wmean`, `ratio`, `lift`, `share`. |
+| `aggregate` | Friendly alias: `mean`, `sum`, `count`, `null_count`, `median`, `q1`, `q3`, `min`, `max`, `range`, `stdev`, `variance`, `skewness`, `kurtosis`, `ci0`, `ci1`, `distinct`, `mode`, plus `wmean`, `ratio`, `lift`, `share`. `null_count` works on any field type; numeric aggregates require a quantitative or temporal field. |
 | `scale` | Scale spec (`type`, `domain`, `range`, `scheme`, `padding`, ...). |
 | `axis` | Axis config (`title`, `format`, `grid`, `tick_count`, `label_angle`, ...). |
 | `legend` | Legend config (`title`, `orient`, `direction`, ...). |

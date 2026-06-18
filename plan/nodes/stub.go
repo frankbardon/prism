@@ -135,10 +135,14 @@ func appendField(s *encoding.Schema, name string, ft encoding.FieldType) *encodi
 // return a categorical) get explicit cases when they land.
 func aggregateOutputType(op string) encoding.FieldType {
 	switch strings.ToLower(op) {
-	case "count":
-		// Count is conceptually integer but we keep the result type
-		// uniform with the other aggregates for downstream simplicity —
-		// scales and encodings already treat F64/integer alike.
+	case "count", "null_count":
+		// Count / null_count are conceptually integer but we keep the
+		// result type uniform with the other aggregates for downstream
+		// simplicity — scales and encodings already treat F64/integer
+		// alike.
+		return encoding.FieldTypeF64
+	case "range", "skewness", "kurtosis":
+		// Distribution-shape scalars; all F64.
 		return encoding.FieldTypeF64
 	default:
 		return encoding.FieldTypeF64
