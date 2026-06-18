@@ -45,9 +45,10 @@
         {"$ref": "transform.schema.json#/$defs/sample_transform"},
         {"$ref": "transform.schema.json#/$defs/sort_transform"},
         {"$ref": "transform.schema.json#/$defs/limit_transform"},
-        {"$ref": "transform.schema.json#/$defs/crosstab_transform"}
+        {"$ref": "transform.schema.json#/$defs/crosstab_transform"},
+        {"$ref": "transform.schema.json#/$defs/regression_transform"}
       ],
-      "description": "Single transform step; exactly one of the 13 variants identified by its discriminator key."
+      "description": "Single transform step; exactly one of the 14 variants identified by its discriminator key."
     },
     "filter_transform": {
       "type": "object",
@@ -379,6 +380,27 @@
         "kind": {"type": "string", "enum": ["share_of_row", "share_of_col", "index_vs_margin"], "description": "Overlay kind. share_of_row/col emit cell / axis-margin; index_vs_margin emits cell / margin * 100 (requires axis)."},
         "axis": {"type": "string", "enum": ["row", "column"], "description": "Margin axis for index_vs_margin. Ignored for share_of_row/col."},
         "as":   {"type": "string", "minLength": 1, "description": "Output column name (defaults to the kind)."}
+      }
+    },
+
+    "regression_transform": {
+      "type": "object",
+      "description": "OLS regression fit (Pulse ATTR_REG_FITTED): augments each source row with a fitted ŷ column, sorted by the first predictor for trend-line rendering. Must be the first transform on the chain (it fits the source cohort directly).",
+      "additionalProperties": false,
+      "required": ["regression"],
+      "properties": {
+        "regression": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["target", "predictors"],
+          "properties": {
+            "target":     {"type": "string", "minLength": 1, "description": "Dependent variable (y)."},
+            "predictors": {"type": "array", "minItems": 1, "items": {"type": "string", "minLength": 1}, "description": "Independent variables (x). Multiple predictors fit a multiple regression."},
+            "as":         {"type": "string", "minLength": 1, "description": "Fitted-value output column name (defaults to fitted)."}
+          }
+        },
+        "data": {"type": "string", "minLength": 1, "description": "Optional input alias (must resolve to a registered .pulse dataset)."},
+        "as":   {"type": "string", "minLength": 1, "description": "Optional output alias."}
       }
     },
 

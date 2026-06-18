@@ -37,4 +37,5 @@ func init() {
 	validate.RegisterDefault(func() validate.SemanticRule { return ThemeSchemeKnown{} })
 	validate.RegisterDefault(func() validate.SemanticRule { return ThemeMarkTypeKnown{} })
 	validate.RegisterDefault(func() validate.SemanticRule { return CrosstabPosition{} })
+	validate.RegisterDefault(func() validate.SemanticRule { return RegressionPosition{} })
 }

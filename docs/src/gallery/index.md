@@ -31,6 +31,7 @@ For live interactive rendering in a browser, see [`index.html`](index.html).
 | [heatmap](composite-marks/heatmap.prism.json) | <img src="composite-marks/heatmap.svg" width="240"> |
 | [crosstab_heatmap](composite-marks/crosstab_heatmap.prism.json) | <img src="composite-marks/crosstab_heatmap.svg" width="240"> |
 | [crosstab_overlay_share](composite-marks/crosstab_overlay_share.prism.json) | <img src="composite-marks/crosstab_overlay_share.svg" width="240"> |
+| [regression_trend](composite-marks/regression_trend.prism.json) | <img src="composite-marks/regression_trend.svg" width="240"> |
 | [boxplot](composite-marks/boxplot.prism.json) | <img src="composite-marks/boxplot.svg" width="240"> |
 | [violin_score](composite-marks/violin_score.prism.json) | <img src="composite-marks/violin_score.svg" width="240"> |
 | [pie](composite-marks/pie.prism.json) | <img src="composite-marks/pie.svg" width="240"> |

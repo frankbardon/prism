@@ -1,0 +1,24 @@
+{
+  "$schema": "urn:prism:schema:v1:spec",
+  "title": "Affinity score vs age with OLS trend line (regression)",
+  "data": {"source": "testdata/cohorts/tiny.pulse"},
+  "layer": [
+    {
+      "$schema": "urn:prism:schema:v1:spec",
+      "mark": {"type": "point", "opacity": 0.3},
+      "encoding": {
+        "x": {"field": "age", "type": "quantitative"},
+        "y": {"field": "score", "type": "quantitative"}
+      }
+    },
+    {
+      "$schema": "urn:prism:schema:v1:spec",
+      "transform": [{"regression": {"target": "score", "predictors": ["age"], "as": "fit"}}],
+      "mark": {"type": "line", "stroke": "#d62728", "stroke_width": 2},
+      "encoding": {
+        "x": {"field": "age", "type": "quantitative"},
+        "y": {"field": "fit", "type": "quantitative"}
+      }
+    }
+  ]
+}

@@ -551,6 +551,8 @@ func transformAsName(t spec.Transform) string {
 		return t.Limit.As
 	case t.Crosstab != nil:
 		return t.Crosstab.As
+	case t.Regression != nil:
+		return t.Regression.As
 	}
 	return ""
 }
@@ -686,6 +688,8 @@ func (c *buildCtx) applyOneTransform(input plan.NodeID, t spec.Transform) (plan.
 		return c.addAndReturn(nodes.NewLimit(id, in, t.Limit.Limit, off))
 	case t.Crosstab != nil:
 		return c.buildCrosstab(input, t.Crosstab)
+	case t.Regression != nil:
+		return c.buildRegression(input, t.Regression)
 	}
 	return "", outOfScopeErr("transform:unknown", "P04")
 }
@@ -696,6 +700,70 @@ func (c *buildCtx) applyOneTransform(input plan.NodeID, t spec.Transform) (plan.
 // SourceNode is removed from the DAG, mirroring the PulseChainFusion
 // pattern. Returns PRISM_PLAN_CROSSTAB_REQUIRES_SOURCE when the
 // immediate input is not a SourceNode.
+// buildRegression walks back to the upstream SourceNode (the only legal
+// input — regression fits the cohort directly via pulse.Process) and
+// replaces it with a leaf RegressionNode, mirroring buildCrosstab.
+func (c *buildCtx) buildRegression(input plan.NodeID, t *spec.RegressionTransform) (plan.NodeID, error) {
+	in, err := func() (plan.NodeID, error) {
+		if t.Data == "" {
+			return input, nil
+		}
+		if id, ok := c.leafByName[t.Data]; ok {
+			return id, nil
+		}
+		return "", c.missingDatasetErr(t.Data)
+	}()
+	if err != nil {
+		return "", err
+	}
+	inNode, ok := c.b.Node(in)
+	if !ok {
+		return "", prismerrors.New(
+			"PRISM_PLAN_REGRESSION_REQUIRES_SOURCE",
+			fmt.Sprintf("regression transform input %s not in plan.", in),
+			map[string]any{"Input": string(in)},
+		)
+	}
+	src, ok := inNode.(*nodes.SourceNode)
+	if !ok {
+		return "", prismerrors.New(
+			"PRISM_PLAN_REGRESSION_REQUIRES_SOURCE",
+			fmt.Sprintf("regression transform must consume a source ref; got %T upstream (input id %s).", inNode, in),
+			map[string]any{"InputKind": fmt.Sprintf("%T", inNode), "Input": string(in)},
+		)
+	}
+	inSchema, err := src.OutputSchema()
+	if err != nil {
+		return "", err
+	}
+	id := nodes.DeriveRegressionID(src.Ref(), t)
+	node, err := nodes.NewRegression(id, src.Ref(), src.FS(), inSchema, t)
+	if err != nil {
+		return "", err
+	}
+	if err := c.b.AddNode(node); err != nil {
+		return "", err
+	}
+	// Drop the now-unused SourceNode so the executor doesn't materialise
+	// the cohort a second time, then rewire any leaf bookkeeping that
+	// pointed at it.
+	c.b.RemoveNode(src.ID())
+	for name, leafID := range c.leafByName {
+		if leafID == src.ID() {
+			c.leafByName[name] = id
+		}
+	}
+	if c.topLeaf == src.ID() {
+		c.topLeaf = id
+	}
+	for ref, leafID := range c.leafBySource {
+		if leafID == src.ID() {
+			c.leafBySource[ref] = id
+		}
+	}
+	return id, nil
+}
+
 func (c *buildCtx) buildCrosstab(input plan.NodeID, t *spec.CrosstabTransform) (plan.NodeID, error) {
 	in, err := func() (plan.NodeID, error) {
 		if t.Data == "" {

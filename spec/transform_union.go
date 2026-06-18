@@ -36,6 +36,8 @@ func (t Transform) MarshalJSON() ([]byte, error) {
 		return json.Marshal(t.Limit)
 	case t.Crosstab != nil:
 		return json.Marshal(t.Crosstab)
+	case t.Regression != nil:
+		return json.Marshal(t.Regression)
 	}
 	return []byte("null"), nil
 }
@@ -142,6 +144,12 @@ func (t *Transform) UnmarshalJSON(data []byte) error {
 			return err
 		}
 		t.Crosstab = &v
+	case "regression":
+		var v RegressionTransform
+		if err := strictUnmarshal(data, &v); err != nil {
+			return err
+		}
+		t.Regression = &v
 	default:
 		return fmt.Errorf("transform: unhandled discriminator %q", hit)
 	}
@@ -152,7 +160,7 @@ func (t *Transform) UnmarshalJSON(data []byte) error {
 var transformDiscriminators = []string{
 	"filter", "calculate", "aggregate", "bin", "window",
 	"join", "union", "pivot", "unpivot",
-	"sample", "sort", "limit", "crosstab",
+	"sample", "sort", "limit", "crosstab", "regression",
 }
 
 // strictUnmarshal applies DisallowUnknownFields to a single byte slice.

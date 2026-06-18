@@ -188,6 +188,53 @@ Cells are evenly numbered through `PRISM_SPEC_032` (shape rule),
 `PRISM_SPEC_033` (position rule), `PRISM_SPEC_034` (normalize enum).
 Run `prism errors lookup <code>` for details + fixups.
 
+## Regression transform
+
+The `regression` transform fits an OLS regression over the cohort
+(Pulse `REG_OLS`) and emits the two endpoints of the fitted trend line —
+`(min(x), ŷ)` and `(max(x), ŷ)`. Because every OLS fitted point is
+collinear, two endpoints draw the full line; layer a `line` mark over
+`(predictor, fitted)` on top of a `point` scatter of `(predictor,
+target)` for the classic regression overlay.
+
+```json
+{
+  "$schema": "urn:prism:schema:v1:spec",
+  "data": {"source": "sales.pulse"},
+  "layer": [
+    {"mark": "point", "encoding": {
+      "x": {"field": "spend", "type": "quantitative"},
+      "y": {"field": "revenue", "type": "quantitative"}
+    }},
+    {
+      "transform": [{"regression": {"target": "revenue", "predictors": ["spend"], "as": "fit"}}],
+      "mark": "line",
+      "encoding": {
+        "x": {"field": "spend", "type": "quantitative"},
+        "y": {"field": "fit", "type": "quantitative"}
+      }
+    }
+  ]
+}
+```
+
+Body:
+
+| Field | Required | Notes |
+|---|---|---|
+| `target`     | yes | Dependent variable (y). |
+| `predictors` | yes | Independent variable (x). Exactly one in v1 — the only shape that maps to a 2-D line. |
+| `as`         |     | Fitted-value output column name (default `fitted`). |
+
+Constraints:
+
+- Regression must be the **first** transform on the chain — the OLS
+  prepass fits the source cohort directly, like crosstab
+  (`PRISM_SPEC_035`, `PRISM_PLAN_REGRESSION_REQUIRES_SOURCE`).
+- v1 fits unpenalized OLS with a single predictor. Multiple predictors,
+  GLM/Bayesian families, and the per-row residual / leverage attributes
+  land in a follow-up.
+
 ## Strict by default
 
 - Unknown fields error (typos like `xfield` vs `x.field` caught at parse).

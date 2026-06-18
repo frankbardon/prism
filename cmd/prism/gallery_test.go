@@ -63,6 +63,7 @@ func TestPrismGalleryFixtures(t *testing.T) {
 		"multi-source/bar_pulse_backed.prism.json":          true,
 		"composite-marks/crosstab_heatmap.prism.json":       true,
 		"composite-marks/crosstab_overlay_share.prism.json": true,
+		"composite-marks/regression_trend.prism.json":       true,
 	}
 
 	updateGoldens := os.Getenv("UPDATE_GOLDENS") == "1"
