@@ -11,7 +11,7 @@ require (
 	github.com/signintech/gopdf v0.36.1
 	github.com/spf13/afero v1.15.0
 	github.com/twitchtv/twirp v8.1.3+incompatible
-	github.com/urfave/cli/v3 v3.9.1
+	github.com/urfave/cli/v3 v3.10.0
 	golang.org/x/text v0.38.0
 	google.golang.org/protobuf v1.36.11
 )
