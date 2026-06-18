@@ -73,3 +73,65 @@ func TestBuildCrosstabRequestBadPeriod(t *testing.T) {
 		t.Fatal("expected error for invalid date period, got nil")
 	}
 }
+
+// TestBuildCrosstabRequestOverlays verifies overlay translation: the
+// request switches to matrix shape, forces the margin each overlay
+// needs as a denominator, and sets Ref.Margin.Axis correctly (fixed by
+// kind for share_of_*, user-supplied for index_vs_margin).
+func TestBuildCrosstabRequestOverlays(t *testing.T) {
+	body := spec.CrosstabBody{
+		Rows:    []spec.CrosstabGroup{{Field: "region"}},
+		Columns: []spec.CrosstabGroup{{Field: "quarter"}},
+		Cell:    spec.CrosstabCell{Aggregate: "sum", Field: "rev", As: "rev"},
+		Overlays: []spec.CrosstabOverlay{
+			{Kind: "share_of_row", As: "rs"},
+			{Kind: "index_vs_margin", Axis: "column", As: "idx"},
+		},
+	}
+	req, err := buildCrosstabRequest("s.pulse", body, "rev")
+	if err != nil {
+		t.Fatalf("buildCrosstabRequest: %v", err)
+	}
+	if req.Crosstab.Shape != pulsetypes.CrosstabShapeMatrix {
+		t.Errorf("shape = %q, want matrix (overlays force matrix)", req.Crosstab.Shape)
+	}
+	if !req.Crosstab.Margins.Rows || !req.Crosstab.Margins.Columns {
+		t.Errorf("margins = %+v, want both row+column forced", req.Crosstab.Margins)
+	}
+	if len(req.Overlays) != 2 {
+		t.Fatalf("overlays = %d, want 2", len(req.Overlays))
+	}
+	if req.Overlays[0].Kind != pulsetypes.OverlayKindShareOfRow ||
+		req.Overlays[0].Ref.Margin == nil ||
+		req.Overlays[0].Ref.Margin.Axis != pulsetypes.MarginAxisRow {
+		t.Errorf("overlay[0] = %+v, want SHARE_OF_ROW with row margin ref", req.Overlays[0])
+	}
+	if req.Overlays[1].Kind != pulsetypes.OverlayKindIndexVsMargin ||
+		req.Overlays[1].Ref.Margin == nil ||
+		req.Overlays[1].Ref.Margin.Axis != pulsetypes.MarginAxisColumn {
+		t.Errorf("overlay[1] = %+v, want INDEX_VS_MARGIN with column margin ref", req.Overlays[1])
+	}
+}
+
+func TestBuildCrosstabRequestBadOverlay(t *testing.T) {
+	// Unknown kind.
+	bad := spec.CrosstabBody{
+		Rows:     []spec.CrosstabGroup{{Field: "r"}},
+		Columns:  []spec.CrosstabGroup{{Field: "c"}},
+		Cell:     spec.CrosstabCell{Aggregate: "count", Field: "x"},
+		Overlays: []spec.CrosstabOverlay{{Kind: "bogus"}},
+	}
+	if _, err := buildCrosstabRequest("s.pulse", bad, "x"); err == nil {
+		t.Fatal("expected error for unknown overlay kind")
+	}
+	// index_vs_margin without axis.
+	noAxis := spec.CrosstabBody{
+		Rows:     []spec.CrosstabGroup{{Field: "r"}},
+		Columns:  []spec.CrosstabGroup{{Field: "c"}},
+		Cell:     spec.CrosstabCell{Aggregate: "count", Field: "x"},
+		Overlays: []spec.CrosstabOverlay{{Kind: "index_vs_margin"}},
+	}
+	if _, err := buildCrosstabRequest("s.pulse", noAxis, "x"); err == nil {
+		t.Fatal("expected error for index_vs_margin without axis")
+	}
+}

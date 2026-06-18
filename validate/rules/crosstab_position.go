@@ -68,6 +68,34 @@ func checkCrosstabGroupers(groups []spec.CrosstabGroup, path string, out *[]*err
 	}
 }
 
+// crosstabOverlayKinds lists the friendly overlay names the crosstab
+// node supports (mirrors crosstabOverlayKinds in plan/nodes/crosstab.go).
+// index_vs_margin additionally requires axis row|column.
+var crosstabOverlayKinds = map[string]bool{
+	"share_of_row": true, "share_of_col": true, "index_vs_margin": true,
+}
+
+// checkCrosstabOverlays statically validates overlay kind + axis.
+func checkCrosstabOverlays(overlays []spec.CrosstabOverlay, path string, out *[]*errors.AppError) {
+	for i, o := range overlays {
+		if !crosstabOverlayKinds[o.Kind] {
+			*out = append(*out, errors.New(
+				"PRISM_SPEC_032",
+				fmt.Sprintf("crosstab overlay kind %q at %s[%d] must be share_of_row, share_of_col, or index_vs_margin.", o.Kind, path, i),
+				map[string]any{"Path": path, "Index": i, "Kind": o.Kind},
+			))
+			continue
+		}
+		if o.Kind == "index_vs_margin" && o.Axis != "row" && o.Axis != "column" {
+			*out = append(*out, errors.New(
+				"PRISM_SPEC_032",
+				fmt.Sprintf("crosstab overlay index_vs_margin at %s[%d] requires axis row or column (got %q).", path, i, o.Axis),
+				map[string]any{"Path": path, "Index": i, "Axis": o.Axis},
+			))
+		}
+	}
+}
+
 func walkCrosstab(s *spec.Spec, prefix string, out *[]*errors.AppError) {
 	if s == nil {
 		return
@@ -119,6 +147,8 @@ func walkCrosstab(s *spec.Spec, prefix string, out *[]*errors.AppError) {
 		// Grouper kind / period enum check (rows + columns).
 		checkCrosstabGroupers(t.Crosstab.Crosstab.Rows, path+".rows", out)
 		checkCrosstabGroupers(t.Crosstab.Crosstab.Columns, path+".columns", out)
+		// Overlay kind / axis enum check.
+		checkCrosstabOverlays(t.Crosstab.Crosstab.Overlays, path+".overlays", out)
 		// Normalize: enum check.
 		switch t.Crosstab.Crosstab.Normalize {
 		case "", "none", "row", "column", "total":

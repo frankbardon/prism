@@ -38,6 +38,30 @@ type CrosstabBody struct {
 	// Response.Crosstab — reserved for future encoders that consume
 	// the dense matrix.
 	Shape string `json:"shape,omitempty"`
+	// Overlays attaches Pulse post-result overlay layers to the cell
+	// grid. Each overlay adds one F64 column to the long-form output,
+	// index-aligned to the base cell, so it can drive a `color` /
+	// `opacity` channel. When any overlay is present the node runs the
+	// crosstab in matrix shape internally (overlays decorate body
+	// cells) — user `margins` flags are ignored for the visual output.
+	Overlays []CrosstabOverlay `json:"overlays,omitempty"`
+}
+
+// CrosstabOverlay is one post-result overlay layer on the cell grid.
+// v1 supports the cell-scoped, matrix-payload kinds that align
+// one-to-one with heatmap cells: share_of_row, share_of_col, and
+// index_vs_margin. Group/series-scoped kinds (index_vs_total,
+// share_of_total) land in a follow-up.
+type CrosstabOverlay struct {
+	// Kind is the friendly overlay name: share_of_row, share_of_col,
+	// index_vs_margin.
+	Kind string `json:"kind"`
+	// Axis selects the margin axis ("row" or "column") for
+	// index_vs_margin. Ignored by share_of_row/col (the axis is
+	// implied by the kind).
+	Axis string `json:"axis,omitempty"`
+	// As is the output column name. Defaults to the kind.
+	As string `json:"as,omitempty"`
 }
 
 // CrosstabGroup is one row / column grouper. Type defaults to

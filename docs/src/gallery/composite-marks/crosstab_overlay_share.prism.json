@@ -1,0 +1,19 @@
+{
+  "$schema": "urn:prism:schema:v1:spec",
+  "title": "Revenue share-of-row by region x quarter (crosstab overlay)",
+  "data": {"source": "testdata/cohorts/sales.pulse"},
+  "transform": [{
+    "crosstab": {
+      "rows":    [{"field": "region"}],
+      "columns": [{"field": "quarter"}],
+      "cell":    {"aggregate": "sum", "field": "revenue", "as": "revenue"},
+      "overlays": [{"kind": "share_of_row", "as": "row_share"}]
+    }
+  }],
+  "mark": "heatmap",
+  "encoding": {
+    "x":     {"field": "quarter", "type": "nominal"},
+    "y":     {"field": "region",  "type": "nominal"},
+    "color": {"field": "row_share", "type": "quantitative"}
+  }
+}

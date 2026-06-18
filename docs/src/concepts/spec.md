@@ -140,6 +140,34 @@ Body:
 | `margins`   |     | `{rows, columns, grand}` — emit total rows with `_margin` sentinel. |
 | `normalize` |     | `none` (default), `row`, `column`, `total`. |
 | `shape`     |     | `long` (default) returns one row per cell; `matrix` is reserved. |
+| `overlays`  |     | Post-result overlay layers; each adds one F64 column aligned to the base cell. See below. |
+
+### Crosstab overlays
+
+`overlays` attaches Pulse post-result overlay layers to the cell grid.
+Each overlay adds one F64 column — index-aligned to the base cell — so
+it can drive a `color` or `opacity` channel. v1 supports the
+cell-scoped kinds that align one-to-one with heatmap cells:
+
+| `kind` | Column value | Notes |
+|---|---|---|
+| `share_of_row` | cell / row-margin | cells along a row sum to 1.0 |
+| `share_of_col` | cell / column-margin | cells down a column sum to 1.0 |
+| `index_vs_margin` | cell / margin × 100 | requires `axis` (`row` or `column`); 100 = on-margin |
+
+```json
+"crosstab": {
+  "rows":    [{"field": "region"}],
+  "columns": [{"field": "quarter"}],
+  "cell":    {"aggregate": "sum", "field": "revenue", "as": "revenue"},
+  "overlays": [{"kind": "share_of_row", "as": "row_share"}]
+}
+```
+
+When any overlay is present the node runs the crosstab in matrix shape
+internally (overlays decorate body cells), so user `margins` flags are
+ignored for the visual output. Group/series-scoped kinds
+(`index_vs_total`, `share_of_total`) land in a follow-up.
 
 Constraints:
 
