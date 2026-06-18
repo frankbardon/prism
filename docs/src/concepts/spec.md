@@ -134,7 +134,7 @@ Body:
 
 | Field | Required | Notes |
 |---|---|---|
-| `rows`      | yes | Row-axis groupers. v1: one or more `{field: "..."}` (GROUP_CATEGORY). |
+| `rows`      | yes | Row-axis groupers. One or more `{field: "..."}` (category, default) or `{field: "...", type: "date", period: "..."}` (GROUP_DATE). |
 | `columns`   | yes | Column-axis groupers. Same shape. |
 | `cell`      | yes | `{aggregate, field, as}` — Pulse-backed alias (sum, mean, count, ...). |
 | `margins`   |     | `{rows, columns, grand}` — emit total rows with `_margin` sentinel. |
@@ -146,8 +146,11 @@ Constraints:
 - Crosstab must be the **first** transform on the chain. Pulse has no
   in-memory cohort constructor, so chaining it after another Prism
   transform is structurally impossible (`PRISM_SPEC_033`).
-- Grouper type is `category` only in v1; date / range / quantile
-  groupers land in a follow-up.
+- Grouper `type` is `category` (default) or `date`. A date grouper
+  buckets a temporal field by `period` — one of `year`, `quarter`,
+  `month` (default), `week`, `day`, `day_of_week` — emitting string
+  bucket-key labels (`"2024"`, `"2024-Q1"`, `"2024-03"`, ...). Range /
+  rounded / quantile groupers land in a follow-up.
 - Margin rows carry a `_margin` column the encoder leaves on the table
   — filter them out at the chart level by upstream `filter`-after
   composition or by avoiding the `margins` flag for the visual

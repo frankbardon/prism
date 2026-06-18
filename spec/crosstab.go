@@ -40,12 +40,18 @@ type CrosstabBody struct {
 	Shape string `json:"shape,omitempty"`
 }
 
-// CrosstabGroup is one row / column grouper. v1 accepts a category
-// grouper (Field only); the Type field is reserved for date / range /
-// rounded / quantile groupers in a follow-up.
+// CrosstabGroup is one row / column grouper. Type defaults to
+// "category" (GROUP_CATEGORY, Field only). Type "date" buckets a
+// temporal field by calendar Period (GROUP_DATE) — the bucket keys are
+// string labels ("2024", "2024-Q1", "2024-03", ...). Range / rounded /
+// quantile groupers remain a follow-up.
 type CrosstabGroup struct {
 	Field string `json:"field"`
 	Type  string `json:"type,omitempty"`
+	// Period selects the calendar component for a date grouper: one of
+	// year, quarter, month (default), week, day, day_of_week. Ignored
+	// for category groupers.
+	Period string `json:"period,omitempty"`
 }
 
 // CrosstabCell describes the per-cell aggregation. Reuses the

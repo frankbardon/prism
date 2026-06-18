@@ -4,6 +4,7 @@ import (
 	"context"
 	"crypto/sha256"
 	"encoding/hex"
+	"encoding/json"
 	"fmt"
 	"sort"
 	"strings"
@@ -32,9 +33,10 @@ import (
 // flat rows today, so the wire shape stays the same regardless of
 // margins / normalisation.
 //
-// Grouper support is currently restricted to GROUP_CATEGORY (one
-// Field per axis entry). Date / range / quantile groupers land
-// behind a follow-up that wires their params.
+// Grouper support: GROUP_CATEGORY (one Field per axis entry) and
+// GROUP_DATE (type "date", calendar bucketing by period — bucket keys
+// are string labels). Range / rounded / quantile groupers land behind
+// a follow-up that wires their Interval params.
 type CrosstabNode struct {
 	id        plan.NodeID
 	ref       string
@@ -166,13 +168,11 @@ func crosstabBodyKey(b spec.CrosstabBody) string {
 	var sb strings.Builder
 	sb.WriteString("rows=")
 	for _, g := range b.Rows {
-		sb.WriteString(g.Field)
-		sb.WriteByte(',')
+		writeGroupKey(&sb, g)
 	}
 	sb.WriteString(";cols=")
 	for _, g := range b.Columns {
-		sb.WriteString(g.Field)
-		sb.WriteByte(',')
+		writeGroupKey(&sb, g)
 	}
 	sb.WriteString(";cell=")
 	sb.WriteString(b.Cell.Aggregate)
@@ -191,6 +191,22 @@ func crosstabBodyKey(b spec.CrosstabBody) string {
 		sb.WriteString(b.Shape)
 	}
 	return sb.String()
+}
+
+// writeGroupKey appends a stable canonical encoding of one grouper
+// (field + type + period) to the fingerprint builder, so two crosstabs
+// that differ only in grouper kind / period hash differently.
+func writeGroupKey(sb *strings.Builder, g spec.CrosstabGroup) {
+	sb.WriteString(g.Field)
+	if g.Type != "" {
+		sb.WriteByte(':')
+		sb.WriteString(g.Type)
+	}
+	if g.Period != "" {
+		sb.WriteByte('/')
+		sb.WriteString(g.Period)
+	}
+	sb.WriteByte(',')
 }
 
 // buildCrosstabRequest translates a spec.CrosstabBody into a fully-
@@ -245,8 +261,18 @@ func buildCrosstabRequest(ref string, body spec.CrosstabBody, cellAs string) (*p
 	}, nil
 }
 
+// dateGroupComponents is the set of calendar components Pulse's
+// GROUP_DATE accepts (mirrors processing/grouper.go
+// validDateGroupComponents). "month" is the default when Period is
+// empty.
+var dateGroupComponents = map[string]bool{
+	"year": true, "quarter": true, "month": true,
+	"week": true, "day": true, "day_of_week": true,
+}
+
 // translateGroupers converts spec.CrosstabGroup entries into
-// pulsetypes.Group entries. v1: GROUP_CATEGORY only (Field).
+// pulsetypes.Group entries. Supports GROUP_CATEGORY (default) and
+// GROUP_DATE (type "date", calendar bucketing by Period).
 func translateGroupers(groups []spec.CrosstabGroup, axis string) ([]*pulsetypes.Group, error) {
 	if len(groups) == 0 {
 		return nil, prismerrors.New(
@@ -268,14 +294,33 @@ func translateGroupers(groups []spec.CrosstabGroup, axis string) ([]*pulsetypes.
 		if t == "" {
 			t = "category"
 		}
-		if t != "category" {
+		switch t {
+		case "category":
+			out[i] = &pulsetypes.Group{Type: pulsetypes.GROUP_CATEGORY, Field: g.Field}
+		case "date":
+			period := g.Period
+			if period == "" {
+				period = "month"
+			}
+			if !dateGroupComponents[period] {
+				return nil, prismerrors.New(
+					"PRISM_SPEC_032",
+					fmt.Sprintf("crosstab date grouper period %q must be one of year/quarter/month/week/day/day_of_week.", period),
+					map[string]any{"Axis": axis, "Period": period},
+				)
+			}
+			params, err := json.Marshal(map[string]string{"component": period})
+			if err != nil {
+				return nil, err
+			}
+			out[i] = &pulsetypes.Group{Type: pulsetypes.GROUP_DATE, Field: g.Field, Params: params}
+		default:
 			return nil, prismerrors.New(
 				"PRISM_SPEC_032",
-				fmt.Sprintf("crosstab grouper type %q not yet supported (v1: category only).", t),
+				fmt.Sprintf("crosstab grouper type %q not supported (use category or date).", t),
 				map[string]any{"Axis": axis, "Type": t},
 			)
 		}
-		out[i] = &pulsetypes.Group{Type: pulsetypes.GROUP_CATEGORY, Field: g.Field}
 	}
 	return out, nil
 }
@@ -342,7 +387,7 @@ func deriveCrosstabSchema(in *encoding.Schema, body spec.CrosstabBody, cellAs st
 				map[string]any{"Field": g.Field},
 			)
 		}
-		fields = append(fields, encoding.Field{Name: g.Field, Type: f.Type})
+		fields = append(fields, encoding.Field{Name: g.Field, Type: crosstabGroupOutputType(g, f.Type)})
 	}
 	for _, g := range body.Columns {
 		f, ok := srcByName[g.Field]
@@ -353,13 +398,24 @@ func deriveCrosstabSchema(in *encoding.Schema, body spec.CrosstabBody, cellAs st
 				map[string]any{"Field": g.Field},
 			)
 		}
-		fields = append(fields, encoding.Field{Name: g.Field, Type: f.Type})
+		fields = append(fields, encoding.Field{Name: g.Field, Type: crosstabGroupOutputType(g, f.Type)})
 	}
 	fields = append(fields, encoding.Field{Name: cellAs, Type: aggregateOutputType(body.Cell.Aggregate)})
 	if body.Margins != nil && (body.Margins.Rows || body.Margins.Columns || body.Margins.Grand) {
 		fields = append(fields, encoding.Field{Name: "_margin", Type: encoding.FieldTypeCategoricalU32})
 	}
 	return &encoding.Schema{Fields: fields}, nil
+}
+
+// crosstabGroupOutputType returns the column type for a grouper in the
+// long-form output. Category groupers preserve the source field type;
+// date groupers emit string bucket-key labels ("2024", "2024-Q1", ...)
+// regardless of the underlying date field.
+func crosstabGroupOutputType(g spec.CrosstabGroup, srcType encoding.FieldType) encoding.FieldType {
+	if g.Type == "date" {
+		return encoding.FieldTypeCategoricalU32
+	}
+	return srcType
 }
 
 // tableFromCrosstabResponse materialises Response.Data into a typed

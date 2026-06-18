@@ -360,8 +360,9 @@
       "additionalProperties": false,
       "required": ["field"],
       "properties": {
-        "field": {"type": "string", "minLength": 1, "description": "Cohort field to group on."},
-        "type":  {"type": "string", "enum": ["category"], "description": "Grouper kind. v1 supports category only (GROUP_CATEGORY)."}
+        "field":  {"type": "string", "minLength": 1, "description": "Cohort field to group on."},
+        "type":   {"type": "string", "enum": ["category", "date"], "description": "Grouper kind. category (default, GROUP_CATEGORY) or date (GROUP_DATE, calendar bucketing of a temporal field)."},
+        "period": {"type": "string", "enum": ["year", "quarter", "month", "week", "day", "day_of_week"], "description": "Calendar component for a date grouper (default month). Ignored for category groupers."}
       }
     },
 
