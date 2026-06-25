@@ -112,20 +112,31 @@ func (s *memoryStore) loadTier(tier Tier) error {
 }
 
 // DefaultStore returns the platform-default Store. On host builds it
-// reads from embedded TopoJSON; on WASM it fetches from the static
-// bundle origin set via SetWasmBundleURL.
+// reads tier bundles from the directory configured via SetHostBundleDir;
+// on WASM it fetches from the static bundle origin set via SetBundleURL.
 func DefaultStore() Store {
-	return defaultStoreOnce()
+	defaultStoreMu.Lock()
+	defer defaultStoreMu.Unlock()
+	if defaultStore == nil {
+		defaultStore = newMemoryStore(platformTierLoader)
+	}
+	return defaultStore
 }
 
 var (
-	defaultStore     Store
-	defaultStoreInit sync.Once
+	defaultStoreMu sync.Mutex
+	defaultStore   Store
 )
 
-func defaultStoreOnce() Store {
-	defaultStoreInit.Do(func() {
-		defaultStore = newMemoryStore(platformTierLoader)
-	})
-	return defaultStore
+// ResetDefaultStore discards the process-wide default Store, including any
+// decoded tier cache, so the next DefaultStore call rebuilds it cold.
+//
+// Test support only: the host geometry cache is a process-global singleton,
+// so a test that needs to observe a cold load (e.g. asserting the
+// unconfigured-directory error path) must reset it to escape geometry
+// cached by sibling tests. Not for production use.
+func ResetDefaultStore() {
+	defaultStoreMu.Lock()
+	defer defaultStoreMu.Unlock()
+	defaultStore = nil
 }

@@ -1,0 +1,9 @@
+{
+  "$schema": "urn:prism:schema:v1:spec",
+  "data": {"feature_collection": {"tier": "admin1-50m"}},
+  "mark": "geoshape",
+  "projection": {"type": "naturalearth", "tier": "admin1-50m"},
+  "encoding": {
+    "feature": {"field": "id", "type": "nominal"}
+  }
+}

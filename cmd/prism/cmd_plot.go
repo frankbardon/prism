@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"io"
 	"os"
@@ -87,6 +88,7 @@ func plotCommand() *cli.Command {
 				Usage: "PDF only — override bundled fonts with .ttf files from this directory (canonical names: prism-sans-regular.ttf, prism-sans-bold.ttf, prism-mono-regular.ttf)",
 			},
 			datasetsConfigFlag(),
+			geodataDirFlag(),
 		},
 		Action: runPlot,
 	}
@@ -141,6 +143,10 @@ func runPlot(ctx context.Context, cmd *cli.Command) error {
 		Height:    height,
 		ThemeName: cmd.String("theme"),
 	}
+
+	// Wire the runtime geodata directory (flag / PRISM_GEODATA) into the
+	// host loader before any geoshape/geopoint mark is encoded.
+	applyGeodataDir(cmd)
 
 	// Branch by spec shape (flat vs composite per P08 — D049/D050).
 	doc, exitErr := plotPipeline(ctx, s, buildOpts, execOpts, encOpts, cmd, srcName)
@@ -231,7 +237,7 @@ func plotPipeline(
 		}
 		doc, err := encode.EncodeComposite(s, composite, per, encOpts)
 		if err != nil {
-			return nil, cli.Exit(fmt.Sprintf("encode: %v", err), 1)
+			return nil, reportEncodeError(cmd, err)
 		}
 		return doc, nil
 	}
@@ -254,7 +260,7 @@ func plotPipeline(
 	}
 	doc, err := encode.Encode(s, res.Tables, tipID, encOpts)
 	if err != nil {
-		return nil, cli.Exit(fmt.Sprintf("encode: %v", err), 1)
+		return nil, reportEncodeError(cmd, err)
 	}
 	return doc, nil
 }
@@ -334,4 +340,24 @@ func asPlotError(err error, target **prismerrors.AppError) bool {
 		return true
 	}
 	return false
+}
+
+// reportEncodeError renders an encode-stage failure as a cli.ExitError.
+// When the failure carries a PRISM_* envelope (e.g. PRISM_GEODATA_DIR_UNSET
+// from an unconfigured geodata directory) the code, message, and fixups are
+// printed to cmd.Writer so the coded error is loud and captured, matching the
+// plan/format error paths. Otherwise it falls back to a terse one-line exit.
+func reportEncodeError(cmd *cli.Command, err error) error {
+	var ae *prismerrors.AppError
+	if errors.As(err, &ae) {
+		fmt.Fprintf(cmd.Writer, "\nERROR %s: %s\n", ae.Code, ae.Message)
+		if len(ae.Fixups) > 0 {
+			fmt.Fprintln(cmd.Writer, "Fixups:")
+			for _, fx := range ae.Fixups {
+				fmt.Fprintf(cmd.Writer, "  - %s\n", fx)
+			}
+		}
+		return cli.Exit("", 1)
+	}
+	return cli.Exit(fmt.Sprintf("encode: %v", err), 1)
 }
