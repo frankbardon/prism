@@ -73,6 +73,27 @@ prism plot bar.json --theme=print > bar-print.svg
 Bundled themes: `light` (default), `dark`, `print`. Custom themes
 via `theme.json` — see [Themes concepts](concepts/themes.md).
 
+## Geographic charts
+
+`geoshape` / `geopoint` marks need map tier geometry, which the host
+binary loads at runtime rather than embedding. Point the loader at a
+directory of tier files with `--geodata-dir` (or the `PRISM_GEODATA`
+environment variable):
+
+```
+prism plot world.json --geodata-dir ./geodata > world.svg
+PRISM_GEODATA=./geodata prism plot world.json > world.svg
+```
+
+A repo checkout already has the tiers in its `geodata/` directory; for a
+standalone install, download `world-110m.geo.json` (and `world-50m` /
+`admin1-50m` if your specs use them) from
+`https://frankbardon.github.io/prism/static/prism/geodata/` into a folder
+and pass that folder. Without a directory, rendering a geo mark fails with
+`PRISM_GEODATA_DIR_UNSET`. The flag is accepted by `plot`, `scene`,
+`serve`, `mcp`, and `static-bundle`. See
+[Geographic Marks](concepts/geo.md) for the full workflow.
+
 ## Embed in a static page (no server)
 
 Prism ships as a WebAssembly module that renders client-side.
