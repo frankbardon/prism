@@ -175,6 +175,8 @@ func Encode(markType string, in Inputs) ([]scene.Mark, *scene.Warning, error) {
 		marksOut, err = encodeSparkbar(in)
 	case "winloss":
 		marksOut, err = encodeWinloss(in)
+	case "sparkarea":
+		marksOut, err = encodeSparkarea(in)
 	case "geoshape":
 		marksOut, err = encodeGeoshape(in)
 	case "geopoint":

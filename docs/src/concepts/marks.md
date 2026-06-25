@@ -41,6 +41,7 @@ arcs, etc. Specify via top-level `mark` (shorthand string) or
 | `sparkline` | Inline micro-line charts, no axes. |
 | `sparkbar` | Inline micro-column charts, no axes — bar-family sibling of `sparkline`. |
 | `winloss` | Equal-height up/down micro-bars by the sign of `y` (>0 up, <0 down, ==0 flat). Magnitude is ignored — only direction encodes. |
+| `sparkarea` | Inline filled micro-area charts, no axes — area-family sibling of `sparkline`; fill reaches the y=0 baseline. |
 | `image` | Sprites / data-URL images at position. |
 | `path` | Raw SVG path data — escape hatch. |
 | `geoshape` | Country / admin-1 polygons (choropleth). See [Geographic Marks](geo.md). |
