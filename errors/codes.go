@@ -621,6 +621,25 @@ var Codes = map[string]CodeMetadata{
 		},
 		SeeAlso: []string{"PRISM_GEO_001"},
 	},
+	"PRISM_GEODATA_DIR_UNSET": {
+		Code:    "PRISM_GEODATA_DIR_UNSET",
+		Message: `Geodata bundle directory is not configured; cannot load tier {{.Tier}}.`,
+		Fixups: []string{
+			`Pass ` + "`--geodata-dir <path>`" + ` or set the ` + "`PRISM_GEODATA`" + ` environment variable to a directory holding the tier files (world-110m.geo.json, world-50m.geo.json, admin1-50m.geo.json).`,
+			`The committed tiers ship in the repo's geodata/ directory; for a standalone binary, download them from https://frankbardon.github.io/prism/static/prism/geodata/ or emit them with ` + "`prism static-bundle`" + `.`,
+		},
+		SeeAlso: []string{"PRISM_GEODATA_TIER_MISSING", "PRISM_GEO_002"},
+	},
+	"PRISM_GEODATA_TIER_MISSING": {
+		Code:    "PRISM_GEODATA_TIER_MISSING",
+		Message: `Geodata tier file for {{.Tier}} not found at {{.Path}}.`,
+		Fixups: []string{
+			`Confirm the configured geodata directory contains ` + "`{{.Tier}}.geo.json`" + `.`,
+			`Regenerate the committed tiers with ` + "`make geodata`" + `, or download {{.Tier}}.geo.json from https://frankbardon.github.io/prism/static/prism/geodata/{{.Tier}}.geo.json.`,
+			`Point ` + "`--geodata-dir`" + ` / ` + "`PRISM_GEODATA`" + ` at the directory that actually holds the tier files.`,
+		},
+		SeeAlso: []string{"PRISM_GEODATA_DIR_UNSET", "PRISM_GEO_002"},
+	},
 	"PRISM_SPEC_022": {
 		Code:    "PRISM_SPEC_022",
 		Message: `animation.easing {{.Easing}} is not a known easing name.`,

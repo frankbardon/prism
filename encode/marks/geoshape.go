@@ -1,6 +1,7 @@
 package marks
 
 import (
+	"errors"
 	"fmt"
 	"math"
 
@@ -51,6 +52,14 @@ func encodeGeoshape(in Inputs) ([]scene.Mark, error) {
 		tier = geodata.TierWorld110m
 	}
 
+	// Surface tier-bundle load failures (unset directory / missing tier
+	// file) up front so a geo mark fails loudly with a coded error rather
+	// than silently skipping its layer when no feature row triggers a
+	// lazy load.
+	if err := store.Preload(tier); err != nil {
+		return nil, mapGeoStoreError(tier, err)
+	}
+
 	var colorValues []any
 	if in.Color != nil && in.Color.Field != "" {
 		cv, err := readField(in.Table, in.Color.Field)
@@ -97,6 +106,36 @@ func encodeGeoshape(in Inputs) ([]scene.Mark, error) {
 		}
 	}
 	return out, nil
+}
+
+// mapGeoStoreError translates a geodata store/load failure into the
+// matching PRISM_* envelope. The unset-directory and missing-tier-file
+// cases get dedicated, fixup-bearing codes; anything else falls back to
+// the generic geo-bundle-load code.
+func mapGeoStoreError(tier geodata.Tier, err error) error {
+	if errors.Is(err, geodata.ErrBundleDirUnset) {
+		return prismerrors.Wrap(
+			"PRISM_GEODATA_DIR_UNSET",
+			fmt.Sprintf("Geodata bundle directory is not configured; cannot load tier %q.", tier),
+			map[string]any{"Tier": string(tier)},
+			err,
+		)
+	}
+	var missing *geodata.TierMissingError
+	if errors.As(err, &missing) {
+		return prismerrors.Wrap(
+			"PRISM_GEODATA_TIER_MISSING",
+			fmt.Sprintf("Geodata tier file for %q not found at %s.", missing.Tier, missing.Path),
+			map[string]any{"Tier": string(missing.Tier), "Path": missing.Path},
+			err,
+		)
+	}
+	return prismerrors.Wrap(
+		"PRISM_GEO_002",
+		fmt.Sprintf("Geo bundle could not be loaded for tier %q.", tier),
+		map[string]any{"Tier": string(tier), "Reason": err.Error()},
+		err,
+	)
 }
 
 // projectPolygon projects every ring in poly through p. Points where

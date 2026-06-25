@@ -75,13 +75,13 @@ func platformTierLoader(tier Tier) ([]byte, error) {
 	hostBundleMu.RUnlock()
 
 	if dir == "" {
-		return nil, fmt.Errorf("geodata: host bundle directory not configured for tier %q (call geodata.SetHostBundleDir first)", tier)
+		return nil, ErrBundleDirUnset
 	}
 
 	path := filepath.Join(dir, string(tier)+".geo.json")
 	raw, err := afero.ReadFile(fs, path)
 	if err != nil {
-		return nil, fmt.Errorf("geodata: tier %q bundle %s not found: %w", tier, path, err)
+		return nil, &TierMissingError{Tier: tier, Path: path, Err: err}
 	}
 	return raw, nil
 }
