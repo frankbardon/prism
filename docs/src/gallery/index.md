@@ -53,6 +53,10 @@ For live interactive rendering in a browser, see [`index.html`](index.html).
 | [winloss_streak_grid](specialty-marks/winloss_streak_grid.prism.json) | <img src="specialty-marks/winloss_streak_grid.svg" width="240"> |
 | [sparkarea_inline](specialty-marks/sparkarea_inline.prism.json) | <img src="specialty-marks/sparkarea_inline.svg" width="240"> |
 | [sparkarea_inline_grid](specialty-marks/sparkarea_inline_grid.prism.json) | <img src="specialty-marks/sparkarea_inline_grid.svg" width="240"> |
+| [sparkline_point_last](specialty-marks/sparkline_point_last.prism.json) | <img src="specialty-marks/sparkline_point_last.svg" width="240"> |
+| [sparkline_point_extent](specialty-marks/sparkline_point_extent.prism.json) | <img src="specialty-marks/sparkline_point_extent.svg" width="240"> |
+| [sparkbar_point_extent](specialty-marks/sparkbar_point_extent.prism.json) | <img src="specialty-marks/sparkbar_point_extent.svg" width="240"> |
+| [sparkarea_reference_band](specialty-marks/sparkarea_reference_band.prism.json) | <img src="specialty-marks/sparkarea_reference_band.svg" width="240"> |
 | [bullet_revenue](specialty-marks/bullet_revenue.prism.json) | <img src="specialty-marks/bullet_revenue.svg" width="240"> |
 | [bullet_satisfaction_vertical](specialty-marks/bullet_satisfaction_vertical.prism.json) | <img src="specialty-marks/bullet_satisfaction_vertical.svg" width="240"> |
 | [bullet_pipeline](specialty-marks/bullet_pipeline.prism.json) | <img src="specialty-marks/bullet_pipeline.svg" width="240"> |

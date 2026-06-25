@@ -1,6 +1,7 @@
 package marks
 
 import (
+	"fmt"
 	"math"
 
 	"github.com/frankbardon/prism/encode/scene"
@@ -30,6 +31,65 @@ type Adornments struct {
 // enabled reports whether any adornment is requested.
 func (a Adornments) enabled() bool {
 	return a.PointLast || a.PointExtent || a.ReferenceBand != nil
+}
+
+// appendSparkAdornments appends the opt-in adornment marks (E4) on top
+// of a spark's base geometry and returns the combined slice. When no
+// adornment field is set it returns base unchanged, so a bare spark
+// renders byte-identically to one without the fields. Series points
+// are recomputed from the X/Y scales (mirroring the base encoder; band
+// x is centred so dots land on the bar) and handed to encodeAdornments.
+func appendSparkAdornments(in Inputs, base []scene.Mark) ([]scene.Mark, error) {
+	ad := adornmentsFromMark(in.Mark)
+	if !ad.enabled() {
+		return base, nil
+	}
+	pts, err := sparkSeriesPoints(in)
+	if err != nil {
+		return nil, err
+	}
+	extra, err := encodeAdornments(pts, in.Y.Scale, in.Layout, in.Style, ad)
+	if err != nil {
+		return nil, err
+	}
+	return append(base, extra...), nil
+}
+
+// sparkSeriesPoints resolves the spark's value points in plot-space
+// pixels, one per row in upstream order. x maps through X.Scale (with a
+// half-band centre offset when X is a band scale, so a sparkbar dot
+// sits over the column rather than its left edge); y maps through
+// Y.Scale, landing the adornment on the bar tip / line vertex / area
+// crest.
+func sparkSeriesPoints(in Inputs) ([][2]float64, error) {
+	xs, err := readField(in.Table, in.X.Field)
+	if err != nil {
+		return nil, err
+	}
+	ys, err := readField(in.Table, in.Y.Field)
+	if err != nil {
+		return nil, err
+	}
+	if len(xs) != len(ys) {
+		return nil, fmt.Errorf("sparkSeriesPoints: column length mismatch (x=%d, y=%d)", len(xs), len(ys))
+	}
+	xOffset := 0.0
+	if band, ok := in.X.Scale.(BandScaler); ok {
+		xOffset = band.BandWidth() / 2
+	}
+	pts := make([][2]float64, 0, len(xs))
+	for i := range xs {
+		x, err := in.X.Scale.Apply(xs[i])
+		if err != nil {
+			return nil, err
+		}
+		y, err := in.Y.Scale.Apply(ys[i])
+		if err != nil {
+			return nil, err
+		}
+		pts = append(pts, [2]float64{x + xOffset, y})
+	}
+	return pts, nil
 }
 
 // adornmentsFromMark extracts the spark adornment toggles from a mark

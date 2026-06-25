@@ -48,6 +48,41 @@ arcs, etc. Specify via top-level `mark` (shorthand string) or
 | `geoshape` | Country / admin-1 polygons (choropleth). See [Geographic Marks](geo.md). |
 | `geopoint` | Lon/lat → point overlay. See [Geographic Marks](geo.md). |
 
+### Spark adornments
+
+The `sparkline`, `sparkbar`, and `sparkarea` marks accept three opt-in
+mark-def fields that emphasize specific values on the bare spark. All
+three default **off** — a spark with none set renders byte-identically
+to one without the fields. They are independent and compose freely; set
+any combination on the same mark.
+
+| Mark-def field | Type | Effect |
+|---|---|---|
+| `point_last` | boolean | Draws an emphasis dot on the final (most recent) value. |
+| `point_extent` | boolean | Draws highlight dots on the minimum and maximum values. |
+| `reference_band` | `{from, to}` | Shades a faint horizontal normal-range band, spanning the full spark width between the two value-axis bounds, behind the series. |
+
+Dots inherit the spark's line color; the band is a faint fill of the
+same color. `from` / `to` are data-space values on the spark's value
+axis and may be given in either order. The `winloss` mark is **not** in
+scope for adornments — its bars encode direction, not a continuous
+series.
+
+```json
+{
+  "mark": {
+    "type": "sparkline",
+    "point_last": true,
+    "point_extent": true,
+    "reference_band": {"from": 15, "to": 22}
+  },
+  "encoding": {
+    "x": {"field": "t", "type": "quantitative"},
+    "y": {"field": "v", "type": "quantitative"}
+  }
+}
+```
+
 ### Tree / dendrogram / network
 
 Hierarchical and relational marks share a small layout package

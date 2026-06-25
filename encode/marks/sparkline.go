@@ -24,5 +24,6 @@ func encodeSparkline(in Inputs) ([]scene.Mark, error) {
 			marks[i].ID = "sparkline-" + marks[i].ID
 		}
 	}
-	return marks, nil
+	// Opt-in adornments (E4); no-op when no adornment field is set.
+	return appendSparkAdornments(in, marks)
 }
