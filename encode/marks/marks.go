@@ -169,6 +169,8 @@ func Encode(markType string, in Inputs) ([]scene.Mark, *scene.Warning, error) {
 		marksOut, err = encodeSankey(in)
 	case "funnel":
 		marksOut, err = encodeFunnel(in)
+	case "bullet":
+		marksOut, err = encodeBullet(in)
 	case "sparkline":
 		marksOut, err = encodeSparkline(in)
 	case "sparkbar":
