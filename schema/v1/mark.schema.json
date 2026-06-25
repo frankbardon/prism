@@ -11,7 +11,7 @@
         "bar", "line", "area", "point", "circle", "square", "tick", "rect", "rule", "text",
         "arc", "pie", "donut",
         "histogram", "heatmap", "boxplot", "violin",
-        "sankey", "funnel", "sparkline", "sparkbar", "winloss", "sparkarea",
+        "sankey", "funnel", "sparkline", "sparkbar", "winloss", "sparkarea", "bullet",
         "image", "path",
         "geoshape", "geopoint",
         "tree", "dendrogram", "network"
@@ -76,7 +76,11 @@
         "iterations":    {"type": "integer", "minimum": 1, "description": "Force-directed iteration count for network marks (cap 2000)."},
         "link_distance": {"type": "number", "minimum": 0, "description": "Preferred edge length for network force layout."},
         "charge":        {"type": "number", "description": "Repulsion strength (negative) for network force layout."},
-        "seed":          {"type": "integer", "description": "Deterministic seed for the network force layout."}
+        "seed":          {"type": "integer", "description": "Deterministic seed for the network force layout."},
+        "target":        {"type": ["number", "string"], "description": "Bullet reference value to beat — a literal number or a data-field name."},
+        "bands":         {"type": "array", "items": {"type": "number"}, "description": "Bullet qualitative range bounds, ordered ascending (e.g. poor / ok / good thresholds)."},
+        "comparative":   {"type": ["number", "string"], "description": "Bullet secondary measure value (e.g. prior period) — a literal number or a data-field name."},
+        "orientation":   {"type": "string", "enum": ["horizontal", "vertical"], "description": "Bullet layout direction."}
       }
     }
   }

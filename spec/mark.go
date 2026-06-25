@@ -63,6 +63,22 @@ type MarkDef struct {
 	// Seed (network) — deterministic seed for the force layout.
 	// Default 42.
 	Seed *int64 `json:"seed,omitempty"`
+	// Bullet KPI mark (E3) carries its inputs as mark-def fields
+	// rather than encoding channels, mirroring histogram / violin /
+	// sankey.
+	//
+	// Target is the reference value to beat. It may be a literal
+	// number or a string naming a data field to resolve per row.
+	Target any `json:"target,omitempty"`
+	// Bands is an ordered list of qualitative range bounds (e.g.
+	// poor / ok / good thresholds), ascending.
+	Bands []float64 `json:"bands,omitempty"`
+	// Comparative is a secondary measure value (e.g. prior period).
+	// Like Target it may be a literal number or a data-field name.
+	Comparative any `json:"comparative,omitempty"`
+	// Orientation selects the bullet layout direction —
+	// "horizontal" | "vertical". Default "horizontal".
+	Orientation string `json:"orientation,omitempty"`
 }
 
 // Mark is the discriminated mark form: string shorthand or full mark_def
