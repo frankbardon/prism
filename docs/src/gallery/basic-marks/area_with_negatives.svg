@@ -9,7 +9,7 @@
     </g>
     <g class="prism-plot">
       <g class="prism-layer" data-layer-id="layer-0" data-prism-layer="layer-0">
-        <path class="prism-mark-area" data-prism-id="area-0" data-prism-datum-row="0" d="M145.714,153.522 L251.429,465.612 L357.143,270.746 L462.857,560 L568.571,50 L674.286,289.015 L780,372.746 L780,560 L145.714,560 Z" fill="#4c78a8" opacity="0.7"/>
+        <path class="prism-mark-area" data-prism-id="area-0" data-prism-datum-row="0" d="M145.714,153.522 L251.429,465.612 L357.143,270.746 L462.857,560 L568.571,50 L674.286,289.015 L780,372.746 L780,342.299 L674.286,342.299 L568.571,342.299 L462.857,342.299 L357.143,342.299 L251.429,342.299 L145.714,342.299 Z" fill="#4c78a8" opacity="0.7"/>
       </g>
     </g>
   </g>

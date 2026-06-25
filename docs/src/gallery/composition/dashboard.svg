@@ -38,7 +38,7 @@
     </g>
     <g class="prism-plot">
       <g class="prism-layer" data-layer-id="layer-0" data-prism-layer="layer-0">
-        <path class="prism-mark-area" data-prism-id="area-0" data-prism-datum-row="0" d="M188,396.346 L336,389.423 L484,380.769 L632,372.115 L780,360 L780,396.346 L188,396.346 Z" fill="#4c78a8" opacity="0.7"/>
+        <path class="prism-mark-area" data-prism-id="area-0" data-prism-datum-row="0" d="M188,396.346 L336,389.423 L484,380.769 L632,372.115 L780,360 L780,405 L632,405 L484,405 L336,405 L188,405 Z" fill="#4c78a8" opacity="0.7"/>
       </g>
     </g>
   </g>
