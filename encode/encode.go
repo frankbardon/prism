@@ -38,6 +38,27 @@ type EncodeOpts struct {
 	OverrideYScale Scale
 }
 
+// sparkMarks is the single source of truth for "spark" marks —
+// compact marks that render without axes, legend, or title and use
+// the tight 4-px-pad layout (ComputeSparkline). Adding a spark mark
+// is a one-line edit here; the three chrome-suppression sites in
+// Encode consult it via isSparkMark. `bullet` is intentionally absent
+// (it keeps its scale axis). The later spark variants (sparkbar,
+// winloss, sparkarea) are listed ahead of their encoders so the
+// chrome behavior lands with the mark in its own story.
+var sparkMarks = map[string]bool{
+	"sparkline": true,
+	"sparkbar":  true,
+	"winloss":   true,
+	"sparkarea": true,
+}
+
+// isSparkMark reports whether markType is a chrome-suppressed spark
+// mark (no axis/legend/title, ComputeSparkline layout).
+func isSparkMark(markType string) bool {
+	return sparkMarks[markType]
+}
+
 // Encode turns a validated *spec.Spec plus the executor's output
 // tables into a SceneDoc ready for any Renderer. The tipID is the
 // node id whose Table feeds the encoder (returned by
@@ -104,7 +125,7 @@ func Encode(s *spec.Spec, tables map[plan.NodeID]*table.Table, tipID plan.NodeID
 	// reservation; the title block, axes, and legends are suppressed
 	// at scene-assembly time below.
 	var layout Layout
-	if markType == "sparkline" {
+	if isSparkMark(markType) {
 		layout = ComputeSparkline(width, height)
 		hasTitle = false
 	} else {
@@ -172,7 +193,7 @@ func Encode(s *spec.Spec, tables map[plan.NodeID]*table.Table, tipID plan.NodeID
 	// Build axes (only when the channel was bound). Sparkline (D067)
 	// suppresses axes entirely — leave axes empty.
 	axes := make([]scene.Axis, 0, 2)
-	if markType != "sparkline" && !geoMark {
+	if !isSparkMark(markType) && !geoMark {
 		if xScale != nil {
 			axes = append(axes, BuildAxisWithOpts(xScale, scene.ChannelX, scene.AxisPositionBottom, layout.Plot, axisOptsFor(enc.X)))
 		}
@@ -384,7 +405,7 @@ func Encode(s *spec.Spec, tables map[plan.NodeID]*table.Table, tipID plan.NodeID
 	// Build legends for non-trivial mark channels. Sparkline (D067)
 	// suppresses legends entirely.
 	var legends []scene.Legend
-	if markType != "sparkline" && colorChannel != nil && len(colorChannel.Categories) > 1 {
+	if !isSparkMark(markType) && colorChannel != nil && len(colorChannel.Categories) > 1 {
 		// Sankey populates colorChannel from source ∪ target nodes when
 		// no explicit color binding exists (D064); use colorChannel.Field
 		// as the legend title in that case.
