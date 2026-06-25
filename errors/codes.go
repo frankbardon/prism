@@ -774,6 +774,15 @@ var Codes = map[string]CodeMetadata{
 			`Typos like ` + "`bars`" + ` or ` + "`Bar`" + ` (with capital) fail this rule — mark names are lowercase, singular.`,
 		},
 	},
+	"PRISM_SPEC_036": {
+		Code:    "PRISM_SPEC_036",
+		Message: `Bullet bands must be strictly ascending (bands[{{.Index}}]={{.Value}} is not greater than its predecessor {{.Previous}}).`,
+		Fixups: []string{
+			`A bullet mark's ` + "`bands`" + ` are cumulative qualitative range bounds measured from zero, so each bound must be strictly greater than the one before it, e.g. ` + "`{mark: {type: \"bullet\", bands: [150, 225, 300]}}`" + `.`,
+			`Flat (equal) or descending bounds would render an inverted or zero-width background range. Sort the bounds ascending and drop duplicates.`,
+		},
+		SeeAlso: []string{"PRISM_SPEC_003"},
+	},
 	"PRISM_WARN_NETWORK_CYCLE": {
 		Code:    "PRISM_WARN_NETWORK_CYCLE",
 		Message: `network input graph contains a cycle; force layout may produce a visually messy result.`,

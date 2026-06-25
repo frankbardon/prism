@@ -53,6 +53,9 @@ For live interactive rendering in a browser, see [`index.html`](index.html).
 | [winloss_streak_grid](specialty-marks/winloss_streak_grid.prism.json) | <img src="specialty-marks/winloss_streak_grid.svg" width="240"> |
 | [sparkarea_inline](specialty-marks/sparkarea_inline.prism.json) | <img src="specialty-marks/sparkarea_inline.svg" width="240"> |
 | [sparkarea_inline_grid](specialty-marks/sparkarea_inline_grid.prism.json) | <img src="specialty-marks/sparkarea_inline_grid.svg" width="240"> |
+| [bullet_revenue](specialty-marks/bullet_revenue.prism.json) | <img src="specialty-marks/bullet_revenue.svg" width="240"> |
+| [bullet_satisfaction_vertical](specialty-marks/bullet_satisfaction_vertical.prism.json) | <img src="specialty-marks/bullet_satisfaction_vertical.svg" width="240"> |
+| [bullet_pipeline](specialty-marks/bullet_pipeline.prism.json) | <img src="specialty-marks/bullet_pipeline.svg" width="240"> |
 | [image_logo](specialty-marks/image_logo.prism.json) | <img src="specialty-marks/image_logo.svg" width="240"> |
 | [path_arbitrary](specialty-marks/path_arbitrary.prism.json) | <img src="specialty-marks/path_arbitrary.svg" width="240"> |
 

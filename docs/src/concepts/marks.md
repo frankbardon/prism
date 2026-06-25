@@ -42,6 +42,7 @@ arcs, etc. Specify via top-level `mark` (shorthand string) or
 | `sparkbar` | Inline micro-column charts, no axes — bar-family sibling of `sparkline`. |
 | `winloss` | Equal-height up/down micro-bars by the sign of `y` (>0 up, <0 down, ==0 flat). Magnitude is ignored — only direction encodes. |
 | `sparkarea` | Inline filled micro-area charts, no axes — area-family sibling of `sparkline`; fill reaches the y=0 baseline. |
+| `bullet` | Compact KPI gauge — a measure bar over qualitative bands, with an optional comparative bar and target tick. Keeps its measure axis. |
 | `image` | Sprites / data-URL images at position. |
 | `path` | Raw SVG path data — escape hatch. |
 | `geoshape` | Country / admin-1 polygons (choropleth). See [Geographic Marks](geo.md). |
@@ -81,6 +82,58 @@ Validate rules: `PRISM_SPEC_028` (missing source/target),
 `PRISM_SPEC_029` (multi-root tree). Encode-time:
 `PRISM_ENCODE_TREE_CYCLE`, `PRISM_ENCODE_NETWORK_NONFINITE`,
 `PRISM_WARN_NETWORK_CYCLE`.
+
+### Bullet
+
+The `bullet` mark is a compact KPI gauge (after Stephen Few's bullet
+graph). It draws, back-to-front:
+
+1. qualitative **band** rects — graded background ranges (dark → light),
+2. the **measure** bar — the encoded data value (thick),
+3. an optional **comparative** bar — a secondary value, thinner overlay,
+4. an optional **target** tick — the value to beat.
+
+Unlike the spark family, `bullet` keeps its measure axis, and the
+measure-axis domain is widened to span the bands / target / comparative
+so none of them clip past the data range.
+
+Channel bindings:
+
+- Horizontal (default): `x` is the quantitative measure, `y` is the
+  nominal metric label.
+- Vertical (`orientation: "vertical"`): `y` is the quantitative measure,
+  `x` is the nominal metric label.
+
+The headline measure reads from row 0 of the measure field (a bullet is
+a single KPI readout).
+
+Mark-def options:
+
+- `bands` — ordered list of cumulative qualitative range bounds measured
+  from zero, **strictly ascending** (e.g. `[150, 225, 300]`). Validated
+  by `PRISM_SPEC_036`.
+- `target` — the reference value to beat. A literal number, or a string
+  naming a data field resolved from row 0.
+- `comparative` — a secondary measure (e.g. prior period). Like `target`,
+  a literal number or a data-field name.
+- `orientation` — `horizontal` (default) or `vertical`.
+
+```json
+{
+  "mark": {
+    "type": "bullet",
+    "bands": [150, 225, 300],
+    "comparative": 240,
+    "target": 260
+  },
+  "encoding": {
+    "x": {"field": "actual", "type": "quantitative"},
+    "y": {"field": "metric", "type": "nominal"}
+  }
+}
+```
+
+Validate rule: `PRISM_SPEC_036` (bands strictly ascending).
 
 ## Channel allowlists
 
