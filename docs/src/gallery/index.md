@@ -47,6 +47,8 @@ For live interactive rendering in a browser, see [`index.html`](index.html).
 | [funnel_signup](specialty-marks/funnel_signup.prism.json) | <img src="specialty-marks/funnel_signup.svg" width="240"> |
 | [sparkline_inline](specialty-marks/sparkline_inline.prism.json) | <img src="specialty-marks/sparkline_inline.svg" width="240"> |
 | [sparkline_inline_grid](specialty-marks/sparkline_inline_grid.prism.json) | <img src="specialty-marks/sparkline_inline_grid.svg" width="240"> |
+| [sparkbar_inline](specialty-marks/sparkbar_inline.prism.json) | <img src="specialty-marks/sparkbar_inline.svg" width="240"> |
+| [sparkbar_inline_grid](specialty-marks/sparkbar_inline_grid.prism.json) | <img src="specialty-marks/sparkbar_inline_grid.svg" width="240"> |
 | [image_logo](specialty-marks/image_logo.prism.json) | <img src="specialty-marks/image_logo.svg" width="240"> |
 | [path_arbitrary](specialty-marks/path_arbitrary.prism.json) | <img src="specialty-marks/path_arbitrary.svg" width="240"> |
 

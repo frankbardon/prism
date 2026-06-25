@@ -1,0 +1,42 @@
+{
+  "$schema": "urn:prism:schema:v1:spec",
+  "title": "Per-region micro-bars",
+  "vconcat": [
+    {
+      "$schema": "urn:prism:schema:v1:spec",
+      "data": {"values": [
+        {"day": "Mon", "v": 5}, {"day": "Tue", "v": 8}, {"day": "Wed", "v": 6}, {"day": "Thu", "v": 11},
+        {"day": "Fri", "v": 9}, {"day": "Sat", "v": 14}, {"day": "Sun", "v": 12}
+      ]},
+      "mark": "sparkbar",
+      "encoding": {
+        "x": {"field": "day", "type": "nominal"},
+        "y": {"field": "v", "type": "quantitative"}
+      }
+    },
+    {
+      "$schema": "urn:prism:schema:v1:spec",
+      "data": {"values": [
+        {"day": "Mon", "v": 22}, {"day": "Tue", "v": 19}, {"day": "Wed", "v": 25}, {"day": "Thu", "v": 20},
+        {"day": "Fri", "v": 24}, {"day": "Sat", "v": 18}, {"day": "Sun", "v": 23}
+      ]},
+      "mark": "sparkbar",
+      "encoding": {
+        "x": {"field": "day", "type": "nominal"},
+        "y": {"field": "v", "type": "quantitative"}
+      }
+    },
+    {
+      "$schema": "urn:prism:schema:v1:spec",
+      "data": {"values": [
+        {"day": "Mon", "v": 100}, {"day": "Tue", "v": 110}, {"day": "Wed", "v": 95}, {"day": "Thu", "v": 120},
+        {"day": "Fri", "v": 130}, {"day": "Sat", "v": 125}, {"day": "Sun", "v": 145}
+      ]},
+      "mark": "sparkbar",
+      "encoding": {
+        "x": {"field": "day", "type": "nominal"},
+        "y": {"field": "v", "type": "quantitative"}
+      }
+    }
+  ]
+}

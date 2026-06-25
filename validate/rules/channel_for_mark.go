@@ -97,6 +97,7 @@ func allowedChannelsForMark(mark string) []string {
 	sankeyMark := []string{"source", "target", "value", "color", "fill", "stroke", "opacity"}
 	funnelMark := []string{"x", "y", "color", "fill", "stroke", "opacity", "text"}
 	sparklineMark := []string{"x", "y", "color", "fill", "stroke", "opacity"}
+	sparkbarMark := []string{"x", "y", "color", "fill", "stroke", "opacity"}
 	geoshapeMark := []string{"feature", "color", "fill", "stroke", "opacity"}
 	geopointMark := []string{"longitude", "latitude", "color", "fill", "stroke", "opacity", "size", "shape"}
 	treeMark := []string{"source", "target", "value", "text", "color", "fill", "stroke", "opacity", "size"}
@@ -114,6 +115,8 @@ func allowedChannelsForMark(mark string) []string {
 		set = funnelMark
 	case "sparkline":
 		set = sparklineMark
+	case "sparkbar":
+		set = sparkbarMark
 	case "text":
 		set = textMark
 	case "image":

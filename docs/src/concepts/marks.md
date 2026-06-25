@@ -39,6 +39,7 @@ arcs, etc. Specify via top-level `mark` (shorthand string) or
 | `sankey` | Flow diagrams (source/target/value table). |
 | `funnel` | Conversion funnels — stacked trapezoids. |
 | `sparkline` | Inline micro-line charts, no axes. |
+| `sparkbar` | Inline micro-column charts, no axes — bar-family sibling of `sparkline`. |
 | `image` | Sprites / data-URL images at position. |
 | `path` | Raw SVG path data — escape hatch. |
 | `geoshape` | Country / admin-1 polygons (choropleth). See [Geographic Marks](geo.md). |
