@@ -11,7 +11,7 @@
         "bar", "line", "area", "point", "circle", "square", "tick", "rect", "rule", "text",
         "arc", "pie", "donut",
         "histogram", "heatmap", "boxplot", "violin",
-        "sankey", "funnel", "sparkline", "sparkbar",
+        "sankey", "funnel", "sparkline", "sparkbar", "winloss",
         "image", "path",
         "geoshape", "geopoint",
         "tree", "dendrogram", "network"

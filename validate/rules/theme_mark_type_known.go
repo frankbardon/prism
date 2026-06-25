@@ -40,6 +40,7 @@ var validMarkTypes = map[string]bool{
 	"funnel":     true,
 	"sparkline":  true,
 	"sparkbar":   true,
+	"winloss":    true,
 	"image":      true,
 	"path":       true,
 	"geoshape":   true,
