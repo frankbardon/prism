@@ -29,12 +29,18 @@ func mcpCommand() *cli.Command {
 				Usage: "Directory the prism_examples_search tool walks for fixture specs",
 			},
 			datasetsConfigFlag(),
+			geodataDirFlag(),
 		},
 		Action: runMCP,
 	}
 }
 
 func runMCP(ctx context.Context, cmd *cli.Command) error {
+	// Point the host geodata loader at the configured directory before
+	// the stdio server starts, so prism_plot tool calls on geoshape /
+	// geopoint specs resolve tier geometry. Process-global by design.
+	applyGeodataDir(cmd)
+
 	registry, err := loadDatasetRegistry(cmd)
 	if err != nil {
 		return cli.Exit(fmt.Sprintf("load --datasets-config: %v", err), 2)
