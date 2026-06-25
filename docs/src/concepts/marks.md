@@ -39,10 +39,49 @@ arcs, etc. Specify via top-level `mark` (shorthand string) or
 | `sankey` | Flow diagrams (source/target/value table). |
 | `funnel` | Conversion funnels — stacked trapezoids. |
 | `sparkline` | Inline micro-line charts, no axes. |
+| `sparkbar` | Inline micro-column charts, no axes — bar-family sibling of `sparkline`. |
+| `winloss` | Equal-height up/down micro-bars by the sign of `y` (>0 up, <0 down, ==0 flat). Magnitude is ignored — only direction encodes. |
+| `sparkarea` | Inline filled micro-area charts, no axes — area-family sibling of `sparkline`; fill reaches the y=0 baseline. |
+| `bullet` | Compact KPI gauge — a measure bar over qualitative bands, with an optional comparative bar and target tick. Keeps its measure axis. |
 | `image` | Sprites / data-URL images at position. |
 | `path` | Raw SVG path data — escape hatch. |
 | `geoshape` | Country / admin-1 polygons (choropleth). See [Geographic Marks](geo.md). |
 | `geopoint` | Lon/lat → point overlay. See [Geographic Marks](geo.md). |
+
+### Spark adornments
+
+The `sparkline`, `sparkbar`, and `sparkarea` marks accept three opt-in
+mark-def fields that emphasize specific values on the bare spark. All
+three default **off** — a spark with none set renders byte-identically
+to one without the fields. They are independent and compose freely; set
+any combination on the same mark.
+
+| Mark-def field | Type | Effect |
+|---|---|---|
+| `point_last` | boolean | Draws an emphasis dot on the final (most recent) value. |
+| `point_extent` | boolean | Draws highlight dots on the minimum and maximum values. |
+| `reference_band` | `{from, to}` | Shades a faint horizontal normal-range band, spanning the full spark width between the two value-axis bounds, behind the series. |
+
+Dots inherit the spark's line color; the band is a faint fill of the
+same color. `from` / `to` are data-space values on the spark's value
+axis and may be given in either order. The `winloss` mark is **not** in
+scope for adornments — its bars encode direction, not a continuous
+series.
+
+```json
+{
+  "mark": {
+    "type": "sparkline",
+    "point_last": true,
+    "point_extent": true,
+    "reference_band": {"from": 15, "to": 22}
+  },
+  "encoding": {
+    "x": {"field": "t", "type": "quantitative"},
+    "y": {"field": "v", "type": "quantitative"}
+  }
+}
+```
 
 ### Tree / dendrogram / network
 
@@ -78,6 +117,58 @@ Validate rules: `PRISM_SPEC_028` (missing source/target),
 `PRISM_SPEC_029` (multi-root tree). Encode-time:
 `PRISM_ENCODE_TREE_CYCLE`, `PRISM_ENCODE_NETWORK_NONFINITE`,
 `PRISM_WARN_NETWORK_CYCLE`.
+
+### Bullet
+
+The `bullet` mark is a compact KPI gauge (after Stephen Few's bullet
+graph). It draws, back-to-front:
+
+1. qualitative **band** rects — graded background ranges (dark → light),
+2. the **measure** bar — the encoded data value (thick),
+3. an optional **comparative** bar — a secondary value, thinner overlay,
+4. an optional **target** tick — the value to beat.
+
+Unlike the spark family, `bullet` keeps its measure axis, and the
+measure-axis domain is widened to span the bands / target / comparative
+so none of them clip past the data range.
+
+Channel bindings:
+
+- Horizontal (default): `x` is the quantitative measure, `y` is the
+  nominal metric label.
+- Vertical (`orientation: "vertical"`): `y` is the quantitative measure,
+  `x` is the nominal metric label.
+
+The headline measure reads from row 0 of the measure field (a bullet is
+a single KPI readout).
+
+Mark-def options:
+
+- `bands` — ordered list of cumulative qualitative range bounds measured
+  from zero, **strictly ascending** (e.g. `[150, 225, 300]`). Validated
+  by `PRISM_SPEC_036`.
+- `target` — the reference value to beat. A literal number, or a string
+  naming a data field resolved from row 0.
+- `comparative` — a secondary measure (e.g. prior period). Like `target`,
+  a literal number or a data-field name.
+- `orientation` — `horizontal` (default) or `vertical`.
+
+```json
+{
+  "mark": {
+    "type": "bullet",
+    "bands": [150, 225, 300],
+    "comparative": 240,
+    "target": 260
+  },
+  "encoding": {
+    "x": {"field": "actual", "type": "quantitative"},
+    "y": {"field": "metric", "type": "nominal"}
+  }
+}
+```
+
+Validate rule: `PRISM_SPEC_036` (bands strictly ascending).
 
 ## Channel allowlists
 

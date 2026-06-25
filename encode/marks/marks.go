@@ -169,8 +169,16 @@ func Encode(markType string, in Inputs) ([]scene.Mark, *scene.Warning, error) {
 		marksOut, err = encodeSankey(in)
 	case "funnel":
 		marksOut, err = encodeFunnel(in)
+	case "bullet":
+		marksOut, err = encodeBullet(in)
 	case "sparkline":
 		marksOut, err = encodeSparkline(in)
+	case "sparkbar":
+		marksOut, err = encodeSparkbar(in)
+	case "winloss":
+		marksOut, err = encodeWinloss(in)
+	case "sparkarea":
+		marksOut, err = encodeSparkarea(in)
 	case "geoshape":
 		marksOut, err = encodeGeoshape(in)
 	case "geopoint":
@@ -185,7 +193,7 @@ func Encode(markType string, in Inputs) ([]scene.Mark, *scene.Warning, error) {
 		return nil, nil, prismerrors.New(
 			"PRISM_ENCODE_001",
 			fmt.Sprintf("Unknown mark type %q.", markType),
-			map[string]any{"Field": "<mark>", "Source": "<spec>", "Available": "bar|line|area|point|rule|arc|pie|donut|histogram|heatmap|boxplot|violin|path|image|sankey|funnel|sparkline"},
+			map[string]any{"Field": "<mark>", "Source": "<spec>", "Available": "bar|line|area|point|rule|arc|pie|donut|histogram|heatmap|boxplot|violin|path|image|sankey|funnel|sparkline|sparkbar|winloss"},
 		)
 	}
 	if err != nil {

@@ -95,7 +95,7 @@ prism/
 │   ├── encode_facet.go encode_repeat.go encode_selection*.go
 │   ├── layout.go scale.go palette.go ticks*.go axis_build.go legend_build.go
 │   ├── selection_build.go  # Selection materialisation
-│   ├── marks/              # Per-mark encoders (bar, line, area, point, rule, text, tick, rect, arc, pie, donut, histogram, heatmap, boxplot, violin, sankey, funnel, sparkline, image, path, geoshape, geopoint)
+│   ├── marks/              # Per-mark encoders (bar, line, area, point, rule, text, tick, rect, arc, pie, donut, histogram, heatmap, boxplot, violin, sankey, funnel, sparkline, sparkbar, winloss, sparkarea, bullet, image, path, geoshape, geopoint)
 │   ├── scale/              # linear, log, pow, sqrt, time, band, point, ordinal
 │   ├── projection/         # Geographic projections (mercator, equirect, naturalearth, albers_usa, orthographic)
 │   ├── scene/              # Scene IR types (Mark, Geom, Axis, Legend, Theme, Selection, Annotation, …)
@@ -148,7 +148,7 @@ Documentation lives in `docs/` (mdBook, published to <https://frankbardon.github
 - `PRISM_*` is reserved for error codes and environment variables. Use `PRISM_<DOMAIN>_NNN` (`PRISM_SPEC_001`) for numbered codes and `PRISM_<DOMAIN>_<DESCRIPTOR>` (`PRISM_RENDER_FORMAT_UNAVAILABLE`, `PRISM_JOIN_MAX_ROWS`) for descriptor-style codes. Warnings use the `PRISM_WARN_*` prefix.
 - Spec field keys are snake_case (`stroke_width`, `corner_radius`, `font_size`). Single-word Vega-Lite vocabulary (`mark`, `encoding`, `transform`, `layer`, `facet`) stays as-is. Channel names (`x`, `y`, `x2`, `y2`, `color`, `size`, `shape`, `opacity`, `text`, `tooltip`, `href`, `theta`, `radius`) stay verbatim from Vega-Lite.
 - Pulse aggregate aliases mirror Vega-Lite: `count`, `sum`, `mean`, `median`, `min`, `max`, `stdev`, `variance`, `q1`, `q3`, `ci0`, `ci1`. Prism adds `distinct`, `mode`, `frequency`, and the v0.22 distribution-shape scalars `range`, `skewness`, `kurtosis`, `null_count` (`distinct`, `mode`, `frequency`, `null_count` are universal — any field type; the distribution-shape scalars are quantitative/temporal only). Cohort-analytics extensions are `wmean`, `ratio`, `lift`, `share`. `frequency` aliases `AGG_FREQUENCY` for its SCALAR contract only — the modal count (occurrences of the most frequent value, the multiplicity companion to `mode`); its per-value cardinality map lives on Pulse's `MetaAggregator` `Components()`/`Rich()` surface, which Prism's row-shaped `Response.Data` path does not consume, so no map column kind is needed. `AGG_ZSCORE` (degenerate per group — mean z-score is always 0) is intentionally NOT aliased.
-- Mark names are bare nouns: `bar`, `line`, `area`, `point`, `rule`, `text`, `tick`, `rect`, `arc`, `pie`, `donut`, `histogram`, `heatmap`, `boxplot`, `violin`, `sankey`, `funnel`, `sparkline`, `image`, `path`.
+- Mark names are bare nouns: `bar`, `line`, `area`, `point`, `rule`, `text`, `tick`, `rect`, `arc`, `pie`, `donut`, `histogram`, `heatmap`, `boxplot`, `violin`, `sankey`, `funnel`, `sparkline`, `sparkbar`, `winloss`, `sparkarea`, `bullet`, `image`, `path`.
 
 ### Error handling
 

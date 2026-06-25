@@ -4,6 +4,7 @@ import (
 	"fmt"
 
 	"github.com/frankbardon/prism/encode/marks"
+	"github.com/frankbardon/prism/encode/scale"
 	"github.com/frankbardon/prism/encode/scene"
 	prismerrors "github.com/frankbardon/prism/errors"
 	"github.com/frankbardon/prism/geodata"
@@ -36,6 +37,27 @@ type EncodeOpts struct {
 	ThemeName      string
 	OverrideXScale Scale
 	OverrideYScale Scale
+}
+
+// sparkMarks is the single source of truth for "spark" marks —
+// compact marks that render without axes, legend, or title and use
+// the tight 4-px-pad layout (ComputeSparkline). Adding a spark mark
+// is a one-line edit here; the three chrome-suppression sites in
+// Encode consult it via isSparkMark. `bullet` is intentionally absent
+// (it keeps its scale axis). The later spark variants (sparkbar,
+// winloss, sparkarea) are listed ahead of their encoders so the
+// chrome behavior lands with the mark in its own story.
+var sparkMarks = map[string]bool{
+	"sparkline": true,
+	"sparkbar":  true,
+	"winloss":   true,
+	"sparkarea": true,
+}
+
+// isSparkMark reports whether markType is a chrome-suppressed spark
+// mark (no axis/legend/title, ComputeSparkline layout).
+func isSparkMark(markType string) bool {
+	return sparkMarks[markType]
 }
 
 // Encode turns a validated *spec.Spec plus the executor's output
@@ -104,7 +126,7 @@ func Encode(s *spec.Spec, tables map[plan.NodeID]*table.Table, tipID plan.NodeID
 	// reservation; the title block, axes, and legends are suppressed
 	// at scene-assembly time below.
 	var layout Layout
-	if markType == "sparkline" {
+	if isSparkMark(markType) {
 		layout = ComputeSparkline(width, height)
 		hasTitle = false
 	} else {
@@ -141,11 +163,25 @@ func Encode(s *spec.Spec, tables map[plan.NodeID]*table.Table, tipID plan.NodeID
 		xWarn  *scene.Warning
 		yWarn  *scene.Warning
 	)
+	// A bullet mark's bands / target / comparative live on the mark-def,
+	// not the data column, so the data-derived measure-axis domain would
+	// clip any of them that reach past the data range. Inject them as
+	// extra domain values on the measure channel (x when horizontal, y
+	// when vertical) so the axis spans the full bullet.
+	var xExtra, yExtra []any
+	if markType == "bullet" && s.Mark != nil && s.Mark.Def != nil {
+		ext := bulletMeasureExtras(s.Mark.Def, tbl)
+		if s.Mark.Def.Orientation == "vertical" {
+			yExtra = ext
+		} else {
+			xExtra = ext
+		}
+	}
 	if !polarMark && !selfScaleMark && !specialtyMark && !geoMark {
 		if opts.OverrideXScale != nil {
 			xScale = opts.OverrideXScale
 		} else {
-			xScale, xWarn, err = resolveChannel(enc.X, tbl, layout.Plot.X, layout.Plot.Right())
+			xScale, xWarn, err = resolveChannel(enc.X, tbl, layout.Plot.X, layout.Plot.Right(), xExtra...)
 			if err != nil {
 				return nil, err
 			}
@@ -159,7 +195,7 @@ func Encode(s *spec.Spec, tables map[plan.NodeID]*table.Table, tipID plan.NodeID
 		if opts.OverrideYScale != nil {
 			yScale = opts.OverrideYScale
 		} else {
-			yScale, yWarn, err = resolveChannel(enc.Y, tbl, layout.Plot.Bottom(), layout.Plot.Y)
+			yScale, yWarn, err = resolveChannel(enc.Y, tbl, layout.Plot.Bottom(), layout.Plot.Y, yExtra...)
 			if err != nil {
 				return nil, err
 			}
@@ -172,7 +208,7 @@ func Encode(s *spec.Spec, tables map[plan.NodeID]*table.Table, tipID plan.NodeID
 	// Build axes (only when the channel was bound). Sparkline (D067)
 	// suppresses axes entirely — leave axes empty.
 	axes := make([]scene.Axis, 0, 2)
-	if markType != "sparkline" && !geoMark {
+	if !isSparkMark(markType) && !geoMark {
 		if xScale != nil {
 			axes = append(axes, BuildAxisWithOpts(xScale, scene.ChannelX, scene.AxisPositionBottom, layout.Plot, axisOptsFor(enc.X)))
 		}
@@ -384,7 +420,7 @@ func Encode(s *spec.Spec, tables map[plan.NodeID]*table.Table, tipID plan.NodeID
 	// Build legends for non-trivial mark channels. Sparkline (D067)
 	// suppresses legends entirely.
 	var legends []scene.Legend
-	if markType != "sparkline" && colorChannel != nil && len(colorChannel.Categories) > 1 {
+	if !isSparkMark(markType) && colorChannel != nil && len(colorChannel.Categories) > 1 {
 		// Sankey populates colorChannel from source ∪ target nodes when
 		// no explicit color binding exists (D064); use colorChannel.Field
 		// as the legend title in that case.
@@ -498,7 +534,7 @@ func buildSceneDoc(
 // scale.exponent for log / pow), the typed dispatch ResolveScaleTyped
 // takes over. Otherwise the channel-type / column-kind inference
 // path runs.
-func resolveChannel(ch *spec.PositionChannel, tbl *table.Table, rmin, rmax float64) (Scale, *scene.Warning, error) {
+func resolveChannel(ch *spec.PositionChannel, tbl *table.Table, rmin, rmax float64, extra ...any) (Scale, *scene.Warning, error) {
 	if ch == nil || ch.Field == "" {
 		return nil, nil, nil
 	}
@@ -510,10 +546,13 @@ func resolveChannel(ch *spec.PositionChannel, tbl *table.Table, rmin, rmax float
 			map[string]any{"Field": ch.Field, "Source": "<table>", "Available": joinTableFields(tbl)},
 		)
 	}
-	values := make([]any, col.Len())
+	values := make([]any, col.Len(), col.Len()+len(extra))
 	for i := 0; i < col.Len(); i++ {
 		values[i] = col.ValueAt(i)
 	}
+	// extra carries mark-supplied domain values (bullet bands / target /
+	// comparative) that must widen the data-derived domain.
+	values = append(values, extra...)
 	if ch.Scale != nil && ch.Scale.Type != "" {
 		opts := ScaleOpts{}
 		if ch.Scale.Base != nil {
@@ -525,6 +564,48 @@ func resolveChannel(ch *spec.PositionChannel, tbl *table.Table, rmin, rmax float
 		return ResolveScaleTyped(scene.ScaleType(ch.Scale.Type), values, rmin, rmax, opts)
 	}
 	return ResolveScale(ch.Type, col.Kind(), values, rmin, rmax)
+}
+
+// bulletMeasureExtras returns the extra measure-axis domain values a
+// bullet mark needs so its bands, target, and comparative never clip
+// past the data-derived domain. Band bounds are used verbatim; target /
+// comparative resolve like the encoder does — a literal number as-is, a
+// string as row 0 of the named field.
+func bulletMeasureExtras(def *spec.MarkDef, tbl *table.Table) []any {
+	if def == nil {
+		return nil
+	}
+	extras := make([]any, 0, len(def.Bands)+2)
+	for _, b := range def.Bands {
+		extras = append(extras, b)
+	}
+	for _, ref := range []any{def.Target, def.Comparative} {
+		if v, ok := bulletRefDomainValue(ref, tbl); ok {
+			extras = append(extras, v)
+		}
+	}
+	return extras
+}
+
+// bulletRefDomainValue resolves a bullet target / comparative reference
+// to a numeric domain value: a literal number is coerced directly; a
+// non-empty string names a field whose row-0 value is read.
+func bulletRefDomainValue(raw any, tbl *table.Table) (float64, bool) {
+	switch t := raw.(type) {
+	case nil:
+		return 0, false
+	case string:
+		if t == "" {
+			return 0, false
+		}
+		col, ok := tbl.Column(t)
+		if !ok || col.Len() == 0 {
+			return 0, false
+		}
+		return scale.ToFloat(col.ValueAt(0))
+	default:
+		return scale.ToFloat(raw)
+	}
 }
 
 // toMarkScale lifts an encode.Scale into the marks.Scale interface

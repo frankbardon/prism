@@ -1,0 +1,21 @@
+{
+  "$schema": "urn:prism:schema:v1:spec",
+  "title": "Satisfaction (vertical)",
+  "data": {
+    "name": "kpi",
+    "values": [
+      {"metric": "CSAT", "score": 78}
+    ]
+  },
+  "mark": {
+    "type": "bullet",
+    "orientation": "vertical",
+    "bands": [50, 75, 100],
+    "comparative": 72,
+    "target": 90
+  },
+  "encoding": {
+    "x": {"field": "metric", "type": "nominal"},
+    "y": {"field": "score", "type": "quantitative"}
+  }
+}

@@ -44,6 +44,7 @@ rules assume well-formed structure.
 | `PRISM_SPEC_026` condition test parses | Semantic | Every `test` expression in a channel `condition` clause must parse via the Pulse expression parser. Mirrors `PRISM_SPEC_006`. |
 | `PRISM_SPEC_027` condition value-or-binding | Semantic | A condition entry must carry exactly one of `value` or `field`; a `selection`-form entry with neither inherits the channel's own field binding. |
 | `PRISM_SPEC_035` regression position + shape | Semantic | A `regression` transform must be the first transform on the chain (it fits the source cohort directly, like crosstab) and declare `target` + exactly one predictor. |
+| `PRISM_SPEC_036` bullet bands strictly ascending | Semantic | A `bullet` mark's `bands` are cumulative range bounds from zero, so each bound must be strictly greater than its predecessor. Fires per out-of-order pair. |
 
 ## $ref resolution strategy
 

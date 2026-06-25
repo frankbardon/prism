@@ -47,6 +47,19 @@ For live interactive rendering in a browser, see [`index.html`](index.html).
 | [funnel_signup](specialty-marks/funnel_signup.prism.json) | <img src="specialty-marks/funnel_signup.svg" width="240"> |
 | [sparkline_inline](specialty-marks/sparkline_inline.prism.json) | <img src="specialty-marks/sparkline_inline.svg" width="240"> |
 | [sparkline_inline_grid](specialty-marks/sparkline_inline_grid.prism.json) | <img src="specialty-marks/sparkline_inline_grid.svg" width="240"> |
+| [sparkbar_inline](specialty-marks/sparkbar_inline.prism.json) | <img src="specialty-marks/sparkbar_inline.svg" width="240"> |
+| [sparkbar_inline_grid](specialty-marks/sparkbar_inline_grid.prism.json) | <img src="specialty-marks/sparkbar_inline_grid.svg" width="240"> |
+| [winloss_streak](specialty-marks/winloss_streak.prism.json) | <img src="specialty-marks/winloss_streak.svg" width="240"> |
+| [winloss_streak_grid](specialty-marks/winloss_streak_grid.prism.json) | <img src="specialty-marks/winloss_streak_grid.svg" width="240"> |
+| [sparkarea_inline](specialty-marks/sparkarea_inline.prism.json) | <img src="specialty-marks/sparkarea_inline.svg" width="240"> |
+| [sparkarea_inline_grid](specialty-marks/sparkarea_inline_grid.prism.json) | <img src="specialty-marks/sparkarea_inline_grid.svg" width="240"> |
+| [sparkline_point_last](specialty-marks/sparkline_point_last.prism.json) | <img src="specialty-marks/sparkline_point_last.svg" width="240"> |
+| [sparkline_point_extent](specialty-marks/sparkline_point_extent.prism.json) | <img src="specialty-marks/sparkline_point_extent.svg" width="240"> |
+| [sparkbar_point_extent](specialty-marks/sparkbar_point_extent.prism.json) | <img src="specialty-marks/sparkbar_point_extent.svg" width="240"> |
+| [sparkarea_reference_band](specialty-marks/sparkarea_reference_band.prism.json) | <img src="specialty-marks/sparkarea_reference_band.svg" width="240"> |
+| [bullet_revenue](specialty-marks/bullet_revenue.prism.json) | <img src="specialty-marks/bullet_revenue.svg" width="240"> |
+| [bullet_satisfaction_vertical](specialty-marks/bullet_satisfaction_vertical.prism.json) | <img src="specialty-marks/bullet_satisfaction_vertical.svg" width="240"> |
+| [bullet_pipeline](specialty-marks/bullet_pipeline.prism.json) | <img src="specialty-marks/bullet_pipeline.svg" width="240"> |
 | [image_logo](specialty-marks/image_logo.prism.json) | <img src="specialty-marks/image_logo.svg" width="240"> |
 | [path_arbitrary](specialty-marks/path_arbitrary.prism.json) | <img src="specialty-marks/path_arbitrary.svg" width="240"> |
 

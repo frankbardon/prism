@@ -96,7 +96,13 @@ func allowedChannelsForMark(mark string) []string {
 	textMark := []string{"x", "y", "text", "color", "fill", "stroke", "opacity", "size"}
 	sankeyMark := []string{"source", "target", "value", "color", "fill", "stroke", "opacity"}
 	funnelMark := []string{"x", "y", "color", "fill", "stroke", "opacity", "text"}
+	// bullet carries target / comparative / bands as mark-def fields; the
+	// measure value rides the x (horizontal) or y (vertical) channel.
+	bulletMark := []string{"x", "y", "color", "fill", "stroke", "opacity", "text"}
 	sparklineMark := []string{"x", "y", "color", "fill", "stroke", "opacity"}
+	sparkbarMark := []string{"x", "y", "color", "fill", "stroke", "opacity"}
+	winlossMark := []string{"x", "y", "color", "fill", "stroke", "opacity"}
+	sparkareaMark := []string{"x", "y", "color", "fill", "stroke", "opacity"}
 	geoshapeMark := []string{"feature", "color", "fill", "stroke", "opacity"}
 	geopointMark := []string{"longitude", "latitude", "color", "fill", "stroke", "opacity", "size", "shape"}
 	treeMark := []string{"source", "target", "value", "text", "color", "fill", "stroke", "opacity", "size"}
@@ -112,8 +118,16 @@ func allowedChannelsForMark(mark string) []string {
 		set = sankeyMark
 	case "funnel":
 		set = funnelMark
+	case "bullet":
+		set = bulletMark
 	case "sparkline":
 		set = sparklineMark
+	case "sparkbar":
+		set = sparkbarMark
+	case "winloss":
+		set = winlossMark
+	case "sparkarea":
+		set = sparkareaMark
 	case "text":
 		set = textMark
 	case "image":

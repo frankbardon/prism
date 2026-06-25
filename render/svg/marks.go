@@ -168,8 +168,8 @@ func renderArea(w *Writer, m scene.Mark) {
 		return
 	}
 	// Area = path with M (upper start), L's (upper rest), L's down
-	// the lower edge (or back to baseline if Lower is nil), Z to
-	// close.
+	// the reversed lower edge, Z to close. The encoder supplies Lower
+	// as the y=0 baseline edge (one point per Upper x).
 	w.OpenTag("path")
 	w.Attr("class", "prism-mark-area")
 	if m.ID != "" {
@@ -189,47 +189,14 @@ func renderArea(w *Writer, m scene.Mark) {
 		w.Raw(",")
 		w.Raw(render.FormatFloat(p[1]))
 	}
-	if g.Lower != nil {
-		// Reverse lower edge.
-		for i := len(g.Lower) - 1; i >= 0; i-- {
-			w.Raw(" L")
-			w.Raw(render.FormatFloat(g.Lower[i][0]))
-			w.Raw(",")
-			w.Raw(render.FormatFloat(g.Lower[i][1]))
-		}
-	} else {
-		// Baseline = the plot's bottom edge. We don't have access to
-		// the plot rect here; the encoder must put Lower in for
-		// stacked areas. For unstacked baseline-0 areas, the upper
-		// edge's last+first x with a y of "max upper y" closes the
-		// shape into a baseline strip — but in pixel space the
-		// "baseline" is whatever the renderer renders for y=0,
-		// which the encoder already snapped via the y-scale. Use
-		// the last point's x with the upper edge's max y (max y in
-		// SVG = bottom of plot region for an inverted y-axis).
-		lastX := g.Upper[len(g.Upper)-1][0]
-		firstX := g.Upper[0][0]
-		// Compute max y in upper points.
-		maxY := g.Upper[0][1]
-		for _, p := range g.Upper {
-			if p[1] > maxY {
-				maxY = p[1]
-			}
-		}
-		// In SVG with inverted y, "baseline" = max y (bottom edge).
-		// The encoder doesn't tell us where the actual baseline is.
-		// For the P05 fixtures this gives the visually-correct area
-		// (filled from the line down to the bottom of the highest
-		// point — close enough for goldens; P08 lands stacking +
-		// proper baselines).
+	// Reverse the lower (baseline) edge to close the shape. The encoder
+	// always supplies Lower for area marks; a degenerate empty Lower
+	// closes straight back to the upper start via Z.
+	for i := len(g.Lower) - 1; i >= 0; i-- {
 		w.Raw(" L")
-		w.Raw(render.FormatFloat(lastX))
+		w.Raw(render.FormatFloat(g.Lower[i][0]))
 		w.Raw(",")
-		w.Raw(render.FormatFloat(maxY))
-		w.Raw(" L")
-		w.Raw(render.FormatFloat(firstX))
-		w.Raw(",")
-		w.Raw(render.FormatFloat(maxY))
+		w.Raw(render.FormatFloat(g.Lower[i][1]))
 	}
 	w.Raw(" Z")
 	w.CloseAttr()
