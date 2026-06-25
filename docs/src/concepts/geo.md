@@ -126,8 +126,11 @@ on first encode. Set a custom URL via:
 prism.geo.setBundleURL("https://cdn.example.com/geodata/");
 ```
 
-`prism static-bundle ./public/prism` always emits the geodata
-artifacts under `<out>/geodata/` so the WASM runtime finds them.
+`prism static-bundle --geodata-dir ./geodata ./public/prism` emits the
+geodata artifacts under `<out>/geodata/` so the WASM runtime finds them.
+The host build no longer embeds tier geometry, so `--geodata-dir` (or the
+`PRISM_GEODATA` env var) must point at a directory of `<tier>.geo.json`
+bundles; if it is unset, the command fails with `PRISM_GEODATA_DIR_UNSET`.
 
 For pages that inline the tier bytes:
 

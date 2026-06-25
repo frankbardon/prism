@@ -8,6 +8,8 @@ import (
 	"path/filepath"
 	"strings"
 	"testing"
+
+	"github.com/frankbardon/prism/geodata"
 )
 
 // TestPrismCLIStaticBundleCopiesAllFiles ensures `prism static-bundle
@@ -16,7 +18,11 @@ import (
 // promise (D071 — relative imports keep resolving after extraction).
 func TestPrismCLIStaticBundleCopiesAllFiles(t *testing.T) {
 	dir := t.TempDir()
-	_, exit := runCLI(t, "prism", "static-bundle", dir)
+	// Source tier geometry from the committed repo geodata/ directory; the
+	// host build no longer embeds tiers, so --geodata-dir is the seam that
+	// feeds the <outDir>/geodata/<tier>.geo.json copies.
+	geoDir := repoFile(t, "geodata")
+	_, exit := runCLI(t, "prism", "static-bundle", "--geodata-dir", geoDir, dir)
 	if exit != 0 {
 		t.Fatalf("static-bundle exited %d", exit)
 	}
@@ -30,6 +36,13 @@ func TestPrismCLIStaticBundleCopiesAllFiles(t *testing.T) {
 		"prism-resolver.mjs",
 		"prism-selection.mjs",
 		"README.md",
+		// Geodata artifacts: the still-embedded manifest plus each tier
+		// sourced from --geodata-dir. The WASM runtime fetches these from
+		// <bundle>/geodata/, so the layout must stay stable.
+		filepath.Join("geodata", "manifest.json"),
+	}
+	for _, tier := range geodata.AllTiers() {
+		wantFiles = append(wantFiles, filepath.Join("geodata", string(tier)+".geo.json"))
 	}
 	for _, rel := range wantFiles {
 		path := filepath.Join(dir, rel)
@@ -41,6 +54,26 @@ func TestPrismCLIStaticBundleCopiesAllFiles(t *testing.T) {
 		if info.Size() == 0 {
 			t.Errorf("extracted file %s is zero bytes", rel)
 		}
+	}
+}
+
+// TestPrismCLIStaticBundleGeodataDirUnset asserts that running
+// static-bundle with no geodata directory configured (neither
+// --geodata-dir nor PRISM_GEODATA, and the ambient TestMain dir cleared)
+// fails loudly with PRISM_GEODATA_DIR_UNSET instead of an opaque embed
+// message. The host build no longer embeds tier geometry, so the loader
+// has no fallback source.
+func TestPrismCLIStaticBundleGeodataDirUnset(t *testing.T) {
+	restoreHostBundleDir(t)
+	geodata.SetHostBundleDir("")
+
+	dir := t.TempDir()
+	out, exit := runCLI(t, "prism", "static-bundle", dir)
+	if exit == 0 {
+		t.Fatalf("expected non-zero exit with no geodata dir, got 0: %s", firstChars(out, 300))
+	}
+	if !strings.Contains(out, "PRISM_GEODATA_DIR_UNSET") {
+		t.Fatalf("expected PRISM_GEODATA_DIR_UNSET in output:\n%s", firstChars(out, 400))
 	}
 }
 
