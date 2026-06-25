@@ -79,6 +79,32 @@ type MarkDef struct {
 	// Orientation selects the bullet layout direction —
 	// "horizontal" | "vertical". Default "horizontal".
 	Orientation string `json:"orientation,omitempty"`
+
+	// Spark adornments (E4) are opt-in, default-off embellishments for
+	// the compact spark marks (sparkline / sparkbar / sparkarea). The
+	// zero value of every field means "no adornment", so existing spark
+	// output is byte-identical with the fields merely declared. The
+	// shared geometry helper lives in encode/marks/adornment.go; the
+	// spark encoders consume these fields in E4-S2.
+	//
+	// PointLast draws an emphasis dot on the final (most recent) value.
+	PointLast bool `json:"point_last,omitempty"`
+	// PointExtent draws highlight dots on the minimum and maximum
+	// values — an extent pass over the encoded series.
+	PointExtent bool `json:"point_extent,omitempty"`
+	// ReferenceBand shades a horizontal normal-range band behind the
+	// spark, bounded by From/To in value-axis data space. Nil = no band.
+	ReferenceBand *ReferenceBand `json:"reference_band,omitempty"`
+}
+
+// ReferenceBand bounds the shaded normal-range band drawn behind a
+// spark mark (E4 adornments). From and To are data-space values on the
+// spark's value axis; the band spans the full plot width between them.
+// Presence of the block enables the band regardless of ordering — the
+// helper normalises From/To to the lower/upper pixel edge.
+type ReferenceBand struct {
+	From float64 `json:"from"`
+	To   float64 `json:"to"`
 }
 
 // Mark is the discriminated mark form: string shorthand or full mark_def

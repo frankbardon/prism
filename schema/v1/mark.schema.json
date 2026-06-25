@@ -80,7 +80,19 @@
         "target":        {"type": ["number", "string"], "description": "Bullet reference value to beat — a literal number or a data-field name."},
         "bands":         {"type": "array", "items": {"type": "number"}, "description": "Bullet qualitative range bounds, ordered ascending (e.g. poor / ok / good thresholds)."},
         "comparative":   {"type": ["number", "string"], "description": "Bullet secondary measure value (e.g. prior period) — a literal number or a data-field name."},
-        "orientation":   {"type": "string", "enum": ["horizontal", "vertical"], "description": "Bullet layout direction."}
+        "orientation":   {"type": "string", "enum": ["horizontal", "vertical"], "description": "Bullet layout direction."},
+        "point_last":    {"type": "boolean", "description": "Spark adornment: draw an emphasis dot on the final value."},
+        "point_extent":  {"type": "boolean", "description": "Spark adornment: draw highlight dots on the minimum and maximum values."},
+        "reference_band": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["from", "to"],
+          "properties": {
+            "from": {"type": "number", "description": "Lower bound of the shaded normal-range band in value-axis data space."},
+            "to":   {"type": "number", "description": "Upper bound of the shaded normal-range band in value-axis data space."}
+          },
+          "description": "Spark adornment: shade a horizontal normal-range band behind the spark, spanning the full plot width between from and to."
+        }
       }
     }
   }
