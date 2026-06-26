@@ -102,7 +102,7 @@ func TestPrismMCPPlotTool(t *testing.T) {
 	if res.IsError {
 		t.Fatalf("prism_plot returned error: %s", textOf(res))
 	}
-	var payload plotResult
+	var payload PlotOutput
 	if err := json.Unmarshal([]byte(textOf(res)), &payload); err != nil {
 		t.Fatalf("plot result parse: %v\n%s", err, textOf(res))
 	}
@@ -136,7 +136,7 @@ func TestPrismMCPPlotToolPDF(t *testing.T) {
 	if res.IsError {
 		t.Fatalf("prism_plot pdf returned error: %s", textOf(res))
 	}
-	var payload plotResult
+	var payload PlotOutput
 	if err := json.Unmarshal([]byte(textOf(res)), &payload); err != nil {
 		t.Fatalf("plot result parse: %v\n%s", err, textOf(res))
 	}
@@ -225,7 +225,7 @@ func TestPrismMCPExamplesSearchTool(t *testing.T) {
 		t.Fatalf("prism_examples_search returned error: %s", textOf(res))
 	}
 	var s struct {
-		Examples []exampleResult `json:"examples"`
+		Examples []ExampleResult `json:"examples"`
 	}
 	if err := json.Unmarshal([]byte(textOf(res)), &s); err != nil {
 		t.Fatalf("search body parse: %v", err)
@@ -268,7 +268,7 @@ func TestPrismMCPExamplesSearchOverride(t *testing.T) {
 		t.Fatalf("prism_examples_search (override) returned error: %s", textOf(res))
 	}
 	var s struct {
-		Examples []exampleResult `json:"examples"`
+		Examples []ExampleResult `json:"examples"`
 	}
 	if err := json.Unmarshal([]byte(textOf(res)), &s); err != nil {
 		t.Fatalf("search body parse: %v", err)

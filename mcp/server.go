@@ -19,6 +19,7 @@ import (
 	"context"
 	"encoding/base64"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io/fs"
 	"path/filepath"
@@ -136,12 +137,149 @@ func errorResult(msg string) *gosdk.CallToolResult {
 	}
 }
 
-// plotResult is the structured payload returned by prism_plot.
-type plotResult struct {
+// PlotInput is the typed input for the prism_plot tool.
+type PlotInput struct {
+	Spec   string `json:"spec"`
+	Format string `json:"format,omitempty"`
+}
+
+// PlotOutput is the structured payload returned by prism_plot.
+type PlotOutput struct {
 	Bytes    string   `json:"bytes"` // base64-encoded
 	Mime     string   `json:"mime"`
 	Caption  string   `json:"caption"`
 	Warnings []string `json:"warnings,omitempty"`
+}
+
+// ValidateInput is the typed input for the prism_validate tool.
+type ValidateInput struct {
+	Spec string `json:"spec"`
+}
+
+// ValidateError is one validation diagnostic in a ValidateOutput. Field order
+// mirrors the historical map-marshalled shape (code, fixups, message).
+type ValidateError struct {
+	Code    string   `json:"code"`
+	Fixups  []string `json:"fixups"`
+	Message string   `json:"message"`
+}
+
+// ValidateOutput is the structured payload returned by prism_validate. Field
+// order mirrors the historical map-marshalled shape (errors, ok).
+type ValidateOutput struct {
+	Errors []ValidateError `json:"errors"`
+	Ok     bool            `json:"ok"`
+}
+
+// DescribeInput is the typed input for the prism_describe tool.
+type DescribeInput struct {
+	Spec string `json:"spec"`
+}
+
+// DescribeOutput is the structured payload returned by prism_describe.
+type DescribeOutput struct {
+	Summary string `json:"summary"`
+}
+
+// ExampleResult is one entry returned by prism_examples_search.
+type ExampleResult struct {
+	Name    string `json:"name"`
+	Summary string `json:"summary"`
+	Spec    string `json:"spec"`
+}
+
+// ExamplesSearchInput is the typed input for the prism_examples_search tool.
+// Query is the wire-facing field; Root + FS carry the server's examples-source
+// configuration (empty Root → embedded corpus, non-empty → on-disk walk) and
+// are not part of the tool's JSON schema.
+type ExamplesSearchInput struct {
+	Query string   `json:"query"`
+	Root  string   `json:"-"`
+	FS    afero.Fs `json:"-"`
+}
+
+// ExamplesSearchOutput is the structured payload returned by
+// prism_examples_search.
+type ExamplesSearchOutput struct {
+	Examples []ExampleResult `json:"examples"`
+}
+
+// missingArg builds the argument-error returned when a required tool argument
+// is absent. The SDK wiring surfaces it as a tool-result error so the agent
+// can self-correct.
+func missingArg(name string) error {
+	return errors.New("missing required argument: " + name)
+}
+
+// PlotTool compiles a Prism spec and renders it to image bytes via the rpc
+// facade. It returns the facade's coded errors verbatim.
+func PlotTool(ctx context.Context, f *rpc.PrismServer, in PlotInput) (PlotOutput, error) {
+	if in.Spec == "" {
+		return PlotOutput{}, missingArg("spec")
+	}
+	format := in.Format
+	if format == "" {
+		format = "svg"
+	}
+
+	// The Twirp Plot handler enforces the format switch + runs the full
+	// pipeline; we reuse it to keep one source of truth for "what 'svg' means".
+	resp, err := f.Plot(ctx, &rpc.PlotRequest{Spec: in.Spec, Format: format})
+	if err != nil {
+		return PlotOutput{}, err
+	}
+	return PlotOutput{
+		Bytes:    base64.StdEncoding.EncodeToString(resp.Bytes),
+		Mime:     resp.Mime,
+		Caption:  summariseSpec(in.Spec), // caption from the parsed spec
+		Warnings: append([]string(nil), resp.Warnings...),
+	}, nil
+}
+
+// ValidateTool validates a Prism spec via the rpc facade, returning the
+// facade's coded errors verbatim.
+func ValidateTool(ctx context.Context, f *rpc.PrismServer, in ValidateInput) (ValidateOutput, error) {
+	if in.Spec == "" {
+		return ValidateOutput{}, missingArg("spec")
+	}
+	resp, err := f.Validate(ctx, &rpc.ValidateRequest{Spec: in.Spec})
+	if err != nil {
+		return ValidateOutput{}, err
+	}
+	errs := make([]ValidateError, 0, len(resp.Errors))
+	for _, e := range resp.Errors {
+		errs = append(errs, ValidateError{
+			Code:    e.Code,
+			Fixups:  e.Fixups,
+			Message: e.Message,
+		})
+	}
+	return ValidateOutput{Errors: errs, Ok: resp.Ok}, nil
+}
+
+// DescribeTool returns a natural-language summary of a Prism spec. The facade
+// argument is accepted for signature uniformity and is unused.
+func DescribeTool(_ context.Context, _ *rpc.PrismServer, in DescribeInput) (DescribeOutput, error) {
+	if in.Spec == "" {
+		return DescribeOutput{}, missingArg("spec")
+	}
+	return DescribeOutput{Summary: summariseSpec(in.Spec)}, nil
+}
+
+// ExamplesSearchTool searches the example spec library. An empty in.Root serves
+// the embedded corpus; a non-empty Root opts into an on-disk afero walk of that
+// directory. The facade argument is accepted for signature uniformity.
+func ExamplesSearchTool(_ context.Context, _ *rpc.PrismServer, in ExamplesSearchInput) (ExamplesSearchOutput, error) {
+	if in.Query == "" {
+		return ExamplesSearchOutput{}, missingArg("query")
+	}
+	var hits []ExampleResult
+	if in.Root == "" {
+		hits = searchEmbedded(in.Query, 5)
+	} else {
+		hits = searchExamples(in.FS, in.Root, in.Query, 5)
+	}
+	return ExamplesSearchOutput{Examples: hits}, nil
 }
 
 func plotHandler(impl *rpc.PrismServer) gosdk.ToolHandler {
@@ -149,33 +287,11 @@ func plotHandler(impl *rpc.PrismServer) gosdk.ToolHandler {
 		args := toolArgs(req)
 		spec, _ := args["spec"].(string)
 		format, _ := args["format"].(string)
-		if spec == "" {
-			return errorResult("missing required argument: spec"), nil
-		}
-		if format == "" {
-			format = "svg"
-		}
-
-		// The Twirp Plot handler enforces the format switch + runs
-		// the full pipeline; we reuse it to keep one source of
-		// truth for "what 'svg' means".
-		resp, err := impl.Plot(ctx, &rpc.PlotRequest{
-			Spec: spec, Format: format,
-		})
+		out, err := PlotTool(ctx, impl, PlotInput{Spec: spec, Format: format})
 		if err != nil {
 			return errorResult(err.Error()), nil
 		}
-
-		// Caption from the parsed spec (mark + encoding fields).
-		caption := summariseSpec(spec)
-
-		result := plotResult{
-			Bytes:    base64.StdEncoding.EncodeToString(resp.Bytes),
-			Mime:     resp.Mime,
-			Caption:  caption,
-			Warnings: append([]string(nil), resp.Warnings...),
-		}
-		body, _ := json.Marshal(result)
+		body, _ := json.Marshal(out)
 		return textResult(string(body)), nil
 	}
 }
@@ -184,26 +300,11 @@ func validateHandler(impl *rpc.PrismServer) gosdk.ToolHandler {
 	return func(ctx context.Context, req *gosdk.CallToolRequest) (*gosdk.CallToolResult, error) {
 		args := toolArgs(req)
 		spec, _ := args["spec"].(string)
-		if spec == "" {
-			return errorResult("missing required argument: spec"), nil
-		}
-		resp, err := impl.Validate(ctx, &rpc.ValidateRequest{Spec: spec})
+		out, err := ValidateTool(ctx, impl, ValidateInput{Spec: spec})
 		if err != nil {
 			return errorResult(err.Error()), nil
 		}
-		// Hand-marshal a tidy shape: {ok, errors:[{code,message,fixups}]}.
-		errs := make([]map[string]any, 0, len(resp.Errors))
-		for _, e := range resp.Errors {
-			errs = append(errs, map[string]any{
-				"code":    e.Code,
-				"message": e.Message,
-				"fixups":  e.Fixups,
-			})
-		}
-		body, _ := json.Marshal(map[string]any{
-			"ok":     resp.Ok,
-			"errors": errs,
-		})
+		body, _ := json.Marshal(out)
 		return textResult(string(body)), nil
 	}
 }
@@ -212,36 +313,28 @@ func describeHandler() gosdk.ToolHandler {
 	return func(ctx context.Context, req *gosdk.CallToolRequest) (*gosdk.CallToolResult, error) {
 		args := toolArgs(req)
 		spec, _ := args["spec"].(string)
-		if spec == "" {
-			return errorResult("missing required argument: spec"), nil
+		out, err := DescribeTool(ctx, nil, DescribeInput{Spec: spec})
+		if err != nil {
+			return errorResult(err.Error()), nil
 		}
-		summary := summariseSpec(spec)
-		body, _ := json.Marshal(map[string]any{"summary": summary})
+		body, _ := json.Marshal(out)
 		return textResult(string(body)), nil
 	}
-}
-
-// exampleResult is one entry returned by prism_examples_search.
-type exampleResult struct {
-	Name    string `json:"name"`
-	Summary string `json:"summary"`
-	Spec    string `json:"spec"`
 }
 
 func examplesSearchHandler(opts Options) gosdk.ToolHandler {
 	return func(ctx context.Context, req *gosdk.CallToolRequest) (*gosdk.CallToolResult, error) {
 		args := toolArgs(req)
 		query, _ := args["query"].(string)
-		if query == "" {
-			return errorResult("missing required argument: query"), nil
+		out, err := ExamplesSearchTool(ctx, opts.PrismServer, ExamplesSearchInput{
+			Query: query,
+			Root:  opts.ExamplesRoot,
+			FS:    opts.ExamplesFS,
+		})
+		if err != nil {
+			return errorResult(err.Error()), nil
 		}
-		var hits []exampleResult
-		if opts.ExamplesRoot == "" {
-			hits = searchEmbedded(query, 5)
-		} else {
-			hits = searchExamples(opts.ExamplesFS, opts.ExamplesRoot, query, 5)
-		}
-		body, _ := json.Marshal(map[string]any{"examples": hits})
+		body, _ := json.Marshal(out)
 		return textResult(string(body)), nil
 	}
 }
@@ -251,9 +344,9 @@ func examplesSearchHandler(opts Options) gosdk.ToolHandler {
 // fallback for specs that carry no title: examples.Search falls back to the
 // bare stem to stay stdlib-pure, whereas the MCP tool historically produced a
 // spec-aware summary, so we preserve that user-visible output here.
-func searchEmbedded(query string, limit int) []exampleResult {
+func searchEmbedded(query string, limit int) []ExampleResult {
 	results := examples.Search(query, limit)
-	out := make([]exampleResult, 0, len(results))
+	out := make([]ExampleResult, 0, len(results))
 	for _, r := range results {
 		summary := r.Summary
 		if extractTitle([]byte(r.Spec)) == "" {
@@ -261,7 +354,7 @@ func searchEmbedded(query string, limit int) []exampleResult {
 				summary = richer
 			}
 		}
-		out = append(out, exampleResult{
+		out = append(out, ExampleResult{
 			Name:    r.Name,
 			Summary: summary,
 			Spec:    r.Spec,
@@ -274,12 +367,12 @@ func searchEmbedded(query string, limit int) []exampleResult {
 // results whose filename stem (or title) contains query case-
 // insensitively. Each result carries the raw spec JSON for direct
 // invocation.
-func searchExamples(fsys afero.Fs, root, query string, limit int) []exampleResult {
+func searchExamples(fsys afero.Fs, root, query string, limit int) []ExampleResult {
 	if fsys == nil {
 		fsys = afero.NewOsFs()
 	}
 	q := strings.ToLower(query)
-	var out []exampleResult
+	var out []ExampleResult
 	_ = afero.Walk(fsys, root, func(path string, info fs.FileInfo, walkErr error) error {
 		if walkErr != nil || info.IsDir() {
 			return nil
@@ -305,7 +398,7 @@ func searchExamples(fsys afero.Fs, root, query string, limit int) []exampleResul
 		if summary == "" {
 			summary = summariseSpec(string(body))
 		}
-		out = append(out, exampleResult{
+		out = append(out, ExampleResult{
 			Name:    base,
 			Summary: summary,
 			Spec:    string(body),
