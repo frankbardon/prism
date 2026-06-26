@@ -45,6 +45,12 @@ type Options struct {
 	// ExamplesRoot is set. Defaults to afero.NewOsFs(). Tests inject an
 	// afero.MemMapFs. Ignored when ExamplesRoot is empty (embedded corpus).
 	ExamplesFS afero.Fs
+	// ServerName / Version set the MCP server identity advertised on the
+	// initialize handshake. Empty values default to DefaultServerName /
+	// DefaultVersion. The CLI threads the real build version here (later
+	// story); there is no process-global version.
+	ServerName string
+	Version    string
 }
 
 // New constructs an MCP server with all four Prism tools registered.
@@ -60,64 +66,63 @@ func New(opts Options) *gosdk.Server {
 	if opts.ExamplesRoot != "" && opts.ExamplesFS == nil {
 		opts.ExamplesFS = afero.NewOsFs()
 	}
+	if opts.ServerName == "" {
+		opts.ServerName = DefaultServerName
+	}
+	if opts.Version == "" {
+		opts.Version = DefaultVersion
+	}
 
-	s := gosdk.NewServer(&gosdk.Implementation{Name: "prism", Version: "0.1.0"}, nil)
+	s := gosdk.NewServer(&gosdk.Implementation{Name: opts.ServerName, Version: opts.Version}, nil)
 	registerTools(s, opts)
 	return s
 }
 
-// registerTools attaches the four Prism tools to the supplied server.
-// Public so tests can build a bare server and register selectively.
+// registerTools attaches the four Prism tools to the supplied server,
+// sourcing names, descriptions, reflected input schemas, and dispatch from
+// the type-erased Tools(cfg) catalog — so the wire surface and the importable
+// descriptor catalog never drift.
 //
-// We use the low-level gosdk.Server.AddTool with hand-written input
-// schemas so the tool result is the raw JSON text content the agent
-// host expects (the typed gosdk.AddTool[In,Out] form would wrap the
-// payload in structured content instead).
+// We use the low-level gosdk.Server.AddTool with the reflected input schema so
+// the tool result is the raw JSON text content the agent host expects (the
+// typed gosdk.AddTool[In,Out] form would wrap the payload in structured
+// content instead).
 func registerTools(s *gosdk.Server, opts Options) {
-	s.AddTool(
-		&gosdk.Tool{
-			Name:        "prism_plot",
-			Description: "Compile a Prism spec and render to image bytes. SVG (default) and PDF are supported; PNG returns PRISM_RENDER_FORMAT_UNAVAILABLE (V2).",
-			InputSchema: json.RawMessage(`{"type":"object","properties":{"spec":{"type":"string","description":"Prism spec as a JSON string (matches the schemas under schema/v1/)."},"format":{"type":"string","description":"Output format: svg (default) | pdf. PNG returns PRISM_RENDER_FORMAT_UNAVAILABLE."}},"required":["spec"]}`),
-		},
-		plotHandler(opts.PrismServer),
-	)
-	s.AddTool(
-		&gosdk.Tool{
-			Name:        "prism_validate",
-			Description: "Validate a Prism spec against the embedded JSON Schema + semantic rules.",
-			InputSchema: json.RawMessage(`{"type":"object","properties":{"spec":{"type":"string","description":"Prism spec as a JSON string."}},"required":["spec"]}`),
-		},
-		validateHandler(opts.PrismServer),
-	)
-	s.AddTool(
-		&gosdk.Tool{
-			Name:        "prism_describe",
-			Description: "Return a natural-language summary of what a Prism spec renders.",
-			InputSchema: json.RawMessage(`{"type":"object","properties":{"spec":{"type":"string","description":"Prism spec as a JSON string."}},"required":["spec"]}`),
-		},
-		describeHandler(),
-	)
-	s.AddTool(
-		&gosdk.Tool{
-			Name:        "prism_examples_search",
-			Description: "Search the curated example spec library by substring match on name + title. Returns up to 5 results.",
-			InputSchema: json.RawMessage(`{"type":"object","properties":{"query":{"type":"string","description":"Case-insensitive substring to match against fixture names + titles."}},"required":["query"]}`),
-		},
-		examplesSearchHandler(opts),
-	)
+	cfg := Config{
+		ServerName:   opts.ServerName,
+		Version:      opts.Version,
+		ExamplesRoot: opts.ExamplesRoot,
+		ExamplesFS:   opts.ExamplesFS,
+	}
+	for _, d := range Tools(cfg) {
+		s.AddTool(
+			&gosdk.Tool{
+				Name:        d.Name,
+				Description: d.Description,
+				InputSchema: d.InputSchema,
+			},
+			descriptorHandler(d, opts.PrismServer),
+		)
+	}
 }
 
-// toolArgs decodes the raw tool-call arguments into a string-keyed map,
-// mirroring the mark3labs CallToolRequest.GetArguments() shape the
-// handler bodies were written against.
-func toolArgs(req *gosdk.CallToolRequest) map[string]any {
-	out := map[string]any{}
-	if req == nil || req.Params == nil || len(req.Params.Arguments) == 0 {
-		return out
+// descriptorHandler adapts a type-erased ToolDescriptor into a go-sdk tool
+// handler: it forwards the raw call arguments to Invoke, marshals the typed
+// output as JSON text content, and surfaces handler errors as tool-result
+// errors (IsError=true) so the agent can self-correct.
+func descriptorHandler(d ToolDescriptor, impl *rpc.PrismServer) gosdk.ToolHandler {
+	return func(ctx context.Context, req *gosdk.CallToolRequest) (*gosdk.CallToolResult, error) {
+		var raw json.RawMessage
+		if req != nil && req.Params != nil {
+			raw = req.Params.Arguments
+		}
+		out, err := d.Invoke(ctx, impl, raw)
+		if err != nil {
+			return errorResult(err.Error()), nil
+		}
+		body, _ := json.Marshal(out)
+		return textResult(string(body)), nil
 	}
-	_ = json.Unmarshal(req.Params.Arguments, &out)
-	return out
 }
 
 // textResult wraps a JSON payload string as a successful tool result.
@@ -280,63 +285,6 @@ func ExamplesSearchTool(_ context.Context, _ *rpc.PrismServer, in ExamplesSearch
 		hits = searchExamples(in.FS, in.Root, in.Query, 5)
 	}
 	return ExamplesSearchOutput{Examples: hits}, nil
-}
-
-func plotHandler(impl *rpc.PrismServer) gosdk.ToolHandler {
-	return func(ctx context.Context, req *gosdk.CallToolRequest) (*gosdk.CallToolResult, error) {
-		args := toolArgs(req)
-		spec, _ := args["spec"].(string)
-		format, _ := args["format"].(string)
-		out, err := PlotTool(ctx, impl, PlotInput{Spec: spec, Format: format})
-		if err != nil {
-			return errorResult(err.Error()), nil
-		}
-		body, _ := json.Marshal(out)
-		return textResult(string(body)), nil
-	}
-}
-
-func validateHandler(impl *rpc.PrismServer) gosdk.ToolHandler {
-	return func(ctx context.Context, req *gosdk.CallToolRequest) (*gosdk.CallToolResult, error) {
-		args := toolArgs(req)
-		spec, _ := args["spec"].(string)
-		out, err := ValidateTool(ctx, impl, ValidateInput{Spec: spec})
-		if err != nil {
-			return errorResult(err.Error()), nil
-		}
-		body, _ := json.Marshal(out)
-		return textResult(string(body)), nil
-	}
-}
-
-func describeHandler() gosdk.ToolHandler {
-	return func(ctx context.Context, req *gosdk.CallToolRequest) (*gosdk.CallToolResult, error) {
-		args := toolArgs(req)
-		spec, _ := args["spec"].(string)
-		out, err := DescribeTool(ctx, nil, DescribeInput{Spec: spec})
-		if err != nil {
-			return errorResult(err.Error()), nil
-		}
-		body, _ := json.Marshal(out)
-		return textResult(string(body)), nil
-	}
-}
-
-func examplesSearchHandler(opts Options) gosdk.ToolHandler {
-	return func(ctx context.Context, req *gosdk.CallToolRequest) (*gosdk.CallToolResult, error) {
-		args := toolArgs(req)
-		query, _ := args["query"].(string)
-		out, err := ExamplesSearchTool(ctx, opts.PrismServer, ExamplesSearchInput{
-			Query: query,
-			Root:  opts.ExamplesRoot,
-			FS:    opts.ExamplesFS,
-		})
-		if err != nil {
-			return errorResult(err.Error()), nil
-		}
-		body, _ := json.Marshal(out)
-		return textResult(string(body)), nil
-	}
 }
 
 // searchEmbedded serves prism_examples_search from the embedded examples
