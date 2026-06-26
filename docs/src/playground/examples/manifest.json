@@ -21,6 +21,16 @@
       ]
     },
     {
+      "name": "Compact marks",
+      "examples": [
+        {"id": "sparkline",      "title": "Sparkline",             "file": "sparkline.json"},
+        {"id": "sparkbar",       "title": "Sparkbar",              "file": "sparkbar.json"},
+        {"id": "sparkarea",      "title": "Sparkarea",             "file": "sparkarea.json"},
+        {"id": "winloss",        "title": "Win/loss",              "file": "winloss.json"},
+        {"id": "bullet",         "title": "Bullet chart",          "file": "bullet.json"}
+      ]
+    },
+    {
       "name": "Parts of a whole",
       "examples": [
         {"id": "pie",            "title": "Pie chart",             "file": "pie.json"},
