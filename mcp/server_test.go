@@ -9,9 +9,7 @@ import (
 	"strings"
 	"testing"
 
-	mcpgo "github.com/mark3labs/mcp-go/mcp"
-	"github.com/mark3labs/mcp-go/mcptest"
-	"github.com/mark3labs/mcp-go/server"
+	gosdk "github.com/modelcontextprotocol/go-sdk/mcp"
 	"github.com/spf13/afero"
 
 	"github.com/frankbardon/prism/rpc"
@@ -30,69 +28,48 @@ const fixtureSpec = `{
   }
 }`
 
-// newTestServer wires the four Prism tools onto an mcptest.Server.
-// Uses an in-memory examples FS so the search smoke is deterministic.
-func newTestServer(t *testing.T) *mcptest.Server {
+// newTestSession builds an MCP server via the public New() entrypoint
+// (all four tools registered) and connects an in-memory go-sdk client
+// to it. Returns the client session; both sessions are torn down on
+// cleanup. Uses an in-memory examples FS so the search smoke is
+// deterministic.
+func newTestSession(t *testing.T) *gosdk.ClientSession {
 	t.Helper()
 	exFS := afero.NewMemMapFs()
 	_ = afero.WriteFile(exFS, "testdata/specs/bar_basic.json", []byte(fixtureSpec), 0o644)
 	_ = afero.WriteFile(exFS, "testdata/specs/funnel_signup.json",
 		[]byte(`{"$schema":"urn:prism:schema:v1:spec","title":"funnel","mark":"bar","encoding":{}}`), 0o644)
 
-	opts := Options{
+	srv := New(Options{
 		PrismServer:  &rpc.PrismServer{Fs: afero.NewMemMapFs()},
 		ExamplesRoot: "testdata/specs/",
 		ExamplesFS:   exFS,
-	}
-	srv := mcptest.NewUnstartedServer(t)
+	})
 
-	// Re-register tools onto the test server's underlying *MCPServer
-	// is not directly exposed; mcptest.Server.AddTool delegates to
-	// its internal server. Mirror New()'s registrations here.
-	srv.AddTool(
-		mcpgo.NewTool("prism_plot",
-			mcpgo.WithDescription("Compile a Prism spec and render to image bytes."),
-			mcpgo.WithString("spec", mcpgo.Required()),
-			mcpgo.WithString("format"),
-		),
-		plotHandler(opts.PrismServer),
-	)
-	srv.AddTool(
-		mcpgo.NewTool("prism_validate",
-			mcpgo.WithDescription("Validate a Prism spec."),
-			mcpgo.WithString("spec", mcpgo.Required()),
-		),
-		validateHandler(opts.PrismServer),
-	)
-	srv.AddTool(
-		mcpgo.NewTool("prism_describe",
-			mcpgo.WithDescription("Describe a spec."),
-			mcpgo.WithString("spec", mcpgo.Required()),
-		),
-		describeHandler(),
-	)
-	srv.AddTool(
-		mcpgo.NewTool("prism_examples_search",
-			mcpgo.WithDescription("Search example fixtures."),
-			mcpgo.WithString("query", mcpgo.Required()),
-		),
-		examplesSearchHandler(opts),
-	)
-
-	if err := srv.Start(context.Background()); err != nil {
-		t.Fatalf("mcptest.Start: %v", err)
+	ctx := context.Background()
+	serverT, clientT := gosdk.NewInMemoryTransports()
+	serverSession, err := srv.Connect(ctx, serverT, nil)
+	if err != nil {
+		t.Fatalf("server Connect: %v", err)
 	}
-	t.Cleanup(srv.Close)
-	return srv
+	t.Cleanup(func() { _ = serverSession.Close() })
+
+	client := gosdk.NewClient(&gosdk.Implementation{Name: "test", Version: "0.0.0"}, nil)
+	clientSession, err := client.Connect(ctx, clientT, nil)
+	if err != nil {
+		t.Fatalf("client Connect: %v", err)
+	}
+	t.Cleanup(func() { _ = clientSession.Close() })
+
+	return clientSession
 }
 
-// TestPrismMCPToolsRegistered is one of the four PHASE.md-mandated
-// P14 test gates. Sends tools/list to the running server and
-// asserts all four tool names are present.
+// TestPrismMCPToolsRegistered sends tools/list to the running server
+// and asserts all four tool names are present.
 func TestPrismMCPToolsRegistered(t *testing.T) {
-	srv := newTestServer(t)
+	cs := newTestSession(t)
 
-	listResult, err := srv.Client().ListTools(context.Background(), mcpgo.ListToolsRequest{})
+	listResult, err := cs.ListTools(context.Background(), nil)
 	if err != nil {
 		t.Fatalf("ListTools: %v", err)
 	}
@@ -108,17 +85,17 @@ func TestPrismMCPToolsRegistered(t *testing.T) {
 	}
 }
 
-// TestPrismMCPPlotTool exercises the prism_plot round trip end-to-
-// end through the mcptest client + pipes.
+// TestPrismMCPPlotTool exercises the prism_plot round trip end-to-end
+// through the in-memory client + transport.
 func TestPrismMCPPlotTool(t *testing.T) {
-	srv := newTestServer(t)
-	var req mcpgo.CallToolRequest
-	req.Params.Name = "prism_plot"
-	req.Params.Arguments = map[string]any{
-		"spec":   fixtureSpec,
-		"format": "svg",
-	}
-	res, err := srv.Client().CallTool(context.Background(), req)
+	cs := newTestSession(t)
+	res, err := cs.CallTool(context.Background(), &gosdk.CallToolParams{
+		Name: "prism_plot",
+		Arguments: map[string]any{
+			"spec":   fixtureSpec,
+			"format": "svg",
+		},
+	})
 	if err != nil {
 		t.Fatalf("CallTool prism_plot: %v", err)
 	}
@@ -141,18 +118,18 @@ func TestPrismMCPPlotTool(t *testing.T) {
 	}
 }
 
-// TestPrismMCPPlotToolPDF — PDF lands in P15. Round-trip the
-// prism_plot tool with format=pdf; verify the response carries
-// application/pdf mime + base64-decoded bytes start with %PDF-.
+// TestPrismMCPPlotToolPDF round-trips the prism_plot tool with
+// format=pdf; verifies the response carries application/pdf mime +
+// base64-decoded bytes start with %PDF-.
 func TestPrismMCPPlotToolPDF(t *testing.T) {
-	srv := newTestServer(t)
-	var req mcpgo.CallToolRequest
-	req.Params.Name = "prism_plot"
-	req.Params.Arguments = map[string]any{
-		"spec":   fixtureSpec,
-		"format": "pdf",
-	}
-	res, err := srv.Client().CallTool(context.Background(), req)
+	cs := newTestSession(t)
+	res, err := cs.CallTool(context.Background(), &gosdk.CallToolParams{
+		Name: "prism_plot",
+		Arguments: map[string]any{
+			"spec":   fixtureSpec,
+			"format": "pdf",
+		},
+	})
 	if err != nil {
 		t.Fatalf("CallTool prism_plot pdf: %v", err)
 	}
@@ -178,16 +155,15 @@ func TestPrismMCPPlotToolPDF(t *testing.T) {
 	}
 }
 
-// TestPrismMCPValidateTool round-trips the prism_validate tool on
-// a valid + invalid spec.
+// TestPrismMCPValidateTool round-trips the prism_validate tool on a
+// valid spec.
 func TestPrismMCPValidateTool(t *testing.T) {
-	srv := newTestServer(t)
+	cs := newTestSession(t)
 
-	// Valid.
-	var req mcpgo.CallToolRequest
-	req.Params.Name = "prism_validate"
-	req.Params.Arguments = map[string]any{"spec": fixtureSpec}
-	res, err := srv.Client().CallTool(context.Background(), req)
+	res, err := cs.CallTool(context.Background(), &gosdk.CallToolParams{
+		Name:      "prism_validate",
+		Arguments: map[string]any{"spec": fixtureSpec},
+	})
 	if err != nil {
 		t.Fatalf("CallTool prism_validate (valid): %v", err)
 	}
@@ -208,11 +184,11 @@ func TestPrismMCPValidateTool(t *testing.T) {
 
 // TestPrismMCPDescribeTool exercises prism_describe.
 func TestPrismMCPDescribeTool(t *testing.T) {
-	srv := newTestServer(t)
-	var req mcpgo.CallToolRequest
-	req.Params.Name = "prism_describe"
-	req.Params.Arguments = map[string]any{"spec": fixtureSpec}
-	res, err := srv.Client().CallTool(context.Background(), req)
+	cs := newTestSession(t)
+	res, err := cs.CallTool(context.Background(), &gosdk.CallToolParams{
+		Name:      "prism_describe",
+		Arguments: map[string]any{"spec": fixtureSpec},
+	})
 	if err != nil {
 		t.Fatalf("CallTool prism_describe: %v", err)
 	}
@@ -235,11 +211,11 @@ func TestPrismMCPDescribeTool(t *testing.T) {
 
 // TestPrismMCPExamplesSearchTool exercises prism_examples_search.
 func TestPrismMCPExamplesSearchTool(t *testing.T) {
-	srv := newTestServer(t)
-	var req mcpgo.CallToolRequest
-	req.Params.Name = "prism_examples_search"
-	req.Params.Arguments = map[string]any{"query": "bar"}
-	res, err := srv.Client().CallTool(context.Background(), req)
+	cs := newTestSession(t)
+	res, err := cs.CallTool(context.Background(), &gosdk.CallToolParams{
+		Name:      "prism_examples_search",
+		Arguments: map[string]any{"query": "bar"},
+	})
 	if err != nil {
 		t.Fatalf("CallTool prism_examples_search: %v", err)
 	}
@@ -261,26 +237,11 @@ func TestPrismMCPExamplesSearchTool(t *testing.T) {
 }
 
 // TestPrismMCPNewSmoke ensures the public New() entrypoint registers
-// the same four tools (no missing wiring). Uses tools/list directly
-// against a server.MCPServer instance via mcptest's harness.
+// exactly the four tools (no missing wiring), driven over the
+// in-memory transport.
 func TestPrismMCPNewSmoke(t *testing.T) {
-	// Build through public New(), then re-register on mcptest by
-	// copying the tool metadata back out. Since *MCPServer doesn't
-	// expose its tool map, we instead rebuild via the same internal
-	// registerTools call onto an mcptest server.
-	srv := mcptest.NewUnstartedServer(t)
-	opts := Options{
-		PrismServer:  &rpc.PrismServer{Fs: afero.NewMemMapFs()},
-		ExamplesRoot: "testdata/specs/",
-		ExamplesFS:   afero.NewMemMapFs(),
-	}
-	registerToolsOnMCPTest(srv, opts)
-	if err := srv.Start(context.Background()); err != nil {
-		t.Fatalf("start: %v", err)
-	}
-	defer srv.Close()
-
-	listResult, err := srv.Client().ListTools(context.Background(), mcpgo.ListToolsRequest{})
+	cs := newTestSession(t)
+	listResult, err := cs.ListTools(context.Background(), nil)
 	if err != nil {
 		t.Fatalf("ListTools: %v", err)
 	}
@@ -289,41 +250,33 @@ func TestPrismMCPNewSmoke(t *testing.T) {
 	}
 }
 
-// registerToolsOnMCPTest mirrors registerTools for the mcptest
-// harness (which exposes AddTool but not the underlying *MCPServer
-// pointer New() returns).
-func registerToolsOnMCPTest(srv *mcptest.Server, opts Options) {
-	srv.AddTool(mcpgo.NewTool("prism_plot",
-		mcpgo.WithDescription("Compile and render."),
-		mcpgo.WithString("spec", mcpgo.Required()),
-		mcpgo.WithString("format"),
-	), plotHandler(opts.PrismServer))
-	srv.AddTool(mcpgo.NewTool("prism_validate",
-		mcpgo.WithDescription("Validate."),
-		mcpgo.WithString("spec", mcpgo.Required()),
-	), validateHandler(opts.PrismServer))
-	srv.AddTool(mcpgo.NewTool("prism_describe",
-		mcpgo.WithDescription("Describe."),
-		mcpgo.WithString("spec", mcpgo.Required()),
-	), describeHandler())
-	srv.AddTool(mcpgo.NewTool("prism_examples_search",
-		mcpgo.WithDescription("Search."),
-		mcpgo.WithString("query", mcpgo.Required()),
-	), examplesSearchHandler(opts))
+// TestPrismMCPPlotMissingSpec confirms a missing required argument
+// surfaces as a tool-result error (IsError=true), not a protocol-level
+// Go error — so the agent can see the message and self-correct.
+func TestPrismMCPPlotMissingSpec(t *testing.T) {
+	cs := newTestSession(t)
+	res, err := cs.CallTool(context.Background(), &gosdk.CallToolParams{
+		Name:      "prism_plot",
+		Arguments: map[string]any{},
+	})
+	if err != nil {
+		t.Fatalf("CallTool prism_plot (missing spec): %v", err)
+	}
+	if !res.IsError {
+		t.Fatalf("expected IsError=true for missing spec; got success: %s", textOf(res))
+	}
+	if !strings.Contains(textOf(res), "missing required argument: spec") {
+		t.Errorf("error text = %q; want 'missing required argument: spec'", textOf(res))
+	}
 }
 
 // textOf concatenates every TextContent entry in a CallToolResult.
-func textOf(res *mcpgo.CallToolResult) string {
+func textOf(res *gosdk.CallToolResult) string {
 	var b strings.Builder
 	for _, c := range res.Content {
-		if tc, ok := c.(mcpgo.TextContent); ok {
+		if tc, ok := c.(*gosdk.TextContent); ok {
 			b.WriteString(tc.Text)
 		}
 	}
 	return b.String()
 }
-
-// _ keeps server referenced for documentation: New() returns
-// *server.MCPServer, but the tests above use the mcptest harness so
-// the runtime symbol is otherwise unused.
-var _ = server.NewMCPServer
