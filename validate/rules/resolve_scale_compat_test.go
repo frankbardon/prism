@@ -87,7 +87,7 @@ func TestPrismResolveScaleCompatSkipsImplicitTypes(t *testing.T) {
 // (mirroring how the CLI calls validate).
 func TestPrismResolveScaleCompatFixtureFires(t *testing.T) {
 	root := repoRootRules(t)
-	path := filepath.Join(root, "testdata", "specs", "invalid", "layer_shared_y_incompatible.json")
+	path := filepath.Join(root, "examples", "specs", "invalid", "layer_shared_y_incompatible.json")
 	body, err := os.ReadFile(path)
 	if err != nil {
 		t.Fatalf("read fixture: %v", err)

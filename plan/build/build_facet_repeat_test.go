@@ -16,7 +16,7 @@ import (
 // rows / cols stay zero (encoder fills in after partitioning).
 func TestPrismBuildFacetSingleColumn(t *testing.T) {
 	root := repoRoot(t)
-	s := loadSpec(t, filepath.Join(root, "testdata", "specs", "facet_by_region.json"))
+	s := loadSpec(t, filepath.Join(root, "examples", "specs", "facet_by_region.json"))
 	c, err := build.BuildComposite(s, build.Options{})
 	if err != nil {
 		t.Fatalf("BuildComposite: %v", err)
@@ -46,7 +46,7 @@ func TestPrismBuildFacetSingleColumn(t *testing.T) {
 // land in Children with the substituted field name (D056).
 func TestPrismBuildRepeatRowMajor(t *testing.T) {
 	root := repoRoot(t)
-	s := loadSpec(t, filepath.Join(root, "testdata", "specs", "repeat_metrics.json"))
+	s := loadSpec(t, filepath.Join(root, "examples", "specs", "repeat_metrics.json"))
 	c, err := build.BuildComposite(s, build.Options{})
 	if err != nil {
 		t.Fatalf("BuildComposite: %v", err)

@@ -23,7 +23,7 @@ import (
 // bar_basic.json under each of light/dark/print and asserts pairwise
 // byte-distinct SVG outputs (theme actually takes effect end-to-end).
 func TestPrismThemeVariantsDistinct(t *testing.T) {
-	fixture := filepath.Join(repoRoot(t), "testdata", "specs", "bar_basic.json")
+	fixture := filepath.Join(repoRoot(t), "examples", "specs", "bar_basic.json")
 	body, err := os.ReadFile(fixture)
 	if err != nil {
 		t.Fatalf("read fixture: %v", err)

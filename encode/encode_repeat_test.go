@@ -22,7 +22,7 @@ import (
 // chart.
 func TestPrismEncodeRepeatRowMajor(t *testing.T) {
 	root := repoRootForFacetTest(t)
-	path := filepath.Join(root, "testdata", "specs", "repeat_metrics.json")
+	path := filepath.Join(root, "examples", "specs", "repeat_metrics.json")
 	body, err := os.ReadFile(path)
 	if err != nil {
 		t.Fatalf("read: %v", err)

@@ -56,7 +56,7 @@ func TestPrismPlotCompositeDispatch(t *testing.T) {
 		c := c
 		t.Run(c.fixture, func(t *testing.T) {
 			chdirRepoRoot(t)
-			fixturePath := repoFile(t, "testdata", "specs", c.fixture)
+			fixturePath := repoFile(t, "examples", "specs", c.fixture)
 			out, exit := runCLI(t, "prism", "plot", fixturePath)
 			if exit != 0 {
 				t.Fatalf("plot %s exited %d: %s", c.fixture, exit, firstChars(out, 400))
@@ -75,7 +75,7 @@ func TestPrismPlotCompositeDispatch(t *testing.T) {
 // TestPrismExecuteCompositeDispatch verifies `prism execute` prints
 // per-child sections for a composite spec.
 func TestPrismExecuteCompositeDispatch(t *testing.T) {
-	fixturePath := repoFile(t, "testdata", "specs", "layer_actual_vs_benchmark.json")
+	fixturePath := repoFile(t, "examples", "specs", "layer_actual_vs_benchmark.json")
 	out, exit := runCLI(t, "prism", "execute", "--format", "table", fixturePath)
 	if exit != 0 {
 		t.Fatalf("execute exited %d: %s", exit, firstChars(out, 400))

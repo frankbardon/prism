@@ -9,7 +9,7 @@ import (
 	"testing"
 )
 
-// TestPrismPlotProducesValidSVGForAllFixtures sweeps testdata/specs
+// TestPrismPlotProducesValidSVGForAllFixtures sweeps examples/specs
 // and runs every fixture that builds + executes cleanly through
 // `prism plot`. Asserts the output decodes as well-formed XML. Acts
 // as the regression net for the spec → svg pipeline; breaks the
@@ -26,7 +26,7 @@ func TestPrismPlotProducesValidSVGForAllFixtures(t *testing.T) {
 		// the SVG to be well-formed, so DO NOT skip them.
 	}
 
-	dir := repoFile(t, "testdata", "specs")
+	dir := repoFile(t, "examples", "specs")
 	entries, err := os.ReadDir(dir)
 	if err != nil {
 		t.Fatalf("readdir %s: %v", dir, err)

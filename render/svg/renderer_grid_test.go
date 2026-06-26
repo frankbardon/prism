@@ -26,7 +26,7 @@ import (
 // svg.Render pipeline.
 func renderCompositeFixture(t *testing.T, name string) []byte {
 	t.Helper()
-	path := filepath.Join(repoRoot(t), "testdata", "specs", name)
+	path := filepath.Join(repoRoot(t), "examples", "specs", name)
 	body, err := os.ReadFile(path)
 	if err != nil {
 		t.Fatalf("read: %v", err)

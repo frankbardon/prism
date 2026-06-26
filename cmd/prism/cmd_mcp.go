@@ -6,12 +6,13 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/mark3labs/mcp-go/server"
+	gosdk "github.com/modelcontextprotocol/go-sdk/mcp"
 	"github.com/spf13/afero"
 	"github.com/urfave/cli/v3"
 
 	"github.com/frankbardon/prism/internal/observability"
 	prismmcp "github.com/frankbardon/prism/mcp"
+	gosdkadapter "github.com/frankbardon/prism/mcp/gosdk"
 	"github.com/frankbardon/prism/rpc"
 )
 
@@ -25,8 +26,7 @@ func mcpCommand() *cli.Command {
 		Flags: []cli.Flag{
 			&cli.StringFlag{
 				Name:  "examples-root",
-				Value: "testdata/specs/",
-				Usage: "Directory the prism_examples_search tool walks for fixture specs",
+				Usage: "On-disk directory for prism_examples_search to walk instead of the embedded example corpus (default: embedded)",
 			},
 			datasetsConfigFlag(),
 			geodataDirFlag(),
@@ -50,14 +50,21 @@ func runMCP(ctx context.Context, cmd *cli.Command) error {
 		Fs:              afero.NewOsFs(),
 		ExecOpts:        observability.Hooks(),
 	}
-	srv := prismmcp.New(prismmcp.Options{
-		PrismServer:  impl,
+	// Thread the build version into the server identity; the examples-root
+	// override (if any) flows through the config into the tool catalog. The
+	// CLI stays thin — all wiring lives in the mcp/gosdk adapter.
+	cfg := prismmcp.Config{
+		ServerName:   "prism",
+		Version:      versionString,
 		ExamplesRoot: cmd.String("examples-root"),
 		ExamplesFS:   afero.NewOsFs(),
-	})
-	if err := server.ServeStdio(srv); err != nil {
+	}
+	srv := gosdk.NewServer(&gosdk.Implementation{Name: cfg.ServerName, Version: cfg.Version}, nil)
+	if err := gosdkadapter.Register(srv, impl, cfg); err != nil {
+		return cli.Exit(fmt.Sprintf("mcp register: %v", err), 1)
+	}
+	if err := srv.Run(ctx, &gosdk.StdioTransport{}); err != nil {
 		return cli.Exit(fmt.Sprintf("mcp serve: %v", err), 1)
 	}
-	_ = ctx
 	return nil
 }

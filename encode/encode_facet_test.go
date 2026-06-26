@@ -40,7 +40,7 @@ func repoRootForFacetTest(t *testing.T) string {
 func runFacetSpec(t *testing.T, fixture string) (*spec.Spec, *plan.CompositeDAG, []map[plan.NodeID]*table.Table, *scene.SceneDoc) {
 	t.Helper()
 	root := repoRootForFacetTest(t)
-	path := filepath.Join(root, "testdata", "specs", fixture)
+	path := filepath.Join(root, "examples", "specs", fixture)
 	body, err := os.ReadFile(path)
 	if err != nil {
 		t.Fatalf("read %s: %v", path, err)

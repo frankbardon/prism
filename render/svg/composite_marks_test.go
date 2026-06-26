@@ -237,7 +237,7 @@ func TestPrismPathPassthrough(t *testing.T) {
 // Used by the angle / count / tooltip gates that inspect IR shape.
 func loadAndEncodeFixture(t *testing.T, name string) *scene.SceneDoc {
 	t.Helper()
-	path := filepath.Join(repoRoot(t), "testdata", "specs", name)
+	path := filepath.Join(repoRoot(t), "examples", "specs", name)
 	body, err := os.ReadFile(path)
 	if err != nil {
 		t.Fatalf("read fixture %s: %v", name, err)

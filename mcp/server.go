@@ -1,227 +1,221 @@
 //go:build !js
 
-// Package mcp wires Prism into the Model Context Protocol via
-// mark3labs/mcp-go (D008 parity with Pulse, pinned at v0.54.0).
+// Package mcp is the SDK-agnostic core of Prism's Model Context Protocol
+// surface. It exposes the four Prism tools as typed handlers and as a
+// type-erased descriptor catalog (Tools(cfg)), plus the pure helpers behind
+// them — and imports NO MCP SDK. Mounting the catalog onto a concrete server
+// is the job of an adapter (see the mcp/gosdk package, which grafts these
+// descriptors onto a modelcontextprotocol/go-sdk server).
 //
-// New(opts) returns a configured *server.MCPServer with four tools
-// registered:
+// The four tools are:
 //
 //   - prism_plot(spec, format?)         → bytes + mime + caption
 //   - prism_validate(spec)              → ok + structured errors
 //   - prism_describe(spec)              → natural-language summary
 //   - prism_examples_search(query)      → list of fixture specs
 //
-// The server is transport-agnostic; the CLI's `prism mcp`
-// subcommand wraps it in server.ServeStdio for agent-host use.
+// Each has a typed handler (PlotTool, ValidateTool, DescribeTool,
+// ExamplesSearchTool) callable directly against an *rpc.PrismServer, and a
+// matching descriptor in Tools(cfg) for transport-neutral mounting.
 package mcp
 
 import (
 	"context"
 	"encoding/base64"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io/fs"
 	"path/filepath"
 	"sort"
 	"strings"
 
-	mcpgo "github.com/mark3labs/mcp-go/mcp"
-	"github.com/mark3labs/mcp-go/server"
 	"github.com/spf13/afero"
 
+	"github.com/frankbardon/prism/examples"
 	"github.com/frankbardon/prism/rpc"
 	prismspec "github.com/frankbardon/prism/spec"
 )
 
-// Options configures a new MCP server instance. ExamplesRoot is the
-// directory the prism_examples_search tool searches; defaults to
-// "testdata/specs/".
-type Options struct {
-	PrismServer  *rpc.PrismServer
-	ExamplesRoot string
-	// ExamplesFS is the file system the examples search walks.
-	// Defaults to afero.NewOsFs(). Tests inject an afero.MemMapFs.
-	ExamplesFS afero.Fs
+// PlotInput is the typed input for the prism_plot tool.
+type PlotInput struct {
+	Spec   string `json:"spec"`
+	Format string `json:"format,omitempty"`
 }
 
-// New constructs an MCP server with all four Prism tools registered.
-// The returned *server.MCPServer is ready to drive via either
-// server.ServeStdio (for the `prism mcp` CLI subcommand) or any
-// other transport mcp-go supports.
-func New(opts Options) *server.MCPServer {
-	if opts.PrismServer == nil {
-		opts.PrismServer = &rpc.PrismServer{Fs: afero.NewOsFs()}
-	}
-	if opts.ExamplesRoot == "" {
-		opts.ExamplesRoot = "testdata/specs/"
-	}
-	if opts.ExamplesFS == nil {
-		opts.ExamplesFS = afero.NewOsFs()
-	}
-
-	s := server.NewMCPServer("prism", "0.1.0")
-	registerTools(s, opts)
-	return s
-}
-
-// registerTools attaches the four Prism tools to the supplied server.
-// Public so tests can build a bare server and register selectively.
-func registerTools(s *server.MCPServer, opts Options) {
-	s.AddTool(
-		mcpgo.NewTool("prism_plot",
-			mcpgo.WithDescription("Compile a Prism spec and render to image bytes. SVG (default) and PDF are supported; PNG returns PRISM_RENDER_FORMAT_UNAVAILABLE (V2)."),
-			mcpgo.WithString("spec",
-				mcpgo.Required(),
-				mcpgo.Description("Prism spec as a JSON string (matches the schemas under schema/v1/).")),
-			mcpgo.WithString("format",
-				mcpgo.Description("Output format: svg (default) | pdf. PNG returns PRISM_RENDER_FORMAT_UNAVAILABLE.")),
-		),
-		plotHandler(opts.PrismServer),
-	)
-	s.AddTool(
-		mcpgo.NewTool("prism_validate",
-			mcpgo.WithDescription("Validate a Prism spec against the embedded JSON Schema + semantic rules."),
-			mcpgo.WithString("spec",
-				mcpgo.Required(),
-				mcpgo.Description("Prism spec as a JSON string.")),
-		),
-		validateHandler(opts.PrismServer),
-	)
-	s.AddTool(
-		mcpgo.NewTool("prism_describe",
-			mcpgo.WithDescription("Return a natural-language summary of what a Prism spec renders."),
-			mcpgo.WithString("spec",
-				mcpgo.Required(),
-				mcpgo.Description("Prism spec as a JSON string.")),
-		),
-		describeHandler(),
-	)
-	s.AddTool(
-		mcpgo.NewTool("prism_examples_search",
-			mcpgo.WithDescription("Search the curated example spec library by substring match on name + title. Returns up to 5 results."),
-			mcpgo.WithString("query",
-				mcpgo.Required(),
-				mcpgo.Description("Case-insensitive substring to match against fixture names + titles.")),
-		),
-		examplesSearchHandler(opts),
-	)
-}
-
-// plotResult is the structured payload returned by prism_plot.
-type plotResult struct {
+// PlotOutput is the structured payload returned by prism_plot.
+type PlotOutput struct {
 	Bytes    string   `json:"bytes"` // base64-encoded
 	Mime     string   `json:"mime"`
 	Caption  string   `json:"caption"`
 	Warnings []string `json:"warnings,omitempty"`
 }
 
-func plotHandler(impl *rpc.PrismServer) server.ToolHandlerFunc {
-	return func(ctx context.Context, req mcpgo.CallToolRequest) (*mcpgo.CallToolResult, error) {
-		args := req.GetArguments()
-		spec, _ := args["spec"].(string)
-		format, _ := args["format"].(string)
-		if spec == "" {
-			return mcpgo.NewToolResultError("missing required argument: spec"), nil
-		}
-		if format == "" {
-			format = "svg"
-		}
-
-		// The Twirp Plot handler enforces the format switch + runs
-		// the full pipeline; we reuse it to keep one source of
-		// truth for "what 'svg' means".
-		resp, err := impl.Plot(ctx, &rpc.PlotRequest{
-			Spec: spec, Format: format,
-		})
-		if err != nil {
-			return mcpgo.NewToolResultError(err.Error()), nil
-		}
-
-		// Caption from the parsed spec (mark + encoding fields).
-		caption := summariseSpec(spec)
-
-		result := plotResult{
-			Bytes:    base64.StdEncoding.EncodeToString(resp.Bytes),
-			Mime:     resp.Mime,
-			Caption:  caption,
-			Warnings: append([]string(nil), resp.Warnings...),
-		}
-		body, _ := json.Marshal(result)
-		return mcpgo.NewToolResultText(string(body)), nil
-	}
+// ValidateInput is the typed input for the prism_validate tool.
+type ValidateInput struct {
+	Spec string `json:"spec"`
 }
 
-func validateHandler(impl *rpc.PrismServer) server.ToolHandlerFunc {
-	return func(ctx context.Context, req mcpgo.CallToolRequest) (*mcpgo.CallToolResult, error) {
-		args := req.GetArguments()
-		spec, _ := args["spec"].(string)
-		if spec == "" {
-			return mcpgo.NewToolResultError("missing required argument: spec"), nil
-		}
-		resp, err := impl.Validate(ctx, &rpc.ValidateRequest{Spec: spec})
-		if err != nil {
-			return mcpgo.NewToolResultError(err.Error()), nil
-		}
-		// Hand-marshal a tidy shape: {ok, errors:[{code,message,fixups}]}.
-		errs := make([]map[string]any, 0, len(resp.Errors))
-		for _, e := range resp.Errors {
-			errs = append(errs, map[string]any{
-				"code":    e.Code,
-				"message": e.Message,
-				"fixups":  e.Fixups,
-			})
-		}
-		body, _ := json.Marshal(map[string]any{
-			"ok":     resp.Ok,
-			"errors": errs,
-		})
-		return mcpgo.NewToolResultText(string(body)), nil
-	}
+// ValidateError is one validation diagnostic in a ValidateOutput. Field order
+// mirrors the historical map-marshalled shape (code, fixups, message).
+type ValidateError struct {
+	Code    string   `json:"code"`
+	Fixups  []string `json:"fixups"`
+	Message string   `json:"message"`
 }
 
-func describeHandler() server.ToolHandlerFunc {
-	return func(ctx context.Context, req mcpgo.CallToolRequest) (*mcpgo.CallToolResult, error) {
-		args := req.GetArguments()
-		spec, _ := args["spec"].(string)
-		if spec == "" {
-			return mcpgo.NewToolResultError("missing required argument: spec"), nil
-		}
-		summary := summariseSpec(spec)
-		body, _ := json.Marshal(map[string]any{"summary": summary})
-		return mcpgo.NewToolResultText(string(body)), nil
-	}
+// ValidateOutput is the structured payload returned by prism_validate. Field
+// order mirrors the historical map-marshalled shape (errors, ok).
+type ValidateOutput struct {
+	Errors []ValidateError `json:"errors"`
+	Ok     bool            `json:"ok"`
 }
 
-// exampleResult is one entry returned by prism_examples_search.
-type exampleResult struct {
+// DescribeInput is the typed input for the prism_describe tool.
+type DescribeInput struct {
+	Spec string `json:"spec"`
+}
+
+// DescribeOutput is the structured payload returned by prism_describe.
+type DescribeOutput struct {
+	Summary string `json:"summary"`
+}
+
+// ExampleResult is one entry returned by prism_examples_search.
+type ExampleResult struct {
 	Name    string `json:"name"`
 	Summary string `json:"summary"`
 	Spec    string `json:"spec"`
 }
 
-func examplesSearchHandler(opts Options) server.ToolHandlerFunc {
-	return func(ctx context.Context, req mcpgo.CallToolRequest) (*mcpgo.CallToolResult, error) {
-		args := req.GetArguments()
-		query, _ := args["query"].(string)
-		if query == "" {
-			return mcpgo.NewToolResultError("missing required argument: query"), nil
-		}
-		hits := searchExamples(opts.ExamplesFS, opts.ExamplesRoot, query, 5)
-		body, _ := json.Marshal(map[string]any{"examples": hits})
-		return mcpgo.NewToolResultText(string(body)), nil
+// ExamplesSearchInput is the typed input for the prism_examples_search tool.
+// Query is the wire-facing field; Root + FS carry the server's examples-source
+// configuration (empty Root → embedded corpus, non-empty → on-disk walk) and
+// are not part of the tool's JSON schema.
+type ExamplesSearchInput struct {
+	Query string   `json:"query"`
+	Root  string   `json:"-"`
+	FS    afero.Fs `json:"-"`
+}
+
+// ExamplesSearchOutput is the structured payload returned by
+// prism_examples_search.
+type ExamplesSearchOutput struct {
+	Examples []ExampleResult `json:"examples"`
+}
+
+// missingArg builds the argument-error returned when a required tool argument
+// is absent. The SDK wiring surfaces it as a tool-result error so the agent
+// can self-correct.
+func missingArg(name string) error {
+	return errors.New("missing required argument: " + name)
+}
+
+// PlotTool compiles a Prism spec and renders it to image bytes via the rpc
+// facade. It returns the facade's coded errors verbatim.
+func PlotTool(ctx context.Context, f *rpc.PrismServer, in PlotInput) (PlotOutput, error) {
+	if in.Spec == "" {
+		return PlotOutput{}, missingArg("spec")
 	}
+	format := in.Format
+	if format == "" {
+		format = "svg"
+	}
+
+	// The Twirp Plot handler enforces the format switch + runs the full
+	// pipeline; we reuse it to keep one source of truth for "what 'svg' means".
+	resp, err := f.Plot(ctx, &rpc.PlotRequest{Spec: in.Spec, Format: format})
+	if err != nil {
+		return PlotOutput{}, err
+	}
+	return PlotOutput{
+		Bytes:    base64.StdEncoding.EncodeToString(resp.Bytes),
+		Mime:     resp.Mime,
+		Caption:  summariseSpec(in.Spec), // caption from the parsed spec
+		Warnings: append([]string(nil), resp.Warnings...),
+	}, nil
+}
+
+// ValidateTool validates a Prism spec via the rpc facade, returning the
+// facade's coded errors verbatim.
+func ValidateTool(ctx context.Context, f *rpc.PrismServer, in ValidateInput) (ValidateOutput, error) {
+	if in.Spec == "" {
+		return ValidateOutput{}, missingArg("spec")
+	}
+	resp, err := f.Validate(ctx, &rpc.ValidateRequest{Spec: in.Spec})
+	if err != nil {
+		return ValidateOutput{}, err
+	}
+	errs := make([]ValidateError, 0, len(resp.Errors))
+	for _, e := range resp.Errors {
+		errs = append(errs, ValidateError{
+			Code:    e.Code,
+			Fixups:  e.Fixups,
+			Message: e.Message,
+		})
+	}
+	return ValidateOutput{Errors: errs, Ok: resp.Ok}, nil
+}
+
+// DescribeTool returns a natural-language summary of a Prism spec. The facade
+// argument is accepted for signature uniformity and is unused.
+func DescribeTool(_ context.Context, _ *rpc.PrismServer, in DescribeInput) (DescribeOutput, error) {
+	if in.Spec == "" {
+		return DescribeOutput{}, missingArg("spec")
+	}
+	return DescribeOutput{Summary: summariseSpec(in.Spec)}, nil
+}
+
+// ExamplesSearchTool searches the example spec library. An empty in.Root serves
+// the embedded corpus; a non-empty Root opts into an on-disk afero walk of that
+// directory. The facade argument is accepted for signature uniformity.
+func ExamplesSearchTool(_ context.Context, _ *rpc.PrismServer, in ExamplesSearchInput) (ExamplesSearchOutput, error) {
+	if in.Query == "" {
+		return ExamplesSearchOutput{}, missingArg("query")
+	}
+	var hits []ExampleResult
+	if in.Root == "" {
+		hits = searchEmbedded(in.Query, 5)
+	} else {
+		hits = searchExamples(in.FS, in.Root, in.Query, 5)
+	}
+	return ExamplesSearchOutput{Examples: hits}, nil
+}
+
+// searchEmbedded serves prism_examples_search from the embedded examples
+// corpus. It mirrors examples.Search but layers the richer summariseSpec
+// fallback for specs that carry no title: examples.Search falls back to the
+// bare stem to stay stdlib-pure, whereas the MCP tool historically produced a
+// spec-aware summary, so we preserve that user-visible output here.
+func searchEmbedded(query string, limit int) []ExampleResult {
+	results := examples.Search(query, limit)
+	out := make([]ExampleResult, 0, len(results))
+	for _, r := range results {
+		summary := r.Summary
+		if extractTitle([]byte(r.Spec)) == "" {
+			if richer := summariseSpec(r.Spec); richer != "" {
+				summary = richer
+			}
+		}
+		out = append(out, ExampleResult{
+			Name:    r.Name,
+			Summary: summary,
+			Spec:    r.Spec,
+		})
+	}
+	return out
 }
 
 // searchExamples walks the examples root and returns up to limit
 // results whose filename stem (or title) contains query case-
 // insensitively. Each result carries the raw spec JSON for direct
 // invocation.
-func searchExamples(fsys afero.Fs, root, query string, limit int) []exampleResult {
+func searchExamples(fsys afero.Fs, root, query string, limit int) []ExampleResult {
 	if fsys == nil {
 		fsys = afero.NewOsFs()
 	}
 	q := strings.ToLower(query)
-	var out []exampleResult
+	var out []ExampleResult
 	_ = afero.Walk(fsys, root, func(path string, info fs.FileInfo, walkErr error) error {
 		if walkErr != nil || info.IsDir() {
 			return nil
@@ -247,7 +241,7 @@ func searchExamples(fsys afero.Fs, root, query string, limit int) []exampleResul
 		if summary == "" {
 			summary = summariseSpec(string(body))
 		}
-		out = append(out, exampleResult{
+		out = append(out, ExampleResult{
 			Name:    base,
 			Summary: summary,
 			Spec:    string(body),

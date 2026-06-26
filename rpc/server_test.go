@@ -14,7 +14,7 @@ import (
 )
 
 // minimalSpec is the smallest valid Prism spec; mirrors
-// testdata/specs/bar_basic.json without dragging the fixture into
+// examples/specs/bar_basic.json without dragging the fixture into
 // this package's test surface.
 const minimalSpec = `{
   "$schema": "urn:prism:schema:v1:spec",

@@ -16,7 +16,7 @@ import (
 // (prism.mjs) and the cross-impl harness (D076) consume.
 func TestPrismCLISceneEmitsValidJSON(t *testing.T) {
 	chdirRepoRoot(t)
-	fixture := repoFile(t, "testdata", "specs", "bar_basic.json")
+	fixture := repoFile(t, "examples", "specs", "bar_basic.json")
 	out, exit := runCLI(t, "prism", "scene", fixture)
 	if exit != 0 {
 		t.Fatalf("scene exited %d: %s", exit, firstChars(out, 400))
@@ -46,7 +46,7 @@ func TestPrismCLISceneOutFlag(t *testing.T) {
 	chdirRepoRoot(t)
 	dir := t.TempDir()
 	outPath := filepath.Join(dir, "bar.scene.json")
-	fixture := repoFile(t, "testdata", "specs", "bar_basic.json")
+	fixture := repoFile(t, "examples", "specs", "bar_basic.json")
 	_, exit := runCLI(t, "prism", "scene", "--out", outPath, fixture)
 	if exit != 0 {
 		t.Fatalf("scene --out exited %d", exit)
@@ -68,7 +68,7 @@ func TestPrismCLISceneOutFlag(t *testing.T) {
 // single-line JSON (no newlines beyond the trailing one).
 func TestPrismCLISceneCompact(t *testing.T) {
 	chdirRepoRoot(t)
-	fixture := repoFile(t, "testdata", "specs", "bar_basic.json")
+	fixture := repoFile(t, "examples", "specs", "bar_basic.json")
 	out, exit := runCLI(t, "prism", "scene", "--compact", fixture)
 	if exit != 0 {
 		t.Fatalf("scene --compact exited %d", exit)

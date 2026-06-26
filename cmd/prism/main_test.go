@@ -19,8 +19,8 @@ import (
 // PRISM_SPEC_001 mentioned in stdout). Uses the real newApp() so any
 // future regressions in command wiring surface here.
 func TestValidateCLISmoke(t *testing.T) {
-	posFixture := repoFile(t, "testdata", "specs", "bar_basic.json")
-	negFixture := repoFile(t, "testdata", "specs", "invalid", "unknown_field.json")
+	posFixture := repoFile(t, "examples", "specs", "bar_basic.json")
+	negFixture := repoFile(t, "examples", "specs", "invalid", "unknown_field.json")
 
 	t.Run("valid", func(t *testing.T) {
 		out, exit := runCLI(t, "prism", "validate", posFixture)
@@ -70,7 +70,7 @@ func TestValidateCLISmoke(t *testing.T) {
 		}
 		t.Cleanup(func() { _ = os.Chdir(originalCwd) })
 
-		fixture := filepath.Join("testdata", "specs", "bar_pulse_backed.json")
+		fixture := filepath.Join("examples", "specs", "bar_pulse_backed.json")
 		out, exit := runCLI(t, "prism", "validate", fixture)
 		if exit != 0 {
 			t.Fatalf("expected exit 0, got %d (stdout=%q)", exit, out)
@@ -81,7 +81,7 @@ func TestValidateCLISmoke(t *testing.T) {
 	})
 
 	t.Run("plan-dot", func(t *testing.T) {
-		fixture := repoFile(t, "testdata", "specs", "bar_basic.json")
+		fixture := repoFile(t, "examples", "specs", "bar_basic.json")
 		out, exit := runCLI(t, "prism", "plan", fixture)
 		if exit != 0 {
 			t.Fatalf("expected exit 0, got %d (stdout=%q)", exit, out)
@@ -92,7 +92,7 @@ func TestValidateCLISmoke(t *testing.T) {
 	})
 
 	t.Run("plan-text", func(t *testing.T) {
-		fixture := repoFile(t, "testdata", "specs", "bar_basic.json")
+		fixture := repoFile(t, "examples", "specs", "bar_basic.json")
 		out, exit := runCLI(t, "prism", "plan", fixture, "--format", "text")
 		if exit != 0 {
 			t.Fatalf("expected exit 0, got %d (stdout=%q)", exit, out)
@@ -105,7 +105,7 @@ func TestValidateCLISmoke(t *testing.T) {
 	})
 
 	t.Run("plan-json", func(t *testing.T) {
-		fixture := repoFile(t, "testdata", "specs", "bar_basic.json")
+		fixture := repoFile(t, "examples", "specs", "bar_basic.json")
 		out, exit := runCLI(t, "prism", "plan", fixture, "--format", "json")
 		if exit != 0 {
 			t.Fatalf("expected exit 0, got %d (stdout=%q)", exit, out)
@@ -116,7 +116,7 @@ func TestValidateCLISmoke(t *testing.T) {
 	})
 
 	t.Run("plan-missing-dataset", func(t *testing.T) {
-		fixture := repoFile(t, "testdata", "specs", "invalid", "dataset_undefined.json")
+		fixture := repoFile(t, "examples", "specs", "invalid", "dataset_undefined.json")
 		out, exit := runCLI(t, "prism", "plan", fixture)
 		if exit != 1 {
 			t.Fatalf("expected exit 1, got %d (stdout=%q)", exit, out)
@@ -127,7 +127,7 @@ func TestValidateCLISmoke(t *testing.T) {
 	})
 
 	t.Run("plan-bad-format", func(t *testing.T) {
-		fixture := repoFile(t, "testdata", "specs", "bar_basic.json")
+		fixture := repoFile(t, "examples", "specs", "bar_basic.json")
 		_, exit := runCLI(t, "prism", "plan", fixture, "--format", "yaml")
 		if exit != 2 {
 			t.Fatalf("expected exit 2 for bad format, got %d", exit)
@@ -135,7 +135,7 @@ func TestValidateCLISmoke(t *testing.T) {
 	})
 
 	t.Run("execute-json", func(t *testing.T) {
-		fixture := repoFile(t, "testdata", "specs", "bar_basic.json")
+		fixture := repoFile(t, "examples", "specs", "bar_basic.json")
 		out, exit := runCLI(t, "prism", "execute", fixture, "--format", "json")
 		if exit != 0 {
 			t.Fatalf("expected exit 0, got %d (stdout=%q)", exit, out)
@@ -154,7 +154,7 @@ func TestValidateCLISmoke(t *testing.T) {
 	})
 
 	t.Run("execute-table", func(t *testing.T) {
-		fixture := repoFile(t, "testdata", "specs", "bar_basic.json")
+		fixture := repoFile(t, "examples", "specs", "bar_basic.json")
 		out, exit := runCLI(t, "prism", "execute", fixture, "--format", "table")
 		if exit != 0 {
 			t.Fatalf("expected exit 0, got %d (stdout=%q)", exit, out)
@@ -175,7 +175,7 @@ func TestValidateCLISmoke(t *testing.T) {
 		}
 		t.Cleanup(func() { _ = os.Chdir(originalCwd) })
 
-		fixture := filepath.Join("testdata", "specs", "bar_pulse_backed.json")
+		fixture := filepath.Join("examples", "specs", "bar_pulse_backed.json")
 		out, exit := runCLI(t, "prism", "execute", fixture, "--format", "json")
 		if exit != 0 {
 			t.Fatalf("expected exit 0, got %d (stdout=%q)", exit, out)
@@ -200,7 +200,7 @@ func TestValidateCLISmoke(t *testing.T) {
 	})
 
 	t.Run("execute-bad-format", func(t *testing.T) {
-		fixture := repoFile(t, "testdata", "specs", "bar_basic.json")
+		fixture := repoFile(t, "examples", "specs", "bar_basic.json")
 		_, exit := runCLI(t, "prism", "execute", fixture, "--format", "yaml")
 		if exit != 2 {
 			t.Fatalf("expected exit 2 for bad format, got %d", exit)
@@ -215,7 +215,7 @@ func TestValidateCLISmoke(t *testing.T) {
 		}
 		t.Cleanup(func() { _ = os.Chdir(originalCwd) })
 
-		fixture := filepath.Join("testdata", "specs", "invalid", "unknown_field_pulse_backed.json")
+		fixture := filepath.Join("examples", "specs", "invalid", "unknown_field_pulse_backed.json")
 		out, exit := runCLI(t, "prism", "validate", fixture)
 		if exit != 1 {
 			t.Fatalf("expected exit 1, got %d (stdout=%q)", exit, out)
@@ -229,7 +229,7 @@ func TestValidateCLISmoke(t *testing.T) {
 	})
 
 	t.Run("plot-bar-svg", func(t *testing.T) {
-		fixture := repoFile(t, "testdata", "specs", "bar_basic.json")
+		fixture := repoFile(t, "examples", "specs", "bar_basic.json")
 		out, exit := runCLI(t, "prism", "plot", fixture)
 		if exit != 0 {
 			t.Fatalf("expected exit 0, got %d (stdout=%q)", exit, out)
@@ -246,7 +246,7 @@ func TestValidateCLISmoke(t *testing.T) {
 	})
 
 	t.Run("plot-line-svg", func(t *testing.T) {
-		fixture := repoFile(t, "testdata", "specs", "line_basic.json")
+		fixture := repoFile(t, "examples", "specs", "line_basic.json")
 		out, exit := runCLI(t, "prism", "plot", fixture)
 		if exit != 0 {
 			t.Fatalf("expected exit 0, got %d (stdout=%q)", exit, out)
@@ -263,7 +263,7 @@ func TestValidateCLISmoke(t *testing.T) {
 	})
 
 	t.Run("plot-area-svg", func(t *testing.T) {
-		fixture := repoFile(t, "testdata", "specs", "area_basic.json")
+		fixture := repoFile(t, "examples", "specs", "area_basic.json")
 		out, exit := runCLI(t, "prism", "plot", fixture)
 		if exit != 0 {
 			t.Fatalf("expected exit 0, got %d", exit)
@@ -274,7 +274,7 @@ func TestValidateCLISmoke(t *testing.T) {
 	})
 
 	t.Run("plot-point-svg", func(t *testing.T) {
-		fixture := repoFile(t, "testdata", "specs", "point_scatter.json")
+		fixture := repoFile(t, "examples", "specs", "point_scatter.json")
 		out, exit := runCLI(t, "prism", "plot", fixture)
 		if exit != 0 {
 			t.Fatalf("expected exit 0, got %d", exit)
@@ -285,7 +285,7 @@ func TestValidateCLISmoke(t *testing.T) {
 	})
 
 	t.Run("plot-rule-svg", func(t *testing.T) {
-		fixture := repoFile(t, "testdata", "specs", "rule_basic.json")
+		fixture := repoFile(t, "examples", "specs", "rule_basic.json")
 		out, exit := runCLI(t, "prism", "plot", fixture)
 		if exit != 0 {
 			t.Fatalf("expected exit 0, got %d", exit)
@@ -297,7 +297,7 @@ func TestValidateCLISmoke(t *testing.T) {
 	})
 
 	t.Run("plot-png-unavailable", func(t *testing.T) {
-		fixture := repoFile(t, "testdata", "specs", "bar_basic.json")
+		fixture := repoFile(t, "examples", "specs", "bar_basic.json")
 		out, exit := runCLI(t, "prism", "plot", fixture, "--format", "png")
 		if exit != 1 {
 			t.Fatalf("expected exit 1 for unsupported format, got %d", exit)
@@ -308,7 +308,7 @@ func TestValidateCLISmoke(t *testing.T) {
 	})
 
 	t.Run("plot-out-file", func(t *testing.T) {
-		fixture := repoFile(t, "testdata", "specs", "bar_basic.json")
+		fixture := repoFile(t, "examples", "specs", "bar_basic.json")
 		tmpPath := filepath.Join(os.TempDir(), "prism-plot-test.svg")
 		t.Cleanup(func() { _ = os.Remove(tmpPath) })
 		_, exit := runCLI(t, "prism", "plot", fixture, "--out", tmpPath)
@@ -325,7 +325,7 @@ func TestValidateCLISmoke(t *testing.T) {
 	})
 
 	t.Run("plot-custom-dimensions", func(t *testing.T) {
-		fixture := repoFile(t, "testdata", "specs", "bar_basic.json")
+		fixture := repoFile(t, "examples", "specs", "bar_basic.json")
 		out, exit := runCLI(t, "prism", "plot", fixture, "--width", "1200", "--height", "400")
 		if exit != 0 {
 			t.Fatalf("expected exit 0, got %d", exit)

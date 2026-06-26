@@ -123,12 +123,12 @@ func TestPrismEncodeNoTimeStubWarning(t *testing.T) {
 	}
 }
 
-// repoFixture resolves a path under testdata/specs/ relative to the
+// repoFixture resolves a path under examples/specs/ relative to the
 // repository root.
 func repoFixture(t *testing.T, name string) string {
 	t.Helper()
 	root := repoRoot(t)
-	return filepath.Join(root, "testdata", "specs", name)
+	return filepath.Join(root, "examples", "specs", name)
 }
 
 // repoRoot walks up from the current directory looking for go.mod.

@@ -7,7 +7,7 @@ import (
 )
 
 // TestPrismExamplesList exercises `prism examples list` against the
-// committed testdata/specs/ tree. Asserts the output contains the
+// committed examples/specs/ tree. Asserts the output contains the
 // stable fixture names every later phase still ships with.
 func TestPrismExamplesList(t *testing.T) {
 	// The examples subcommand uses cwd as base; tests run from the

@@ -123,7 +123,7 @@ func writeExamples(dir string) error {
 		return err
 	}
 	for _, name := range initExampleFixtures {
-		src := filepath.Join("testdata", "specs", name)
+		src := filepath.Join("examples", "specs", name)
 		body, err := os.ReadFile(src)
 		if err != nil {
 			// Fixture missing in the install environment (e.g. user ran

@@ -24,7 +24,7 @@ func examplesCommand() *cli.Command {
 		Flags: []cli.Flag{
 			&cli.StringFlag{
 				Name:  "root",
-				Value: "testdata/specs/",
+				Value: "examples/specs/",
 				Usage: "Directory holding example spec files",
 			},
 		},
@@ -51,7 +51,7 @@ func examplesCommand() *cli.Command {
 func runExamplesList(_ context.Context, cmd *cli.Command) error {
 	root := cmd.String("root")
 	if root == "" {
-		root = "testdata/specs/"
+		root = "examples/specs/"
 	}
 	osfs := afero.NewOsFs()
 
@@ -99,7 +99,7 @@ func runExamplesShow(_ context.Context, cmd *cli.Command) error {
 	name := args[0]
 	root := cmd.String("root")
 	if root == "" {
-		root = "testdata/specs/"
+		root = "examples/specs/"
 	}
 	osfs := afero.NewOsFs()
 
