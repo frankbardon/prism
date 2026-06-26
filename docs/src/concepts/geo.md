@@ -2,8 +2,13 @@
 
 Prism ships two geo-aware marks for choropleth maps and georeferenced
 overlays. Both consume a `projection` block on the spec and resolve
-boundary geometry from an embedded geodata catalog — no external tile
-server, no runtime network dependency for the host CLI.
+boundary geometry from a geodata catalog — no external tile server.
+The lightweight manifest (feature ids + bounding boxes) is embedded in
+every build, so validate / plan / inspect work with no setup. The heavier
+tier geometry is loaded at runtime: the host CLI reads it from a directory
+you point it at (`--geodata-dir` / `PRISM_GEODATA`), and the WASM build
+fetches it from a configurable URL. See
+[Host CLI vs WASM](#host-cli-vs-wasm) below.
 
 ## Marks
 
@@ -114,11 +119,54 @@ artifacts are the input.
 
 ## Host CLI vs WASM
 
-**Host build (CLI / library):** every tier is embedded in the binary
-via `//go:embed`. Geoshape charts work out-of-the-box; no sideload
-required.
+**Host build (CLI / library):** only the manifest (~128 KB) is embedded.
+Tier geometry is loaded at runtime from a directory you supply — the host
+binary no longer embeds the three tier files. Point the loader at that
+directory with the `--geodata-dir` flag or the `PRISM_GEODATA` environment
+variable:
 
-**WASM build (browser):** only the manifest is embedded (~100 KB). The
+```
+prism plot world.json --geodata-dir ./geodata > world.svg
+# or
+PRISM_GEODATA=./geodata prism plot world.json > world.svg
+```
+
+The directory must contain the tier files named `<tier>.geo.json`
+(`world-110m.geo.json`, `world-50m.geo.json`, `admin1-50m.geo.json`). The
+flag is available on the leaves that materialise geometry — `plot`,
+`scene`, `serve`, `mcp`, and `static-bundle`. The no-execute leaves
+(`validate`, `plan`, `inspect`) and the data-only `execute` leaf use only
+the embedded manifest and do not take the flag.
+
+Rendering a `geoshape` / `geopoint` mark hard-fails when geometry cannot
+be resolved:
+
+- `PRISM_GEODATA_DIR_UNSET` — no directory was configured (neither
+  `--geodata-dir` nor `PRISM_GEODATA` is set) and a geo mark needs a tier.
+- `PRISM_GEODATA_TIER_MISSING` — a directory is configured but it does not
+  contain the requested `<tier>.geo.json` file.
+
+### Getting the tier files
+
+The committed tiers ship in the repo's `geodata/` directory, so a checkout
+already has them: `--geodata-dir ./geodata`. For a standalone binary,
+download the files from the docs site and point `--geodata-dir` at the
+folder you saved them in:
+
+```
+mkdir geodata && cd geodata
+curl -O https://frankbardon.github.io/prism/static/prism/geodata/world-110m.geo.json
+curl -O https://frankbardon.github.io/prism/static/prism/geodata/world-50m.geo.json
+curl -O https://frankbardon.github.io/prism/static/prism/geodata/admin1-50m.geo.json
+cd ..
+prism plot world.json --geodata-dir ./geodata > world.svg
+```
+
+Download only the tiers your specs reference — `world-110m` alone is
+enough for a country basemap. You can also emit the files locally with
+`prism static-bundle` (see below).
+
+**WASM build (browser):** only the manifest is embedded (~128 KB). The
 runtime fetches the tier file from `${origin}/static/prism/geodata/<tier>.geo.json`
 on first encode. Set a custom URL via:
 
@@ -126,8 +174,11 @@ on first encode. Set a custom URL via:
 prism.geo.setBundleURL("https://cdn.example.com/geodata/");
 ```
 
-`prism static-bundle ./public/prism` always emits the geodata
-artifacts under `<out>/geodata/` so the WASM runtime finds them.
+`prism static-bundle --geodata-dir ./geodata ./public/prism` emits the
+geodata artifacts under `<out>/geodata/` so the WASM runtime finds them.
+Because the host build no longer embeds the tiers, `static-bundle` sources
+them from the `--geodata-dir` directory; if it is unset, the command fails
+with `PRISM_GEODATA_DIR_UNSET`.
 
 For pages that inline the tier bytes:
 
@@ -155,7 +206,11 @@ The `PRISM_SPEC_021` rule fires when:
 Runtime errors:
 
 - `PRISM_GEO_001` — feature id in a row is not in the manifest tier.
-- `PRISM_GEO_002` — bundle fetch failed (WASM) or embed missing (host).
+- `PRISM_GEO_002` — bundle fetch failed (WASM).
+- `PRISM_GEODATA_DIR_UNSET` — host render of a geo mark with no
+  `--geodata-dir` / `PRISM_GEODATA` configured.
+- `PRISM_GEODATA_TIER_MISSING` — the configured directory does not contain
+  the requested `<tier>.geo.json` file.
 
 ## Custom maps
 

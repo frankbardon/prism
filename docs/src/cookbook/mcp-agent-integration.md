@@ -47,3 +47,26 @@ parsed spec (mark + encoding fields + dataset names).
 For server-mode integrations (HTTP, not stdio), use the Twirp surface
 at `prism serve --addr :8080`. Generated clients live under
 `rpc/` — Go is built-in; protoc can regenerate for JS/Python/Rust.
+
+## Geographic marks
+
+If the agent will plot `geoshape` / `geopoint` charts, give the server a
+map tier directory: both `prism mcp` and `prism serve` accept
+`--geodata-dir <path>` (or the `PRISM_GEODATA` environment variable),
+pointing at a folder of `<tier>.geo.json` files. Without it, a geo plot
+fails with `PRISM_GEODATA_DIR_UNSET`:
+
+```json
+{
+  "mcpServers": {
+    "prism": {
+      "command": "prism",
+      "args": ["mcp"],
+      "env": {"PRISM_GEODATA": "/path/to/geodata"}
+    }
+  }
+}
+```
+
+See [Geographic Marks](../concepts/geo.md) for the tier files and
+download link.

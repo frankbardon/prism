@@ -6,6 +6,7 @@ import (
 	"bytes"
 	"compress/gzip"
 	"context"
+	"errors"
 	"fmt"
 	"io/fs"
 	"os"
@@ -15,6 +16,7 @@ import (
 
 	"github.com/urfave/cli/v3"
 
+	prismerrors "github.com/frankbardon/prism/errors"
 	"github.com/frankbardon/prism/geodata"
 	staticfs "github.com/frankbardon/prism/static"
 )
@@ -49,6 +51,7 @@ func staticBundleCommand() *cli.Command {
 				Usage: "Path to a pre-built prism.wasm (default: bin/prism.wasm in cwd, else builds via `go build ./cmd/prismwasm`)",
 				Value: "",
 			},
+			geodataDirFlag(),
 		},
 		Action: runStaticBundle,
 	}
@@ -105,16 +108,26 @@ func runStaticBundle(_ context.Context, cmd *cli.Command) error {
 			return err
 		}
 	}
+	// Point the host geodata loader at the user's --geodata-dir /
+	// PRISM_GEODATA directory before sourcing tier bytes (the host build
+	// no longer embeds tier geometry).
+	applyGeodataDir(cmd)
 	if err := emitGeodataBundle(cmd, outDir); err != nil {
 		return err
 	}
 	return nil
 }
 
-// emitGeodataBundle drops the embedded geodata artifacts into
-// <outDir>/geodata/. WASM consumers default to fetching from this
-// path; static-bundle always emits them so the geoshape mark is
-// usable out-of-the-box.
+// emitGeodataBundle drops the geodata artifacts into <outDir>/geodata/.
+// The manifest stays embedded; tier geometry is sourced from the
+// configured --geodata-dir (the host build no longer embeds tiers). WASM
+// consumers default to fetching from this path, so static-bundle always
+// emits the files so the geoshape mark is usable out-of-the-box.
+//
+// When no directory is configured (or a tier file is missing) the host
+// loader returns a coded geodata error; it is mapped to its PRISM_*
+// envelope and rendered loudly so the operator sees PRISM_GEODATA_DIR_UNSET
+// / PRISM_GEODATA_TIER_MISSING rather than an opaque message.
 func emitGeodataBundle(cmd *cli.Command, outDir string) error {
 	dir := filepath.Join(outDir, "geodata")
 	if err := os.MkdirAll(dir, 0o755); err != nil {
@@ -127,7 +140,7 @@ func emitGeodataBundle(cmd *cli.Command, outDir string) error {
 	for _, tier := range geodata.AllTiers() {
 		body, err := geodata.EmbeddedTierBytes(tier)
 		if err != nil {
-			return cli.Exit(fmt.Sprintf("embed tier %s: %v", tier, err), 1)
+			return reportEncodeError(cmd, mapGeodataLoadError(tier, err))
 		}
 		dst := filepath.Join(dir, string(tier)+".geo.json")
 		if err := os.WriteFile(dst, body, 0o644); err != nil {
@@ -137,6 +150,38 @@ func emitGeodataBundle(cmd *cli.Command, outDir string) error {
 	}
 	fmt.Fprintf(cmd.Writer, "static-bundle: wrote %d geodata files to %s\n", count, dir)
 	return nil
+}
+
+// mapGeodataLoadError translates a host tier-loader failure into the
+// matching PRISM_* envelope so static-bundle surfaces the same coded
+// errors as the encode boundary (mirrors encode/marks.mapGeoStoreError).
+// The unset-directory and missing-tier-file cases get dedicated,
+// fixup-bearing codes; anything else falls back to the generic
+// geo-bundle-load code.
+func mapGeodataLoadError(tier geodata.Tier, err error) error {
+	if errors.Is(err, geodata.ErrBundleDirUnset) {
+		return prismerrors.Wrap(
+			"PRISM_GEODATA_DIR_UNSET",
+			fmt.Sprintf("Geodata bundle directory is not configured; cannot load tier %q for static-bundle. Pass --geodata-dir or set PRISM_GEODATA.", tier),
+			map[string]any{"Tier": string(tier)},
+			err,
+		)
+	}
+	var missing *geodata.TierMissingError
+	if errors.As(err, &missing) {
+		return prismerrors.Wrap(
+			"PRISM_GEODATA_TIER_MISSING",
+			fmt.Sprintf("Geodata tier file for %q not found at %s.", missing.Tier, missing.Path),
+			map[string]any{"Tier": string(missing.Tier), "Path": missing.Path},
+			err,
+		)
+	}
+	return prismerrors.Wrap(
+		"PRISM_GEO_002",
+		fmt.Sprintf("Geo bundle could not be loaded for tier %q.", tier),
+		map[string]any{"Tier": string(tier), "Reason": err.Error()},
+		err,
+	)
 }
 
 // emitWasmBundle materialises the three additional artifacts that

@@ -69,6 +69,7 @@ func sceneCommand() *cli.Command {
 				Usage: "Emit minified JSON (default: pretty-printed with 2-space indent)",
 			},
 			datasetsConfigFlag(),
+			geodataDirFlag(),
 		},
 		Action: runScene,
 	}
@@ -111,6 +112,10 @@ func runScene(ctx context.Context, cmd *cli.Command) error {
 		Height:    cmd.Float("height"),
 		ThemeName: cmd.String("theme"),
 	}
+
+	// Wire the runtime geodata directory (flag / PRISM_GEODATA) into the
+	// host loader before any geoshape/geopoint mark is encoded.
+	applyGeodataDir(cmd)
 
 	// Reuse plotPipeline to drive build/execute/encode through both
 	// flat and composite spec shapes. We don't call render() —

@@ -52,6 +52,7 @@ func serveCommand() *cli.Command {
 				Usage: "CORS Access-Control-Allow-Origin value. Empty string disables CORS headers.",
 			},
 			datasetsConfigFlag(),
+			geodataDirFlag(),
 		},
 		Action: runServe,
 	}
@@ -60,6 +61,13 @@ func serveCommand() *cli.Command {
 // runServe binds the configured address, mounts both surfaces, and
 // blocks until the context is cancelled or the listener errors.
 func runServe(ctx context.Context, cmd *cli.Command) error {
+	// Point the host geodata loader at the configured directory before
+	// the server begins handling requests, so geoshape / geopoint render
+	// requests resolve tier geometry. Process-global by design: the
+	// operator configures the directory once at startup and every request
+	// the server encodes honours it.
+	applyGeodataDir(cmd)
+
 	addr := resolveBindAddr(cmd)
 
 	lis, err := net.Listen("tcp", addr)
