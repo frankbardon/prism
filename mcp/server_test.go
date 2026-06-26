@@ -31,20 +31,20 @@ const fixtureSpec = `{
 // newTestSession builds an MCP server via the public New() entrypoint
 // (all four tools registered) and connects an in-memory go-sdk client
 // to it. Returns the client session; both sessions are torn down on
-// cleanup. Uses an in-memory examples FS so the search smoke is
-// deterministic.
+// cleanup. Leaves ExamplesRoot empty so prism_examples_search exercises
+// the embedded examples corpus — the default a real `prism mcp` uses.
 func newTestSession(t *testing.T) *gosdk.ClientSession {
 	t.Helper()
-	exFS := afero.NewMemMapFs()
-	_ = afero.WriteFile(exFS, "testdata/specs/bar_basic.json", []byte(fixtureSpec), 0o644)
-	_ = afero.WriteFile(exFS, "testdata/specs/funnel_signup.json",
-		[]byte(`{"$schema":"urn:prism:schema:v1:spec","title":"funnel","mark":"bar","encoding":{}}`), 0o644)
-
-	srv := New(Options{
-		PrismServer:  &rpc.PrismServer{Fs: afero.NewMemMapFs()},
-		ExamplesRoot: "testdata/specs/",
-		ExamplesFS:   exFS,
+	return connectSession(t, Options{
+		PrismServer: &rpc.PrismServer{Fs: afero.NewMemMapFs()},
 	})
+}
+
+// connectSession wires an in-memory client to a server built from opts and
+// registers teardown for both sessions.
+func connectSession(t *testing.T, opts Options) *gosdk.ClientSession {
+	t.Helper()
+	srv := New(opts)
 
 	ctx := context.Background()
 	serverT, clientT := gosdk.NewInMemoryTransports()
@@ -209,7 +209,9 @@ func TestPrismMCPDescribeTool(t *testing.T) {
 	}
 }
 
-// TestPrismMCPExamplesSearchTool exercises prism_examples_search.
+// TestPrismMCPExamplesSearchTool exercises prism_examples_search against
+// the EMBEDDED examples corpus (the default — no ExamplesRoot set), which
+// is what a real `prism mcp` with no --examples-root flag serves.
 func TestPrismMCPExamplesSearchTool(t *testing.T) {
 	cs := newTestSession(t)
 	res, err := cs.CallTool(context.Background(), &gosdk.CallToolParams{
@@ -231,8 +233,48 @@ func TestPrismMCPExamplesSearchTool(t *testing.T) {
 	if len(s.Examples) == 0 {
 		t.Fatalf("search returned no examples")
 	}
+	if len(s.Examples) > 5 {
+		t.Errorf("expected at most 5 results (cap); got %d", len(s.Examples))
+	}
 	if s.Examples[0].Name != "bar_basic" {
 		t.Errorf("expected first match bar_basic; got %q", s.Examples[0].Name)
+	}
+	if s.Examples[0].Summary == "" || s.Examples[0].Spec == "" {
+		t.Errorf("embedded result missing summary/spec: %+v", s.Examples[0])
+	}
+}
+
+// TestPrismMCPExamplesSearchOverride confirms a non-empty ExamplesRoot
+// still drives the on-disk afero walk instead of the embedded corpus.
+func TestPrismMCPExamplesSearchOverride(t *testing.T) {
+	exFS := afero.NewMemMapFs()
+	_ = afero.WriteFile(exFS, "fixtures/only_override.json",
+		[]byte(`{"$schema":"urn:prism:schema:v1:spec","title":"override only","mark":"bar","encoding":{}}`), 0o644)
+
+	cs := connectSession(t, Options{
+		PrismServer:  &rpc.PrismServer{Fs: afero.NewMemMapFs()},
+		ExamplesRoot: "fixtures/",
+		ExamplesFS:   exFS,
+	})
+
+	res, err := cs.CallTool(context.Background(), &gosdk.CallToolParams{
+		Name:      "prism_examples_search",
+		Arguments: map[string]any{"query": "override"},
+	})
+	if err != nil {
+		t.Fatalf("CallTool prism_examples_search (override): %v", err)
+	}
+	if res.IsError {
+		t.Fatalf("prism_examples_search (override) returned error: %s", textOf(res))
+	}
+	var s struct {
+		Examples []exampleResult `json:"examples"`
+	}
+	if err := json.Unmarshal([]byte(textOf(res)), &s); err != nil {
+		t.Fatalf("search body parse: %v", err)
+	}
+	if len(s.Examples) != 1 || s.Examples[0].Name != "only_override" {
+		t.Fatalf("expected the single on-disk override fixture; got %+v", s.Examples)
 	}
 }
 

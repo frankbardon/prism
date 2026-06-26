@@ -25,8 +25,7 @@ func mcpCommand() *cli.Command {
 		Flags: []cli.Flag{
 			&cli.StringFlag{
 				Name:  "examples-root",
-				Value: "testdata/specs/",
-				Usage: "Directory the prism_examples_search tool walks for fixture specs",
+				Usage: "On-disk directory for prism_examples_search to walk instead of the embedded example corpus (default: embedded)",
 			},
 			datasetsConfigFlag(),
 			geodataDirFlag(),

@@ -28,18 +28,21 @@ import (
 	gosdk "github.com/modelcontextprotocol/go-sdk/mcp"
 	"github.com/spf13/afero"
 
+	"github.com/frankbardon/prism/examples"
 	"github.com/frankbardon/prism/rpc"
 	prismspec "github.com/frankbardon/prism/spec"
 )
 
-// Options configures a new MCP server instance. ExamplesRoot is the
-// directory the prism_examples_search tool searches; defaults to
-// "testdata/specs/".
+// Options configures a new MCP server instance. ExamplesRoot selects the
+// data source for the prism_examples_search tool: empty (the default)
+// serves results from the embedded examples corpus; a non-empty value
+// opts into an on-disk afero walk of that directory.
 type Options struct {
 	PrismServer  *rpc.PrismServer
 	ExamplesRoot string
-	// ExamplesFS is the file system the examples search walks.
-	// Defaults to afero.NewOsFs(). Tests inject an afero.MemMapFs.
+	// ExamplesFS is the file system the on-disk examples walk uses when
+	// ExamplesRoot is set. Defaults to afero.NewOsFs(). Tests inject an
+	// afero.MemMapFs. Ignored when ExamplesRoot is empty (embedded corpus).
 	ExamplesFS afero.Fs
 }
 
@@ -51,10 +54,9 @@ func New(opts Options) *gosdk.Server {
 	if opts.PrismServer == nil {
 		opts.PrismServer = &rpc.PrismServer{Fs: afero.NewOsFs()}
 	}
-	if opts.ExamplesRoot == "" {
-		opts.ExamplesRoot = "testdata/specs/"
-	}
-	if opts.ExamplesFS == nil {
+	// An empty ExamplesRoot serves the embedded corpus; a non-empty root
+	// opts into an on-disk walk, defaulting the filesystem to the OS.
+	if opts.ExamplesRoot != "" && opts.ExamplesFS == nil {
 		opts.ExamplesFS = afero.NewOsFs()
 	}
 
@@ -233,10 +235,39 @@ func examplesSearchHandler(opts Options) gosdk.ToolHandler {
 		if query == "" {
 			return errorResult("missing required argument: query"), nil
 		}
-		hits := searchExamples(opts.ExamplesFS, opts.ExamplesRoot, query, 5)
+		var hits []exampleResult
+		if opts.ExamplesRoot == "" {
+			hits = searchEmbedded(query, 5)
+		} else {
+			hits = searchExamples(opts.ExamplesFS, opts.ExamplesRoot, query, 5)
+		}
 		body, _ := json.Marshal(map[string]any{"examples": hits})
 		return textResult(string(body)), nil
 	}
+}
+
+// searchEmbedded serves prism_examples_search from the embedded examples
+// corpus. It mirrors examples.Search but layers the richer summariseSpec
+// fallback for specs that carry no title: examples.Search falls back to the
+// bare stem to stay stdlib-pure, whereas the MCP tool historically produced a
+// spec-aware summary, so we preserve that user-visible output here.
+func searchEmbedded(query string, limit int) []exampleResult {
+	results := examples.Search(query, limit)
+	out := make([]exampleResult, 0, len(results))
+	for _, r := range results {
+		summary := r.Summary
+		if extractTitle([]byte(r.Spec)) == "" {
+			if richer := summariseSpec(r.Spec); richer != "" {
+				summary = richer
+			}
+		}
+		out = append(out, exampleResult{
+			Name:    r.Name,
+			Summary: summary,
+			Spec:    r.Spec,
+		})
+	}
+	return out
 }
 
 // searchExamples walks the examples root and returns up to limit
