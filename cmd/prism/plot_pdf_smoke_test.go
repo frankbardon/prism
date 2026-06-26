@@ -18,7 +18,7 @@ func TestPrismCLIPlotPDFEmitsPDFBytes(t *testing.T) {
 	app := newApp()
 	if err := app.Run(context.Background(), []string{
 		"prism", "plot",
-		"../../testdata/specs/bar_basic.json",
+		"../../examples/specs/bar_basic.json",
 		"--format", "pdf",
 		"--out", out,
 	}); err != nil {
@@ -44,7 +44,7 @@ func TestPrismCLIPlotPDFPaginateMultipage(t *testing.T) {
 	app := newApp()
 	if err := app.Run(context.Background(), []string{
 		"prism", "plot",
-		"../../testdata/specs/concat_v.json",
+		"../../examples/specs/concat_v.json",
 		"--format", "pdf",
 		"--paginate",
 		"--out", out,
@@ -71,7 +71,7 @@ func TestPrismCLIPlotPDFPageSizeLetter(t *testing.T) {
 	app := newApp()
 	if err := app.Run(context.Background(), []string{
 		"prism", "plot",
-		"../../testdata/specs/bar_basic.json",
+		"../../examples/specs/bar_basic.json",
 		"--format", "pdf",
 		"--page-size", "letter",
 		"--out", out,
@@ -98,7 +98,7 @@ func TestPrismCLIPlotPDFRejectsBadPageSize(t *testing.T) {
 	app := newApp()
 	_ = app.Run(context.Background(), []string{
 		"prism", "plot",
-		"../../testdata/specs/bar_basic.json",
+		"../../examples/specs/bar_basic.json",
 		"--format", "pdf",
 		"--page-size", "not-a-size",
 	})
@@ -117,7 +117,7 @@ func TestPrismCLIPlotPDFFontDirOverride(t *testing.T) {
 	app := newApp()
 	if err := app.Run(context.Background(), []string{
 		"prism", "plot",
-		"../../testdata/specs/bar_basic.json",
+		"../../examples/specs/bar_basic.json",
 		"--format", "pdf",
 		"--font-dir", "../../render/pdf/fonts",
 		"--out", out,

@@ -13,7 +13,7 @@ import (
 
 func TestPrismBuildLayerProducesPerLayerSubDAGs(t *testing.T) {
 	root := repoRoot(t)
-	s := loadSpec(t, filepath.Join(root, "testdata", "specs", "layer_actual_vs_benchmark.json"))
+	s := loadSpec(t, filepath.Join(root, "examples", "specs", "layer_actual_vs_benchmark.json"))
 	c, err := build.BuildComposite(s, build.Options{})
 	if err != nil {
 		t.Fatalf("BuildComposite: %v", err)
@@ -113,7 +113,7 @@ func TestPrismBuildLayerPerLayerDataOverride(t *testing.T) {
 
 func TestPrismBuildConcatHorizontal(t *testing.T) {
 	root := repoRoot(t)
-	s := loadSpec(t, filepath.Join(root, "testdata", "specs", "concat_h.json"))
+	s := loadSpec(t, filepath.Join(root, "examples", "specs", "concat_h.json"))
 	c, err := build.BuildComposite(s, build.Options{})
 	if err != nil {
 		t.Fatalf("BuildComposite: %v", err)
@@ -131,7 +131,7 @@ func TestPrismBuildConcatHorizontal(t *testing.T) {
 
 func TestPrismBuildConcatVertical(t *testing.T) {
 	root := repoRoot(t)
-	s := loadSpec(t, filepath.Join(root, "testdata", "specs", "concat_v.json"))
+	s := loadSpec(t, filepath.Join(root, "examples", "specs", "concat_v.json"))
 	c, err := build.BuildComposite(s, build.Options{})
 	if err != nil {
 		t.Fatalf("BuildComposite: %v", err)
@@ -187,7 +187,7 @@ func TestPrismBuildNestedCompositionRejected(t *testing.T) {
 
 func TestPrismBuildRejectsCompositeViaFlatBuild(t *testing.T) {
 	root := repoRoot(t)
-	s := loadSpec(t, filepath.Join(root, "testdata", "specs", "concat_h.json"))
+	s := loadSpec(t, filepath.Join(root, "examples", "specs", "concat_h.json"))
 	_, _, err := build.Build(s, build.Options{})
 	if err == nil {
 		t.Fatal("expected PRISM_PLAN_002 from flat Build on composite")

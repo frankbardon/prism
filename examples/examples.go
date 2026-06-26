@@ -8,7 +8,7 @@
 // relative to specs/ (e.g. "scales/log" → examples/specs/scales/log.json,
 // "invalid/theta_on_bar" → examples/specs/invalid/theta_on_bar.json).
 //
-// The package imports ONLY embed + the standard library. It deliberately pulls
+// The package imports ONLY embed + the standard library. It intentionally pulls
 // in no facade, no MCP SDK, and no afero, so importing it is free of the
 // six-stage pipeline's dependency weight and stays safe for every build target.
 package examples

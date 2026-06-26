@@ -16,8 +16,8 @@ import (
 )
 
 // TestPrismSpecGoldensValidateOffline is the end-to-end gallery harness.
-// Every fixture under testdata/specs/ (positive) must validate clean.
-// Every fixture under testdata/specs/invalid/ (negative) must fire at
+// Every fixture under examples/specs/ (positive) must validate clean.
+// Every fixture under examples/specs/invalid/ (negative) must fire at
 // least one error whose code matches the fixture's expected code,
 // derived from the file basename via the negativeCodeMap below.
 //
@@ -41,8 +41,8 @@ func TestPrismSpecGoldensValidateOffline(t *testing.T) {
 	}
 	t.Cleanup(func() { _ = os.Chdir(originalCwd) })
 
-	positives := filepath.Join(root, "testdata", "specs")
-	negatives := filepath.Join(root, "testdata", "specs", "invalid")
+	positives := filepath.Join(root, "examples", "specs")
+	negatives := filepath.Join(root, "examples", "specs", "invalid")
 
 	// Positives.
 	posEntries, err := os.ReadDir(positives)

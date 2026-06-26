@@ -15,7 +15,7 @@ import (
 )
 
 // repoRoot walks up from this test file until it finds go.mod. Used to
-// locate testdata/specs/* regardless of where `go test` is invoked.
+// locate examples/specs/* regardless of where `go test` is invoked.
 func repoRoot(t *testing.T) string {
 	t.Helper()
 	_, here, _, _ := runtime.Caller(0)
@@ -47,7 +47,7 @@ func loadSpec(t *testing.T, path string) *spec.Spec {
 
 func TestPrismDAGBuildSingleSource(t *testing.T) {
 	root := repoRoot(t)
-	s := loadSpec(t, filepath.Join(root, "testdata", "specs", "bar_basic.json"))
+	s := loadSpec(t, filepath.Join(root, "examples", "specs", "bar_basic.json"))
 	d, tip, err := build.Build(s, build.Options{})
 	if err != nil {
 		t.Fatalf("Build: %v", err)
@@ -77,7 +77,7 @@ func TestPrismDAGBuildAllFixtures(t *testing.T) {
 	skip := map[string]bool{}
 
 	root := repoRoot(t)
-	dir := filepath.Join(root, "testdata", "specs")
+	dir := filepath.Join(root, "examples", "specs")
 	entries, err := os.ReadDir(dir)
 	if err != nil {
 		t.Fatalf("readdir %s: %v", dir, err)
@@ -154,7 +154,7 @@ func TestPrismDAGBuildSelectionFixturesPipe(t *testing.T) {
 	for _, name := range cases {
 		name := name
 		t.Run(name, func(t *testing.T) {
-			s := loadSpec(t, filepath.Join(root, "testdata", "specs", name))
+			s := loadSpec(t, filepath.Join(root, "examples", "specs", name))
 			d, tip, err := build.Build(s, build.Options{})
 			if err != nil {
 				t.Fatalf("Build: %v", err)
@@ -196,7 +196,7 @@ func TestPrismDAGBuildMissingDataset(t *testing.T) {
 // jsonProbe is a defensive sanity-check that the spec decoder is wired —
 // catches go.mod/embed regressions before we trip on them upstream.
 func TestPrismBuildFixtureDecodes(t *testing.T) {
-	body, err := os.ReadFile(filepath.Join(repoRoot(t), "testdata", "specs", "bar_basic.json"))
+	body, err := os.ReadFile(filepath.Join(repoRoot(t), "examples", "specs", "bar_basic.json"))
 	if err != nil {
 		t.Fatalf("read: %v", err)
 	}

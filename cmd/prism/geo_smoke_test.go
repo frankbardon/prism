@@ -15,7 +15,7 @@ import (
 // regressions in projection, manifest, or render layers surface here
 // before the broader gallery sweep.
 func TestPrismGeoshapePlot(t *testing.T) {
-	spec := filepath.Join(repoFile(t, "testdata", "specs"), "geo_world.json")
+	spec := filepath.Join(repoFile(t, "examples", "specs"), "geo_world.json")
 
 	out, exit := runCLI(t, "prism", "validate", spec)
 	if exit != 0 {
@@ -44,7 +44,7 @@ func TestPrismGeoshapePlot(t *testing.T) {
 // resolve, then asserts plot renders the geoshape SVG.
 func TestPrismGeoshapePlotGeodataDir(t *testing.T) {
 	geoDir := repoFile(t, "geodata")
-	specPath := filepath.Join(repoFile(t, "testdata", "specs"), "geo_world.json")
+	specPath := filepath.Join(repoFile(t, "examples", "specs"), "geo_world.json")
 
 	restoreHostBundleDir(t)
 	geodata.SetHostBundleDir("")
@@ -67,7 +67,7 @@ func TestPrismGeoshapePlotGeodataDir(t *testing.T) {
 // geoshape mark.
 func TestPrismSceneGeodataDir(t *testing.T) {
 	geoDir := repoFile(t, "geodata")
-	specPath := filepath.Join(repoFile(t, "testdata", "specs"), "geo_world.json")
+	specPath := filepath.Join(repoFile(t, "examples", "specs"), "geo_world.json")
 
 	restoreHostBundleDir(t)
 	geodata.SetHostBundleDir("")
@@ -92,7 +92,7 @@ func TestPrismSceneGeodataDir(t *testing.T) {
 // resolve. After the reset + cleared directory the host loader consults
 // the (empty) directory and returns PRISM_GEODATA_DIR_UNSET.
 func TestPrismGeoshapeGeodataDirUnset(t *testing.T) {
-	specPath := filepath.Join(repoFile(t, "testdata", "specs"), "geo_admin1.json")
+	specPath := filepath.Join(repoFile(t, "examples", "specs"), "geo_admin1.json")
 
 	restoreHostBundleDir(t)
 	geodata.SetHostBundleDir("")

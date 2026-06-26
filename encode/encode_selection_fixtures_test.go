@@ -73,8 +73,8 @@ func inferFixtureType(v any) string {
 }
 
 // TestPrismSelectionFixturesEncode walks every spec under
-// testdata/specs/selections/ + the two P01 selection fixtures at
-// testdata/specs/ and asserts they validate clean, build, execute,
+// examples/specs/selections/ + the two P01 selection fixtures at
+// examples/specs/ and asserts they validate clean, build, execute,
 // encode, and surface at least one Scene.Selections entry per
 // declared selection.
 //
@@ -83,11 +83,11 @@ func inferFixtureType(v any) string {
 func TestPrismSelectionFixturesEncode(t *testing.T) {
 	root := repoRoot(t)
 	cases := []string{
-		filepath.Join(root, "testdata", "specs", "selection_point.json"),
-		filepath.Join(root, "testdata", "specs", "selection_interval.json"),
+		filepath.Join(root, "examples", "specs", "selection_point.json"),
+		filepath.Join(root, "examples", "specs", "selection_interval.json"),
 	}
 	// Append every JSON under selections/.
-	selDir := filepath.Join(root, "testdata", "specs", "selections")
+	selDir := filepath.Join(root, "examples", "specs", "selections")
 	entries, err := os.ReadDir(selDir)
 	if err != nil {
 		t.Fatalf("read selections dir: %v", err)

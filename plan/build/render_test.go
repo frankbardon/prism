@@ -28,7 +28,7 @@ func goldenPath(t *testing.T, name string) string {
 func buildBarBasicDAG(t *testing.T) *plan.DAG {
 	t.Helper()
 	root := repoRoot(t)
-	s := loadSpec(t, filepath.Join(root, "testdata", "specs", "bar_basic.json"))
+	s := loadSpec(t, filepath.Join(root, "examples", "specs", "bar_basic.json"))
 	d, _, err := build.Build(s, build.Options{})
 	if err != nil {
 		t.Fatalf("Build: %v", err)

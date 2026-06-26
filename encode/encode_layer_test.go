@@ -58,7 +58,7 @@ func runComposite(t *testing.T, fixturePath string) (*spec.Spec, *plan.Composite
 
 func TestPrismEncodeLayerEmitsTwoSceneLayers(t *testing.T) {
 	root := repoRootForTest(t)
-	path := filepath.Join(root, "testdata", "specs", "layer_actual_vs_benchmark.json")
+	path := filepath.Join(root, "examples", "specs", "layer_actual_vs_benchmark.json")
 	s, c, all := runComposite(t, path)
 
 	doc, err := encode.EncodeComposite(s, c, all, encode.EncodeOpts{})
@@ -181,7 +181,7 @@ func TestPrismEncodeLayerSharedIncompatibleRaises005(t *testing.T) {
 
 func TestPrismEncodeLayerMissingTipEmitsSkippedWarning(t *testing.T) {
 	root := repoRootForTest(t)
-	path := filepath.Join(root, "testdata", "specs", "layer_actual_vs_benchmark.json")
+	path := filepath.Join(root, "examples", "specs", "layer_actual_vs_benchmark.json")
 	s, c, per := runComposite(t, path)
 	// Drop the second child's tip table to simulate a partial failure.
 	delete(per[1], c.Children[1].Tip)

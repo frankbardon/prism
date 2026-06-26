@@ -52,7 +52,7 @@ func loadAndEncodeBytes(t *testing.T, body []byte) *scene.SceneDoc {
 // TestPrismHistogramAutoBin.
 func callHistogramEncoderDirect(t *testing.T) *marks.HistogramResult {
 	t.Helper()
-	path := filepath.Join(repoRoot(t), "testdata", "specs", "histogram.json")
+	path := filepath.Join(repoRoot(t), "examples", "specs", "histogram.json")
 	body, err := os.ReadFile(path)
 	if err != nil {
 		t.Fatalf("read fixture: %v", err)

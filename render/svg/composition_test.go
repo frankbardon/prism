@@ -86,7 +86,7 @@ func TestPrismConcatRowMajor(t *testing.T) {
 // scene must NOT carry its own y axis.
 func TestPrismScaleResolveShared(t *testing.T) {
 	root := repoRoot(t)
-	path := filepath.Join(root, "testdata", "specs", "layer_shared_y_scale.json")
+	path := filepath.Join(root, "examples", "specs", "layer_shared_y_scale.json")
 	body, err := os.ReadFile(path)
 	if err != nil {
 		t.Fatalf("read: %v", err)
@@ -146,7 +146,7 @@ func TestPrismScaleResolveShared(t *testing.T) {
 // (defense-in-depth).
 func TestPrismScaleResolveIncompatible(t *testing.T) {
 	root := repoRoot(t)
-	path := filepath.Join(root, "testdata", "specs", "invalid", "layer_shared_y_incompatible.json")
+	path := filepath.Join(root, "examples", "specs", "invalid", "layer_shared_y_incompatible.json")
 	body, err := os.ReadFile(path)
 	if err != nil {
 		t.Fatalf("read: %v", err)
@@ -216,7 +216,7 @@ func chdirRepoRootSVG(t *testing.T) {
 func renderCompositeFromRoot(t *testing.T, fixture string) []byte {
 	t.Helper()
 	root := repoRoot(t)
-	path := filepath.Join(root, "testdata", "specs", fixture)
+	path := filepath.Join(root, "examples", "specs", fixture)
 	body, err := os.ReadFile(path)
 	if err != nil {
 		t.Fatalf("read: %v", err)

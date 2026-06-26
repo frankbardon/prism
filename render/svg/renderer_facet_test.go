@@ -23,7 +23,7 @@ import (
 func renderFacetSpec(t *testing.T, fixture string) []byte {
 	t.Helper()
 	root := repoRoot(t)
-	path := filepath.Join(root, "testdata", "specs", fixture)
+	path := filepath.Join(root, "examples", "specs", fixture)
 	body, err := os.ReadFile(path)
 	if err != nil {
 		t.Fatalf("read: %v", err)

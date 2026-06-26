@@ -12,7 +12,7 @@ import (
 )
 
 // TestPrismDAGBuildInvalidGallery walks every fixture under
-// testdata/specs/invalid/. Most are validator-gate failures
+// examples/specs/invalid/. Most are validator-gate failures
 // (PRISM_SPEC_*) that the builder does NOT re-check — they should
 // still produce a non-empty DAG. The one builder-gate failure is
 // dataset_undefined.json which raises PRISM_PLAN_003.
@@ -23,7 +23,7 @@ import (
 // regression that conflates the two would surface here.
 func TestPrismDAGBuildInvalidGallery(t *testing.T) {
 	root := repoRoot(t)
-	dir := filepath.Join(root, "testdata", "specs", "invalid")
+	dir := filepath.Join(root, "examples", "specs", "invalid")
 	entries, err := os.ReadDir(dir)
 	if err != nil {
 		t.Fatalf("readdir: %v", err)

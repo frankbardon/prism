@@ -24,11 +24,11 @@ func TestPrismPDFCoreMarks(t *testing.T) {
 		fixture  string
 		operator string // expected gopdf operator signature in the byte stream
 	}{
-		{"bar", "../../testdata/specs/bar_basic.json", "re"},
-		{"line", "../../testdata/specs/line_basic.json", "l"},
-		{"area", "../../testdata/specs/area_basic.json", "f"},
-		{"point", "../../testdata/specs/point_scatter.json", "c"},
-		{"rule", "../../testdata/specs/rule_basic.json", "l"},
+		{"bar", "../../examples/specs/bar_basic.json", "re"},
+		{"line", "../../examples/specs/line_basic.json", "l"},
+		{"area", "../../examples/specs/area_basic.json", "f"},
+		{"point", "../../examples/specs/point_scatter.json", "c"},
+		{"rule", "../../examples/specs/rule_basic.json", "l"},
 	}
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {
@@ -68,7 +68,7 @@ func TestPrismPDFCoreMarks(t *testing.T) {
 // checks for either /TrueType or /CIDFontType2 — both prove the
 // font is embedded as TTF.
 func TestPrismPDFFontsEmbedded(t *testing.T) {
-	doc := loadFixture(t, "../../testdata/specs/dashboard.json")
+	doc := loadFixture(t, "../../examples/specs/dashboard.json")
 	out, err := New().Render(doc, render.RenderOpts{Format: "pdf"})
 	if err != nil {
 		t.Fatalf("Render: %v", err)
@@ -85,7 +85,7 @@ func TestPrismPDFFontsEmbedded(t *testing.T) {
 // produces N pages. The dashboard fixture has 4 cells; expect
 // exactly four /Type /Page (not /Pages) occurrences.
 func TestPrismPDFPagination(t *testing.T) {
-	doc := loadFixture(t, "../../testdata/specs/dashboard.json")
+	doc := loadFixture(t, "../../examples/specs/dashboard.json")
 	out, err := New().Render(doc, render.RenderOpts{
 		Format:   "pdf",
 		Paginate: true,
@@ -109,7 +109,7 @@ func TestPrismPDFPagination(t *testing.T) {
 // are not raster content; only /Subtype /Image proves an actual
 // image got embedded.
 func TestPrismPDFVectorPreserved(t *testing.T) {
-	doc := loadFixture(t, "../../testdata/specs/dashboard.json")
+	doc := loadFixture(t, "../../examples/specs/dashboard.json")
 	out, err := New().Render(doc, render.RenderOpts{Format: "pdf"})
 	if err != nil {
 		t.Fatalf("Render: %v", err)
@@ -141,7 +141,7 @@ func TestPrismPDFDashboardStructuralAssertions(t *testing.T) {
 		t.Fatalf("parse: %v", err)
 	}
 
-	doc := loadFixture(t, "../../testdata/specs/dashboard.json")
+	doc := loadFixture(t, "../../examples/specs/dashboard.json")
 	out, err := New().Render(doc, render.RenderOpts{
 		Format:   "pdf",
 		Paginate: exp.Paginate,

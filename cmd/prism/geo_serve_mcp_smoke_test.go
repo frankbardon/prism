@@ -89,7 +89,7 @@ func startServerBin(t *testing.T, bin string, extraArgs ...string) (port string,
 // /prism/scene request envelope ({"spec": <spec>}).
 func geoSceneBody(t *testing.T) []byte {
 	t.Helper()
-	raw, err := os.ReadFile(repoFile(t, "testdata", "specs", "geo_world.json"))
+	raw, err := os.ReadFile(repoFile(t, "examples", "specs", "geo_world.json"))
 	if err != nil {
 		t.Fatalf("read geo_world.json: %v", err)
 	}
@@ -172,7 +172,7 @@ func startMCPClient(t *testing.T, bin string, extraArgs ...string) *mcpclient.Cl
 // geo_world.json geoshape spec and returns the tool result.
 func callPlotGeoshape(t *testing.T, cli *mcpclient.Client) *mcpgo.CallToolResult {
 	t.Helper()
-	raw, err := os.ReadFile(repoFile(t, "testdata", "specs", "geo_world.json"))
+	raw, err := os.ReadFile(repoFile(t, "examples", "specs", "geo_world.json"))
 	if err != nil {
 		t.Fatalf("read geo_world.json: %v", err)
 	}

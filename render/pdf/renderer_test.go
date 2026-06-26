@@ -61,7 +61,7 @@ func TestPrismPDFRendererSingleCellSinglePage(t *testing.T) {
 // encode) and renders to PDF, asserting the output is well-formed
 // + non-trivial.
 func TestPrismPDFRendererFromBarBasicFixture(t *testing.T) {
-	doc := loadFixture(t, "../../testdata/specs/bar_basic.json")
+	doc := loadFixture(t, "../../examples/specs/bar_basic.json")
 	bs, err := New().Render(doc, render.RenderOpts{Format: "pdf"})
 	if err != nil {
 		t.Fatalf("Render bar_basic: %v", err)

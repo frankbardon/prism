@@ -22,7 +22,7 @@ import (
 
 // TestPrismBoxplotQuantileParity — PHASE.md mandatory P10 gate.
 //
-// Loads testdata/specs/boxplot.json, materialises the inline data
+// Loads examples/specs/boxplot.json, materialises the inline data
 // via build + execute (which routes through the compile/inmem
 // backend whose AGG_PERCENTILE implementation P04 already proved
 // matches Pulse's via TestPrismAggregateValueParity), and asserts
@@ -36,7 +36,7 @@ import (
 // proves via independent tests.
 func TestPrismBoxplotQuantileParity(t *testing.T) {
 	root := findRepoRoot(t)
-	specPath := filepath.Join(root, "testdata", "specs", "boxplot.json")
+	specPath := filepath.Join(root, "examples", "specs", "boxplot.json")
 	body, err := os.ReadFile(specPath)
 	if err != nil {
 		t.Fatalf("read fixture: %v", err)

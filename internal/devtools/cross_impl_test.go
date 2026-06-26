@@ -12,7 +12,7 @@ import (
 )
 
 // curatedFixtures is the P12 launch set for cross-impl parity. Each
-// fixture must exist as testdata/specs/<name>.json. The harness
+// fixture must exist as examples/specs/<name>.json. The harness
 // derives testdata/cross_impl/<name>/scene.json (from `prism scene`)
 // + testdata/cross_impl/<name>/go.svg (from `prism plot`) on first
 // run with PRISM_CROSS_IMPL_REGEN=1, then re-runs to byte-diff the
@@ -81,7 +81,7 @@ func TestCrossImplSVGParity(t *testing.T) {
 			scenePath := filepath.Join(dir, "scene.json")
 			goSVGPath := filepath.Join(dir, "go.svg")
 			wasmSVGPath := filepath.Join(dir, "wasm.svg")
-			specPath := filepath.Join(root, "testdata", "specs", fixture+".json")
+			specPath := filepath.Join(root, "examples", "specs", fixture+".json")
 
 			if regen {
 				if err := regenerateGoInputs(root, prismBin, specPath, scenePath, goSVGPath); err != nil {

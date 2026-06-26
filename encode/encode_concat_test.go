@@ -9,7 +9,7 @@ import (
 
 func TestPrismEncodeConcatHorizontalProducesRowMajorCells(t *testing.T) {
 	root := repoRootForTest(t)
-	path := filepath.Join(root, "testdata", "specs", "concat_h.json")
+	path := filepath.Join(root, "examples", "specs", "concat_h.json")
 	s, c, per := runComposite(t, path)
 
 	doc, err := encode.EncodeComposite(s, c, per, encode.EncodeOpts{})
@@ -34,7 +34,7 @@ func TestPrismEncodeConcatHorizontalProducesRowMajorCells(t *testing.T) {
 
 func TestPrismEncodeConcatVerticalProducesRowMajorCells(t *testing.T) {
 	root := repoRootForTest(t)
-	path := filepath.Join(root, "testdata", "specs", "concat_v.json")
+	path := filepath.Join(root, "examples", "specs", "concat_v.json")
 	s, c, per := runComposite(t, path)
 
 	doc, err := encode.EncodeComposite(s, c, per, encode.EncodeOpts{})
@@ -59,7 +59,7 @@ func TestPrismEncodeConcatVerticalProducesRowMajorCells(t *testing.T) {
 
 func TestPrismEncodeConcatChildOffsetsApplied(t *testing.T) {
 	root := repoRootForTest(t)
-	pathH := filepath.Join(root, "testdata", "specs", "concat_h.json")
+	pathH := filepath.Join(root, "examples", "specs", "concat_h.json")
 	s, c, per := runComposite(t, pathH)
 
 	doc, err := encode.EncodeComposite(s, c, per, encode.EncodeOpts{Width: 800, Height: 400})
@@ -78,7 +78,7 @@ func TestPrismEncodeConcatChildOffsetsApplied(t *testing.T) {
 		t.Errorf("hconcat: cell[1].Plot.X=%v <= cell[0].Plot.X+100=%v (no offset applied?)", c1, c0+100)
 	}
 
-	pathV := filepath.Join(root, "testdata", "specs", "concat_v.json")
+	pathV := filepath.Join(root, "examples", "specs", "concat_v.json")
 	sv, cv, perv := runComposite(t, pathV)
 	docV, err := encode.EncodeComposite(sv, cv, perv, encode.EncodeOpts{Width: 600, Height: 800})
 	if err != nil {
