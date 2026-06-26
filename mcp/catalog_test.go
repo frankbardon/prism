@@ -8,6 +8,7 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/google/jsonschema-go/jsonschema"
 	"github.com/spf13/afero"
 
 	"github.com/frankbardon/prism/rpc"
@@ -118,6 +119,82 @@ func TestExamplesSearchOverrideBakedIntoClosure(t *testing.T) {
 	if len(res.Examples) != 1 || res.Examples[0].Name != "only_override" {
 		t.Fatalf("expected the single on-disk override fixture; got %+v", res.Examples)
 	}
+}
+
+// TestToolSchemasReflectStructs is the anti-drift gate: every descriptor's
+// InputSchema/OutputSchema must be a faithful, non-empty reflection of its Go
+// I/O struct. It re-reflects each struct fresh via jsonschema-go and compares
+// canonical JSON against the descriptor's baked schema, so a struct-tag change
+// that isn't mirrored in the reflected catalog fails the build rather than
+// silently shipping a stale schema to agents.
+func TestToolSchemasReflectStructs(t *testing.T) {
+	tools := Tools(Config{})
+	byName := map[string]ToolDescriptor{}
+	for _, d := range tools {
+		byName[d.Name] = d
+	}
+
+	cases := []struct {
+		tool   string
+		input  json.RawMessage
+		output json.RawMessage
+	}{
+		{"prism_plot", freshSchema[PlotInput](t), freshSchema[PlotOutput](t)},
+		{"prism_validate", freshSchema[ValidateInput](t), freshSchema[ValidateOutput](t)},
+		{"prism_describe", freshSchema[DescribeInput](t), freshSchema[DescribeOutput](t)},
+		{"prism_examples_search", freshSchema[ExamplesSearchInput](t), freshSchema[ExamplesSearchOutput](t)},
+	}
+
+	for _, c := range cases {
+		d, ok := byName[c.tool]
+		if !ok {
+			t.Errorf("missing tool %q", c.tool)
+			continue
+		}
+		if len(d.InputSchema) == 0 {
+			t.Errorf("%s: empty input schema", c.tool)
+		}
+		if len(d.OutputSchema) == 0 {
+			t.Errorf("%s: empty output schema", c.tool)
+		}
+		if got, want := canonicalJSON(t, d.InputSchema), canonicalJSON(t, c.input); got != want {
+			t.Errorf("%s input schema drifted from struct reflection:\n got: %s\nwant: %s", c.tool, got, want)
+		}
+		if got, want := canonicalJSON(t, d.OutputSchema), canonicalJSON(t, c.output); got != want {
+			t.Errorf("%s output schema drifted from struct reflection:\n got: %s\nwant: %s", c.tool, got, want)
+		}
+	}
+}
+
+// freshSchema reflects T independently of the package-level cache and marshals
+// it, so the comparison in TestToolSchemasReflectStructs is against a freshly
+// derived schema rather than the same value the catalog already holds.
+func freshSchema[T any](t *testing.T) json.RawMessage {
+	t.Helper()
+	s, err := jsonschema.For[T](nil)
+	if err != nil {
+		t.Fatalf("reflect schema for %T: %v", *new(T), err)
+	}
+	raw, err := json.Marshal(s)
+	if err != nil {
+		t.Fatalf("marshal schema for %T: %v", *new(T), err)
+	}
+	return raw
+}
+
+// canonicalJSON round-trips raw through encoding/json so two schemas that
+// differ only in key order or whitespace compare equal.
+func canonicalJSON(t *testing.T, raw json.RawMessage) string {
+	t.Helper()
+	var v any
+	if err := json.Unmarshal(raw, &v); err != nil {
+		t.Fatalf("unmarshal schema: %v\n%s", err, raw)
+	}
+	b, err := json.Marshal(v)
+	if err != nil {
+		t.Fatalf("remarshal schema: %v", err)
+	}
+	return string(b)
 }
 
 // jsonString quotes s as a JSON string literal for embedding in a raw payload.
