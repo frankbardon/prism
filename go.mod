@@ -7,7 +7,6 @@ require (
 	github.com/expr-lang/expr v1.17.8
 	github.com/frankbardon/pulse v0.24.0
 	github.com/google/jsonschema-go v0.4.3
-	github.com/mark3labs/mcp-go v0.55.0
 	github.com/modelcontextprotocol/go-sdk v1.6.1
 	github.com/santhosh-tekuri/jsonschema/v6 v6.0.2
 	github.com/signintech/gopdf v0.36.1
@@ -34,7 +33,6 @@ require (
 	github.com/richardlehane/msoleps v1.0.6 // indirect
 	github.com/segmentio/asm v1.1.3 // indirect
 	github.com/segmentio/encoding v0.5.4 // indirect
-	github.com/spf13/cast v1.7.1 // indirect
 	github.com/tiendc/go-deepcopy v1.7.2 // indirect
 	github.com/xuri/efp v0.0.1 // indirect
 	github.com/xuri/excelize/v2 v2.10.1 // indirect

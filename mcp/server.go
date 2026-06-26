@@ -1,18 +1,22 @@
 //go:build !js
 
-// Package mcp wires Prism into the Model Context Protocol via
-// modelcontextprotocol/go-sdk (pinned at v1.6.1).
+// Package mcp is the SDK-agnostic core of Prism's Model Context Protocol
+// surface. It exposes the four Prism tools as typed handlers and as a
+// type-erased descriptor catalog (Tools(cfg)), plus the pure helpers behind
+// them — and imports NO MCP SDK. Mounting the catalog onto a concrete server
+// is the job of an adapter (see the mcp/gosdk package, which grafts these
+// descriptors onto a modelcontextprotocol/go-sdk server).
 //
-// New(opts) returns a configured *gosdk.Server with four tools
-// registered:
+// The four tools are:
 //
 //   - prism_plot(spec, format?)         → bytes + mime + caption
 //   - prism_validate(spec)              → ok + structured errors
 //   - prism_describe(spec)              → natural-language summary
 //   - prism_examples_search(query)      → list of fixture specs
 //
-// The server is transport-agnostic; the CLI's `prism mcp`
-// subcommand drives it over a stdio transport for agent-host use.
+// Each has a typed handler (PlotTool, ValidateTool, DescribeTool,
+// ExamplesSearchTool) callable directly against an *rpc.PrismServer, and a
+// matching descriptor in Tools(cfg) for transport-neutral mounting.
 package mcp
 
 import (
@@ -26,121 +30,12 @@ import (
 	"sort"
 	"strings"
 
-	gosdk "github.com/modelcontextprotocol/go-sdk/mcp"
 	"github.com/spf13/afero"
 
 	"github.com/frankbardon/prism/examples"
 	"github.com/frankbardon/prism/rpc"
 	prismspec "github.com/frankbardon/prism/spec"
 )
-
-// Options configures a new MCP server instance. ExamplesRoot selects the
-// data source for the prism_examples_search tool: empty (the default)
-// serves results from the embedded examples corpus; a non-empty value
-// opts into an on-disk afero walk of that directory.
-type Options struct {
-	PrismServer  *rpc.PrismServer
-	ExamplesRoot string
-	// ExamplesFS is the file system the on-disk examples walk uses when
-	// ExamplesRoot is set. Defaults to afero.NewOsFs(). Tests inject an
-	// afero.MemMapFs. Ignored when ExamplesRoot is empty (embedded corpus).
-	ExamplesFS afero.Fs
-	// ServerName / Version set the MCP server identity advertised on the
-	// initialize handshake. Empty values default to DefaultServerName /
-	// DefaultVersion. The CLI threads the real build version here (later
-	// story); there is no process-global version.
-	ServerName string
-	Version    string
-}
-
-// New constructs an MCP server with all four Prism tools registered.
-// The returned *gosdk.Server is ready to drive via a stdio transport
-// (for the `prism mcp` CLI subcommand) or any other transport the
-// go-sdk supports.
-func New(opts Options) *gosdk.Server {
-	if opts.PrismServer == nil {
-		opts.PrismServer = &rpc.PrismServer{Fs: afero.NewOsFs()}
-	}
-	// An empty ExamplesRoot serves the embedded corpus; a non-empty root
-	// opts into an on-disk walk, defaulting the filesystem to the OS.
-	if opts.ExamplesRoot != "" && opts.ExamplesFS == nil {
-		opts.ExamplesFS = afero.NewOsFs()
-	}
-	if opts.ServerName == "" {
-		opts.ServerName = DefaultServerName
-	}
-	if opts.Version == "" {
-		opts.Version = DefaultVersion
-	}
-
-	s := gosdk.NewServer(&gosdk.Implementation{Name: opts.ServerName, Version: opts.Version}, nil)
-	registerTools(s, opts)
-	return s
-}
-
-// registerTools attaches the four Prism tools to the supplied server,
-// sourcing names, descriptions, reflected input schemas, and dispatch from
-// the type-erased Tools(cfg) catalog — so the wire surface and the importable
-// descriptor catalog never drift.
-//
-// We use the low-level gosdk.Server.AddTool with the reflected input schema so
-// the tool result is the raw JSON text content the agent host expects (the
-// typed gosdk.AddTool[In,Out] form would wrap the payload in structured
-// content instead).
-func registerTools(s *gosdk.Server, opts Options) {
-	cfg := Config{
-		ServerName:   opts.ServerName,
-		Version:      opts.Version,
-		ExamplesRoot: opts.ExamplesRoot,
-		ExamplesFS:   opts.ExamplesFS,
-	}
-	for _, d := range Tools(cfg) {
-		s.AddTool(
-			&gosdk.Tool{
-				Name:        d.Name,
-				Description: d.Description,
-				InputSchema: d.InputSchema,
-			},
-			descriptorHandler(d, opts.PrismServer),
-		)
-	}
-}
-
-// descriptorHandler adapts a type-erased ToolDescriptor into a go-sdk tool
-// handler: it forwards the raw call arguments to Invoke, marshals the typed
-// output as JSON text content, and surfaces handler errors as tool-result
-// errors (IsError=true) so the agent can self-correct.
-func descriptorHandler(d ToolDescriptor, impl *rpc.PrismServer) gosdk.ToolHandler {
-	return func(ctx context.Context, req *gosdk.CallToolRequest) (*gosdk.CallToolResult, error) {
-		var raw json.RawMessage
-		if req != nil && req.Params != nil {
-			raw = req.Params.Arguments
-		}
-		out, err := d.Invoke(ctx, impl, raw)
-		if err != nil {
-			return errorResult(err.Error()), nil
-		}
-		body, _ := json.Marshal(out)
-		return textResult(string(body)), nil
-	}
-}
-
-// textResult wraps a JSON payload string as a successful tool result.
-func textResult(body string) *gosdk.CallToolResult {
-	return &gosdk.CallToolResult{
-		Content: []gosdk.Content{&gosdk.TextContent{Text: body}},
-	}
-}
-
-// errorResult surfaces a facade/argument error as a tool-result error
-// (IsError=true) rather than an MCP protocol-level Go error, so the
-// agent can see the message and self-correct.
-func errorResult(msg string) *gosdk.CallToolResult {
-	return &gosdk.CallToolResult{
-		IsError: true,
-		Content: []gosdk.Content{&gosdk.TextContent{Text: msg}},
-	}
-}
 
 // PlotInput is the typed input for the prism_plot tool.
 type PlotInput struct {

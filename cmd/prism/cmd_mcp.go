@@ -12,6 +12,7 @@ import (
 
 	"github.com/frankbardon/prism/internal/observability"
 	prismmcp "github.com/frankbardon/prism/mcp"
+	gosdkadapter "github.com/frankbardon/prism/mcp/gosdk"
 	"github.com/frankbardon/prism/rpc"
 )
 
@@ -49,11 +50,19 @@ func runMCP(ctx context.Context, cmd *cli.Command) error {
 		Fs:              afero.NewOsFs(),
 		ExecOpts:        observability.Hooks(),
 	}
-	srv := prismmcp.New(prismmcp.Options{
-		PrismServer:  impl,
+	// Thread the build version into the server identity; the examples-root
+	// override (if any) flows through the config into the tool catalog. The
+	// CLI stays thin — all wiring lives in the mcp/gosdk adapter.
+	cfg := prismmcp.Config{
+		ServerName:   "prism",
+		Version:      versionString,
 		ExamplesRoot: cmd.String("examples-root"),
 		ExamplesFS:   afero.NewOsFs(),
-	})
+	}
+	srv := gosdk.NewServer(&gosdk.Implementation{Name: cfg.ServerName, Version: cfg.Version}, nil)
+	if err := gosdkadapter.Register(srv, impl, cfg); err != nil {
+		return cli.Exit(fmt.Sprintf("mcp register: %v", err), 1)
+	}
 	if err := srv.Run(ctx, &gosdk.StdioTransport{}); err != nil {
 		return cli.Exit(fmt.Sprintf("mcp serve: %v", err), 1)
 	}

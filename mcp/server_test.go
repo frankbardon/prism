@@ -5,11 +5,9 @@ package mcp
 import (
 	"context"
 	"encoding/base64"
-	"encoding/json"
 	"strings"
 	"testing"
 
-	gosdk "github.com/modelcontextprotocol/go-sdk/mcp"
 	"github.com/spf13/afero"
 
 	"github.com/frankbardon/prism/rpc"
@@ -28,122 +26,41 @@ const fixtureSpec = `{
   }
 }`
 
-// newTestSession builds an MCP server via the public New() entrypoint
-// (all four tools registered) and connects an in-memory go-sdk client
-// to it. Returns the client session; both sessions are torn down on
-// cleanup. Leaves ExamplesRoot empty so prism_examples_search exercises
-// the embedded examples corpus — the default a real `prism mcp` uses.
-func newTestSession(t *testing.T) *gosdk.ClientSession {
-	t.Helper()
-	return connectSession(t, Options{
-		PrismServer: &rpc.PrismServer{Fs: afero.NewMemMapFs()},
-	})
+// newFacade returns a hermetic rpc facade backed by an in-memory filesystem —
+// the seam the typed tool handlers call into.
+func newFacade() *rpc.PrismServer {
+	return &rpc.PrismServer{Fs: afero.NewMemMapFs()}
 }
 
-// connectSession wires an in-memory client to a server built from opts and
-// registers teardown for both sessions.
-func connectSession(t *testing.T, opts Options) *gosdk.ClientSession {
-	t.Helper()
-	srv := New(opts)
-
-	ctx := context.Background()
-	serverT, clientT := gosdk.NewInMemoryTransports()
-	serverSession, err := srv.Connect(ctx, serverT, nil)
+// TestPlotTool exercises the typed prism_plot handler directly against the
+// facade (no MCP SDK): base64 SVG bytes + mime + caption.
+func TestPlotTool(t *testing.T) {
+	out, err := PlotTool(context.Background(), newFacade(), PlotInput{Spec: fixtureSpec, Format: "svg"})
 	if err != nil {
-		t.Fatalf("server Connect: %v", err)
+		t.Fatalf("PlotTool: %v", err)
 	}
-	t.Cleanup(func() { _ = serverSession.Close() })
-
-	client := gosdk.NewClient(&gosdk.Implementation{Name: "test", Version: "0.0.0"}, nil)
-	clientSession, err := client.Connect(ctx, clientT, nil)
-	if err != nil {
-		t.Fatalf("client Connect: %v", err)
+	if out.Mime != "image/svg+xml" {
+		t.Errorf("mime = %q; want image/svg+xml", out.Mime)
 	}
-	t.Cleanup(func() { _ = clientSession.Close() })
-
-	return clientSession
-}
-
-// TestPrismMCPToolsRegistered sends tools/list to the running server
-// and asserts all four tool names are present.
-func TestPrismMCPToolsRegistered(t *testing.T) {
-	cs := newTestSession(t)
-
-	listResult, err := cs.ListTools(context.Background(), nil)
-	if err != nil {
-		t.Fatalf("ListTools: %v", err)
-	}
-	got := map[string]bool{}
-	for _, tool := range listResult.Tools {
-		got[tool.Name] = true
-	}
-	want := []string{"prism_plot", "prism_validate", "prism_describe", "prism_examples_search"}
-	for _, name := range want {
-		if !got[name] {
-			t.Errorf("tool %q not registered (got: %v)", name, got)
-		}
-	}
-}
-
-// TestPrismMCPPlotTool exercises the prism_plot round trip end-to-end
-// through the in-memory client + transport.
-func TestPrismMCPPlotTool(t *testing.T) {
-	cs := newTestSession(t)
-	res, err := cs.CallTool(context.Background(), &gosdk.CallToolParams{
-		Name: "prism_plot",
-		Arguments: map[string]any{
-			"spec":   fixtureSpec,
-			"format": "svg",
-		},
-	})
-	if err != nil {
-		t.Fatalf("CallTool prism_plot: %v", err)
-	}
-	if res.IsError {
-		t.Fatalf("prism_plot returned error: %s", textOf(res))
-	}
-	var payload PlotOutput
-	if err := json.Unmarshal([]byte(textOf(res)), &payload); err != nil {
-		t.Fatalf("plot result parse: %v\n%s", err, textOf(res))
-	}
-	if payload.Mime != "image/svg+xml" {
-		t.Errorf("mime = %q; want image/svg+xml", payload.Mime)
-	}
-	decoded, _ := base64.StdEncoding.DecodeString(payload.Bytes)
+	decoded, _ := base64.StdEncoding.DecodeString(out.Bytes)
 	if !strings.HasPrefix(strings.TrimSpace(string(decoded)), "<svg") {
 		t.Errorf("decoded bytes do not start with <svg")
 	}
-	if payload.Caption == "" {
+	if out.Caption == "" {
 		t.Errorf("caption empty")
 	}
 }
 
-// TestPrismMCPPlotToolPDF round-trips the prism_plot tool with
-// format=pdf; verifies the response carries application/pdf mime +
-// base64-decoded bytes start with %PDF-.
-func TestPrismMCPPlotToolPDF(t *testing.T) {
-	cs := newTestSession(t)
-	res, err := cs.CallTool(context.Background(), &gosdk.CallToolParams{
-		Name: "prism_plot",
-		Arguments: map[string]any{
-			"spec":   fixtureSpec,
-			"format": "pdf",
-		},
-	})
+// TestPlotToolPDF confirms format=pdf returns application/pdf bytes.
+func TestPlotToolPDF(t *testing.T) {
+	out, err := PlotTool(context.Background(), newFacade(), PlotInput{Spec: fixtureSpec, Format: "pdf"})
 	if err != nil {
-		t.Fatalf("CallTool prism_plot pdf: %v", err)
+		t.Fatalf("PlotTool pdf: %v", err)
 	}
-	if res.IsError {
-		t.Fatalf("prism_plot pdf returned error: %s", textOf(res))
+	if out.Mime != "application/pdf" {
+		t.Errorf("mime = %q; want application/pdf", out.Mime)
 	}
-	var payload PlotOutput
-	if err := json.Unmarshal([]byte(textOf(res)), &payload); err != nil {
-		t.Fatalf("plot result parse: %v\n%s", err, textOf(res))
-	}
-	if payload.Mime != "application/pdf" {
-		t.Errorf("mime = %q; want application/pdf", payload.Mime)
-	}
-	decoded, err := base64.StdEncoding.DecodeString(payload.Bytes)
+	decoded, err := base64.StdEncoding.DecodeString(out.Bytes)
 	if err != nil {
 		t.Fatalf("base64 decode: %v", err)
 	}
@@ -155,170 +72,119 @@ func TestPrismMCPPlotToolPDF(t *testing.T) {
 	}
 }
 
-// TestPrismMCPValidateTool round-trips the prism_validate tool on a
-// valid spec.
-func TestPrismMCPValidateTool(t *testing.T) {
-	cs := newTestSession(t)
-
-	res, err := cs.CallTool(context.Background(), &gosdk.CallToolParams{
-		Name:      "prism_validate",
-		Arguments: map[string]any{"spec": fixtureSpec},
-	})
-	if err != nil {
-		t.Fatalf("CallTool prism_validate (valid): %v", err)
+// TestPlotToolMissingSpec confirms the missing-argument guard returns a Go
+// error (the SDK adapter is what maps it to a tool-result error).
+func TestPlotToolMissingSpec(t *testing.T) {
+	_, err := PlotTool(context.Background(), newFacade(), PlotInput{})
+	if err == nil {
+		t.Fatal("expected error for missing spec; got nil")
 	}
-	if res.IsError {
-		t.Fatalf("prism_validate (valid) returned error: %s", textOf(res))
-	}
-	var v struct {
-		Ok     bool             `json:"ok"`
-		Errors []map[string]any `json:"errors"`
-	}
-	if err := json.Unmarshal([]byte(textOf(res)), &v); err != nil {
-		t.Fatalf("validate body parse: %v", err)
-	}
-	if !v.Ok {
-		t.Errorf("Validate(valid) ok=false; errors=%v", v.Errors)
+	if !strings.Contains(err.Error(), "missing required argument: spec") {
+		t.Errorf("error = %q; want 'missing required argument: spec'", err.Error())
 	}
 }
 
-// TestPrismMCPDescribeTool exercises prism_describe.
-func TestPrismMCPDescribeTool(t *testing.T) {
-	cs := newTestSession(t)
-	res, err := cs.CallTool(context.Background(), &gosdk.CallToolParams{
-		Name:      "prism_describe",
-		Arguments: map[string]any{"spec": fixtureSpec},
-	})
+// TestValidateTool round-trips the typed prism_validate handler on a valid
+// spec.
+func TestValidateTool(t *testing.T) {
+	out, err := ValidateTool(context.Background(), newFacade(), ValidateInput{Spec: fixtureSpec})
 	if err != nil {
-		t.Fatalf("CallTool prism_describe: %v", err)
+		t.Fatalf("ValidateTool: %v", err)
 	}
-	if res.IsError {
-		t.Fatalf("prism_describe returned error: %s", textOf(res))
-	}
-	var d struct {
-		Summary string `json:"summary"`
-	}
-	if err := json.Unmarshal([]byte(textOf(res)), &d); err != nil {
-		t.Fatalf("describe body parse: %v", err)
-	}
-	if !strings.Contains(d.Summary, "bar chart") {
-		t.Errorf("summary missing 'bar chart': %q", d.Summary)
-	}
-	if !strings.Contains(d.Summary, "hello") {
-		t.Errorf("summary missing title 'hello': %q", d.Summary)
+	if !out.Ok {
+		t.Errorf("Validate(valid) ok=false; errors=%v", out.Errors)
 	}
 }
 
-// TestPrismMCPExamplesSearchTool exercises prism_examples_search against
-// the EMBEDDED examples corpus (the default — no ExamplesRoot set), which
-// is what a real `prism mcp` with no --examples-root flag serves.
-func TestPrismMCPExamplesSearchTool(t *testing.T) {
-	cs := newTestSession(t)
-	res, err := cs.CallTool(context.Background(), &gosdk.CallToolParams{
-		Name:      "prism_examples_search",
-		Arguments: map[string]any{"query": "bar"},
-	})
+// TestDescribeTool exercises the typed prism_describe handler.
+func TestDescribeTool(t *testing.T) {
+	out, err := DescribeTool(context.Background(), newFacade(), DescribeInput{Spec: fixtureSpec})
 	if err != nil {
-		t.Fatalf("CallTool prism_examples_search: %v", err)
+		t.Fatalf("DescribeTool: %v", err)
 	}
-	if res.IsError {
-		t.Fatalf("prism_examples_search returned error: %s", textOf(res))
+	if !strings.Contains(out.Summary, "bar chart") {
+		t.Errorf("summary missing 'bar chart': %q", out.Summary)
 	}
-	var s struct {
-		Examples []ExampleResult `json:"examples"`
+	if !strings.Contains(out.Summary, "hello") {
+		t.Errorf("summary missing title 'hello': %q", out.Summary)
 	}
-	if err := json.Unmarshal([]byte(textOf(res)), &s); err != nil {
-		t.Fatalf("search body parse: %v", err)
+}
+
+// TestExamplesSearchToolEmbedded searches the embedded corpus (empty Root),
+// the default a real `prism mcp` with no --examples-root serves.
+func TestExamplesSearchToolEmbedded(t *testing.T) {
+	out, err := ExamplesSearchTool(context.Background(), newFacade(), ExamplesSearchInput{Query: "bar"})
+	if err != nil {
+		t.Fatalf("ExamplesSearchTool: %v", err)
 	}
-	if len(s.Examples) == 0 {
+	if len(out.Examples) == 0 {
 		t.Fatalf("search returned no examples")
 	}
-	if len(s.Examples) > 5 {
-		t.Errorf("expected at most 5 results (cap); got %d", len(s.Examples))
+	if len(out.Examples) > 5 {
+		t.Errorf("expected at most 5 results (cap); got %d", len(out.Examples))
 	}
-	if s.Examples[0].Name != "bar_basic" {
-		t.Errorf("expected first match bar_basic; got %q", s.Examples[0].Name)
+	if out.Examples[0].Name != "bar_basic" {
+		t.Errorf("expected first match bar_basic; got %q", out.Examples[0].Name)
 	}
-	if s.Examples[0].Summary == "" || s.Examples[0].Spec == "" {
-		t.Errorf("embedded result missing summary/spec: %+v", s.Examples[0])
+	if out.Examples[0].Summary == "" || out.Examples[0].Spec == "" {
+		t.Errorf("embedded result missing summary/spec: %+v", out.Examples[0])
 	}
 }
 
-// TestPrismMCPExamplesSearchOverride confirms a non-empty ExamplesRoot
-// still drives the on-disk afero walk instead of the embedded corpus.
-func TestPrismMCPExamplesSearchOverride(t *testing.T) {
+// TestExamplesSearchToolOverride confirms a non-empty Root drives the on-disk
+// afero walk instead of the embedded corpus.
+func TestExamplesSearchToolOverride(t *testing.T) {
 	exFS := afero.NewMemMapFs()
 	_ = afero.WriteFile(exFS, "fixtures/only_override.json",
 		[]byte(`{"$schema":"urn:prism:schema:v1:spec","title":"override only","mark":"bar","encoding":{}}`), 0o644)
 
-	cs := connectSession(t, Options{
-		PrismServer:  &rpc.PrismServer{Fs: afero.NewMemMapFs()},
-		ExamplesRoot: "fixtures/",
-		ExamplesFS:   exFS,
-	})
-
-	res, err := cs.CallTool(context.Background(), &gosdk.CallToolParams{
-		Name:      "prism_examples_search",
-		Arguments: map[string]any{"query": "override"},
+	out, err := ExamplesSearchTool(context.Background(), newFacade(), ExamplesSearchInput{
+		Query: "override",
+		Root:  "fixtures/",
+		FS:    exFS,
 	})
 	if err != nil {
-		t.Fatalf("CallTool prism_examples_search (override): %v", err)
+		t.Fatalf("ExamplesSearchTool (override): %v", err)
 	}
-	if res.IsError {
-		t.Fatalf("prism_examples_search (override) returned error: %s", textOf(res))
-	}
-	var s struct {
-		Examples []ExampleResult `json:"examples"`
-	}
-	if err := json.Unmarshal([]byte(textOf(res)), &s); err != nil {
-		t.Fatalf("search body parse: %v", err)
-	}
-	if len(s.Examples) != 1 || s.Examples[0].Name != "only_override" {
-		t.Fatalf("expected the single on-disk override fixture; got %+v", s.Examples)
+	if len(out.Examples) != 1 || out.Examples[0].Name != "only_override" {
+		t.Fatalf("expected the single on-disk override fixture; got %+v", out.Examples)
 	}
 }
 
-// TestPrismMCPNewSmoke ensures the public New() entrypoint registers
-// exactly the four tools (no missing wiring), driven over the
-// in-memory transport.
-func TestPrismMCPNewSmoke(t *testing.T) {
-	cs := newTestSession(t)
-	listResult, err := cs.ListTools(context.Background(), nil)
-	if err != nil {
-		t.Fatalf("ListTools: %v", err)
+// TestExamplesSearchToolMissingQuery confirms the missing-argument guard.
+func TestExamplesSearchToolMissingQuery(t *testing.T) {
+	_, err := ExamplesSearchTool(context.Background(), newFacade(), ExamplesSearchInput{})
+	if err == nil {
+		t.Fatal("expected error for missing query; got nil")
 	}
-	if len(listResult.Tools) != 4 {
-		t.Fatalf("ListTools returned %d tools; want 4 (got %v)", len(listResult.Tools), listResult.Tools)
+	if !strings.Contains(err.Error(), "missing required argument: query") {
+		t.Errorf("error = %q; want 'missing required argument: query'", err.Error())
 	}
 }
 
-// TestPrismMCPPlotMissingSpec confirms a missing required argument
-// surfaces as a tool-result error (IsError=true), not a protocol-level
-// Go error — so the agent can see the message and self-correct.
-func TestPrismMCPPlotMissingSpec(t *testing.T) {
-	cs := newTestSession(t)
-	res, err := cs.CallTool(context.Background(), &gosdk.CallToolParams{
-		Name:      "prism_plot",
-		Arguments: map[string]any{},
-	})
-	if err != nil {
-		t.Fatalf("CallTool prism_plot (missing spec): %v", err)
+// TestSummariseSpec covers the pure summariser used by prism_describe.
+func TestSummariseSpec(t *testing.T) {
+	summary := summariseSpec(fixtureSpec)
+	if !strings.Contains(summary, "bar chart") {
+		t.Errorf("summary missing 'bar chart': %q", summary)
 	}
-	if !res.IsError {
-		t.Fatalf("expected IsError=true for missing spec; got success: %s", textOf(res))
-	}
-	if !strings.Contains(textOf(res), "missing required argument: spec") {
-		t.Errorf("error text = %q; want 'missing required argument: spec'", textOf(res))
+	if summariseSpec("{not json") != "" {
+		t.Errorf("expected empty summary for undecodable spec")
 	}
 }
 
-// textOf concatenates every TextContent entry in a CallToolResult.
-func textOf(res *gosdk.CallToolResult) string {
-	var b strings.Builder
-	for _, c := range res.Content {
-		if tc, ok := c.(*gosdk.TextContent); ok {
-			b.WriteString(tc.Text)
-		}
+// TestSearchExamples covers the on-disk afero walk helper directly.
+func TestSearchExamples(t *testing.T) {
+	fsys := afero.NewMemMapFs()
+	_ = afero.WriteFile(fsys, "specs/bar_demo.json",
+		[]byte(`{"$schema":"urn:prism:schema:v1:spec","title":"Bar demo","mark":"bar","encoding":{}}`), 0o644)
+	_ = afero.WriteFile(fsys, "specs/invalid/broken.json", []byte(`{bad`), 0o644)
+
+	hits := searchExamples(fsys, "specs/", "bar", 5)
+	if len(hits) != 1 || hits[0].Name != "bar_demo" {
+		t.Fatalf("expected the single bar_demo hit (invalid/ skipped); got %+v", hits)
 	}
-	return b.String()
+	if hits[0].Summary != "Bar demo" {
+		t.Errorf("summary = %q; want title 'Bar demo'", hits[0].Summary)
+	}
 }

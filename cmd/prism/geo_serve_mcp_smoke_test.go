@@ -13,8 +13,7 @@ import (
 	"testing"
 	"time"
 
-	mcpclient "github.com/mark3labs/mcp-go/client"
-	mcpgo "github.com/mark3labs/mcp-go/mcp"
+	gosdk "github.com/modelcontextprotocol/go-sdk/mcp"
 )
 
 // E2-S2 wires --geodata-dir / PRISM_GEODATA into the `serve` and `mcp`
@@ -145,32 +144,30 @@ func TestPrismServeGeodataDirUnset(t *testing.T) {
 	}
 }
 
-// startMCPClient launches `<bin> mcp <extraArgs...>` over stdio,
-// initialises the session, and returns a connected client. The client is
-// closed on cleanup.
-func startMCPClient(t *testing.T, bin string, extraArgs ...string) *mcpclient.Client {
+// startMCPClient launches `<bin> mcp <extraArgs...>` over stdio via the go-sdk
+// CommandTransport, initialises the session, and returns the connected client
+// session. The session (and the spawned process) is torn down on cleanup.
+func startMCPClient(t *testing.T, bin string, extraArgs ...string) *gosdk.ClientSession {
 	t.Helper()
 	args := append([]string{"mcp"}, extraArgs...)
-	cli, err := mcpclient.NewStdioMCPClient(bin, nil, args...)
-	if err != nil {
-		t.Fatalf("start mcp client: %v", err)
-	}
-	t.Cleanup(func() { _ = cli.Close() })
+	cmd := exec.Command(bin, args...)
 
+	// The Connect ctx scopes only the initialize handshake; the session keeps
+	// its own lifetime and is released by Close on cleanup.
 	ctx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
 	defer cancel()
-	var initReq mcpgo.InitializeRequest
-	initReq.Params.ProtocolVersion = mcpgo.LATEST_PROTOCOL_VERSION
-	initReq.Params.ClientInfo = mcpgo.Implementation{Name: "prism-geo-smoke", Version: "0"}
-	if _, err := cli.Initialize(ctx, initReq); err != nil {
-		t.Fatalf("mcp initialize: %v", err)
+	client := gosdk.NewClient(&gosdk.Implementation{Name: "prism-geo-smoke", Version: "0"}, nil)
+	session, err := client.Connect(ctx, &gosdk.CommandTransport{Command: cmd}, nil)
+	if err != nil {
+		t.Fatalf("mcp connect: %v", err)
 	}
-	return cli
+	t.Cleanup(func() { _ = session.Close() })
+	return session
 }
 
 // callPlotGeoshape invokes the prism_plot tool on the committed
 // geo_world.json geoshape spec and returns the tool result.
-func callPlotGeoshape(t *testing.T, cli *mcpclient.Client) *mcpgo.CallToolResult {
+func callPlotGeoshape(t *testing.T, cs *gosdk.ClientSession) *gosdk.CallToolResult {
 	t.Helper()
 	raw, err := os.ReadFile(repoFile(t, "examples", "specs", "geo_world.json"))
 	if err != nil {
@@ -178,10 +175,10 @@ func callPlotGeoshape(t *testing.T, cli *mcpclient.Client) *mcpgo.CallToolResult
 	}
 	ctx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
 	defer cancel()
-	var req mcpgo.CallToolRequest
-	req.Params.Name = "prism_plot"
-	req.Params.Arguments = map[string]any{"spec": string(raw), "format": "svg"}
-	res, err := cli.CallTool(ctx, req)
+	res, err := cs.CallTool(ctx, &gosdk.CallToolParams{
+		Name:      "prism_plot",
+		Arguments: map[string]any{"spec": string(raw), "format": "svg"},
+	})
 	if err != nil {
 		t.Fatalf("CallTool prism_plot: %v", err)
 	}
@@ -189,10 +186,10 @@ func callPlotGeoshape(t *testing.T, cli *mcpclient.Client) *mcpgo.CallToolResult
 }
 
 // mcpResultText concatenates the TextContent entries of a tool result.
-func mcpResultText(res *mcpgo.CallToolResult) string {
+func mcpResultText(res *gosdk.CallToolResult) string {
 	var b strings.Builder
 	for _, c := range res.Content {
-		if tc, ok := c.(mcpgo.TextContent); ok {
+		if tc, ok := c.(*gosdk.TextContent); ok {
 			b.WriteString(tc.Text)
 		}
 	}
