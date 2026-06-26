@@ -31,6 +31,14 @@
       ]
     },
     {
+      "name": "Hierarchy & networks",
+      "examples": [
+        {"id": "tree",           "title": "Tree (org chart)",      "file": "tree.json"},
+        {"id": "dendrogram",     "title": "Dendrogram",            "file": "dendrogram.json"},
+        {"id": "network",        "title": "Network graph",         "file": "network.json"}
+      ]
+    },
+    {
       "name": "Parts of a whole",
       "examples": [
         {"id": "pie",            "title": "Pie chart",             "file": "pie.json"},

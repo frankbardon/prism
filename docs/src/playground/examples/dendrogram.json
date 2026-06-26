@@ -1,0 +1,22 @@
+{
+  "$schema": "urn:prism:schema:v1:spec",
+  "title": "Cluster dendrogram",
+  "data": {
+    "name": "clusters",
+    "values": [
+      {"id": "root",  "parent": null,   "name": "All samples"},
+      {"id": "a",     "parent": "root", "name": "Group A"},
+      {"id": "b",     "parent": "root", "name": "Group B"},
+      {"id": "a1",    "parent": "a",    "name": "A-1"},
+      {"id": "a2",    "parent": "a",    "name": "A-2"},
+      {"id": "b1",    "parent": "b",    "name": "B-1"},
+      {"id": "b2",    "parent": "b",    "name": "B-2"}
+    ]
+  },
+  "mark": {"type": "dendrogram", "link_shape": "step"},
+  "encoding": {
+    "source": {"field": "parent"},
+    "target": {"field": "id"},
+    "text":   {"field": "name"}
+  }
+}
