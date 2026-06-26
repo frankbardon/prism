@@ -27,6 +27,7 @@ import (
 
 	mcpgo "github.com/mark3labs/mcp-go/mcp"
 	"github.com/mark3labs/mcp-go/server"
+	gosdk "github.com/modelcontextprotocol/go-sdk/mcp"
 	"github.com/spf13/afero"
 
 	"github.com/frankbardon/prism/rpc"
@@ -59,7 +60,7 @@ func New(opts Options) *server.MCPServer {
 		opts.ExamplesFS = afero.NewOsFs()
 	}
 
-	s := server.NewMCPServer("prism", "0.1.0")
+	s := gosdk.NewServer(&gosdk.Implementation{Name: "prism", Version: "0.1.0"}, nil)
 	registerTools(s, opts)
 	return s
 }
