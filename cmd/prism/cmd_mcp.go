@@ -6,7 +6,7 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/mark3labs/mcp-go/server"
+	gosdk "github.com/modelcontextprotocol/go-sdk/mcp"
 	"github.com/spf13/afero"
 	"github.com/urfave/cli/v3"
 
@@ -55,9 +55,8 @@ func runMCP(ctx context.Context, cmd *cli.Command) error {
 		ExamplesRoot: cmd.String("examples-root"),
 		ExamplesFS:   afero.NewOsFs(),
 	})
-	if err := server.ServeStdio(srv); err != nil {
+	if err := srv.Run(ctx, &gosdk.StdioTransport{}); err != nil {
 		return cli.Exit(fmt.Sprintf("mcp serve: %v", err), 1)
 	}
-	_ = ctx
 	return nil
 }

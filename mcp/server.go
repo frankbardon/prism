@@ -1,9 +1,9 @@
 //go:build !js
 
 // Package mcp wires Prism into the Model Context Protocol via
-// mark3labs/mcp-go (D008 parity with Pulse, pinned at v0.54.0).
+// modelcontextprotocol/go-sdk (pinned at v1.6.1).
 //
-// New(opts) returns a configured *server.MCPServer with four tools
+// New(opts) returns a configured *gosdk.Server with four tools
 // registered:
 //
 //   - prism_plot(spec, format?)         → bytes + mime + caption
@@ -12,7 +12,7 @@
 //   - prism_examples_search(query)      → list of fixture specs
 //
 // The server is transport-agnostic; the CLI's `prism mcp`
-// subcommand wraps it in server.ServeStdio for agent-host use.
+// subcommand drives it over a stdio transport for agent-host use.
 package mcp
 
 import (
@@ -25,8 +25,6 @@ import (
 	"sort"
 	"strings"
 
-	mcpgo "github.com/mark3labs/mcp-go/mcp"
-	"github.com/mark3labs/mcp-go/server"
 	gosdk "github.com/modelcontextprotocol/go-sdk/mcp"
 	"github.com/spf13/afero"
 
@@ -46,10 +44,10 @@ type Options struct {
 }
 
 // New constructs an MCP server with all four Prism tools registered.
-// The returned *server.MCPServer is ready to drive via either
-// server.ServeStdio (for the `prism mcp` CLI subcommand) or any
-// other transport mcp-go supports.
-func New(opts Options) *server.MCPServer {
+// The returned *gosdk.Server is ready to drive via a stdio transport
+// (for the `prism mcp` CLI subcommand) or any other transport the
+// go-sdk supports.
+func New(opts Options) *gosdk.Server {
 	if opts.PrismServer == nil {
 		opts.PrismServer = &rpc.PrismServer{Fs: afero.NewOsFs()}
 	}
@@ -67,45 +65,73 @@ func New(opts Options) *server.MCPServer {
 
 // registerTools attaches the four Prism tools to the supplied server.
 // Public so tests can build a bare server and register selectively.
-func registerTools(s *server.MCPServer, opts Options) {
+//
+// We use the low-level gosdk.Server.AddTool with hand-written input
+// schemas so the tool result is the raw JSON text content the agent
+// host expects (the typed gosdk.AddTool[In,Out] form would wrap the
+// payload in structured content instead).
+func registerTools(s *gosdk.Server, opts Options) {
 	s.AddTool(
-		mcpgo.NewTool("prism_plot",
-			mcpgo.WithDescription("Compile a Prism spec and render to image bytes. SVG (default) and PDF are supported; PNG returns PRISM_RENDER_FORMAT_UNAVAILABLE (V2)."),
-			mcpgo.WithString("spec",
-				mcpgo.Required(),
-				mcpgo.Description("Prism spec as a JSON string (matches the schemas under schema/v1/).")),
-			mcpgo.WithString("format",
-				mcpgo.Description("Output format: svg (default) | pdf. PNG returns PRISM_RENDER_FORMAT_UNAVAILABLE.")),
-		),
+		&gosdk.Tool{
+			Name:        "prism_plot",
+			Description: "Compile a Prism spec and render to image bytes. SVG (default) and PDF are supported; PNG returns PRISM_RENDER_FORMAT_UNAVAILABLE (V2).",
+			InputSchema: json.RawMessage(`{"type":"object","properties":{"spec":{"type":"string","description":"Prism spec as a JSON string (matches the schemas under schema/v1/)."},"format":{"type":"string","description":"Output format: svg (default) | pdf. PNG returns PRISM_RENDER_FORMAT_UNAVAILABLE."}},"required":["spec"]}`),
+		},
 		plotHandler(opts.PrismServer),
 	)
 	s.AddTool(
-		mcpgo.NewTool("prism_validate",
-			mcpgo.WithDescription("Validate a Prism spec against the embedded JSON Schema + semantic rules."),
-			mcpgo.WithString("spec",
-				mcpgo.Required(),
-				mcpgo.Description("Prism spec as a JSON string.")),
-		),
+		&gosdk.Tool{
+			Name:        "prism_validate",
+			Description: "Validate a Prism spec against the embedded JSON Schema + semantic rules.",
+			InputSchema: json.RawMessage(`{"type":"object","properties":{"spec":{"type":"string","description":"Prism spec as a JSON string."}},"required":["spec"]}`),
+		},
 		validateHandler(opts.PrismServer),
 	)
 	s.AddTool(
-		mcpgo.NewTool("prism_describe",
-			mcpgo.WithDescription("Return a natural-language summary of what a Prism spec renders."),
-			mcpgo.WithString("spec",
-				mcpgo.Required(),
-				mcpgo.Description("Prism spec as a JSON string.")),
-		),
+		&gosdk.Tool{
+			Name:        "prism_describe",
+			Description: "Return a natural-language summary of what a Prism spec renders.",
+			InputSchema: json.RawMessage(`{"type":"object","properties":{"spec":{"type":"string","description":"Prism spec as a JSON string."}},"required":["spec"]}`),
+		},
 		describeHandler(),
 	)
 	s.AddTool(
-		mcpgo.NewTool("prism_examples_search",
-			mcpgo.WithDescription("Search the curated example spec library by substring match on name + title. Returns up to 5 results."),
-			mcpgo.WithString("query",
-				mcpgo.Required(),
-				mcpgo.Description("Case-insensitive substring to match against fixture names + titles.")),
-		),
+		&gosdk.Tool{
+			Name:        "prism_examples_search",
+			Description: "Search the curated example spec library by substring match on name + title. Returns up to 5 results.",
+			InputSchema: json.RawMessage(`{"type":"object","properties":{"query":{"type":"string","description":"Case-insensitive substring to match against fixture names + titles."}},"required":["query"]}`),
+		},
 		examplesSearchHandler(opts),
 	)
+}
+
+// toolArgs decodes the raw tool-call arguments into a string-keyed map,
+// mirroring the mark3labs CallToolRequest.GetArguments() shape the
+// handler bodies were written against.
+func toolArgs(req *gosdk.CallToolRequest) map[string]any {
+	out := map[string]any{}
+	if req == nil || req.Params == nil || len(req.Params.Arguments) == 0 {
+		return out
+	}
+	_ = json.Unmarshal(req.Params.Arguments, &out)
+	return out
+}
+
+// textResult wraps a JSON payload string as a successful tool result.
+func textResult(body string) *gosdk.CallToolResult {
+	return &gosdk.CallToolResult{
+		Content: []gosdk.Content{&gosdk.TextContent{Text: body}},
+	}
+}
+
+// errorResult surfaces a facade/argument error as a tool-result error
+// (IsError=true) rather than an MCP protocol-level Go error, so the
+// agent can see the message and self-correct.
+func errorResult(msg string) *gosdk.CallToolResult {
+	return &gosdk.CallToolResult{
+		IsError: true,
+		Content: []gosdk.Content{&gosdk.TextContent{Text: msg}},
+	}
 }
 
 // plotResult is the structured payload returned by prism_plot.
@@ -116,13 +142,13 @@ type plotResult struct {
 	Warnings []string `json:"warnings,omitempty"`
 }
 
-func plotHandler(impl *rpc.PrismServer) server.ToolHandlerFunc {
-	return func(ctx context.Context, req mcpgo.CallToolRequest) (*mcpgo.CallToolResult, error) {
-		args := req.GetArguments()
+func plotHandler(impl *rpc.PrismServer) gosdk.ToolHandler {
+	return func(ctx context.Context, req *gosdk.CallToolRequest) (*gosdk.CallToolResult, error) {
+		args := toolArgs(req)
 		spec, _ := args["spec"].(string)
 		format, _ := args["format"].(string)
 		if spec == "" {
-			return mcpgo.NewToolResultError("missing required argument: spec"), nil
+			return errorResult("missing required argument: spec"), nil
 		}
 		if format == "" {
 			format = "svg"
@@ -135,7 +161,7 @@ func plotHandler(impl *rpc.PrismServer) server.ToolHandlerFunc {
 			Spec: spec, Format: format,
 		})
 		if err != nil {
-			return mcpgo.NewToolResultError(err.Error()), nil
+			return errorResult(err.Error()), nil
 		}
 
 		// Caption from the parsed spec (mark + encoding fields).
@@ -148,20 +174,20 @@ func plotHandler(impl *rpc.PrismServer) server.ToolHandlerFunc {
 			Warnings: append([]string(nil), resp.Warnings...),
 		}
 		body, _ := json.Marshal(result)
-		return mcpgo.NewToolResultText(string(body)), nil
+		return textResult(string(body)), nil
 	}
 }
 
-func validateHandler(impl *rpc.PrismServer) server.ToolHandlerFunc {
-	return func(ctx context.Context, req mcpgo.CallToolRequest) (*mcpgo.CallToolResult, error) {
-		args := req.GetArguments()
+func validateHandler(impl *rpc.PrismServer) gosdk.ToolHandler {
+	return func(ctx context.Context, req *gosdk.CallToolRequest) (*gosdk.CallToolResult, error) {
+		args := toolArgs(req)
 		spec, _ := args["spec"].(string)
 		if spec == "" {
-			return mcpgo.NewToolResultError("missing required argument: spec"), nil
+			return errorResult("missing required argument: spec"), nil
 		}
 		resp, err := impl.Validate(ctx, &rpc.ValidateRequest{Spec: spec})
 		if err != nil {
-			return mcpgo.NewToolResultError(err.Error()), nil
+			return errorResult(err.Error()), nil
 		}
 		// Hand-marshal a tidy shape: {ok, errors:[{code,message,fixups}]}.
 		errs := make([]map[string]any, 0, len(resp.Errors))
@@ -176,20 +202,20 @@ func validateHandler(impl *rpc.PrismServer) server.ToolHandlerFunc {
 			"ok":     resp.Ok,
 			"errors": errs,
 		})
-		return mcpgo.NewToolResultText(string(body)), nil
+		return textResult(string(body)), nil
 	}
 }
 
-func describeHandler() server.ToolHandlerFunc {
-	return func(ctx context.Context, req mcpgo.CallToolRequest) (*mcpgo.CallToolResult, error) {
-		args := req.GetArguments()
+func describeHandler() gosdk.ToolHandler {
+	return func(ctx context.Context, req *gosdk.CallToolRequest) (*gosdk.CallToolResult, error) {
+		args := toolArgs(req)
 		spec, _ := args["spec"].(string)
 		if spec == "" {
-			return mcpgo.NewToolResultError("missing required argument: spec"), nil
+			return errorResult("missing required argument: spec"), nil
 		}
 		summary := summariseSpec(spec)
 		body, _ := json.Marshal(map[string]any{"summary": summary})
-		return mcpgo.NewToolResultText(string(body)), nil
+		return textResult(string(body)), nil
 	}
 }
 
@@ -200,16 +226,16 @@ type exampleResult struct {
 	Spec    string `json:"spec"`
 }
 
-func examplesSearchHandler(opts Options) server.ToolHandlerFunc {
-	return func(ctx context.Context, req mcpgo.CallToolRequest) (*mcpgo.CallToolResult, error) {
-		args := req.GetArguments()
+func examplesSearchHandler(opts Options) gosdk.ToolHandler {
+	return func(ctx context.Context, req *gosdk.CallToolRequest) (*gosdk.CallToolResult, error) {
+		args := toolArgs(req)
 		query, _ := args["query"].(string)
 		if query == "" {
-			return mcpgo.NewToolResultError("missing required argument: query"), nil
+			return errorResult("missing required argument: query"), nil
 		}
 		hits := searchExamples(opts.ExamplesFS, opts.ExamplesRoot, query, 5)
 		body, _ := json.Marshal(map[string]any{"examples": hits})
-		return mcpgo.NewToolResultText(string(body)), nil
+		return textResult(string(body)), nil
 	}
 }
 
