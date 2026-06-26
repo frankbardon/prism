@@ -1,6 +1,6 @@
 # Prism Gallery
 
-70 fixture specs across 13 categories. Each entry pairs a `*.prism.json`
+90 fixture specs across 13 categories. Each entry pairs a `*.prism.json`
 spec with a rendered `*.svg`. Browse the source to learn the spec
 shapes; open the SVGs to see what they render.
 
@@ -135,13 +135,15 @@ selection or Pulse expression. See
 
 ## Tree
 
-Rooted hierarchies laid out with tidy-tree. See
-[Marks › Tree](../concepts/marks.md#tree).
+Rooted hierarchies laid out with tidy-tree, plus the `dendrogram`
+variant (step links, hidden nodes). See
+[Marks › Tree / dendrogram / network](../concepts/marks.md#tree--dendrogram--network).
 
 | Spec | Preview |
 |---|---|
 | [org_chart](tree/org_chart.prism.json) | <img src="tree/org_chart.svg" width="240"> |
 | [decision_tree](tree/decision_tree.prism.json) | <img src="tree/decision_tree.svg" width="240"> |
+| [cluster_dendrogram](tree/cluster_dendrogram.prism.json) | <img src="tree/cluster_dendrogram.svg" width="240"> |
 
 ## Network
 
