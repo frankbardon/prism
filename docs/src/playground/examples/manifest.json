@@ -21,6 +21,33 @@
       ]
     },
     {
+      "name": "Compact marks",
+      "examples": [
+        {"id": "sparkline",      "title": "Sparkline",             "file": "sparkline.json"},
+        {"id": "sparkbar",       "title": "Sparkbar",              "file": "sparkbar.json"},
+        {"id": "sparkarea",      "title": "Sparkarea",             "file": "sparkarea.json"},
+        {"id": "winloss",        "title": "Win/loss",              "file": "winloss.json"},
+        {"id": "bullet",         "title": "Bullet chart",          "file": "bullet.json"}
+      ]
+    },
+    {
+      "name": "Hierarchy & networks",
+      "examples": [
+        {"id": "tree",           "title": "Tree (org chart)",      "file": "tree.json"},
+        {"id": "dendrogram",     "title": "Dendrogram",            "file": "dendrogram.json"},
+        {"id": "network",        "title": "Network graph",         "file": "network.json"}
+      ]
+    },
+    {
+      "name": "Primitives",
+      "examples": [
+        {"id": "tick",           "title": "Tick strip",            "file": "tick.json"},
+        {"id": "rect",           "title": "Rect grid",             "file": "rect.json"},
+        {"id": "image",          "title": "Image mark",            "file": "image.json"},
+        {"id": "path",           "title": "Arbitrary path",        "file": "path.json"}
+      ]
+    },
+    {
       "name": "Parts of a whole",
       "examples": [
         {"id": "pie",            "title": "Pie chart",             "file": "pie.json"},

@@ -1,0 +1,26 @@
+{
+  "$schema": "urn:prism:schema:v1:spec",
+  "title": "Win/loss streak",
+  "data": {
+    "name": "season",
+    "values": [
+      {"game": "g1",  "result": 1},
+      {"game": "g2",  "result": 1},
+      {"game": "g3",  "result": -1},
+      {"game": "g4",  "result": 1},
+      {"game": "g5",  "result": -1},
+      {"game": "g6",  "result": -1},
+      {"game": "g7",  "result": 0},
+      {"game": "g8",  "result": 1},
+      {"game": "g9",  "result": 1},
+      {"game": "g10", "result": -1},
+      {"game": "g11", "result": 1},
+      {"game": "g12", "result": 1}
+    ]
+  },
+  "mark": "winloss",
+  "encoding": {
+    "x": {"field": "game", "type": "nominal"},
+    "y": {"field": "result", "type": "quantitative"}
+  }
+}

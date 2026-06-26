@@ -170,6 +170,55 @@ Mark-def options:
 
 Validate rule: `PRISM_SPEC_036` (bands strictly ascending).
 
+### Image and path
+
+`image` and `path` are single-geometry escape hatches: each spec emits
+exactly one mark from a mark-def field rather than one mark per data
+row. They take no positional data series of their own — `encoding` may
+be left empty (`{}`).
+
+**`image`** places a raster sprite at a position. Key fields:
+
+- `url` (string, required) — the image source, read from `mark_def.url`.
+  Offline-first: only `data:` URLs (e.g. base64-encoded PNG) and
+  relative paths are accepted; remote `http(s)` fetch is rejected at
+  validate time by `PRISM_SPEC_016`. The string passes through verbatim
+  to the rendered `<image href>`.
+- `size` (number) — side length in pixels. Images are square; defaults
+  to `64`.
+- Position — when both `x` and `y` channels are bound, the image anchors
+  at the scaled value of row 0; with no position channels it lands at
+  the plot region's top-left quarter (a sensible single-decoration
+  default).
+
+```json
+{
+  "mark": {"type": "image", "url": "data:image/png;base64,iVBOR...", "size": 64},
+  "encoding": {}
+}
+```
+
+**`path`** draws a raw SVG path — the escape hatch for primitives Prism
+does not model natively. Key field:
+
+- `path` (string, required) — the SVG `d` string, read from
+  `mark_def.path` and passed through untouched to the rendered
+  `<path d=...>` (the renderer handles attribute escaping). An empty `d`
+  is rejected by `PRISM_SPEC_017`.
+
+Standard style props (`fill`, `stroke`, `stroke_width`, `opacity`) apply.
+For a data-driven polyline, prefer `line` with `x`/`y` encodings.
+
+```json
+{
+  "mark": {"type": "path", "path": "M 100 100 L 200 100 L 150 200 Z", "fill": "#3b82f6"},
+  "encoding": {}
+}
+```
+
+Validate rules: `PRISM_SPEC_016` (image URL allowed), `PRISM_SPEC_017`
+(non-empty path `d`).
+
 ## Channel allowlists
 
 Not every channel is valid for every mark — `theta` only makes sense
