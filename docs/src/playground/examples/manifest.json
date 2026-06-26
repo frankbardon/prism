@@ -39,6 +39,15 @@
       ]
     },
     {
+      "name": "Primitives",
+      "examples": [
+        {"id": "tick",           "title": "Tick strip",            "file": "tick.json"},
+        {"id": "rect",           "title": "Rect grid",             "file": "rect.json"},
+        {"id": "image",          "title": "Image mark",            "file": "image.json"},
+        {"id": "path",           "title": "Arbitrary path",        "file": "path.json"}
+      ]
+    },
+    {
       "name": "Parts of a whole",
       "examples": [
         {"id": "pie",            "title": "Pie chart",             "file": "pie.json"},
