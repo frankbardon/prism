@@ -9,8 +9,7 @@
 //     cheaper than a full Render (the encode + raster stages are the
 //     expensive ones).
 //
-//   - Render — full pipeline → byte stream (SVG today; PDF gated by
-//     build tag).
+//   - Render — full pipeline → byte stream (SVG).
 //
 // Both helpers accept either a parsed *spec.Spec or raw JSON bytes
 // and surface diagnostics (PRISM_WARN_* warnings) alongside any
