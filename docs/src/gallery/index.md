@@ -97,6 +97,13 @@ For live interactive rendering in a browser, see [`index.html`](index.html).
 | [multi_source_join](multi-source/multi_source_join.prism.json) | <img src="multi-source/multi_source_join.svg" width="240"> |
 | [bar_pulse_backed](multi-source/bar_pulse_backed.prism.json) | <img src="multi-source/bar_pulse_backed.svg" width="240"> |
 
+## Transforms
+
+| Spec | Preview |
+|---|---|
+| [filter_structured](transforms/filter_structured.prism.json) | <img src="transforms/filter_structured.svg" width="240"> |
+| [calculate_structured](transforms/calculate_structured.prism.json) | <img src="transforms/calculate_structured.svg" width="240"> |
+
 ## Scales
 
 | Spec | Preview |
