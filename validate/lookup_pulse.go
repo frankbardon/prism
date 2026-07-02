@@ -1,7 +1,6 @@
 package validate
 
 import (
-	"github.com/frankbardon/pulse/encoding"
 	"github.com/spf13/afero"
 
 	"github.com/frankbardon/prism/resolve"
@@ -17,8 +16,8 @@ import (
 //	pl := validate.NewPulseLookup(resolve.New(nil), afero.NewOsFs())
 //	pl.Register("brand_scores", "testdata/cohorts/tiny.pulse")
 //
-// Lookups resolve through the Resolver and fold the returned
-// *encoding.Schema into the minimal *PulseSchemaShim that semantic
+// Lookups resolve through the Resolver and fold the returned native
+// *table.Schema into the minimal *PulseSchemaShim that semantic
 // rules consume. Results are cached by dataset name for the lifetime
 // of the PulseLookup — Validate is a one-shot caller, so the cache is
 // scoped to a single validation pass.
@@ -67,7 +66,7 @@ func (l *PulseLookup) Names() []string {
 
 // Schema implements SchemaLookup.
 //
-// Resolves the dataset's ref via the Resolver, folds the Pulse schema
+// Resolves the dataset's ref via the Resolver, folds the native schema
 // into a *PulseSchemaShim, and returns it. Returns (nil, false) when
 // the name is not registered or the Resolver returns an error — the
 // validator interprets a missing schema as "no checks possible" rather
@@ -93,15 +92,14 @@ func (l *PulseLookup) Schema(name string) (*PulseSchemaShim, bool) {
 	if rc != nil {
 		_ = rc.Close()
 	}
-	// The resolver now returns the native *table.Schema (E1-S2); the
-	// shim builder is still Pulse-typed until E1-S3 retypes it, so bridge
-	// via the E1 conversion helper.
-	shim := pulseSchemaToShim(name, table.ToPulseSchema(schema))
+	// The resolver returns the native *table.Schema (E1-S2); fold it
+	// straight into the shim — no Pulse round-trip.
+	shim := schemaToShim(name, schema)
 	l.cache[name] = shim
 	return shim, true
 }
 
-// pulseSchemaToShim folds an *encoding.Schema into the minimal
+// schemaToShim folds a native *table.Schema into the minimal
 // PulseSchemaShim P01 rules consume. Type bucketing:
 //
 //	IsNumeric()    -> "quantitative"
@@ -109,7 +107,7 @@ func (l *PulseLookup) Schema(name string) (*PulseSchemaShim, bool) {
 //	FieldTypeDate   -> "temporal"
 //	bool (packed/nullable) -> "nominal"
 //	anything else   -> "nominal" (conservative fallback)
-func pulseSchemaToShim(name string, schema *encoding.Schema) *PulseSchemaShim {
+func schemaToShim(name string, schema *table.Schema) *PulseSchemaShim {
 	shim := &PulseSchemaShim{Name: name}
 	if schema == nil {
 		return shim
@@ -123,18 +121,18 @@ func pulseSchemaToShim(name string, schema *encoding.Schema) *PulseSchemaShim {
 	return shim
 }
 
-// measureTypeFor returns the Prism measure-type bucket for a Pulse
-// FieldType. Exposed here (lower-case) for internal reuse; the public
-// surface stays through PulseLookup.
-func measureTypeFor(ft encoding.FieldType) string {
+// measureTypeFor returns the Prism measure-type bucket for a native
+// table.FieldType. Exposed here (lower-case) for internal reuse; the
+// public surface stays through PulseLookup.
+func measureTypeFor(ft table.FieldType) string {
 	switch {
-	case ft == encoding.FieldTypeDate:
+	case ft == table.FieldTypeDate:
 		return "temporal"
 	case ft.IsNumeric():
 		return "quantitative"
 	case ft.IsCategorical():
 		return "nominal"
-	case ft == encoding.FieldTypePackedBool:
+	case ft == table.FieldTypePackedBool:
 		return "nominal"
 	default:
 		return "nominal"
