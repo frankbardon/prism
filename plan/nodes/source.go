@@ -84,7 +84,10 @@ func (n *SourceNode) Summary() string { return n.ref }
 // OutputSchema resolves the ref so the schema is discoverable without
 // materialising records. The ReadCloser returned by Resolve is closed
 // immediately. Kept as a public method for backwards compatibility with
-// validate.PulseLookup; new callers should prefer Schema(nil).
+// the Pulse-typed callers (validate.PulseLookup, NewCrosstab,
+// NewRegression) that still consume a *encoding.Schema; it converts the
+// native schema the resolver now returns back to the Pulse shape via the
+// E1 shim. New callers should prefer Schema(nil).
 func (n *SourceNode) OutputSchema() (*encoding.Schema, error) {
 	rc, schema, err := n.resolver.Resolve(n.ref, n.fs)
 	if err != nil {
@@ -93,14 +96,21 @@ func (n *SourceNode) OutputSchema() (*encoding.Schema, error) {
 	if rc != nil {
 		_ = rc.Close()
 	}
-	return schema, nil
+	return table.ToPulseSchema(schema), nil
 }
 
 // Schema implements plan.Node. Source nodes ignore the `in` slice (they
 // have no upstream); the output schema is whatever the resolver reports
-// for the underlying .pulse cohort.
-func (n *SourceNode) Schema(_ []*encoding.Schema) (*encoding.Schema, error) {
-	return n.OutputSchema()
+// for the underlying .pulse cohort, in the native Prism shape.
+func (n *SourceNode) Schema(_ []*table.Schema) (*table.Schema, error) {
+	rc, schema, err := n.resolver.Resolve(n.ref, n.fs)
+	if err != nil {
+		return nil, err
+	}
+	if rc != nil {
+		_ = rc.Close()
+	}
+	return schema, nil
 }
 
 // RowCount returns the record count from the cohort's Pulse header
@@ -132,7 +142,7 @@ func (n *SourceNode) Execute(ctx context.Context, _ []*table.Table) (*table.Tabl
 		return nil, err
 	}
 
-	rc, schema, err := n.resolver.Resolve(n.ref, n.fs)
+	rc, _, err := n.resolver.Resolve(n.ref, n.fs)
 	if err != nil {
 		return nil, err
 	}
@@ -153,9 +163,9 @@ func (n *SourceNode) Execute(ctx context.Context, _ []*table.Table) (*table.Tabl
 
 	// Position the reader at the first record byte. The payload always
 	// starts with HeaderSize bytes (magic + version) followed by the
-	// encoded schema; we re-parse the schema here only to advance the
-	// reader cursor — the authoritative *encoding.Schema is the one
-	// returned by Resolve.
+	// encoded schema; parsing the schema both advances the reader cursor
+	// and yields the authoritative *encoding.Schema the Pulse record
+	// reader needs (dictionaries + field types) to decode the records.
 	br := bytes.NewReader(payload)
 	if err := encoding.ReadHeader(br); err != nil {
 		return nil, prismerrors.Wrap(
@@ -165,7 +175,8 @@ func (n *SourceNode) Execute(ctx context.Context, _ []*table.Table) (*table.Tabl
 			err,
 		)
 	}
-	if _, err := encoding.ReadSchema(br); err != nil {
+	schema, err := encoding.ReadSchema(br)
+	if err != nil {
 		return nil, prismerrors.Wrap(
 			"PRISM_RESOLVE_006",
 			fmt.Sprintf("Pulse schema unreadable for %s: %v.", n.ref, err),
@@ -216,7 +227,7 @@ func materialise(schema *encoding.Schema, r io.Reader, hash, ref string) (*table
 		rowCount++
 	}
 
-	return table.NewTable(schema, finaliseColumns(cols, schema), rowCount, hash)
+	return table.NewTable(table.FromPulseSchema(schema), finaliseColumns(cols, schema), rowCount, hash)
 }
 
 // columnBuilder is a per-field accumulator chosen by Kind. Storage is

@@ -6,16 +6,14 @@ import (
 	"sync"
 	"testing"
 
-	"github.com/frankbardon/pulse/encoding"
-
 	"github.com/frankbardon/prism/plan"
 	"github.com/frankbardon/prism/table"
 )
 
 func mkCacheTable(t *testing.T, hash string) *table.Table {
 	t.Helper()
-	schema := &encoding.Schema{Fields: []encoding.Field{
-		{Name: "v", Type: encoding.FieldTypeF64},
+	schema := &table.Schema{Fields: []table.Field{
+		{Name: "v", Type: table.FieldTypeF64},
 	}}
 	cols := map[string]table.Column{"v": table.FloatColumn{1, 2, 3}}
 	tbl, err := table.NewTable(schema, cols, 3, hash)

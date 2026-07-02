@@ -5,6 +5,7 @@ import (
 	"github.com/spf13/afero"
 
 	"github.com/frankbardon/prism/resolve"
+	"github.com/frankbardon/prism/table"
 )
 
 // PulseLookup is a SchemaLookup backed by a real Resolver. It is the
@@ -92,7 +93,10 @@ func (l *PulseLookup) Schema(name string) (*PulseSchemaShim, bool) {
 	if rc != nil {
 		_ = rc.Close()
 	}
-	shim := pulseSchemaToShim(name, schema)
+	// The resolver now returns the native *table.Schema (E1-S2); the
+	// shim builder is still Pulse-typed until E1-S3 retypes it, so bridge
+	// via the E1 conversion helper.
+	shim := pulseSchemaToShim(name, table.ToPulseSchema(schema))
 	l.cache[name] = shim
 	return shim, true
 }

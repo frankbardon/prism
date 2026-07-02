@@ -9,10 +9,6 @@
 // than nested under `compile/` or `plan/`.
 package table
 
-import (
-	"github.com/frankbardon/pulse/encoding"
-)
-
 // Kind buckets Pulse storage types into Prism's columnar categories.
 // The mapping is intentionally lossy: every Pulse type folds into
 // exactly one Kind, so downstream code (scales, encodings, format
@@ -51,31 +47,6 @@ func (k Kind) String() string {
 	default:
 		return "unknown"
 	}
-}
-
-// KindFromPulseFieldType folds the 13 Pulse FieldType variants into the
-// five Prism Kinds. Decimal types route to KindFloat in v1 because we
-// surface them as numeric scalars at the encoding layer; revisit when a
-// dedicated decimal renderer lands. Nullability is orthogonal to Kind —
-// callers consult Field.Nullable separately.
-func KindFromPulseFieldType(ft encoding.FieldType) Kind {
-	switch {
-	case ft.IsDecimal():
-		return KindFloat
-	case ft == encoding.FieldTypeF32, ft == encoding.FieldTypeF64:
-		return KindFloat
-	case ft == encoding.FieldTypeDate:
-		return KindDate
-	case ft == encoding.FieldTypePackedBool:
-		return KindBool
-	case ft.IsCategorical():
-		return KindString
-	case ft == encoding.FieldTypeU8, ft == encoding.FieldTypeU16,
-		ft == encoding.FieldTypeU32, ft == encoding.FieldTypeU64,
-		ft == encoding.FieldTypeU4:
-		return KindInt
-	}
-	return KindUnknown
 }
 
 // Column is the read interface for one materialised column. Concrete

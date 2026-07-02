@@ -4,8 +4,6 @@ import (
 	"context"
 	"testing"
 
-	"github.com/frankbardon/pulse/encoding"
-
 	"github.com/frankbardon/prism/plan/nodes"
 	"github.com/frankbardon/prism/table"
 )
@@ -15,8 +13,8 @@ import (
 // distinguish "no match" from "matched with a zero value".
 func TestJoinLeftEmitsNullsForUnmatched(t *testing.T) {
 	leftSchema := mkSchema(
-		encoding.Field{Name: "brand_id", Type: encoding.FieldTypeCategoricalU8},
-		encoding.Field{Name: "score", Type: encoding.FieldTypeF64},
+		table.Field{Name: "brand_id", Type: table.FieldTypeCategoricalU8},
+		table.Field{Name: "score", Type: table.FieldTypeF64},
 	)
 	left := mkTableFor(t, leftSchema, map[string]table.Column{
 		"brand_id": mkStrCol("alpha", "beta", "gamma"),
@@ -24,8 +22,8 @@ func TestJoinLeftEmitsNullsForUnmatched(t *testing.T) {
 	}, 3, "xxh64:leftleftleftleft")
 
 	rightSchema := mkSchema(
-		encoding.Field{Name: "brand_id", Type: encoding.FieldTypeCategoricalU8},
-		encoding.Field{Name: "label", Type: encoding.FieldTypeCategoricalU8},
+		table.Field{Name: "brand_id", Type: table.FieldTypeCategoricalU8},
+		table.Field{Name: "label", Type: table.FieldTypeCategoricalU8},
 	)
 	right := mkTableFor(t, rightSchema, map[string]table.Column{
 		"brand_id": mkStrCol("alpha", "beta"),
@@ -67,8 +65,8 @@ func TestJoinLeftEmitsNullsForUnmatched(t *testing.T) {
 // left-side and right-side cells as null for unmatched rows.
 func TestJoinOuterEmitsNullsBothSides(t *testing.T) {
 	leftSchema := mkSchema(
-		encoding.Field{Name: "brand_id", Type: encoding.FieldTypeCategoricalU8},
-		encoding.Field{Name: "score", Type: encoding.FieldTypeF64},
+		table.Field{Name: "brand_id", Type: table.FieldTypeCategoricalU8},
+		table.Field{Name: "score", Type: table.FieldTypeF64},
 	)
 	left := mkTableFor(t, leftSchema, map[string]table.Column{
 		"brand_id": mkStrCol("alpha", "beta"),
@@ -76,8 +74,8 @@ func TestJoinOuterEmitsNullsBothSides(t *testing.T) {
 	}, 2, "xxh64:leftleftleftleft")
 
 	rightSchema := mkSchema(
-		encoding.Field{Name: "brand_id", Type: encoding.FieldTypeCategoricalU8},
-		encoding.Field{Name: "label", Type: encoding.FieldTypeCategoricalU8},
+		table.Field{Name: "brand_id", Type: table.FieldTypeCategoricalU8},
+		table.Field{Name: "label", Type: table.FieldTypeCategoricalU8},
 	)
 	right := mkTableFor(t, rightSchema, map[string]table.Column{
 		"brand_id": mkStrCol("alpha", "gamma"),

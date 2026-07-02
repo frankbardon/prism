@@ -12,6 +12,7 @@ import (
 	"github.com/spf13/afero"
 
 	prismerrors "github.com/frankbardon/prism/errors"
+	"github.com/frankbardon/prism/table"
 )
 
 // DefaultResolver is the production Resolver. It dispatches ref forms
@@ -39,9 +40,15 @@ func New(reg Registry) *DefaultResolver {
 	return &DefaultResolver{registry: reg}
 }
 
-// Resolve implements Resolver.
-func (r *DefaultResolver) Resolve(ref string, fs afero.Fs) (io.ReadCloser, *encoding.Schema, error) {
-	return r.resolve(ref, fs, 0)
+// Resolve implements Resolver. It delegates to the Pulse-backed loader
+// and converts the Pulse schema to the native Prism shape at the package
+// boundary via the E1 shim (the loader itself is removed in E4).
+func (r *DefaultResolver) Resolve(ref string, fs afero.Fs) (io.ReadCloser, *table.Schema, error) {
+	rc, schema, err := r.resolve(ref, fs, 0)
+	if err != nil {
+		return rc, nil, err
+	}
+	return rc, table.FromPulseSchema(schema), nil
 }
 
 const maxRegistryDepth = 4

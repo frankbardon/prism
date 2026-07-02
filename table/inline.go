@@ -7,14 +7,13 @@ import (
 	"strings"
 
 	"github.com/cespare/xxhash/v2"
-	"github.com/frankbardon/pulse/encoding"
 
 	prismerrors "github.com/frankbardon/prism/errors"
 	"github.com/frankbardon/prism/spec"
 )
 
 // FromInline turns inline `data.values` rows (and optional `data.fields`
-// declarations) into a *Table backed by a synthetic *encoding.Schema.
+// declarations) into a *Table backed by a synthetic *Schema.
 //
 // Type resolution:
 //   - If fields is non-empty, every declared field is honoured verbatim;
@@ -33,7 +32,7 @@ import (
 // Hash is xxhash64 over a canonical JSON encoding of values (rows sorted
 // by key per row, fields written in schema declaration order). Identical
 // inputs map to identical hashes regardless of map iteration order.
-func FromInline(name string, values []map[string]any, fields []spec.FieldSpec) (*Table, *encoding.Schema, error) {
+func FromInline(name string, values []map[string]any, fields []spec.FieldSpec) (*Table, *Schema, error) {
 	if len(values) == 0 && len(fields) == 0 {
 		return nil, nil, fmt.Errorf("table: FromInline requires non-empty values or fields")
 	}
@@ -59,16 +58,16 @@ func FromInline(name string, values []map[string]any, fields []spec.FieldSpec) (
 }
 
 // inferInlineSchema resolves field types from declarations or the first row.
-func inferInlineSchema(values []map[string]any, fields []spec.FieldSpec) (*encoding.Schema, []string, error) {
-	s := &encoding.Schema{}
+func inferInlineSchema(values []map[string]any, fields []spec.FieldSpec) (*Schema, []string, error) {
+	s := &Schema{}
 	order := []string{}
 
 	if len(fields) > 0 {
 		for _, f := range fields {
 			ft := pulseTypeFromToken(f.Type)
-			fld := encoding.Field{Name: f.Name, Type: ft}
+			fld := Field{Name: f.Name, Type: ft}
 			if ft.IsCategorical() {
-				fld.Dictionary = encoding.NewDictionary()
+				fld.Dictionary = NewDictionary()
 			}
 			s.Fields = append(s.Fields, fld)
 			order = append(order, f.Name)
@@ -91,9 +90,9 @@ func inferInlineSchema(values []map[string]any, fields []spec.FieldSpec) (*encod
 
 	for _, k := range keys {
 		ft := pulseTypeFromJSONValue(first[k])
-		fld := encoding.Field{Name: k, Type: ft}
+		fld := Field{Name: k, Type: ft}
 		if ft.IsCategorical() {
-			fld.Dictionary = encoding.NewDictionary()
+			fld.Dictionary = NewDictionary()
 		}
 		s.Fields = append(s.Fields, fld)
 		order = append(order, k)
@@ -107,14 +106,14 @@ func inferInlineSchema(values []map[string]any, fields []spec.FieldSpec) (*encod
 // `null` values; the result wraps the underlying slice in a
 // NullableColumn whenever any nulls appeared so downstream IsNull
 // reports reflect the missing data.
-func buildInlineColumns(schema *encoding.Schema, fieldOrder []string, values []map[string]any) (map[string]Column, error) {
+func buildInlineColumns(schema *Schema, fieldOrder []string, values []map[string]any) (map[string]Column, error) {
 	n := len(values)
 	inner := map[string]Column{}
 	nulls := map[string]*NullBitmap{}
 
 	for i := range schema.Fields {
 		f := &schema.Fields[i]
-		kind := KindFromPulseFieldType(f.Type)
+		kind := KindFromFieldType(f.Type)
 		switch kind {
 		case KindInt:
 			inner[f.Name] = make(IntColumn, n)
@@ -144,7 +143,7 @@ func buildInlineColumns(schema *encoding.Schema, fieldOrder []string, values []m
 				continue
 			}
 			f := schema.Field(name)
-			kind := KindFromPulseFieldType(f.Type)
+			kind := KindFromFieldType(f.Type)
 			gotKind, ok := classifyJSONValue(val)
 			if ok && !inlineKindCompatible(kind, gotKind) {
 				return nil, prismerrors.New(
@@ -187,7 +186,7 @@ func ensureNullBitmap(nulls map[string]*NullBitmap, name string, n int) *NullBit
 }
 
 // assignInlineValue places val into col[rowIdx] under the given kind.
-func assignInlineValue(col Column, rowIdx int, kind Kind, val any, f *encoding.Field) error {
+func assignInlineValue(col Column, rowIdx int, kind Kind, val any, f *Field) error {
 	switch kind {
 	case KindInt:
 		c := col.(IntColumn)
@@ -278,34 +277,34 @@ func inlineKindCompatible(want, got Kind) bool {
 	return false
 }
 
-// pulseTypeFromJSONValue picks a Pulse FieldType for an inline first-row value.
-func pulseTypeFromJSONValue(v any) encoding.FieldType {
+// pulseTypeFromJSONValue picks a native FieldType for an inline first-row value.
+func pulseTypeFromJSONValue(v any) FieldType {
 	switch v.(type) {
 	case string:
-		return encoding.FieldTypeCategoricalU8
+		return FieldTypeCategoricalU8
 	case float64, int, int64, float32, int32:
-		return encoding.FieldTypeF64
+		return FieldTypeF64
 	case bool:
-		return encoding.FieldTypePackedBool
+		return FieldTypePackedBool
 	default:
-		return encoding.FieldTypeCategoricalU8
+		return FieldTypeCategoricalU8
 	}
 }
 
 // pulseTypeFromToken maps spec.FieldSpec.Type tokens (the same set used
-// by validate/buildLookup) to Pulse FieldType variants.
-func pulseTypeFromToken(token string) encoding.FieldType {
+// by validate/buildLookup) to native FieldType variants.
+func pulseTypeFromToken(token string) FieldType {
 	switch strings.ToLower(token) {
 	case "int", "int8", "int16", "int32", "int64", "u8", "u16", "u32", "u64":
-		return encoding.FieldTypeU64
+		return FieldTypeU64
 	case "float", "f32", "f64", "float32", "float64":
-		return encoding.FieldTypeF64
+		return FieldTypeF64
 	case "bool", "boolean":
-		return encoding.FieldTypePackedBool
+		return FieldTypePackedBool
 	case "date", "datetime":
-		return encoding.FieldTypeDate
+		return FieldTypeDate
 	default:
-		return encoding.FieldTypeCategoricalU8
+		return FieldTypeCategoricalU8
 	}
 }
 

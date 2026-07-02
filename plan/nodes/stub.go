@@ -25,7 +25,7 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/frankbardon/pulse/encoding"
+	"github.com/frankbardon/prism/table"
 
 	prismerrors "github.com/frankbardon/prism/errors"
 )
@@ -60,7 +60,7 @@ func fingerprintFor(kind string, parts ...string) string {
 // requireSingleInput asserts in has exactly one schema and returns it.
 // Stubbed single-input nodes call this from their Schema body so the
 // shape check lives in one place.
-func requireSingleInput(kind string, in []*encoding.Schema) (*encoding.Schema, error) {
+func requireSingleInput(kind string, in []*table.Schema) (*table.Schema, error) {
 	if len(in) != 1 {
 		return nil, fmt.Errorf("%s: expected 1 input schema, got %d", kind, len(in))
 	}
@@ -72,7 +72,7 @@ func requireSingleInput(kind string, in []*encoding.Schema) (*encoding.Schema, e
 
 // requireTwoInputsErr is the multi-input analogue of requireSingleInput
 // used by JoinNode and any other dyadic node. Returns nil on success.
-func requireTwoInputsErr(kind string, in []*encoding.Schema) error {
+func requireTwoInputsErr(kind string, in []*table.Schema) error {
 	if len(in) != 2 {
 		return fmt.Errorf("%s: expected 2 input schemas, got %d", kind, len(in))
 	}
@@ -85,8 +85,8 @@ func requireTwoInputsErr(kind string, in []*encoding.Schema) error {
 // cloneSchema returns a shallow copy of s (same Field values, fresh
 // outer slice). Stub Schema bodies that grow the field list call this
 // to avoid mutating the input schema.
-func cloneSchema(s *encoding.Schema) *encoding.Schema {
-	out := &encoding.Schema{Fields: make([]encoding.Field, len(s.Fields))}
+func cloneSchema(s *table.Schema) *table.Schema {
+	out := &table.Schema{Fields: make([]table.Field, len(s.Fields))}
 	copy(out.Fields, s.Fields)
 	return out
 }
@@ -94,17 +94,17 @@ func cloneSchema(s *encoding.Schema) *encoding.Schema {
 // projectFields builds a new schema containing only the named fields
 // from s, in the order requested. Missing fields raise PRISM_PLAN_003
 // with the available field list so the diagnostic actually helps.
-func projectFields(s *encoding.Schema, names []string) (*encoding.Schema, error) {
+func projectFields(s *table.Schema, names []string) (*table.Schema, error) {
 	if s == nil {
 		return nil, fmt.Errorf("projectFields: input schema is nil")
 	}
-	idx := map[string]*encoding.Field{}
+	idx := map[string]*table.Field{}
 	available := make([]string, 0, len(s.Fields))
 	for i := range s.Fields {
 		idx[s.Fields[i].Name] = &s.Fields[i]
 		available = append(available, s.Fields[i].Name)
 	}
-	out := &encoding.Schema{Fields: make([]encoding.Field, 0, len(names))}
+	out := &table.Schema{Fields: make([]table.Field, 0, len(names))}
 	for _, n := range names {
 		f, ok := idx[n]
 		if !ok {
@@ -121,9 +121,9 @@ func projectFields(s *encoding.Schema, names []string) (*encoding.Schema, error)
 
 // appendField appends one field to a cloned schema. Used by Calculate,
 // Window, Bin, and GroupAggregate to widen the output shape.
-func appendField(s *encoding.Schema, name string, ft encoding.FieldType) *encoding.Schema {
+func appendField(s *table.Schema, name string, ft table.FieldType) *table.Schema {
 	out := cloneSchema(s)
-	out.Fields = append(out.Fields, encoding.Field{Name: name, Type: ft})
+	out.Fields = append(out.Fields, table.Field{Name: name, Type: ft})
 	return out
 }
 
@@ -133,36 +133,36 @@ func appendField(s *encoding.Schema, name string, ft encoding.FieldType) *encodi
 // FieldTypeF64 because the result is always a scalar measure. Domain
 // extensions that ship a different result kind (e.g. `argmax` would
 // return a categorical) get explicit cases when they land.
-func aggregateOutputType(op string) encoding.FieldType {
+func aggregateOutputType(op string) table.FieldType {
 	switch strings.ToLower(op) {
 	case "count", "null_count":
 		// Count / null_count are conceptually integer but we keep the
 		// result type uniform with the other aggregates for downstream
 		// simplicity — scales and encodings already treat F64/integer
 		// alike.
-		return encoding.FieldTypeF64
+		return table.FieldTypeF64
 	case "range", "skewness", "kurtosis":
 		// Distribution-shape scalars; all F64.
-		return encoding.FieldTypeF64
+		return table.FieldTypeF64
 	case "frequency":
 		// Modal count (occurrences of the most frequent value). Scalar
 		// companion to `mode`; the per-value map stays on Pulse's meta
 		// surface and never reaches a column. F64 like the rest.
-		return encoding.FieldTypeF64
+		return table.FieldTypeF64
 	default:
-		return encoding.FieldTypeF64
+		return table.FieldTypeF64
 	}
 }
 
 // joinedSchema unions two schemas, dropping duplicate occurrences of
 // the join key fields (left wins). The output preserves left order
 // then right order so test assertions remain readable.
-func joinedSchema(left, right *encoding.Schema, on []string) *encoding.Schema {
+func joinedSchema(left, right *table.Schema, on []string) *table.Schema {
 	keys := map[string]struct{}{}
 	for _, k := range on {
 		keys[k] = struct{}{}
 	}
-	out := &encoding.Schema{}
+	out := &table.Schema{}
 	seen := map[string]struct{}{}
 	for i := range left.Fields {
 		f := left.Fields[i]

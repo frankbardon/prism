@@ -4,7 +4,6 @@ import (
 	"fmt"
 
 	"github.com/cespare/xxhash/v2"
-	"github.com/frankbardon/pulse/encoding"
 
 	"github.com/frankbardon/prism/table"
 )
@@ -49,8 +48,8 @@ func envHasNull(env map[string]any) bool {
 
 // cloneSchemaShallow returns a shallow copy of s so callers can
 // extend Fields without mutating the input schema.
-func cloneSchemaShallow(s *encoding.Schema) *encoding.Schema {
-	out := &encoding.Schema{Fields: make([]encoding.Field, len(s.Fields))}
+func cloneSchemaShallow(s *table.Schema) *table.Schema {
+	out := &table.Schema{Fields: make([]table.Field, len(s.Fields))}
 	copy(out.Fields, s.Fields)
 	return out
 }

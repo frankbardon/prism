@@ -3,8 +3,6 @@ package marks
 import (
 	"testing"
 
-	"github.com/frankbardon/pulse/encoding"
-
 	"github.com/frankbardon/prism/encode/scene"
 	"github.com/frankbardon/prism/table"
 )
@@ -70,7 +68,7 @@ func (s *bandScaleT) BandWidth() float64 {
 // hashing; rowCount = len of first column.
 func buildTable(t *testing.T, fields map[string]any) *table.Table {
 	t.Helper()
-	var schema encoding.Schema
+	var schema table.Schema
 	cols := map[string]table.Column{}
 	rowCount := -1
 	order := []string{}
@@ -83,23 +81,23 @@ func buildTable(t *testing.T, fields map[string]any) *table.Table {
 	for _, name := range order {
 		switch v := fields[name].(type) {
 		case []string:
-			schema.Fields = append(schema.Fields, encoding.Field{
+			schema.Fields = append(schema.Fields, table.Field{
 				Name:       name,
-				Type:       encoding.FieldTypeCategoricalU8,
-				Dictionary: encoding.NewDictionary(),
+				Type:       table.FieldTypeCategoricalU8,
+				Dictionary: table.NewDictionary(),
 			})
 			cols[name] = table.StringColumn(v)
 			if rowCount < 0 {
 				rowCount = len(v)
 			}
 		case []float64:
-			schema.Fields = append(schema.Fields, encoding.Field{Name: name, Type: encoding.FieldTypeF64})
+			schema.Fields = append(schema.Fields, table.Field{Name: name, Type: table.FieldTypeF64})
 			cols[name] = table.FloatColumn(v)
 			if rowCount < 0 {
 				rowCount = len(v)
 			}
 		case []int64:
-			schema.Fields = append(schema.Fields, encoding.Field{Name: name, Type: encoding.FieldTypeU64})
+			schema.Fields = append(schema.Fields, table.Field{Name: name, Type: table.FieldTypeU64})
 			cols[name] = table.IntColumn(v)
 			if rowCount < 0 {
 				rowCount = len(v)

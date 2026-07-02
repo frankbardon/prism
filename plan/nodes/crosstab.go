@@ -89,9 +89,11 @@ func (n *CrosstabNode) ID() plan.NodeID { return n.id }
 // the cohort directly.
 func (n *CrosstabNode) Inputs() []plan.NodeID { return nil }
 
-// Schema implements plan.Node. Pre-computed at construction.
-func (n *CrosstabNode) Schema(_ []*encoding.Schema) (*encoding.Schema, error) {
-	return n.outSchema, nil
+// Schema implements plan.Node. Pre-computed at construction; converted
+// to the native shape via the E1 shim (the node still builds a Pulse
+// schema internally until the leaf executors migrate in E4).
+func (n *CrosstabNode) Schema(_ []*table.Schema) (*table.Schema, error) {
+	return table.FromPulseSchema(n.outSchema), nil
 }
 
 // Fingerprint implements plan.Node.
@@ -524,7 +526,7 @@ func deriveCrosstabSchema(in *encoding.Schema, body spec.CrosstabBody, cellAs st
 		}
 		fields = append(fields, encoding.Field{Name: g.Field, Type: crosstabGroupOutputType(g, f.Type)})
 	}
-	fields = append(fields, encoding.Field{Name: cellAs, Type: aggregateOutputType(body.Cell.Aggregate)})
+	fields = append(fields, encoding.Field{Name: cellAs, Type: table.ToPulseFieldType(aggregateOutputType(body.Cell.Aggregate))})
 	// One F64 column per overlay layer (index-aligned to body.Overlays).
 	for _, o := range body.Overlays {
 		fields = append(fields, encoding.Field{Name: overlayColumnName(o), Type: encoding.FieldTypeF64})
@@ -675,5 +677,5 @@ func tableFromLongRows(rows []map[string]any, schema *encoding.Schema, id plan.N
 		}
 	}
 	hash := "crosstab:" + string(id)
-	return table.NewTable(schema, cols, len(rows), hash)
+	return table.NewTable(table.FromPulseSchema(schema), cols, len(rows), hash)
 }

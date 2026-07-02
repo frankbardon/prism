@@ -5,15 +5,13 @@ import (
 	"errors"
 	"testing"
 
-	"github.com/frankbardon/pulse/encoding"
-
 	prismerrors "github.com/frankbardon/prism/errors"
 	"github.com/frankbardon/prism/plan/nodes"
 	"github.com/frankbardon/prism/table"
 )
 
-func mkSchema(fields ...encoding.Field) *encoding.Schema {
-	return &encoding.Schema{Fields: append([]encoding.Field(nil), fields...)}
+func mkSchema(fields ...table.Field) *table.Schema {
+	return &table.Schema{Fields: append([]table.Field(nil), fields...)}
 }
 
 func mkStrCol(vals ...string) table.Column { return table.StringColumn(vals) }
@@ -22,7 +20,7 @@ func mkFloatCol(vals ...float64) table.Column {
 }
 func mkIntCol(vals ...int64) table.Column { return table.IntColumn(vals) }
 
-func mkTableFor(t *testing.T, schema *encoding.Schema, cols map[string]table.Column, n int, hash string) *table.Table {
+func mkTableFor(t *testing.T, schema *table.Schema, cols map[string]table.Column, n int, hash string) *table.Table {
 	t.Helper()
 	tbl, err := table.NewTable(schema, cols, n, hash)
 	if err != nil {
@@ -37,8 +35,8 @@ func brandSide(t *testing.T) *table.Table {
 	// Use a real categorical type so KindFromPulseFieldType resolves
 	// to KindString without dictionary plumbing.
 	s := mkSchema(
-		encoding.Field{Name: "brand_id", Type: encoding.FieldTypeCategoricalU8},
-		encoding.Field{Name: "score", Type: encoding.FieldTypeF64},
+		table.Field{Name: "brand_id", Type: table.FieldTypeCategoricalU8},
+		table.Field{Name: "score", Type: table.FieldTypeF64},
 	)
 	return mkTableFor(t, s, map[string]table.Column{
 		"brand_id": mkStrCol("alpha", "beta", "gamma"),
@@ -51,8 +49,8 @@ func brandSide(t *testing.T) *table.Table {
 func labelSide(t *testing.T) *table.Table {
 	t.Helper()
 	s := mkSchema(
-		encoding.Field{Name: "brand_id", Type: encoding.FieldTypeCategoricalU8},
-		encoding.Field{Name: "label", Type: encoding.FieldTypeCategoricalU8},
+		table.Field{Name: "brand_id", Type: table.FieldTypeCategoricalU8},
+		table.Field{Name: "label", Type: table.FieldTypeCategoricalU8},
 	)
 	return mkTableFor(t, s, map[string]table.Column{
 		"brand_id": mkStrCol("alpha", "beta", "delta"),
@@ -131,14 +129,14 @@ func TestPrismJoinTypes(t *testing.T) {
 
 func TestPrismJoinMultiColumnKey(t *testing.T) {
 	lSchema := mkSchema(
-		encoding.Field{Name: "k1", Type: encoding.FieldTypeCategoricalU8},
-		encoding.Field{Name: "k2", Type: encoding.FieldTypeU8},
-		encoding.Field{Name: "lv", Type: encoding.FieldTypeF64},
+		table.Field{Name: "k1", Type: table.FieldTypeCategoricalU8},
+		table.Field{Name: "k2", Type: table.FieldTypeU8},
+		table.Field{Name: "lv", Type: table.FieldTypeF64},
 	)
 	rSchema := mkSchema(
-		encoding.Field{Name: "k1", Type: encoding.FieldTypeCategoricalU8},
-		encoding.Field{Name: "k2", Type: encoding.FieldTypeU8},
-		encoding.Field{Name: "rv", Type: encoding.FieldTypeF64},
+		table.Field{Name: "k1", Type: table.FieldTypeCategoricalU8},
+		table.Field{Name: "k2", Type: table.FieldTypeU8},
+		table.Field{Name: "rv", Type: table.FieldTypeF64},
 	)
 	left := mkTableFor(t, lSchema, map[string]table.Column{
 		"k1": mkStrCol("a", "a", "b"),
@@ -185,10 +183,10 @@ func TestPrismJoinMultiColumnKey(t *testing.T) {
 func TestPrismJoinCardinalityLimit(t *testing.T) {
 	t.Setenv("PRISM_JOIN_MAX_ROWS", "10")
 	lSchema := mkSchema(
-		encoding.Field{Name: "k", Type: encoding.FieldTypeU8},
+		table.Field{Name: "k", Type: table.FieldTypeU8},
 	)
 	rSchema := mkSchema(
-		encoding.Field{Name: "k", Type: encoding.FieldTypeU8},
+		table.Field{Name: "k", Type: table.FieldTypeU8},
 	)
 	left := mkTableFor(t, lSchema, map[string]table.Column{
 		"k": mkIntCol(1, 2, 3),
@@ -216,10 +214,10 @@ func TestPrismJoinCardinalityLimit(t *testing.T) {
 
 func TestPrismJoinKeyTypeMismatch(t *testing.T) {
 	lSchema := mkSchema(
-		encoding.Field{Name: "k", Type: encoding.FieldTypeF64},
+		table.Field{Name: "k", Type: table.FieldTypeF64},
 	)
 	rSchema := mkSchema(
-		encoding.Field{Name: "k", Type: encoding.FieldTypeCategoricalU8},
+		table.Field{Name: "k", Type: table.FieldTypeCategoricalU8},
 	)
 	left := mkTableFor(t, lSchema, map[string]table.Column{
 		"k": mkFloatCol(1, 2),
@@ -241,10 +239,10 @@ func TestPrismJoinKeyTypeMismatch(t *testing.T) {
 
 func TestPrismJoinKeyAbsent(t *testing.T) {
 	lSchema := mkSchema(
-		encoding.Field{Name: "k", Type: encoding.FieldTypeU8},
+		table.Field{Name: "k", Type: table.FieldTypeU8},
 	)
 	rSchema := mkSchema(
-		encoding.Field{Name: "j", Type: encoding.FieldTypeU8},
+		table.Field{Name: "j", Type: table.FieldTypeU8},
 	)
 	left := mkTableFor(t, lSchema, map[string]table.Column{
 		"k": mkIntCol(1),

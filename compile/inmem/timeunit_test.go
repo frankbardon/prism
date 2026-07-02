@@ -5,8 +5,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/frankbardon/pulse/encoding"
-
 	"github.com/frankbardon/prism/plan/nodes"
 	"github.com/frankbardon/prism/table"
 )
@@ -22,7 +20,7 @@ func dateTable(t *testing.T, days []string) *table.Table {
 		}
 		col[i] = ts.Unix() / secondsPerDay
 	}
-	schema := &encoding.Schema{Fields: []encoding.Field{{Name: "d", Type: encoding.FieldTypeDate}}}
+	schema := &table.Schema{Fields: []table.Field{{Name: "d", Type: table.FieldTypeDate}}}
 	tbl, err := table.NewTable(schema, map[string]table.Column{"d": col}, len(days), "datesrc")
 	if err != nil {
 		t.Fatalf("NewTable: %v", err)

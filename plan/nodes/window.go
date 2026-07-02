@@ -5,8 +5,6 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/frankbardon/pulse/encoding"
-
 	"github.com/frankbardon/prism/plan"
 	"github.com/frankbardon/prism/table"
 )
@@ -77,7 +75,7 @@ func (n *WindowNode) Inputs() []plan.NodeID { return []plan.NodeID{n.input} }
 // Schema implements plan.Node. Output schema is input + one F64 field
 // per WindowOp (ranks come back as float to keep downstream arithmetic
 // uniform; real impl can re-type integer ranks if profiling motivates).
-func (n *WindowNode) Schema(in []*encoding.Schema) (*encoding.Schema, error) {
+func (n *WindowNode) Schema(in []*table.Schema) (*table.Schema, error) {
 	s, err := requireSingleInput("WindowNode", in)
 	if err != nil {
 		return nil, err
@@ -87,7 +85,7 @@ func (n *WindowNode) Schema(in []*encoding.Schema) (*encoding.Schema, error) {
 		if op.As == "" {
 			return nil, fmt.Errorf("WindowNode: op %s missing 'as' name", op.Op)
 		}
-		out.Fields = append(out.Fields, encoding.Field{Name: op.As, Type: encoding.FieldTypeF64})
+		out.Fields = append(out.Fields, table.Field{Name: op.As, Type: table.FieldTypeF64})
 	}
 	return out, nil
 }

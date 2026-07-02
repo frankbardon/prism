@@ -5,8 +5,6 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/frankbardon/pulse/encoding"
-
 	"github.com/frankbardon/prism/plan"
 	"github.com/frankbardon/prism/table"
 )
@@ -40,7 +38,7 @@ func (n *UnpivotNode) Inputs() []plan.NodeID { return []plan.NodeID{n.input} }
 
 // Schema implements plan.Node. Drops the unpivoted fields from the
 // input schema and appends two new fields (key column + value column).
-func (n *UnpivotNode) Schema(in []*encoding.Schema) (*encoding.Schema, error) {
+func (n *UnpivotNode) Schema(in []*table.Schema) (*table.Schema, error) {
 	s, err := requireSingleInput("UnpivotNode", in)
 	if err != nil {
 		return nil, err
@@ -56,7 +54,7 @@ func (n *UnpivotNode) Schema(in []*encoding.Schema) (*encoding.Schema, error) {
 	if len(n.as) > 1 && n.as[1] != "" {
 		valName = n.as[1]
 	}
-	out := &encoding.Schema{Fields: make([]encoding.Field, 0, len(s.Fields))}
+	out := &table.Schema{Fields: make([]table.Field, 0, len(s.Fields))}
 	for i := range s.Fields {
 		f := s.Fields[i]
 		if _, drop := drop[f.Name]; drop {
@@ -65,8 +63,8 @@ func (n *UnpivotNode) Schema(in []*encoding.Schema) (*encoding.Schema, error) {
 		out.Fields = append(out.Fields, f)
 	}
 	out.Fields = append(out.Fields,
-		encoding.Field{Name: keyName, Type: encoding.FieldTypeCategoricalU8},
-		encoding.Field{Name: valName, Type: encoding.FieldTypeF64},
+		table.Field{Name: keyName, Type: table.FieldTypeCategoricalU8},
+		table.Field{Name: valName, Type: table.FieldTypeF64},
 	)
 	if len(out.Fields) == 0 {
 		return nil, fmt.Errorf("UnpivotNode: empty output schema")

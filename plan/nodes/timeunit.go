@@ -4,8 +4,6 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/frankbardon/pulse/encoding"
-
 	"github.com/frankbardon/prism/plan"
 	"github.com/frankbardon/prism/table"
 )
@@ -35,7 +33,7 @@ func (n *TimeUnitNode) Inputs() []plan.NodeID { return []plan.NodeID{n.input} }
 
 // Schema implements plan.Node. Output schema is input + one date field
 // named n.as (the truncated period start for each row).
-func (n *TimeUnitNode) Schema(in []*encoding.Schema) (*encoding.Schema, error) {
+func (n *TimeUnitNode) Schema(in []*table.Schema) (*table.Schema, error) {
 	s, err := requireSingleInput("TimeUnitNode", in)
 	if err != nil {
 		return nil, err
@@ -43,7 +41,7 @@ func (n *TimeUnitNode) Schema(in []*encoding.Schema) (*encoding.Schema, error) {
 	if n.as == "" {
 		return nil, fmt.Errorf("TimeUnitNode: missing 'as' name")
 	}
-	return appendField(s, n.as, encoding.FieldTypeDate), nil
+	return appendField(s, n.as, table.FieldTypeDate), nil
 }
 
 // Execute implements plan.Node via the injected backend.

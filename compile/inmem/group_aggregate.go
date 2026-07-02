@@ -7,8 +7,6 @@ import (
 	"sort"
 	"strings"
 
-	"github.com/frankbardon/pulse/encoding"
-
 	"github.com/frankbardon/prism/compile"
 	prismerrors "github.com/frankbardon/prism/errors"
 	"github.com/frankbardon/prism/plan/nodes"
@@ -40,7 +38,7 @@ func executeGroupAggregate(_ context.Context, n *nodes.GroupAggregateNode, ins [
 
 	// Build output schema: groupby fields verbatim + one F64 per agg op.
 	srcSchema := in.Schema()
-	gbFields := make([]encoding.Field, 0, len(n.Groupby()))
+	gbFields := make([]table.Field, 0, len(n.Groupby()))
 	gbCols := map[string]int{}
 	for i, f := range srcSchema.Fields {
 		gbCols[f.Name] = i
@@ -57,20 +55,20 @@ func executeGroupAggregate(_ context.Context, n *nodes.GroupAggregateNode, ins [
 		gbFields = append(gbFields, srcSchema.Fields[pos])
 	}
 
-	outSchema := &encoding.Schema{Fields: make([]encoding.Field, 0, len(gbFields)+len(n.Aggs()))}
+	outSchema := &table.Schema{Fields: make([]table.Field, 0, len(gbFields)+len(n.Aggs()))}
 	outSchema.Fields = append(outSchema.Fields, gbFields...)
 	for _, op := range n.Aggs() {
 		if op.As == "" {
 			return nil, fmt.Errorf("GroupAggregateNode: aggregate %s missing 'as' name", op.Op)
 		}
-		outSchema.Fields = append(outSchema.Fields, encoding.Field{Name: op.As, Type: encoding.FieldTypeF64})
+		outSchema.Fields = append(outSchema.Fields, table.Field{Name: op.As, Type: table.FieldTypeF64})
 	}
 
 	// Allocate output columns for groupby fields with the right kind.
 	cols := map[string]table.Column{}
 	for _, name := range n.Groupby() {
 		f := srcSchema.Field(name)
-		kind := table.KindFromPulseFieldType(f.Type)
+		kind := table.KindFromFieldType(f.Type)
 		switch kind {
 		case table.KindString:
 			cols[name] = make(table.StringColumn, 0, len(order))

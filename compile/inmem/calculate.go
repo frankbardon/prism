@@ -4,8 +4,6 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/frankbardon/pulse/encoding"
-
 	"github.com/frankbardon/prism/compile"
 	"github.com/frankbardon/prism/plan/nodes"
 	"github.com/frankbardon/prism/table"
@@ -50,7 +48,7 @@ func executeCalculate(_ context.Context, n *nodes.CalculateNode, ins []*table.Ta
 	}
 
 	schema := cloneSchemaShallow(in.Schema())
-	schema.Fields = append(schema.Fields, encoding.Field{Name: n.As(), Type: encoding.FieldTypeF64, Nullable: nulls.Count() > 0})
+	schema.Fields = append(schema.Fields, table.Field{Name: n.As(), Type: table.FieldTypeF64, Nullable: nulls.Count() > 0})
 
 	cols := make(map[string]table.Column, len(in.FieldNames())+1)
 	for _, name := range in.FieldNames() {

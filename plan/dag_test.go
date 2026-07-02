@@ -5,8 +5,6 @@ import (
 	"errors"
 	"testing"
 
-	"github.com/frankbardon/pulse/encoding"
-
 	prismerrors "github.com/frankbardon/prism/errors"
 	"github.com/frankbardon/prism/plan"
 	"github.com/frankbardon/prism/table"
@@ -22,8 +20,8 @@ type fakeNode struct {
 func (n *fakeNode) ID() plan.NodeID       { return n.id }
 func (n *fakeNode) Inputs() []plan.NodeID { return n.inputs }
 func (n *fakeNode) Fingerprint() string   { return "fake:" + string(n.id) }
-func (n *fakeNode) Schema(_ []*encoding.Schema) (*encoding.Schema, error) {
-	return &encoding.Schema{Fields: []encoding.Field{{Name: "x", Type: encoding.FieldTypeF64}}}, nil
+func (n *fakeNode) Schema(_ []*table.Schema) (*table.Schema, error) {
+	return &table.Schema{Fields: []table.Field{{Name: "x", Type: table.FieldTypeF64}}}, nil
 }
 func (n *fakeNode) Execute(_ context.Context, _ []*table.Table) (*table.Table, error) {
 	return nil, nil

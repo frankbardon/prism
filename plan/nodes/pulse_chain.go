@@ -95,9 +95,11 @@ func (n *PulseChainNode) ID() plan.NodeID { return n.id }
 func (n *PulseChainNode) Inputs() []plan.NodeID { return nil }
 
 // Schema implements plan.Node. The chain output schema is computed at
-// fusion time via processing.ChainOutputSchema(finalStageReq).
-func (n *PulseChainNode) Schema(_ []*encoding.Schema) (*encoding.Schema, error) {
-	return n.outSchema, nil
+// fusion time via processing.ChainOutputSchema(finalStageReq); it is
+// converted to the native shape via the E1 shim (the node still builds a
+// Pulse schema internally until the leaf executors migrate in E4).
+func (n *PulseChainNode) Schema(_ []*table.Schema) (*table.Schema, error) {
+	return table.FromPulseSchema(n.outSchema), nil
 }
 
 // Execute implements plan.Node. Opens a fresh pulse.Pulse against the
@@ -278,7 +280,7 @@ func tableFromChainResponse(resp *pulsetypes.Response, schema *encoding.Schema, 
 			}
 		}
 	}
-	return table.NewTable(schema, cols, len(rows), hash)
+	return table.NewTable(table.FromPulseSchema(schema), cols, len(rows), hash)
 }
 
 func coerceString(v any) string {

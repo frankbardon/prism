@@ -4,8 +4,6 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/frankbardon/pulse/encoding"
-
 	"github.com/frankbardon/prism/plan"
 	"github.com/frankbardon/prism/table"
 )
@@ -39,7 +37,7 @@ func (n *UnionNode) Inputs() []plan.NodeID { return n.inputs }
 
 // Schema implements plan.Node. Returns the first input's schema; Execute
 // validates that every other input matches it (PRISM_PLAN_004).
-func (n *UnionNode) Schema(in []*encoding.Schema) (*encoding.Schema, error) {
+func (n *UnionNode) Schema(in []*table.Schema) (*table.Schema, error) {
 	if len(in) == 0 {
 		return nil, fmt.Errorf("UnionNode: no input schemas")
 	}

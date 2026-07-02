@@ -7,8 +7,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/frankbardon/pulse/encoding"
-
 	"github.com/frankbardon/prism/plan"
 	"github.com/frankbardon/prism/table"
 )
@@ -29,8 +27,8 @@ type slowExecNode struct {
 func (n *slowExecNode) ID() plan.NodeID       { return n.id }
 func (n *slowExecNode) Inputs() []plan.NodeID { return n.inputs }
 func (n *slowExecNode) Fingerprint() string   { return "slow:" + string(n.id) }
-func (n *slowExecNode) Schema(_ []*encoding.Schema) (*encoding.Schema, error) {
-	return &encoding.Schema{Fields: []encoding.Field{{Name: "v", Type: encoding.FieldTypeF64}}}, nil
+func (n *slowExecNode) Schema(_ []*table.Schema) (*table.Schema, error) {
+	return &table.Schema{Fields: []table.Field{{Name: "v", Type: table.FieldTypeF64}}}, nil
 }
 func (n *slowExecNode) Execute(ctx context.Context, _ []*table.Table) (*table.Table, error) {
 	if n.callCount != nil {
@@ -54,8 +52,8 @@ func (n *slowExecNode) Execute(ctx context.Context, _ []*table.Table) (*table.Ta
 			return nil, ctx.Err()
 		}
 	}
-	schema := &encoding.Schema{Fields: []encoding.Field{
-		{Name: "v", Type: encoding.FieldTypeF64},
+	schema := &table.Schema{Fields: []table.Field{
+		{Name: "v", Type: table.FieldTypeF64},
 	}}
 	cols := map[string]table.Column{"v": table.FloatColumn{1, 2, 3}}
 	return table.NewTable(schema, cols, 3, n.hash)

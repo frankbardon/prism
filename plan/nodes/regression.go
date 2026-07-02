@@ -104,9 +104,11 @@ func (n *RegressionNode) ID() plan.NodeID { return n.id }
 // cohort directly.
 func (n *RegressionNode) Inputs() []plan.NodeID { return nil }
 
-// Schema implements plan.Node. Pre-computed at construction.
-func (n *RegressionNode) Schema(_ []*encoding.Schema) (*encoding.Schema, error) {
-	return n.outSchema, nil
+// Schema implements plan.Node. Pre-computed at construction; converted
+// to the native shape via the E1 shim (the node still builds a Pulse
+// schema internally until the leaf executors migrate in E4).
+func (n *RegressionNode) Schema(_ []*table.Schema) (*table.Schema, error) {
+	return table.FromPulseSchema(n.outSchema), nil
 }
 
 // Fingerprint implements plan.Node.

@@ -3,8 +3,6 @@ package nodes
 import (
 	"context"
 
-	"github.com/frankbardon/pulse/encoding"
-
 	"github.com/frankbardon/prism/plan"
 	"github.com/frankbardon/prism/table"
 )
@@ -33,12 +31,12 @@ func (n *CalculateNode) Inputs() []plan.NodeID { return []plan.NodeID{n.input} }
 // Schema implements plan.Node. Output schema is input + one F64 field
 // named n.as. F64 is the conservative bucket for expression results
 // (every Pulse arithmetic expression promotes to float).
-func (n *CalculateNode) Schema(in []*encoding.Schema) (*encoding.Schema, error) {
+func (n *CalculateNode) Schema(in []*table.Schema) (*table.Schema, error) {
 	s, err := requireSingleInput("CalculateNode", in)
 	if err != nil {
 		return nil, err
 	}
-	return appendField(s, n.as, encoding.FieldTypeF64), nil
+	return appendField(s, n.as, table.FieldTypeF64), nil
 }
 
 // Execute implements plan.Node via the injected backend.

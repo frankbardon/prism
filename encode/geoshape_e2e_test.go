@@ -4,8 +4,6 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/frankbardon/pulse/encoding"
-
 	"github.com/frankbardon/prism/encode/scene"
 	"github.com/frankbardon/prism/plan"
 	"github.com/frankbardon/prism/spec"
@@ -82,7 +80,7 @@ func TestEncodeGeoshape_UnknownProjection(t *testing.T) {
 func newGeoTable(t *testing.T) *table.Table {
 	t.Helper()
 	rows := []string{"USA", "CAN", "MEX"}
-	sch := &encoding.Schema{Fields: []encoding.Field{{Name: "id", Type: encoding.FieldTypeCategoricalU8}}}
+	sch := &table.Schema{Fields: []table.Field{{Name: "id", Type: table.FieldTypeCategoricalU8}}}
 	tbl, err := table.NewTable(sch, map[string]table.Column{"id": table.StringColumn(rows)}, len(rows), "test-hash")
 	if err != nil {
 		t.Fatalf("table build: %v", err)

@@ -3,8 +3,6 @@ package nodes
 import (
 	"context"
 
-	"github.com/frankbardon/pulse/encoding"
-
 	"github.com/frankbardon/prism/plan"
 	"github.com/frankbardon/prism/table"
 )
@@ -33,7 +31,7 @@ func (n *FilterNode) ID() plan.NodeID { return n.id }
 func (n *FilterNode) Inputs() []plan.NodeID { return []plan.NodeID{n.input} }
 
 // Schema implements plan.Node. Filter does not change the schema.
-func (n *FilterNode) Schema(in []*encoding.Schema) (*encoding.Schema, error) {
+func (n *FilterNode) Schema(in []*table.Schema) (*table.Schema, error) {
 	return requireSingleInput("FilterNode", in)
 }
 

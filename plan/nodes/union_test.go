@@ -6,18 +6,16 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/frankbardon/pulse/encoding"
-
 	prismerrors "github.com/frankbardon/prism/errors"
 	"github.com/frankbardon/prism/plan"
 	"github.com/frankbardon/prism/plan/nodes"
 	"github.com/frankbardon/prism/table"
 )
 
-func unionLeftSchema() *encoding.Schema {
+func unionLeftSchema() *table.Schema {
 	return mkSchema(
-		encoding.Field{Name: "brand_id", Type: encoding.FieldTypeCategoricalU8},
-		encoding.Field{Name: "score", Type: encoding.FieldTypeF64},
+		table.Field{Name: "brand_id", Type: table.FieldTypeCategoricalU8},
+		table.Field{Name: "score", Type: table.FieldTypeF64},
 	)
 }
 
@@ -57,8 +55,8 @@ func TestPrismUnionConcat(t *testing.T) {
 func TestPrismUnionSchemaMismatch(t *testing.T) {
 	a := unionLeftSchema()
 	b := mkSchema(
-		encoding.Field{Name: "brand_id", Type: encoding.FieldTypeCategoricalU8},
-		encoding.Field{Name: "weight", Type: encoding.FieldTypeF64}, // different name
+		table.Field{Name: "brand_id", Type: table.FieldTypeCategoricalU8},
+		table.Field{Name: "weight", Type: table.FieldTypeF64}, // different name
 	)
 	t1 := mkTableFor(t, a, map[string]table.Column{
 		"brand_id": mkStrCol("x"),
@@ -87,7 +85,7 @@ func TestPrismUnionSchemaMismatch(t *testing.T) {
 func TestPrismUnionFieldCountMismatch(t *testing.T) {
 	a := unionLeftSchema()
 	b := mkSchema(
-		encoding.Field{Name: "brand_id", Type: encoding.FieldTypeCategoricalU8},
+		table.Field{Name: "brand_id", Type: table.FieldTypeCategoricalU8},
 	)
 	t1 := mkTableFor(t, a, map[string]table.Column{
 		"brand_id": mkStrCol("x"),

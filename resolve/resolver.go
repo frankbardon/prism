@@ -20,8 +20,9 @@ package resolve
 import (
 	"io"
 
-	"github.com/frankbardon/pulse/encoding"
 	"github.com/spf13/afero"
+
+	"github.com/frankbardon/prism/table"
 )
 
 // Resolver resolves a ref to a streaming reader plus the cohort's
@@ -33,7 +34,7 @@ import (
 //   - DefaultResolver (resolve/default.go): the production path.
 //   - tests may swap in a fake that returns canned bytes + schema.
 type Resolver interface {
-	Resolve(ref string, fs afero.Fs) (io.ReadCloser, *encoding.Schema, error)
+	Resolve(ref string, fs afero.Fs) (io.ReadCloser, *table.Schema, error)
 }
 
 // Registry maps a cohort id (`cohort:<id>`) to its backing ref (path,

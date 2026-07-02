@@ -27,6 +27,18 @@ func FromPulseFieldType(ft encoding.FieldType) FieldType { return FieldType(ft) 
 // TEMP: deleted in E4.
 func ToPulseFieldType(ft FieldType) encoding.FieldType { return encoding.FieldType(ft) }
 
+// KindFromPulseFieldType folds a Pulse encoding.FieldType directly into
+// one of the five Prism Kinds. It is the Pulse-coupled twin of the
+// native KindFromFieldType; the leaf executors that still open Pulse in
+// epic E1 (source / crosstab / pulse_chain / regression) consult it to
+// bucket a Pulse-produced field before handing the schema through
+// FromPulseSchema.
+//
+// TEMP: deleted in E4 (leaf executors migrate to KindFromFieldType).
+func KindFromPulseFieldType(ft encoding.FieldType) Kind {
+	return KindFromFieldType(FromPulseFieldType(ft))
+}
+
 // FromPulseSchema converts a *encoding.Schema to a native *Schema. Returns
 // nil for a nil input. Categorical dictionaries are rebuilt from the Pulse
 // dictionary's ordered Values so IDs line up.

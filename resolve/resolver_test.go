@@ -6,12 +6,12 @@ import (
 	"testing"
 
 	"github.com/frankbardon/pulse"
-	"github.com/frankbardon/pulse/encoding"
 	"github.com/frankbardon/pulse/synth"
 	"github.com/spf13/afero"
 
 	prismerrors "github.com/frankbardon/prism/errors"
 	"github.com/frankbardon/prism/resolve"
+	"github.com/frankbardon/prism/table"
 )
 
 // tinySpec returns a 100-row synth spec with three fields used by every
@@ -194,7 +194,7 @@ func TestPrismResolverPathForms(t *testing.T) {
 }
 
 // fieldNames extracts ordered field names from a Pulse schema.
-func fieldNames(s *encoding.Schema) []string {
+func fieldNames(s *table.Schema) []string {
 	out := make([]string, 0, len(s.Fields))
 	for _, f := range s.Fields {
 		out = append(out, f.Name)

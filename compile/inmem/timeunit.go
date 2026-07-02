@@ -5,8 +5,6 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/frankbardon/pulse/encoding"
-
 	"github.com/frankbardon/prism/plan/nodes"
 	"github.com/frankbardon/prism/table"
 )
@@ -49,7 +47,7 @@ func executeTimeUnit(_ context.Context, n *nodes.TimeUnitNode, ins []*table.Tabl
 	}
 
 	schema := cloneSchemaShallow(in.Schema())
-	schema.Fields = append(schema.Fields, encoding.Field{Name: n.As(), Type: encoding.FieldTypeDate})
+	schema.Fields = append(schema.Fields, table.Field{Name: n.As(), Type: table.FieldTypeDate})
 	cols := make(map[string]table.Column, len(in.FieldNames())+1)
 	for _, name := range in.FieldNames() {
 		c, _ := in.Column(name)

@@ -4,17 +4,15 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/frankbardon/pulse/encoding"
-
 	prismerrors "github.com/frankbardon/prism/errors"
 )
 
-func miniSchema() *encoding.Schema {
-	return &encoding.Schema{
-		Fields: []encoding.Field{
-			{Name: "id", Type: encoding.FieldTypeU32},
-			{Name: "score", Type: encoding.FieldTypeF64},
-			{Name: "label", Type: encoding.FieldTypeCategoricalU8, Dictionary: encoding.NewDictionary()},
+func miniSchema() *Schema {
+	return &Schema{
+		Fields: []Field{
+			{Name: "id", Type: FieldTypeU32},
+			{Name: "score", Type: FieldTypeF64},
+			{Name: "label", Type: FieldTypeCategoricalU8, Dictionary: NewDictionary()},
 		},
 	}
 }

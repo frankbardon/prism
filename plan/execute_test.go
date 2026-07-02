@@ -8,8 +8,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/frankbardon/pulse/encoding"
-
 	prismerrors "github.com/frankbardon/prism/errors"
 	"github.com/frankbardon/prism/plan"
 	"github.com/frankbardon/prism/table"
@@ -31,8 +29,8 @@ type execNode struct {
 func (n *execNode) ID() plan.NodeID       { return n.id }
 func (n *execNode) Inputs() []plan.NodeID { return n.inputs }
 func (n *execNode) Fingerprint() string   { return "exec:" + string(n.id) }
-func (n *execNode) Schema(_ []*encoding.Schema) (*encoding.Schema, error) {
-	return &encoding.Schema{Fields: []encoding.Field{{Name: "v", Type: encoding.FieldTypeF64}}}, nil
+func (n *execNode) Schema(_ []*table.Schema) (*table.Schema, error) {
+	return &table.Schema{Fields: []table.Field{{Name: "v", Type: table.FieldTypeF64}}}, nil
 }
 func (n *execNode) Execute(ctx context.Context, _ []*table.Table) (*table.Table, error) {
 	if n.delay > 0 {
@@ -52,8 +50,8 @@ func (n *execNode) Execute(ctx context.Context, _ []*table.Table) (*table.Table,
 
 func mkTbl(t *testing.T, hash string) *table.Table {
 	t.Helper()
-	schema := &encoding.Schema{Fields: []encoding.Field{
-		{Name: "v", Type: encoding.FieldTypeF64},
+	schema := &table.Schema{Fields: []table.Field{
+		{Name: "v", Type: table.FieldTypeF64},
 	}}
 	cols := map[string]table.Column{"v": table.FloatColumn{1, 2, 3}}
 	tbl, err := table.NewTable(schema, cols, 3, hash)

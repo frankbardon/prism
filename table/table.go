@@ -3,8 +3,6 @@ package table
 import (
 	"fmt"
 
-	"github.com/frankbardon/pulse/encoding"
-
 	prismerrors "github.com/frankbardon/prism/errors"
 	"github.com/frankbardon/prism/internal/limits"
 )
@@ -14,7 +12,7 @@ import (
 // mutate them in place). Hash is computed by the producer (Resolver,
 // SourceNode, inline converter) and propagated as the cache key.
 type Table struct {
-	schema   *encoding.Schema
+	schema   *Schema
 	columns  map[string]Column
 	order    []string
 	rowCount int
@@ -28,13 +26,13 @@ type Table struct {
 //   - columns must contain exactly one entry per schema field (no extras,
 //     no missing).
 //   - every column's Len() must equal rowCount.
-//   - every column's Kind() must match KindFromPulseFieldType for its
+//   - every column's Kind() must match KindFromFieldType for its
 //     schema field's Type.
 //   - rowCount must be in [0, limits.TableMaxRows()]. Exceeding the cap
 //     returns PRISM_RESOLVE_007.
 //
 // hash is propagated verbatim; the producer owns hashing strategy.
-func NewTable(schema *encoding.Schema, columns map[string]Column, rowCount int, hash string) (*Table, error) {
+func NewTable(schema *Schema, columns map[string]Column, rowCount int, hash string) (*Table, error) {
 	if schema == nil {
 		return nil, fmt.Errorf("table: schema is nil")
 	}
@@ -66,9 +64,9 @@ func NewTable(schema *encoding.Schema, columns map[string]Column, rowCount int, 
 		if col.Len() != rowCount {
 			return nil, fmt.Errorf("table: column %q has length %d, want %d", f.Name, col.Len(), rowCount)
 		}
-		wantKind := KindFromPulseFieldType(f.Type)
+		wantKind := KindFromFieldType(f.Type)
 		if wantKind == KindUnknown {
-			return nil, fmt.Errorf("table: schema field %q has unknown Pulse type %s", f.Name, f.Type)
+			return nil, fmt.Errorf("table: schema field %q has unknown type %s", f.Name, f.Type)
 		}
 		if col.Kind() != wantKind {
 			return nil, fmt.Errorf("table: column %q kind %s does not match schema field type %s (want %s)",
@@ -86,8 +84,8 @@ func NewTable(schema *encoding.Schema, columns map[string]Column, rowCount int, 
 	}, nil
 }
 
-// Schema returns the table's Pulse schema.
-func (t *Table) Schema() *encoding.Schema { return t.schema }
+// Schema returns the table's native schema.
+func (t *Table) Schema() *Schema { return t.schema }
 
 // NumRows returns the row count.
 func (t *Table) NumRows() int { return t.rowCount }
