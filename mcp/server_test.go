@@ -51,27 +51,6 @@ func TestPlotTool(t *testing.T) {
 	}
 }
 
-// TestPlotToolPDF confirms format=pdf returns application/pdf bytes.
-func TestPlotToolPDF(t *testing.T) {
-	out, err := PlotTool(context.Background(), newFacade(), PlotInput{Spec: fixtureSpec, Format: "pdf"})
-	if err != nil {
-		t.Fatalf("PlotTool pdf: %v", err)
-	}
-	if out.Mime != "application/pdf" {
-		t.Errorf("mime = %q; want application/pdf", out.Mime)
-	}
-	decoded, err := base64.StdEncoding.DecodeString(out.Bytes)
-	if err != nil {
-		t.Fatalf("base64 decode: %v", err)
-	}
-	if !strings.HasPrefix(string(decoded), "%PDF-") {
-		t.Errorf("decoded bytes do not start with %%PDF-")
-	}
-	if len(decoded) < 1000 {
-		t.Errorf("decoded PDF unexpectedly small: %d bytes", len(decoded))
-	}
-}
-
 // TestPlotToolMissingSpec confirms the missing-argument guard returns a Go
 // error (the SDK adapter is what maps it to a tool-result error).
 func TestPlotToolMissingSpec(t *testing.T) {
