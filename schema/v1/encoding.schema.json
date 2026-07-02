@@ -14,7 +14,7 @@
       ],
       "properties": {
         "selection": {"type": "string", "description": "Name of a declared selection. The entry's value applies while the selection is active."},
-        "test":      {"type": "string", "description": "Pulse expression evaluated at encode time."},
+        "test":      {"$ref": "transform.schema.json#/$defs/filter_predicate", "description": "Structured predicate (same grammar as filter) evaluated per row at encode time; a matching row bakes the entry's value."},
         "field":     {"$ref": "shared.schema.json#/$defs/field_ref"},
         "type":      {"$ref": "shared.schema.json#/$defs/measure_type"},
         "value":     {"description": "Constant literal applied when the entry matches."},

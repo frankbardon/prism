@@ -40,19 +40,23 @@ func (FilterPredicate) Check(s *spec.Spec, schemas validate.SchemaLookup) []*err
 			continue
 		}
 		site := fmt.Sprintf("transform[%d].filter", i)
-		out = append(out, checkPredicate(&t.Filter.Filter, schema, known, outputs, site)...)
+		out = append(out, checkPredicate(&t.Filter.Filter, schema, known, outputs, site, "PRISM_SPEC_037")...)
 	}
 	return out
 }
 
-// checkPredicate recurses through the predicate tree, emitting one
-// PRISM_SPEC_037 per problem found.
+// checkPredicate recurses through the predicate tree, emitting one error
+// (under the caller-supplied code) per problem found. The filter rule
+// passes PRISM_SPEC_037; the calculate case-branch and condition-test
+// rules reuse this same walk under their own codes so there is one
+// predicate-semantics source of truth.
 func checkPredicate(
 	p *spec.Predicate,
 	schema *validate.PulseSchemaShim,
 	known bool,
 	outputs map[string]bool,
 	site string,
+	code string,
 ) []*errors.AppError {
 	if p == nil {
 		return nil
@@ -60,12 +64,12 @@ func checkPredicate(
 	var out []*errors.AppError
 	if p.IsCombinator() {
 		for k := range p.And {
-			out = append(out, checkPredicate(&p.And[k], schema, known, outputs, site)...)
+			out = append(out, checkPredicate(&p.And[k], schema, known, outputs, site, code)...)
 		}
 		for k := range p.Or {
-			out = append(out, checkPredicate(&p.Or[k], schema, known, outputs, site)...)
+			out = append(out, checkPredicate(&p.Or[k], schema, known, outputs, site, code)...)
 		}
-		out = append(out, checkPredicate(p.Not, schema, known, outputs, site)...)
+		out = append(out, checkPredicate(p.Not, schema, known, outputs, site, code)...)
 		return out
 	}
 
@@ -73,7 +77,7 @@ func checkPredicate(
 	leftType, leftResolved := fieldMeasureType(p.Field, schema, known, outputs)
 	if known {
 		if _, ok := fieldOrOutput(p.Field, schema, outputs); !ok {
-			return append(out, predicateErr(site, fmt.Sprintf("field %q does not exist in the source schema", p.Field)))
+			return append(out, predicateErr(code, site, fmt.Sprintf("field %q does not exist in the source schema", p.Field)))
 		}
 	}
 
@@ -82,29 +86,29 @@ func checkPredicate(
 		if p.ToField != "" {
 			if known {
 				if _, ok := fieldOrOutput(p.ToField, schema, outputs); !ok {
-					out = append(out, predicateErr(site, fmt.Sprintf("to_field %q does not exist in the source schema", p.ToField)))
+					out = append(out, predicateErr(code, site, fmt.Sprintf("to_field %q does not exist in the source schema", p.ToField)))
 					break
 				}
 			}
 			rightType, rightResolved := fieldMeasureType(p.ToField, schema, known, outputs)
 			if leftResolved && rightResolved && !sameDomain(leftType, rightType) {
-				out = append(out, predicateErr(site, fmt.Sprintf(
+				out = append(out, predicateErr(code, site, fmt.Sprintf(
 					"comparison between %q (%s) and %q (%s) mixes incompatible types",
 					p.Field, leftType, p.ToField, rightType)))
 			}
 		} else if leftResolved && !literalMatchesDomain(p.Value, leftType) {
-			out = append(out, predicateErr(site, fmt.Sprintf(
+			out = append(out, predicateErr(code, site, fmt.Sprintf(
 				"comparison on %q (%s) uses a value of the wrong type", p.Field, leftType)))
 		}
 	case p.Op == spec.PredOneOf || p.Op == spec.PredNotOneOf:
 		if len(p.Values) == 0 {
-			out = append(out, predicateErr(site, fmt.Sprintf("%q requires a non-empty values set", p.Op)))
+			out = append(out, predicateErr(code, site, fmt.Sprintf("%q requires a non-empty values set", p.Op)))
 			break
 		}
 		if leftResolved {
 			for _, v := range p.Values {
 				if !literalMatchesDomain(v, leftType) {
-					out = append(out, predicateErr(site, fmt.Sprintf(
+					out = append(out, predicateErr(code, site, fmt.Sprintf(
 						"%q on %q (%s) has a value of the wrong type", p.Op, p.Field, leftType)))
 					break
 				}
@@ -112,16 +116,16 @@ func checkPredicate(
 		}
 	case p.Op == spec.PredBetween:
 		if !sameLiteralDomain(p.Lo, p.Hi) {
-			out = append(out, predicateErr(site, "between bounds lo and hi must be the same type"))
+			out = append(out, predicateErr(code, site, "between bounds lo and hi must be the same type"))
 			break
 		}
 		if leftResolved && (!literalMatchesDomain(p.Lo, leftType) || !literalMatchesDomain(p.Hi, leftType)) {
-			out = append(out, predicateErr(site, fmt.Sprintf(
+			out = append(out, predicateErr(code, site, fmt.Sprintf(
 				"between on %q (%s) has bounds of the wrong type", p.Field, leftType)))
 			break
 		}
 		if cmp, ok := compareLiterals(p.Lo, p.Hi); ok && cmp > 0 {
-			out = append(out, predicateErr(site, "between requires lo <= hi"))
+			out = append(out, predicateErr(code, site, "between requires lo <= hi"))
 		}
 	}
 	return out
@@ -248,9 +252,13 @@ func literalFloat(v any) (float64, bool) {
 	return 0, false
 }
 
-func predicateErr(site, reason string) *errors.AppError {
-	return errors.New("PRISM_SPEC_037",
-		fmt.Sprintf("Filter predicate is not well-formed (%s) at %s.", reason, site),
+func predicateErr(code, site, reason string) *errors.AppError {
+	noun := "Filter predicate"
+	if code == "PRISM_SPEC_026" {
+		noun = "Condition test predicate"
+	}
+	return errors.New(code,
+		fmt.Sprintf("%s is not well-formed (%s) at %s.", noun, reason, site),
 		map[string]any{
 			"Reason": reason,
 			"Site":   site,

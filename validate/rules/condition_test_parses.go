@@ -8,40 +8,62 @@ import (
 	"github.com/frankbardon/prism/validate"
 )
 
-// ConditionTestParses implements PRISM_SPEC_026: every `test`
-// expression in a condition entry must parse via the Pulse expression
-// parser (mirroring PRISM_SPEC_006 for transforms).
+// ConditionTestParses implements PRISM_SPEC_026: every `test` predicate
+// in a condition entry must be well-formed. Since E2-S3 a condition
+// `test` is a structured spec.Predicate (the same grammar `filter`
+// uses), not a free-form expression string — so structural shape
+// (exactly one branch, known op, required operands, string form
+// rejected) is already enforced at decode time by
+// spec.Predicate.UnmarshalJSON.
+//
+// This rule adds the schema-aware and cross-operand semantics: field
+// existence and type compatibility. It reuses the shared checkPredicate
+// helper (filter_predicate.go) under code PRISM_SPEC_026 so the
+// predicate semantics stay a single source of truth across filter,
+// calculate case-branches, and conditions.
 type ConditionTestParses struct{}
 
 // Code returns PRISM_SPEC_026.
 func (ConditionTestParses) Code() string { return "PRISM_SPEC_026" }
 
-// Check walks every condition-bearing channel and tries to parse each
-// non-empty test expression. Reuses the parser shim from
-// ExpressionParses so the syntax surface stays in sync with Pulse.
-func (ConditionTestParses) Check(s *spec.Spec, _ validate.SchemaLookup) []*errors.AppError {
+// Check walks every condition-bearing channel across the spec tree and
+// validates each non-empty test predicate against the owning node's
+// dataset schema.
+func (ConditionTestParses) Check(s *spec.Spec, schemas validate.SchemaLookup) []*errors.AppError {
 	if s == nil {
 		return nil
 	}
 	var out []*errors.AppError
-	for _, cc := range walkConditionsTree(s) {
-		for i, entry := range cc.Cond.Entries() {
-			if entry.Test == "" {
-				continue
-			}
-			if err := tryParse(entry.Test); err != nil {
-				out = append(out, errors.New("PRISM_SPEC_026",
-					fmt.Sprintf("Condition on channel %s entry[%d]: test expression failed to parse: %v.",
-						cc.Path, i, err),
-					map[string]any{
-						"Channel":    cc.Path,
-						"Entry":      i,
-						"Expression": entry.Test,
-						"Reason":     err.Error(),
-					},
-				))
+	var visit func(prefix string, sub *spec.Spec)
+	visit = func(prefix string, sub *spec.Spec) {
+		if sub == nil {
+			return
+		}
+		_, schema, known := datasetForSpec(sub, schemas)
+		outputs := collectTransformOutputs(sub.Transform)
+		for _, cc := range channelConditionsAt(prefix, sub) {
+			for i, entry := range cc.Cond.Entries() {
+				if entry.Test == nil {
+					continue
+				}
+				site := fmt.Sprintf("%s.condition[%d].test", cc.Path, i)
+				out = append(out, checkPredicate(entry.Test, schema, known, outputs, site, "PRISM_SPEC_026")...)
 			}
 		}
+		for i, l := range sub.Layer {
+			visit(prefixf("layer[%d]", i), l)
+		}
+		for i, c := range sub.Concat {
+			visit(prefixf("concat[%d]", i), c)
+		}
+		for i, c := range sub.HConcat {
+			visit(prefixf("hconcat[%d]", i), c)
+		}
+		for i, c := range sub.VConcat {
+			visit(prefixf("vconcat[%d]", i), c)
+		}
+		visit("spec", sub.ChildSpec)
 	}
+	visit("", s)
 	return out
 }

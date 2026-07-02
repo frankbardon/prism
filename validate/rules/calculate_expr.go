@@ -94,7 +94,7 @@ func checkCalcExpr(
 		}
 	case "case":
 		for k := range e.Case {
-			out = append(out, checkPredicate(&e.Case[k].When, schema, known, outputs, site+".when")...)
+			out = append(out, checkPredicate(&e.Case[k].When, schema, known, outputs, site+".when", "PRISM_SPEC_037")...)
 			out = append(out, checkCalcExpr(&e.Case[k].Then, schema, known, outputs, site)...)
 		}
 		out = append(out, checkCalcExpr(e.Else, schema, known, outputs, site)...)

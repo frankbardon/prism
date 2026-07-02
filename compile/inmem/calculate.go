@@ -13,7 +13,7 @@ import (
 )
 
 // executeCalculate appends one derived column produced by the node's
-// structured CalcExpr (E2-S2 — no expr-lang involved). The output column
+// structured CalcExpr (E2-S2 — no expression engine involved). The output column
 // type is inferred by nodes.CalcResultType: a numeric expression yields
 // an F64 column, a string expression a categorical column.
 //

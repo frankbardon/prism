@@ -628,19 +628,19 @@ var Codes = map[string]CodeMetadata{
 		Fixups: []string{
 			`Declare the selection in the spec's "selection" block before referencing it in a condition.`,
 			`Available selections: {{.Available}}.`,
-			`Use ` + "`{test: \"...\"}`" + ` for a Pulse-expression condition instead of a named selection.`,
+			`Use a ` + "`{test: {op, field, value}}`" + ` structured-predicate condition instead of a named selection.`,
 		},
 		SeeAlso: []string{"PRISM_SPEC_004", "PRISM_SPEC_026"},
 	},
 	"PRISM_SPEC_026": {
 		Code:    "PRISM_SPEC_026",
-		Message: `Condition on channel {{.Channel}}: test expression failed to parse: {{.Reason}}.`,
+		Message: `Condition test predicate is not well-formed ({{.Reason}}) at {{.Site}}.`,
 		Fixups: []string{
-			`Check Pulse expression syntax. Expression: {{.Expression}}`,
-			`Quote string literals with single quotes ('value'), not double quotes.`,
-			`Use Pulse operators (and, or, not, ==, !=, <, <=, >, >=, +, -, *, /, %).`,
+			`A condition ` + "`test`" + ` is a structured predicate, not an expression string: use {op, field, value} leaves and and/or/not combinators.`,
+			`Confirm every referenced field exists in the dataset and comparison operands share a type (numbers vs numbers, strings vs strings).`,
+			`See PRISM_SPEC_037 for the same predicate grammar used by the filter transform.`,
 		},
-		SeeAlso: []string{"PRISM_SPEC_006"},
+		SeeAlso: []string{"PRISM_SPEC_037"},
 	},
 	"PRISM_SPEC_028": {
 		Code:    "PRISM_SPEC_028",

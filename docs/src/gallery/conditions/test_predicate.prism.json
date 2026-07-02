@@ -17,8 +17,8 @@
     "y": {"field": "delta",  "type": "quantitative"},
     "color": {
       "condition": [
-        {"test": "delta >= 0.5", "value": "#22c55e"},
-        {"test": "delta < 0",     "value": "#ef4444"}
+        {"test": {"op": "gte", "field": "delta", "value": 0.5}, "value": "#22c55e"},
+        {"test": {"op": "lt",  "field": "delta", "value": 0},   "value": "#ef4444"}
       ],
       "value": "#94a3b8"
     }

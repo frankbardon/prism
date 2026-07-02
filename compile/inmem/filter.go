@@ -12,7 +12,7 @@ import (
 // executeFilter evaluates the FilterNode's structured predicate
 // (spec.Predicate) per row over the input columns. Surviving rows are
 // picked from every input column; the schema is preserved verbatim.
-// No expr-lang is involved (E2-S1).
+// No free-form expression engine is involved (E2-S1).
 //
 // Null semantics (2-valued, documented): a null operand in a leaf
 // comparison / between / set-membership makes that leaf evaluate FALSE
