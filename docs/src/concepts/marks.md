@@ -87,7 +87,7 @@ series.
 
 Hierarchical and relational marks share a small layout package
 (`encode/marks/layout`) and decompose to existing primitives (path,
-point, rect, text) so the SVG and PDF renderers handle them without
+point, rect, text) so the SVG renderer handles them without
 new geometry types.
 
 | Mark | When to use |

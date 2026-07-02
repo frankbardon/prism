@@ -9,7 +9,7 @@ contract between authors (humans / agents) and the Prism pipeline.
 Spec (JSON) → Parse → Validate → Plan → Compile → Encode → Render → Bytes
                                           │
                                           ├─→ Pulse engine (data ops)
-                                          └─→ Renderer backend (SVG / Canvas / PDF)
+                                          └─→ Renderer backend (SVG / Canvas)
 ```
 
 ## Minimum viable spec
@@ -54,8 +54,8 @@ must be present. The validator enforces this with `PRISM_SPEC_*` codes.
 ## Animation
 
 The optional `animation` block requests a client-side tween whenever the
-spec swaps. Static SVG and PDF output is unaffected — both renderers
-ignore the block entirely. Only the browser web component
+spec swaps. Static SVG output is unaffected — the renderer
+ignores the block entirely. Only the browser web component
 (`<prism-chart>`) and the WASM runtime honour it.
 
 ```json

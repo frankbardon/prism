@@ -182,8 +182,8 @@ implementation of every Prism stage now, written in Go.
 ## Animation
 
 The spec [`animation`](spec.md#animation) block produces hints in the
-emitted Scene IR (`scene.animation` + `mark.key`). SVG and PDF
-renderers ignore these fields entirely; only the web component and
+emitted Scene IR (`scene.animation` + `mark.key`). The SVG
+renderer ignores these fields entirely; only the web component and
 the WASM runtime tween between successive scenes.
 
 ### How the animator works
