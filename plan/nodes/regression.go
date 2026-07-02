@@ -209,6 +209,78 @@ func (n *RegressionNode) Execute(ctx context.Context, _ []*table.Table) (*table.
 	return tableFromLongRows(rows, n.outSchema, n.id)
 }
 
+// tableFromLongRows materialises long-form rows (Pulse Response.Data)
+// into a typed *table.Table using the Pulse schema. Regression is still
+// Pulse-backed (converted in a later slice); the crosstab path has moved
+// to the pure-Go in-memory materialiser (compile/inmem/crosstab.go).
+func tableFromLongRows(rows []map[string]any, schema *encoding.Schema, id plan.NodeID) (*table.Table, error) {
+	if schema == nil {
+		return nil, fmt.Errorf("regression: nil output schema")
+	}
+	cols := make(map[string]table.Column, len(schema.Fields))
+	for i := range schema.Fields {
+		f := &schema.Fields[i]
+		switch table.KindFromPulseFieldType(f.Type) {
+		case table.KindString:
+			cols[f.Name] = make(table.StringColumn, 0, len(rows))
+		case table.KindFloat:
+			cols[f.Name] = make(table.FloatColumn, 0, len(rows))
+		case table.KindInt:
+			cols[f.Name] = make(table.IntColumn, 0, len(rows))
+		case table.KindBool:
+			cols[f.Name] = make(table.BoolColumn, 0, len(rows))
+		case table.KindDate:
+			cols[f.Name] = make(table.DateColumn, 0, len(rows))
+		default:
+			return nil, fmt.Errorf("regression: unsupported field type %s for %q", f.Type, f.Name)
+		}
+	}
+	for _, row := range rows {
+		for i := range schema.Fields {
+			f := &schema.Fields[i]
+			raw, present := row[f.Name]
+			switch table.KindFromPulseFieldType(f.Type) {
+			case table.KindString:
+				s := ""
+				if present && raw != nil {
+					s = coerceString(raw)
+				}
+				cols[f.Name] = append(cols[f.Name].(table.StringColumn), s)
+			case table.KindFloat:
+				v := 0.0
+				if present && raw != nil {
+					v, _ = coerceFloatRow(raw)
+				}
+				cols[f.Name] = append(cols[f.Name].(table.FloatColumn), v)
+			case table.KindInt:
+				v := int64(0)
+				if present && raw != nil {
+					if f64, ok := coerceFloatRow(raw); ok {
+						v = int64(f64)
+					}
+				}
+				cols[f.Name] = append(cols[f.Name].(table.IntColumn), v)
+			case table.KindBool:
+				b := false
+				if present && raw != nil {
+					b, _ = raw.(bool)
+				}
+				cols[f.Name] = append(cols[f.Name].(table.BoolColumn), b)
+			case table.KindDate:
+				v := int64(0)
+				if present && raw != nil {
+					if f64, ok := coerceFloatRow(raw); ok {
+						v = int64(f64)
+					}
+				}
+				cols[f.Name] = append(cols[f.Name].(table.DateColumn), v)
+			}
+		}
+	}
+	hash := "regression:" + string(id)
+	return table.NewTable(table.FromPulseSchema(schema), cols, len(rows), hash)
+}
+
 // regressionBodyKey returns a stable canonical key for fingerprinting.
 func regressionBodyKey(b spec.RegressionBody) string {
 	as := b.As

@@ -1,16 +1,15 @@
 package spec
 
-// CrosstabTransform builds a contingency table. Wraps Pulse v0.13's
-// Request.Crosstab section: the engine composes the cell aggregation
-// across the row × column grouper grid, applies the configured
-// normalisation, and returns long-form rows ready for a heatmap.
+// CrosstabTransform builds a contingency table. The in-memory engine
+// composes the cell aggregation across the row × column grouper grid,
+// recomputes the margin axes, applies the configured normalisation, and
+// returns long-form rows ready for a heatmap.
 //
 // Constraint: must be the first transform in the chain (or the only
-// transform). Because Pulse has no in-memory cohort constructor,
-// crosstab can only run against the source ref — not on the output
-// of a prior transform. The plan builder enforces this via
-// PRISM_PLAN_CROSSTAB_REQUIRES_SOURCE; the validate rule signals it
-// statically via PRISM_SPEC_032.
+// transform). Crosstab consumes the source table directly — it is not
+// composable after a prior transform in v1. The plan builder enforces
+// this via PRISM_PLAN_CROSSTAB_REQUIRES_SOURCE; the validate rule
+// signals it statically via PRISM_SPEC_032.
 type CrosstabTransform struct {
 	Crosstab CrosstabBody `json:"crosstab"`
 	Data     string       `json:"data,omitempty"`

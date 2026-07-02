@@ -803,22 +803,25 @@ func (c *buildCtx) buildCrosstab(input plan.NodeID, t *spec.CrosstabTransform) (
 			map[string]any{"InputKind": fmt.Sprintf("%T", inNode), "Input": string(in)},
 		)
 	}
-	inSchema, err := src.OutputSchema()
+	// Crosstab now pivots the materialised source table in-memory via the
+	// compile backend, so it keeps the SourceNode as its single upstream
+	// input (the SourceNode remains the only legal input — the position
+	// rule holds — but it is no longer removed from the DAG).
+	inSchema, err := src.Schema(nil)
 	if err != nil {
 		return "", err
 	}
 	id := nodes.DeriveCrosstabID(src.Ref(), t.Crosstab)
-	node, err := nodes.NewCrosstab(id, src.Ref(), src.FS(), inSchema, t.Crosstab)
+	node, err := nodes.NewCrosstab(id, src.ID(), src.Ref(), src.FS(), inSchema, t.Crosstab)
 	if err != nil {
 		return "", err
 	}
-	if err := c.b.AddNode(node); err != nil {
+	if _, err := c.addAndReturn(node); err != nil {
 		return "", err
 	}
-	// Drop the now-unused SourceNode so the DAG executor doesn't
-	// materialise the cohort a second time.
-	c.b.RemoveNode(src.ID())
-	// Rewire any leafByName entries that pointed at the source.
+	// The crosstab is the new tip of this chain; advance the leaf
+	// bookkeeping so any following transform consumes the crosstab
+	// output. The SourceNode stays in the DAG as the crosstab's input.
 	for name, leafID := range c.leafByName {
 		if leafID == src.ID() {
 			c.leafByName[name] = id

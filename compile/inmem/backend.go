@@ -60,6 +60,8 @@ func (b *Backend) Compile(ctx context.Context, node plan.Node, ins []*table.Tabl
 		return executeTimeUnit(ctx, n, ins)
 	case *nodes.WindowNode:
 		return executeWindow(ctx, n, ins)
+	case *nodes.CrosstabNode:
+		return executeCrosstab(ctx, n, ins)
 	}
 	return nil, notImplemented(node)
 }

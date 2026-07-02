@@ -259,10 +259,10 @@ Validation codes:
 
 ## Crosstab transform
 
-The `crosstab` transform delegates a contingency-table computation to
-Pulse v0.13+. Pulse's engine composes the cell aggregation across the
-row × column grouper grid, applies the configured normalisation, and
-returns long-form rows ready for a heatmap encoder.
+The `crosstab` transform builds a contingency table in Prism's in-memory
+engine: it composes the cell aggregation across the row × column grouper
+grid, recomputes the margin axes, applies the configured normalisation,
+and returns long-form rows ready for a heatmap encoder.
 
 ```json
 {
@@ -290,9 +290,9 @@ Body:
 
 | Field | Required | Notes |
 |---|---|---|
-| `rows`      | yes | Row-axis groupers. One or more `{field: "..."}` (category, default) or `{field: "...", type: "date", period: "..."}` (GROUP_DATE). |
+| `rows`      | yes | Row-axis groupers. One or more `{field: "..."}` (category, default) or `{field: "...", type: "date", period: "..."}` (date bucketing). |
 | `columns`   | yes | Column-axis groupers. Same shape. |
-| `cell`      | yes | `{aggregate, field, as}` — Pulse-backed alias (sum, mean, count, ...). |
+| `cell`      | yes | `{aggregate, field, as}` — aggregate alias (sum, mean, count, ...). |
 | `margins`   |     | `{rows, columns, grand}` — emit total rows with `_margin` sentinel. |
 | `normalize` |     | `none` (default), `row`, `column`, `total`. |
 | `shape`     |     | `long` (default) returns one row per cell; `matrix` is reserved. |
@@ -300,7 +300,7 @@ Body:
 
 ### Crosstab overlays
 
-`overlays` attaches Pulse post-result overlay layers to the cell grid.
+`overlays` attaches post-result overlay layers to the cell grid.
 Each overlay adds one F64 column — index-aligned to the base cell — so
 it can drive a `color` or `opacity` channel. v1 supports the
 cell-scoped kinds that align one-to-one with heatmap cells:
@@ -321,16 +321,16 @@ cell-scoped kinds that align one-to-one with heatmap cells:
 }
 ```
 
-When any overlay is present the node runs the crosstab in matrix shape
-internally (overlays decorate body cells), so user `margins` flags are
-ignored for the visual output. Group/series-scoped kinds
-(`index_vs_total`, `share_of_total`) land in a follow-up.
+When any overlay is present the node emits body cells only (overlays
+decorate body cells), so user `margins` flags are ignored for the visual
+output. Group/series-scoped kinds (`index_vs_total`, `share_of_total`)
+land in a follow-up.
 
 Constraints:
 
-- Crosstab must be the **first** transform on the chain. Pulse has no
-  in-memory cohort constructor, so chaining it after another Prism
-  transform is structurally impossible (`PRISM_SPEC_033`).
+- Crosstab must be the **first** transform on the chain. v1 crosstab
+  consumes the source table directly, so chaining it after another Prism
+  transform is not supported (`PRISM_SPEC_033`).
 - Grouper `type` is `category` (default) or `date`. A date grouper
   buckets a temporal field by `period` — one of `year`, `quarter`,
   `month` (default), `week`, `day`, `day_of_week` — emitting string
