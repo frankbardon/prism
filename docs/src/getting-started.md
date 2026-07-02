@@ -59,8 +59,7 @@ fixup suggestions. Add `--json` for machine-readable envelopes.
 
 ```
 prism plot my-chart.prism.json --format svg > chart.svg
-prism plot my-chart.prism.json --format pdf > chart.pdf
-prism plot dashboard.json --format pdf --paginate > dashboard.pdf
+prism plot dashboard.json --format svg > dashboard.svg
 ```
 
 ## Themes

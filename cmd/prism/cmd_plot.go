@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"io"
 	"os"
-	"strconv"
 	"strings"
 
 	"github.com/spf13/afero"
@@ -19,7 +18,6 @@ import (
 	"github.com/frankbardon/prism/plan"
 	"github.com/frankbardon/prism/plan/build"
 	"github.com/frankbardon/prism/render"
-	"github.com/frankbardon/prism/render/pdf"
 	"github.com/frankbardon/prism/render/svg"
 	"github.com/frankbardon/prism/resolve"
 	"github.com/frankbardon/prism/spec"
@@ -36,23 +34,23 @@ import (
 func plotCommand() *cli.Command {
 	return &cli.Command{
 		Name:      "plot",
-		Usage:     "Compile a Prism spec and render it to SVG (default) or PDF (P15)",
+		Usage:     "Compile a Prism spec and render it to SVG",
 		ArgsUsage: "[spec-file]",
 		Flags: []cli.Flag{
 			&cli.StringFlag{
 				Name:  "format",
 				Value: "svg",
-				Usage: "Output format: svg | pdf | png (V2) | canvas-json (browser-only via prism scene)",
+				Usage: "Output format: svg | png (V2) | canvas-json (browser-only via prism scene)",
 			},
 			&cli.FloatFlag{
 				Name:  "width",
 				Value: 0,
-				Usage: "Width in pixels (0 = SVG: viewBox-only / responsive; PDF: use scene's natural frame)",
+				Usage: "Width in pixels (0 = viewBox-only / responsive)",
 			},
 			&cli.FloatFlag{
 				Name:  "height",
 				Value: 0,
-				Usage: "Height in pixels (0 = SVG: viewBox-only / responsive; PDF: use scene's natural frame)",
+				Usage: "Height in pixels (0 = viewBox-only / responsive)",
 			},
 			&cli.StringFlag{
 				Name:  "out",
@@ -73,20 +71,6 @@ func plotCommand() *cli.Command {
 				Name:  "abort-on-error",
 				Usage: "Stop on the first node error instead of skipping dependents",
 			},
-			&cli.BoolFlag{
-				Name:  "paginate",
-				Usage: "PDF only — emit one page per SceneGrid cell (default: single page sized to the outer grid frame)",
-			},
-			&cli.StringFlag{
-				Name:  "page-size",
-				Value: "a4",
-				Usage: "PDF only — page size: a4 | letter | legal | <W>x<H>pt (e.g. 612x792pt = US Letter)",
-			},
-			&cli.StringFlag{
-				Name:  "font-dir",
-				Value: "",
-				Usage: "PDF only — override bundled fonts with .ttf files from this directory (canonical names: prism-sans-regular.ttf, prism-sans-bold.ttf, prism-mono-regular.ttf)",
-			},
 			datasetsConfigFlag(),
 			geodataDirFlag(),
 		},
@@ -98,10 +82,10 @@ func runPlot(ctx context.Context, cmd *cli.Command) error {
 	args := cmd.Args().Slice()
 	format := strings.ToLower(cmd.String("format"))
 
-	// Gate on unsupported formats early. PDF lands in P15; PNG +
-	// canvas-json defer per .planning/STATE.md deferred items.
+	// Gate on unsupported formats early. PNG + canvas-json defer per
+	// .planning/STATE.md deferred items; the pdf renderer was removed.
 	switch format {
-	case "svg", "pdf":
+	case "svg":
 		// supported below
 	default:
 		return reportUnsupportedFormat(cmd, format)
@@ -161,21 +145,6 @@ func runPlot(ctx context.Context, cmd *cli.Command) error {
 			Format: format,
 			Width:  width,
 			Height: height,
-		})
-	case "pdf":
-		pageW, pageH, perr := parsePageSize(cmd.String("page-size"))
-		if perr != nil {
-			return cli.Exit(fmt.Sprintf("--page-size: %v", perr), 2)
-		}
-		pdfOpts := []pdf.Option{}
-		if fd := cmd.String("font-dir"); fd != "" {
-			pdfOpts = append(pdfOpts, pdf.WithFontDir(fd))
-		}
-		bytes, err = pdf.New(pdfOpts...).Render(doc, render.RenderOpts{
-			Format:   format,
-			Width:    pageW,
-			Height:   pageH,
-			Paginate: cmd.Bool("paginate"),
 		})
 	}
 	if err != nil {
@@ -265,43 +234,13 @@ func plotPipeline(
 	return doc, nil
 }
 
-// parsePageSize resolves a --page-size flag value into width / height
-// in PDF points. Recognised forms:
-//
-//	a4      -> 595 x 842 (portrait)
-//	letter  -> 612 x 792
-//	legal   -> 612 x 1008
-//	<W>x<H>pt — explicit (e.g. "612x792pt")
-//
-// Case-insensitive on the named sizes. Returns an error message
-// suitable for surfacing to the user when parsing fails.
-func parsePageSize(s string) (w, h float64, err error) {
-	switch strings.ToLower(strings.TrimSpace(s)) {
-	case "", "a4":
-		return 595, 842, nil
-	case "letter", "us-letter":
-		return 612, 792, nil
-	case "legal", "us-legal":
-		return 612, 1008, nil
-	}
-	// Explicit "<W>x<H>pt" form.
-	body := strings.TrimSuffix(strings.ToLower(strings.TrimSpace(s)), "pt")
-	parts := strings.Split(body, "x")
-	if len(parts) != 2 {
-		return 0, 0, fmt.Errorf("expected a4 | letter | legal | <W>x<H>pt, got %q", s)
-	}
-	wv, e1 := strconv.ParseFloat(strings.TrimSpace(parts[0]), 64)
-	hv, e2 := strconv.ParseFloat(strings.TrimSpace(parts[1]), 64)
-	if e1 != nil || e2 != nil || wv <= 0 || hv <= 0 {
-		return 0, 0, fmt.Errorf("expected positive numbers in <W>x<H>pt, got %q", s)
-	}
-	return wv, hv, nil
-}
-
 // reportUnsupportedFormat emits PRISM_RENDER_FORMAT_UNAVAILABLE for
-// non-svg/non-pdf formats with the appropriate landing-phase fixup.
+// non-svg formats. Deferred formats carry a landing-phase note; the
+// removed pdf format relies on the catalog's message + fixups (which
+// already say "render to SVG instead") so no bespoke fixup is appended.
 func reportUnsupportedFormat(cmd *cli.Command, format string) error {
 	phase := "V2"
+	message := ""
 	switch format {
 	case "canvas-json":
 		// canvas-json consumes the Scene IR through `prism scene` +
@@ -309,10 +248,18 @@ func reportUnsupportedFormat(cmd *cli.Command, format string) error {
 		phase = "P12"
 	case "png":
 		phase = "V2"
+	case "pdf":
+		// The pdf renderer was removed; use a bespoke message but lean
+		// on the catalog fixups for the "render to SVG instead" guidance
+		// rather than appending a near-duplicate line.
+		message = "PDF rendering was removed from Prism."
+	}
+	if message == "" {
+		message = fmt.Sprintf("Render format %s is not available in the current Prism build (lands in %s).", format, phase)
 	}
 	err := prismerrors.New(
 		"PRISM_RENDER_FORMAT_UNAVAILABLE",
-		fmt.Sprintf("Render format %s is not available in the current Prism build (lands in %s).", format, phase),
+		message,
 		map[string]any{"Format": format, "Phase": phase},
 	)
 	var ae *prismerrors.AppError

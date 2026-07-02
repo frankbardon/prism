@@ -2,8 +2,8 @@ package spec
 
 // Animation declares an optional client-side tween between successive
 // scenes. Animation hints live in the Scene IR but are honoured only by
-// the browser web component and the WASM runtime; static SVG and PDF
-// renderers ignore the block entirely so their output stays terminal.
+// the browser web component and the WASM runtime; the static SVG
+// renderer ignores the block entirely so its output stays terminal.
 //
 // At most one encoding channel may carry `key: true`; that channel's
 // resolved value becomes the per-mark identity used to diff old vs

@@ -26,7 +26,7 @@ import (
 // (D076 / TestCrossImplSVGParity).
 //
 // Per D011, SceneDoc JSON is the cross-implementation contract:
-// Go produces it, JS consumes it (P12), Canvas + PDF consume it
+// Go produces it, JS consumes it (P12), Canvas consumes it
 // (P12/P15). This subcommand is the explicit entrypoint for
 // generating the canonical form.
 func sceneCommand() *cli.Command {

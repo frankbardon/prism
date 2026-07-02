@@ -2,7 +2,7 @@ package scene
 
 // Animation is the scene-IR projection of the spec animation block.
 // Fields carry resolved defaults — the encoder never emits a partial
-// Animation. SVG and PDF renderers ignore this struct; only the
+// Animation. The SVG renderer ignores this struct; only the
 // browser web component and the WASM runtime consume it.
 //
 // JSON shape uses omitempty on the optional fields so existing

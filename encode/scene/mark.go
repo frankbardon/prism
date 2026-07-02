@@ -31,14 +31,14 @@ type Mark struct {
 	// Key carries the resolved animation join-key string (e.g.
 	// "region=west") materialised from whichever encoding channel
 	// declared `key: true` in the spec. Empty when no animation is in
-	// play; SVG and PDF renderers ignore it.
+	// play; the SVG renderer ignores it.
 	Key     string   `json:"key,omitempty"`
 	Style   Style    `json:"style,omitempty"`
 	Tooltip *Tooltip `json:"tooltip,omitempty"`
 	Datum   *Datum   `json:"datum,omitempty"`
 
 	// Conditions carries per-mark selection-driven conditional attrs
-	// resolved at encode time. The SVG / PDF renderers ignore this
+	// resolved at encode time. The SVG renderer ignores this
 	// slice (it travels through scene JSON only); the browser-side
 	// selection module reacts to entries here when its selection state
 	// changes. Static `test`-based conditions are baked into Style

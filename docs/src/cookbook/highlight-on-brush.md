@@ -56,17 +56,16 @@ the underlying data.
   `{"selection": ...}` entry for `{"test": "score >= 0.7", "value":
   "#22c55e"}`. The encoder evaluates the expression at encode time
   and bakes the result into each mark's style, so the highlight
-  appears in plain SVG / PDF output without any browser involvement.
+  appears in plain SVG output without any browser involvement.
 - **Multiple conditions**: combine entries. Entries evaluate
   top-down, first match wins; the channel's own `value` is the
   final fallback.
 
 ## Caveats
 
-- PDF cannot honour selection-driven conditions (it's a static
-  format) — the renderer emits a
-  `PRISM_WARN_PDF_CONDITION_FLATTENED` warning and paints the
-  fallback. Static `test` conditions render fine.
+- Selection-driven conditions require a live browser; static SVG
+  output paints the resolved "otherwise" branch. Static `test`
+  conditions render fine.
 - Each entry must carry exactly one of `value` or `field`
   (`PRISM_SPEC_027`); a `selection`-form entry with neither
   inherits the channel's own field binding.

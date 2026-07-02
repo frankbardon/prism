@@ -148,6 +148,3 @@ components register globally; any page that uses
 - Large `.pulse` files (>50 MB) decode slowly in the browser on
   mid-range hardware. Pre-aggregate at build time when the
   chart's audience is mobile.
-- No PDF renderer in the browser. `prism plot --format pdf` is
-  host-only; serve pre-rendered PDFs as static files if the page
-  needs them.

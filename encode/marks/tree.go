@@ -19,8 +19,8 @@ import (
 // radial — vertical default in v0.2), link_shape (step / curve /
 // straight), node_shape (circle / rect / none), node_size.
 //
-// Output decomposes into existing scene-IR primitives so SVG / PDF
-// render without changes:
+// Output decomposes into existing scene-IR primitives so SVG
+// renders without changes:
 //
 //   - one PathGeom per parent → child edge,
 //   - one PointGeom or RectGeom per node (based on node_shape),

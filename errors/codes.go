@@ -299,59 +299,14 @@ var Codes = map[string]CodeMetadata{
 	},
 	"PRISM_RENDER_FORMAT_UNAVAILABLE": {
 		Code:    "PRISM_RENDER_FORMAT_UNAVAILABLE",
-		Message: `Render format {{.Format}} is not available in the current Prism build (lands in {{.Phase}}).`,
+		Message: `Render format {{.Format}} is not available in the current Prism build.`,
 		Fixups: []string{
-			`SVG (default) and PDF (P15) are the available renderers; use --format svg or --format pdf.`,
+			`SVG (default) is the built-in renderer; use --format svg.`,
+			`PDF output was removed from Prism — render to SVG instead (--format svg), or convert the SVG to PDF with an external tool if you need a print artifact.`,
 			`PNG support is deferred to V2; consume the JS port (prism.mjs) via prism scene + canvas for browser-native screenshots.`,
 			`canvas-json consumes the Scene IR directly via 'prism scene <spec>' → render/svg's prism.mjs in the browser.`,
 		},
 		SeeAlso: []string{"PRISM_RENDER_001"},
-	},
-	"PRISM_RENDER_PDF_UNSUPPORTED_PATH": {
-		Code:    "PRISM_RENDER_PDF_UNSUPPORTED_PATH",
-		Message: `PDF renderer cannot translate SVG path command {{.Got}} (only M/L/H/V/Q/C/A/Z + relative forms are supported per D092).`,
-		Fixups: []string{
-			`Rewrite the path using only the supported subset: M / L / H / V / Q / C / A / Z (and the relative forms m / l / h / v / q / c / a / z).`,
-			`Smooth cubic (S / s) and smooth quadratic (T / t) are rejected because they depend on the previous command's reflected control point; expand them to explicit C / Q commands.`,
-			`If you need an arbitrary SVG shape, consider using a primitive Prism mark (rect / line / area / arc) instead of a raw <path>.`,
-		},
-		SeeAlso: []string{"PRISM_SPEC_017", "PRISM_RENDER_001"},
-	},
-	"PRISM_WARN_PDF_GRADIENT_FLATTENED": {
-		Code:    "PRISM_WARN_PDF_GRADIENT_FLATTENED",
-		Message: `PDF renderer flattened a gradient fill to its first color stop (gradient {{.Gradient}}).`,
-		Fixups: []string{
-			`Use a solid color in your spec for byte-identical PDF rendering across SVG and PDF.`,
-			`The SVG renderer preserves the gradient; the PDF backend currently only renders solid fills (gopdf lacks a public shading API).`,
-		},
-		SeeAlso: []string{"PRISM_WARN_PDF_GRADIENT_TEXT_FLATTENED", "PRISM_WARN_PDF_GRADIENT_ANGULAR_FLATTENED", "PRISM_RENDER_001"},
-	},
-	"PRISM_WARN_PDF_GRADIENT_TEXT_FLATTENED": {
-		Code:    "PRISM_WARN_PDF_GRADIENT_TEXT_FLATTENED",
-		Message: `PDF renderer flattened a gradient fill on a text mark (gradient {{.Gradient}}).`,
-		Fixups: []string{
-			`Text marks use a solid fill in PDF output regardless of backend gradient support; this warning is informational.`,
-			`The SVG renderer preserves the gradient on text via inline <linearGradient> defs.`,
-		},
-		SeeAlso: []string{"PRISM_WARN_PDF_GRADIENT_FLATTENED"},
-	},
-	"PRISM_WARN_PDF_GRADIENT_ANGULAR_FLATTENED": {
-		Code:    "PRISM_WARN_PDF_GRADIENT_ANGULAR_FLATTENED",
-		Message: `PDF renderer flattened an angular / conic gradient (gradient {{.Gradient}}): the PDF backend supports only linear and radial.`,
-		Fixups: []string{
-			`Use linear / radial gradients in the spec, or accept the flattened output in PDF.`,
-			`The SVG renderer preserves angular gradients via inline <linearGradient> + transform.`,
-		},
-		SeeAlso: []string{"PRISM_WARN_PDF_GRADIENT_FLATTENED"},
-	},
-	"PRISM_WARN_PDF_CONDITION_FLATTENED": {
-		Code:    "PRISM_WARN_PDF_CONDITION_FLATTENED",
-		Message: `PDF renderer painted the fallback branch of a selection-driven condition on mark {{.Mark}}: PDFs are static.`,
-		Fixups: []string{
-			`Selection-driven conditions need an interactive renderer (SVG via prism-element). Static ` + "`{test: ...}`" + ` conditions render fine in PDF.`,
-			`See ` + "`docs/src/concepts/encoding.md#conditions`" + ` for details.`,
-		},
-		SeeAlso: []string{"PRISM_SPEC_025"},
 	},
 	"PRISM_RENDER_SCENE_EMPTY": {
 		Code:    "PRISM_RENDER_SCENE_EMPTY",

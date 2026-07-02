@@ -31,7 +31,7 @@ The same four tools are exposed regardless of which mounting path you use.
 | `prism_describe` | `{spec}` | `{summary}` |
 | `prism_examples_search` | `{query}` | `{examples: [{name, summary, spec}]}` |
 
-`prism_plot` supports `svg` (default) and `pdf`; `png` returns
+`prism_plot` supports `svg` (default); `png` returns
 `PRISM_RENDER_FORMAT_UNAVAILABLE`. `prism_examples_search` returns up to
 five matches by substring on spec name + title.
 

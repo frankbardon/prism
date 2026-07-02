@@ -20,7 +20,7 @@ import (
 // charge, seed.
 //
 // Output decomposes into LineGeom (one per edge) + Point/Rect geoms
-// (one per unique node). The SVG / PDF renderers handle both
+// (one per unique node). The SVG renderer handles both
 // primitives without changes.
 func encodeNetwork(in Inputs) ([]scene.Mark, error) {
 	if in.Source.Field == "" || in.Target.Field == "" {

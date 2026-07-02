@@ -72,6 +72,20 @@ func TestPrismPlotProducesValidSVGForAllFixtures(t *testing.T) {
 	}
 }
 
+// TestPrismPlotRejectsPDFFormat asserts the removed PDF backend is
+// reported cleanly: `prism plot --format pdf` must exit non-zero with
+// PRISM_RENDER_FORMAT_UNAVAILABLE rather than crash or emit bytes.
+func TestPrismPlotRejectsPDFFormat(t *testing.T) {
+	fixturePath := repoFile(t, "examples", "specs", "bar_basic.json")
+	out, exit := runCLI(t, "prism", "plot", "--format", "pdf", fixturePath)
+	if exit == 0 {
+		t.Fatalf("plot --format pdf exited 0; want non-zero: %s", firstChars(out, 200))
+	}
+	if !strings.Contains(out, "PRISM_RENDER_FORMAT_UNAVAILABLE") {
+		t.Fatalf("plot --format pdf output missing PRISM_RENDER_FORMAT_UNAVAILABLE: %s", firstChars(out, 200))
+	}
+}
+
 // stripLeadingWarnings drops any `WARN PRISM_WARN_*` lines at the
 // top of the buffer so the XML parser sees the SVG bytes directly.
 // In the CLI test harness stderr is merged into the output buffer.

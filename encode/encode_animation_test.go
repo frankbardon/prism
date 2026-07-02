@@ -39,8 +39,8 @@ func buildAndExecute(t *testing.T, s *spec.Spec) (map[plan.NodeID]*table.Table, 
 // TestEncodeNoAnimationLocksGoldens asserts that encoding a spec
 // without an `animation` block produces a SceneDoc whose top scene
 // has Animation == nil and whose per-row marks carry no Key. This is
-// the regression lock that protects every existing SVG / PDF golden
-// — both renderers ignore the new fields, but if the encoder ever
+// the regression lock that protects every existing SVG golden
+// — the renderer ignores the new fields, but if the encoder ever
 // starts emitting them by accident, omitempty on the JSON tags
 // would still surface a diff in scene IR fixtures.
 func TestEncodeNoAnimationLocksGoldens(t *testing.T) {

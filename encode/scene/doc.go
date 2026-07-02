@@ -1,7 +1,7 @@
 // Package scene holds the Prism Scene IR — the renderer-agnostic
 // intermediate representation produced by the encode stage and
-// consumed by every Renderer (SVG ships in P05; PNG / PDF / canvas
-// land in later phases). Types mirror design/06-scene-ir.md verbatim.
+// consumed by every Renderer (SVG ships in P05; PNG / canvas land in
+// later phases). Types mirror design/06-scene-ir.md verbatim.
 //
 // Coordinates are pre-resolved to pixel space. Renderers do not run
 // scale math.

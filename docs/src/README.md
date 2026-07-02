@@ -1,7 +1,7 @@
 # Prism
 
 Prism is a visualization library for `.pulse` files. It compiles
-declarative JSON specs into charts — server-side SVG/PNG/PDF via Go,
+declarative JSON specs into charts — server-side SVG/PNG via Go,
 and live in-browser via web components — using Vega-Lite-inspired
 vocabulary with snake_case naming and Pulse expression syntax.
 

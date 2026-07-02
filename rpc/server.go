@@ -33,7 +33,6 @@ import (
 	"github.com/frankbardon/prism/plan"
 	"github.com/frankbardon/prism/plan/build"
 	"github.com/frankbardon/prism/render"
-	"github.com/frankbardon/prism/render/pdf"
 	"github.com/frankbardon/prism/render/svg"
 	"github.com/frankbardon/prism/resolve"
 	"github.com/frankbardon/prism/spec"
@@ -186,11 +185,9 @@ func dimsOrDefault(w, h int32) (float64, float64) {
 	return width, height
 }
 
-// Plot implements the Plot RPC. SVG and PDF render inline; PNG +
+// Plot implements the Plot RPC. SVG renders inline; PNG and
 // canvas-json return PRISM_RENDER_FORMAT_UNAVAILABLE — the interceptor
-// maps that code to twirp.Unimplemented per D085. PDF defaults to a
-// single page (Paginate=false); multi-page output over the wire
-// defers to a future proto-shape change.
+// maps that code to twirp.Unimplemented per D085.
 func (s *PrismServer) Plot(ctx context.Context, req *PlotRequest) (*PlotResponse, error) {
 	if req == nil {
 		req = &PlotRequest{}
@@ -200,7 +197,7 @@ func (s *PrismServer) Plot(ctx context.Context, req *PlotRequest) (*PlotResponse
 		format = "svg"
 	}
 	switch format {
-	case "svg", "pdf":
+	case "svg":
 		// handled below
 	case "png", "canvas-json":
 		// Match the CLI's landing-phase message so users see the
@@ -241,14 +238,6 @@ func (s *PrismServer) Plot(ctx context.Context, req *PlotRequest) (*PlotResponse
 		rend := svg.New()
 		bytes, err = rend.Render(doc, render.RenderOpts{
 			Format: "svg",
-			Width:  width,
-			Height: height,
-		})
-		mime = rend.MimeType()
-	case "pdf":
-		rend := pdf.New()
-		bytes, err = rend.Render(doc, render.RenderOpts{
-			Format: "pdf",
 			Width:  width,
 			Height: height,
 		})

@@ -11,7 +11,7 @@ and the live browser component both consume.
 |---|---|
 | `light` (default) | Standard web pages, light backgrounds. Tableau10 categorical + Viridis sequential. |
 | `dark` | Dark dashboards, terminal embeds. Observable10 categorical + Magma sequential. |
-| `print` | Reports, PDF output. Grayscale only, no transparency on lines, hatch-friendly. |
+| `print` | Reports, print-ready output. Grayscale only, no transparency on lines, hatch-friendly. |
 | `high_contrast` | Projector / presentation, low-vision readers. Pure black/white, bold weights, no grid lines. |
 | `colorblind` | Colorblind-safe defaults. Okabe-Ito categorical + Cividis sequential (deuteranopia-tuned). |
 

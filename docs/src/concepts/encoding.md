@@ -70,16 +70,13 @@ Rules:
 Where the work happens:
 
 - **`test`-driven entries** are evaluated server-side at encode time
-  and baked directly into the mark's resolved style. SVG and PDF
-  output reflect them with no client involvement.
+  and baked directly into the mark's resolved style. SVG output
+  reflects them with no client involvement.
 - **`selection`-driven entries** land in the scene-IR as a
   `Mark.Conditions[]` slice. The browser-side `prism-selection`
   module flips the matching SVG attribute when the named selection
   becomes active, and reverts to the resolved "otherwise" branch
   when it clears.
-- PDF renders the "otherwise" branch for selection entries (PDFs
-  are static); a `PRISM_WARN_PDF_CONDITION_FLATTENED` warning fires
-  when this would have changed the page.
 
 See the [conditions gallery](../gallery/conditions) and the
 [highlight-on-brush recipe](../cookbook/highlight-on-brush.md).

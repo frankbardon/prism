@@ -31,9 +31,9 @@ Any change to Prism code, configuration, spec vocabulary, schema bundle, or publ
 | A `theme.Range` slot | `theme/range.go` (`Range` struct + `Clone` + `MergeRange`) + matching spec wire field in `spec/theme.go` + override copy in `theme/override.go` (`copyRange`) + JSON Schema property in `schema/v1/theme.schema.json` (`range_block`) + scale-resolution call site in `encode/palette.go` (or marks/heatmap.go for sequential) + every built-in theme that should default the slot |
 | A semantic validation rule | `validate/RULES.md` + new rule file under `validate/rules/` + register in `validate/semantic.go` + new `PRISM_SPEC_NNN` row in `errors/codes.go` |
 | A `PRISM_*` error code (added / removed / renamed) | `errors/codes.go` (canonical `Code`, `Message`, at least one fixup template or `SeeAlso`) + reachable via `prism errors lookup` |
-| A renderer backend (SVG / PDF / Canvas) | `docs/src/concepts/themes.md` (rendering notes if visual) + `render/<backend>/` + dispatch in `render/render.go` |
+| A renderer backend (SVG / Canvas) | `docs/src/concepts/themes.md` (rendering notes if visual) + `render/<backend>/` + dispatch in `render/render.go` |
 | Anything reachable from `cmd/prismwasm/main.go` (WASM entry) | `docs/src/concepts/browser.md` + size-budget gate `internal/gates/wasm_size_test.go` + `cmd/prismwasm/wasm_smoke_test.go` if behaviour changes |
-| A new package import in the WASM entry, OR a new file under a `!js`-gated subtree (`render/pdf/`, `rpc/`, `mcp/`, `cmd/prism/cmd_serve.go`, `cmd_mcp.go`, `cmd_static_bundle.go`, `cmd_init.go`) | Re-run `make build-wasm` locally; CI gates verify (a) the WASM entry still compiles and (b) the gzipped binary is under `PRISM_WASM_MAX_BYTES` |
+| A new package import in the WASM entry, OR a new file under a `!js`-gated subtree (`rpc/`, `mcp/`, `cmd/prism/cmd_serve.go`, `cmd_mcp.go`, `cmd_static_bundle.go`, `cmd_init.go`) | Re-run `make build-wasm` locally; CI gates verify (a) the WASM entry still compiles and (b) the gzipped binary is under `PRISM_WASM_MAX_BYTES` |
 | A CLI leaf (added / removed / flag added) | `cmd/prism/cmd_<name>.go` + `docs/src/getting-started.md` if user-visible + smoke test in `cmd/prism/*_smoke_test.go` |
 | The schema bundle (`schema/v1/`) | `schema/embed.go` (the `//go:embed` directives) + bump bundle version if breaking + `docs/src/concepts/spec.md` (`$schema` reference) |
 | A built-in dataset registry shape | `resolve/registry_dataset.go` + `docs/src/concepts/multi-source.md` + `PRISM_DATASETS` env var documentation below |
@@ -105,7 +105,6 @@ prism/
 │   ├── render.go           # Backend dispatch
 │   ├── precision.go        # Pinned 3-decimal coordinate quantisation
 │   ├── svg/                # Go SVG renderer (canonical)
-│   ├── pdf/                # `signintech/gopdf` with embedded Inter + JetBrains Mono fonts
 │   └── canvas/             # Vendored ESM web component bridge (see `static/`)
 ├── resolve/                # Data source resolution
 │   ├── default.go          # Pulse-backed + file / archive / shard
@@ -177,7 +176,7 @@ Rules register through `validate/rules/register.go` (loaded via `init()`). Add a
 
 - **No `fmt.Sprintf`-built JSON.** All structured output goes through `encoding/json`. CLI envelopes are built explicitly so missing fields fail at compile time.
 - **Stable Scene IR.** `encode/scene/` types serialise to a stable JSON shape consumed by the JS-side renderer. Field additions are additive; renames or removals require a version bump and a JS-side migration.
-- **Pinned coordinate precision.** SVG and PDF renderers round coordinates via `render.precision.go` to 3 decimal places. Adding a new geometric primitive MUST route through the precision helper so cross-impl goldens stay stable.
+- **Pinned coordinate precision.** The SVG renderer rounds coordinates via `render.precision.go` to 3 decimal places. Adding a new geometric primitive MUST route through the precision helper so cross-impl goldens stay stable.
 - **Golden parity.** SVG goldens live under `render/svg/testdata/` and `cmd/prism/templates/` smoke fixtures. JS-side comparison fixtures live under `testdata/cross_impl/` — `scene.json` + `go.svg` are committed; `js.svg` + `diff.txt` regenerate per run (gitignored).
 
 ### Plan + Execute
