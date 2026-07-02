@@ -766,6 +766,15 @@ var Codes = map[string]CodeMetadata{
 		},
 		SeeAlso: []string{"PRISM_SPEC_001", "PRISM_SPEC_006"},
 	},
+	"PRISM_SPEC_038": {
+		Code:    "PRISM_SPEC_038",
+		Message: `Calculate expression is not well-formed ({{.Reason}}) at {{.Site}}.`,
+		Fixups: []string{
+			`A calculate expression is a structured node, not an expression string. Use ` + "`{op: \"div\", operands: [{field: \"Horsepower\"}, {field: \"Weight\"}]}`" + ` for arithmetic, ` + "`{fn: \"coalesce\", args: [...]}`" + ` for functions, ` + "`{concat: [...]}`" + ` to build strings, or ` + "`{case: [{when: <predicate>, then: <expr>}], else: <expr>}`" + ` for conditionals.`,
+			`Every ` + "`field`" + ` operand must exist in the source schema, a ` + "`div`" + ` / ` + "`mod`" + ` by a literal zero is rejected (a runtime zero divisor yields null), and ` + "`as`" + ` must be a non-empty name that does not shadow an existing source column.`,
+		},
+		SeeAlso: []string{"PRISM_SPEC_001", "PRISM_SPEC_037"},
+	},
 	"PRISM_WARN_NETWORK_CYCLE": {
 		Code:    "PRISM_WARN_NETWORK_CYCLE",
 		Message: `network input graph contains a cycle; force layout may produce a visually messy result.`,

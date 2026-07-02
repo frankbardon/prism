@@ -155,16 +155,12 @@ func tryFuseChainFromSource(d *plan.DAG, src *nodes.SourceNode) (*plan.DAG, bool
 			})
 			summaryParts = append(summaryParts, "filter("+expr+")")
 		case *nodes.CalculateNode:
-			if hasGroupAgg || hasSort {
-				return finaliseFusion(d, src, req, absorbed, summaryParts, lastAbsorbed)
-			}
-			req.Attributes = append(req.Attributes, &pulsetypes.Attribute{
-				Type:       pulsetypes.ATTR_FORMULA,
-				Expression: n.Expr(),
-				Label:      n.As(),
-				Field:      n.As(),
-			})
-			summaryParts = append(summaryParts, "calc("+n.As()+")")
+			// Calculate is a structured CalcExpr (E2-S2) with no Pulse
+			// ATTR_FORMULA serialisation; it cannot be pushed into the
+			// Pulse request, so we stop absorbing here and let the
+			// in-memory evaluator run it per-node. This whole pass
+			// disappears with the Pulse backend eviction.
+			return finaliseFusion(d, src, req, absorbed, summaryParts, lastAbsorbed)
 		case *nodes.GroupAggregateNode:
 			if hasGroupAgg || hasSort {
 				return finaliseFusion(d, src, req, absorbed, summaryParts, lastAbsorbed)
@@ -346,7 +342,7 @@ func rewireChainConsumer(n plan.Node, oldIn, newIn plan.NodeID) plan.Node {
 		if v.Inputs()[0] != oldIn {
 			return nil
 		}
-		return nodes.NewCalculate(v.ID(), newIn, v.Expr(), v.As())
+		return nodes.NewCalculate(v.ID(), newIn, v.Calc(), v.As())
 	case *nodes.SampleNode:
 		if v.Inputs()[0] != oldIn {
 			return nil

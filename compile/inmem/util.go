@@ -8,44 +8,6 @@ import (
 	"github.com/frankbardon/prism/table"
 )
 
-// rowValueAt fetches column[i] as a normalized any. Used by Filter /
-// Calculate to populate per-row expression environments. Returns nil
-// when the column is absent.
-func rowValueAt(tbl *table.Table, name string, i int) any {
-	col, ok := tbl.Column(name)
-	if !ok {
-		return nil
-	}
-	return col.ValueAt(i)
-}
-
-// buildEnv returns the per-row environment map every expression
-// evaluation uses. Field values come from the input table; an
-// `__row__` sentinel carries the row index for error context.
-func buildEnv(tbl *table.Table, i int) map[string]any {
-	out := make(map[string]any, len(tbl.FieldNames())+1)
-	for _, name := range tbl.FieldNames() {
-		out[name] = rowValueAt(tbl, name, i)
-	}
-	out["__row__"] = i
-	return out
-}
-
-// envHasNull reports whether any field in env (excluding the
-// __row__ sentinel) is nil. Used by executeFilter / executeCalculate
-// to short-circuit rows with null inputs (PRISM_WARN_NULL_DROPPED).
-func envHasNull(env map[string]any) bool {
-	for k, v := range env {
-		if k == "__row__" {
-			continue
-		}
-		if v == nil {
-			return true
-		}
-	}
-	return false
-}
-
 // cloneSchemaShallow returns a shallow copy of s so callers can
 // extend Fields without mutating the input schema.
 func cloneSchemaShallow(s *table.Schema) *table.Schema {

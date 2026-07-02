@@ -107,11 +107,19 @@ func TestPrismPulseChainFusionFiresOnAggChain(t *testing.T) {
 	}
 }
 
-func TestPrismPulseChainFusionAbsorbsFilterCalcSort(t *testing.T) {
+// A structured calculate (E2-S2) has no Pulse ATTR_FORMULA
+// serialisation, so it breaks the fused chain: the pass absorbs the
+// leading filter, hits the calc, and finalises with no GroupAggregate
+// win — so the chain is not fused. The calc + downstream agg/sort run
+// per-node via the in-memory evaluator instead.
+func TestPrismPulseChainFusionCalcBreaksChain(t *testing.T) {
 	schema := tinySchema()
 	src, _ := srcWithSchema(t, "/a.pulse", schema)
 	fil := nodes.NewFilter("fil1", src.ID(), spec.Predicate{Op: spec.PredGt, Field: "score", Value: 0})
-	calc := nodes.NewCalculate("calc1", fil.ID(), "score * 2", "score2")
+	calc := nodes.NewCalculate("calc1", fil.ID(),
+		spec.CalcExpr{Op: spec.CalcMul, Operands: []spec.CalcExpr{
+			{Field: "score"}, {Literal: float64(2)},
+		}}, "score2")
 	agg := nodes.NewGroupAggregate("agg1", calc.ID(),
 		[]string{"brand_id"},
 		[]nodes.AggOp{{Op: "sum", Field: "score2", As: "score2_sum"}},
@@ -126,26 +134,12 @@ func TestPrismPulseChainFusionAbsorbsFilterCalcSort(t *testing.T) {
 	_ = b.MarkSink(srt.ID())
 	d, _ := b.Build()
 
-	out, changed, err := passes.PulseChainFusionPass{}.Apply(d)
+	_, changed, err := passes.PulseChainFusionPass{}.Apply(d)
 	if err != nil {
 		t.Fatalf("Apply: %v", err)
 	}
-	if !changed {
-		t.Fatal("expected fusion on filter+calc+agg+sort chain")
-	}
-	ch := pulseChainFusedRoot(t, out)
-	if len(ch.StageIDs()) != 4 {
-		t.Fatalf("StageIDs = %v, want 4 nodes absorbed", ch.StageIDs())
-	}
-	req := ch.ChainRequest().Stages[0].Request
-	if len(req.Filterers) != 1 || req.Filterers[0].Expression != "score > 0" {
-		t.Fatalf("Filterers = %v", req.Filterers)
-	}
-	if len(req.Attributes) != 1 || req.Attributes[0].Label != "score2" {
-		t.Fatalf("Attributes = %v", req.Attributes)
-	}
-	if len(req.Sort) != 1 || req.Sort[0].Field != "score2_sum" || !req.Sort[0].Desc {
-		t.Fatalf("Sort = %v", req.Sort)
+	if changed {
+		t.Fatal("expected no fusion: a structured calc breaks the Pulse chain before the group-aggregate win")
 	}
 }
 

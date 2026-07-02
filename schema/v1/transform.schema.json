@@ -157,13 +157,103 @@
     },
     "calculate_transform": {
       "type": "object",
-      "description": "Compute a new column from a Pulse expression and bind it to a name.",
+      "description": "Compute a new column from a structured derived-column expression (E2-S2) and bind it to a name. The old free-form expression string is no longer accepted.",
       "additionalProperties": false,
       "required": ["calculate", "as"],
       "properties": {
-        "calculate": {"$ref": "shared.schema.json#/$defs/expression", "description": "Pulse expression producing the new column value."},
+        "calculate": {"$ref": "transform.schema.json#/$defs/calc_expr", "description": "Structured derived-column expression producing the new column value."},
         "as":        {"type": "string", "minLength": 1, "description": "Name of the new column."},
         "data":      {"type": "string", "minLength": 1, "description": "Optional input alias."}
+      }
+    },
+    "calc_expr": {
+      "description": "One structured calculate node: a field reference, a scalar literal, an arithmetic op, a pure function, a string concat, or a conditional (case/if). Exactly one form matches.",
+      "type": "object",
+      "oneOf": [
+        {"$ref": "transform.schema.json#/$defs/calc_field"},
+        {"$ref": "transform.schema.json#/$defs/calc_literal"},
+        {"$ref": "transform.schema.json#/$defs/calc_arithmetic"},
+        {"$ref": "transform.schema.json#/$defs/calc_function"},
+        {"$ref": "transform.schema.json#/$defs/calc_concat"},
+        {"$ref": "transform.schema.json#/$defs/calc_case"},
+        {"$ref": "transform.schema.json#/$defs/calc_if"}
+      ]
+    },
+    "calc_field": {
+      "type": "object",
+      "description": "Reference to an input column value.",
+      "additionalProperties": false,
+      "required": ["field"],
+      "properties": {
+        "field": {"$ref": "shared.schema.json#/$defs/field_ref", "description": "Column to read."}
+      }
+    },
+    "calc_literal": {
+      "type": "object",
+      "description": "A constant scalar value (number, string, or boolean).",
+      "additionalProperties": false,
+      "required": ["literal"],
+      "properties": {
+        "literal": {"type": ["string", "number", "boolean"], "description": "The constant value."}
+      }
+    },
+    "calc_arithmetic": {
+      "type": "object",
+      "description": "Arithmetic over operands. add/mul take 2+ operands; sub/div/mod take exactly 2. div/mod by zero yields null.",
+      "additionalProperties": false,
+      "required": ["op", "operands"],
+      "properties": {
+        "op": {"type": "string", "enum": ["add", "sub", "mul", "div", "mod"], "description": "Arithmetic operator."},
+        "operands": {"type": "array", "minItems": 2, "items": {"$ref": "transform.schema.json#/$defs/calc_expr"}, "description": "Operand expressions."}
+      }
+    },
+    "calc_function": {
+      "type": "object",
+      "description": "Pure function. abs/round/floor/ceil/neg take one argument; coalesce/min/max take 2+.",
+      "additionalProperties": false,
+      "required": ["fn", "args"],
+      "properties": {
+        "fn": {"type": "string", "enum": ["abs", "round", "floor", "ceil", "neg", "coalesce", "min", "max"], "description": "Function name."},
+        "args": {"type": "array", "minItems": 1, "items": {"$ref": "transform.schema.json#/$defs/calc_expr"}, "description": "Argument expressions."}
+      }
+    },
+    "calc_concat": {
+      "type": "object",
+      "description": "Concatenate operands into a single string; null operands render as the empty string.",
+      "additionalProperties": false,
+      "required": ["concat"],
+      "properties": {
+        "concat": {"type": "array", "minItems": 1, "items": {"$ref": "transform.schema.json#/$defs/calc_expr"}, "description": "Operands to concatenate."}
+      }
+    },
+    "calc_branch": {
+      "type": "object",
+      "description": "One when->then arm of a conditional. `when` reuses the filter predicate grammar.",
+      "additionalProperties": false,
+      "required": ["when", "then"],
+      "properties": {
+        "when": {"$ref": "transform.schema.json#/$defs/filter_predicate", "description": "Predicate selecting rows for this arm."},
+        "then": {"$ref": "transform.schema.json#/$defs/calc_expr", "description": "Value produced when the predicate holds."}
+      }
+    },
+    "calc_case": {
+      "type": "object",
+      "description": "Conditional: the first branch whose predicate holds wins, otherwise `else`.",
+      "additionalProperties": false,
+      "required": ["case", "else"],
+      "properties": {
+        "case": {"type": "array", "minItems": 1, "items": {"$ref": "transform.schema.json#/$defs/calc_branch"}, "description": "Ordered when/then branches."},
+        "else": {"$ref": "transform.schema.json#/$defs/calc_expr", "description": "Mandatory fallback value."}
+      }
+    },
+    "calc_if": {
+      "type": "object",
+      "description": "Alias for `case`: the first branch whose predicate holds wins, otherwise `else`.",
+      "additionalProperties": false,
+      "required": ["if", "else"],
+      "properties": {
+        "if": {"type": "array", "minItems": 1, "items": {"$ref": "transform.schema.json#/$defs/calc_branch"}, "description": "Ordered when/then branches."},
+        "else": {"$ref": "transform.schema.json#/$defs/calc_expr", "description": "Mandatory fallback value."}
       }
     },
     "aggregate_transform": {

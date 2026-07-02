@@ -12,7 +12,7 @@ func init() {
 	validate.RegisterDefault(func() validate.SemanticRule { return ChannelForMark{} })
 	validate.RegisterDefault(func() validate.SemanticRule { return SelectionRef{} })
 	validate.RegisterDefault(func() validate.SemanticRule { return DatasetRef{} })
-	validate.RegisterDefault(func() validate.SemanticRule { return ExpressionParses{} })
+	validate.RegisterDefault(func() validate.SemanticRule { return CalculateExpr{} })
 	validate.RegisterDefault(func() validate.SemanticRule { return ScaleTypeCompat{} })
 	validate.RegisterDefault(func() validate.SemanticRule { return PieDonutEncoding{} })
 	validate.RegisterDefault(func() validate.SemanticRule { return SchemaRef{} })

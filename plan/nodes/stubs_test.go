@@ -119,7 +119,10 @@ func TestPrismGroupAggregateNodeStub(t *testing.T) {
 }
 
 func TestPrismCalculateNodeStub(t *testing.T) {
-	n := nodes.NewCalculate("c:1", "src:1", "score * 2", "doubled")
+	n := nodes.NewCalculate("c:1", "src:1",
+		spec.CalcExpr{Op: spec.CalcMul, Operands: []spec.CalcExpr{
+			{Field: "score"}, {Literal: float64(2)},
+		}}, "doubled")
 	out, err := n.Schema([]*table.Schema{stubInputSchema()})
 	if err != nil {
 		t.Fatalf("Schema: %v", err)

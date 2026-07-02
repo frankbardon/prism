@@ -29,11 +29,13 @@ type FilterTransform struct {
 	As     string    `json:"as,omitempty"`
 }
 
-// CalculateTransform: compute new column.
+// CalculateTransform: compute a new column from a structured derived-
+// column expression (E2-S2). The `calculate` value is a CalcExpr tree,
+// not a free-form expression string.
 type CalculateTransform struct {
-	Calculate string `json:"calculate"`
-	As        string `json:"as"`
-	Data      string `json:"data,omitempty"`
+	Calculate CalcExpr `json:"calculate"`
+	As        string   `json:"as"`
+	Data      string   `json:"data,omitempty"`
 }
 
 // AggregateTransform: group-by aggregate.

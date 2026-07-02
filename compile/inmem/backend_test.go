@@ -121,7 +121,10 @@ func TestPrismInMemBackendDispatchSample(t *testing.T) {
 func TestPrismInMemBackendDispatchCalculate(t *testing.T) {
 	in := helperInlineTable(t)
 	b := New()
-	n := nodes.NewCalculate("c:1", "src", "score * 2", "doubled")
+	n := nodes.NewCalculate("c:1", "src",
+		spec.CalcExpr{Op: spec.CalcMul, Operands: []spec.CalcExpr{
+			{Field: "score"}, {Literal: float64(2)},
+		}}, "doubled")
 	out, err := b.Compile(context.Background(), n, []*table.Table{in})
 	if err != nil {
 		t.Fatalf("Compile: %v", err)

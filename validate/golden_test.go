@@ -133,7 +133,7 @@ var negativeCodeMap = map[string]string{
 	"mean_on_categorical.json":        "PRISM_SPEC_002",
 	"theta_on_bar.json":               "PRISM_SPEC_003",
 	"dataset_undefined.json":          "PRISM_SPEC_005",
-	"bad_expression.json":             "PRISM_SPEC_006",
+	"bad_expression.json":             "PRISM_SPEC_038",
 	"filter_between_reversed.json":    "PRISM_SPEC_037",
 	"log_scale_on_categorical.json":   "PRISM_SPEC_007",
 	"pie_without_theta.json":          "PRISM_SPEC_008",
