@@ -9,7 +9,7 @@ import (
 )
 
 // TestEncodeNoConditionLocksGoldens — encoding a spec without any
-// condition block leaves Mark.Conditions nil so existing SVG / PDF
+// condition block leaves Mark.Conditions nil so existing SVG
 // goldens stay byte-identical.
 func TestEncodeNoConditionLocksGoldens(t *testing.T) {
 	s, tables, tipID := runPipeline(t, "bar_basic.json")

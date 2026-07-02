@@ -185,7 +185,7 @@ func dimsOrDefault(w, h int32) (float64, float64) {
 	return width, height
 }
 
-// Plot implements the Plot RPC. SVG renders inline; PDF, PNG, and
+// Plot implements the Plot RPC. SVG renders inline; PNG and
 // canvas-json return PRISM_RENDER_FORMAT_UNAVAILABLE — the interceptor
 // maps that code to twirp.Unimplemented per D085.
 func (s *PrismServer) Plot(ctx context.Context, req *PlotRequest) (*PlotResponse, error) {

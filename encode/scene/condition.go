@@ -3,7 +3,7 @@ package scene
 // ConditionalAttr is one selection-driven attribute switch attached to
 // a Mark. The browser-side selection layer toggles attributes by
 // reading these entries when its selection state changes; the server
-// renderers (SVG / PDF) ignore them so static output is unaffected.
+// renderer (SVG) ignores them so static output is unaffected.
 //
 // Static, expression-driven conditions (`{test: "..."}`) are evaluated
 // at encode time and baked into Mark.Style — they never appear here.

@@ -111,7 +111,7 @@ type Inputs struct {
 	// with key:true in the spec. When non-empty, per-row marks get
 	// Mark.Key = "<field>=<value>" so the client-side animator can
 	// match marks across scene swaps. Empty (default) leaves Mark.Key
-	// blank; SVG and PDF renderers ignore Mark.Key either way.
+	// blank; the SVG renderer ignores Mark.Key either way.
 	KeyField string
 }
 

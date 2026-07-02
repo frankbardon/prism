@@ -83,7 +83,7 @@ func runPlot(ctx context.Context, cmd *cli.Command) error {
 	format := strings.ToLower(cmd.String("format"))
 
 	// Gate on unsupported formats early. PNG + canvas-json defer per
-	// .planning/STATE.md deferred items; PDF was removed.
+	// .planning/STATE.md deferred items; the pdf renderer was removed.
 	switch format {
 	case "svg":
 		// supported below
@@ -235,10 +235,12 @@ func plotPipeline(
 }
 
 // reportUnsupportedFormat emits PRISM_RENDER_FORMAT_UNAVAILABLE for
-// non-svg formats with the appropriate landing-phase fixup. PDF was
-// removed from Prism; other formats carry a landing-phase note.
+// non-svg formats. Deferred formats carry a landing-phase note; the
+// removed pdf format relies on the catalog's message + fixups (which
+// already say "render to SVG instead") so no bespoke fixup is appended.
 func reportUnsupportedFormat(cmd *cli.Command, format string) error {
 	phase := "V2"
+	message := ""
 	switch format {
 	case "canvas-json":
 		// canvas-json consumes the Scene IR through `prism scene` +
@@ -247,24 +249,17 @@ func reportUnsupportedFormat(cmd *cli.Command, format string) error {
 	case "png":
 		phase = "V2"
 	case "pdf":
-		// PDF rendering was removed from Prism.
-		ae := prismerrors.New(
-			"PRISM_RENDER_FORMAT_UNAVAILABLE",
-			"PDF rendering was removed from Prism.",
-			map[string]any{"Format": format},
-		)
-		ae.Fixups = append(ae.Fixups, "PDF output was removed — render to SVG instead: --format svg")
-		fmt.Fprintf(cmd.Writer, "plot failed: unsupported format %s\n", format)
-		fmt.Fprintf(cmd.Writer, "\nERROR %s: %s\n", ae.Code, ae.Message)
-		fmt.Fprintln(cmd.Writer, "Fixups:")
-		for _, fx := range ae.Fixups {
-			fmt.Fprintf(cmd.Writer, "  - %s\n", fx)
-		}
-		return cli.Exit("", 1)
+		// The pdf renderer was removed; use a bespoke message but lean
+		// on the catalog fixups for the "render to SVG instead" guidance
+		// rather than appending a near-duplicate line.
+		message = "PDF rendering was removed from Prism."
+	}
+	if message == "" {
+		message = fmt.Sprintf("Render format %s is not available in the current Prism build (lands in %s).", format, phase)
 	}
 	err := prismerrors.New(
 		"PRISM_RENDER_FORMAT_UNAVAILABLE",
-		fmt.Sprintf("Render format %s is not available in the current Prism build (lands in %s).", format, phase),
+		message,
 		map[string]any{"Format": format, "Phase": phase},
 	)
 	var ae *prismerrors.AppError
