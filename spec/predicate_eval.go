@@ -15,7 +15,7 @@ package spec
 //     an enclosing or / not).
 //   - and / or / not then combine plain booleans.
 //
-// The one deliberate difference from the columnar path is where the
+// The one intentional difference from the columnar path is where the
 // comparison domain comes from: inmem keys it off the column Kind, while
 // EvalRow infers it from the operand's Go type. For rows materialised
 // from a table.Table (Column.ValueAt), the Go type matches the column
