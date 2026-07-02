@@ -41,15 +41,15 @@ The `encoding` object binds data fields to visual channels.
 ## Conditions
 
 A channel can carry a `condition` clause that switches its visual
-value based on a declared [selection](selections.md) or a Pulse
-expression `test`. The channel's own `value` / `field` supplies the
+value based on a declared [selection](selections.md) or a structured
+predicate `test`. The channel's own `value` / `field` supplies the
 fallback ("otherwise") branch.
 
 ```json
 "color": {
   "condition": [
     {"selection": "brush", "value": "#22c55e"},
-    {"test": "score < 0",  "value": "#ef4444"}
+    {"test": {"op": "lt", "field": "score", "value": 0}, "value": "#ef4444"}
   ],
   "value": "#94a3b8"
 }
@@ -59,9 +59,12 @@ Rules:
 
 - `selection` references a name declared in the spec's `selection`
   block (validate rule `PRISM_SPEC_025`).
-- `test` is a Pulse expression evaluated at encode time
-  (`PRISM_SPEC_026`); the same parser that powers `filter` and
-  `calculate` transforms.
+- `test` is a **structured predicate** — the same grammar `filter`
+  uses (`{op, field, value}` leaves and `and` / `or` / `not`
+  combinators), not an expression string. It is evaluated row-by-row
+  at encode time (`PRISM_SPEC_026`). See
+  [Spec › Filter transform](spec.md#filter-transform) for the full
+  operator set.
 - Each entry needs exactly one of `value` or `field`. A
   `selection`-form entry without `value` inherits the channel's own
   field binding (`PRISM_SPEC_027`).

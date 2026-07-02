@@ -125,7 +125,7 @@ For live interactive rendering in a browser, see [`index.html`](index.html).
 ## Conditions
 
 Per-channel `condition` clauses switch a channel's value based on a
-selection or Pulse expression. See
+selection or a structured predicate `test`. See
 [Encoding › Conditions](../concepts/encoding.md#conditions).
 
 | Spec | Preview |

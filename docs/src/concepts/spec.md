@@ -101,6 +101,162 @@ Spec rules that govern `animation`:
 - `PRISM_SPEC_023` — block declared but no channel has `key: true`.
 - `PRISM_SPEC_024` — more than one channel carries `key: true`.
 
+## Filter transform
+
+`filter` keeps the rows for which a **structured predicate** evaluates
+true. The predicate is a JSON object tree, never an expression string —
+a raw string value is rejected at decode time. Each predicate node is
+exactly one of a leaf test or a boolean combinator.
+
+**Leaf comparisons** — `eq`, `ne`, `lt`, `lte`, `gt`, `gte` — compare a
+field against a literal (`value`) or against another column
+(`to_field`, a field-vs-field compare):
+
+```json
+"transform": [
+  {"filter": {"op": "gt", "field": "Horsepower", "value": 100}},
+  {"filter": {"op": "eq", "field": "Origin", "value": "USA"}},
+  {"filter": {"op": "lt", "field": "sale_price", "to_field": "list_price"}}
+]
+```
+
+**Set membership** — `one_of` / `not_one_of` — tests a field against a
+non-empty candidate set:
+
+```json
+{"filter": {"op": "one_of", "field": "Origin", "values": ["USA", "Europe"]}}
+```
+
+**Inclusive range** — `between` — keeps rows where `lo <= field <= hi`:
+
+```json
+{"filter": {"op": "between", "field": "year", "lo": 2010, "hi": 2019}}
+```
+
+**Null checks** — `is_null` / `not_null` — take only a `field`:
+
+```json
+{"filter": {"op": "not_null", "field": "quota_mean"}}
+```
+
+**Boolean combinators** — `and` / `or` / `not` — nest predicates to any
+depth. A combinator node carries only its branch, never leaf operands:
+
+```json
+{"filter": {"and": [
+  {"op": "gt", "field": "Horsepower", "value": 100},
+  {"or": [
+    {"op": "eq", "field": "Origin", "value": "USA"},
+    {"not": {"op": "is_null", "field": "Cylinders"}}
+  ]}
+]}}
+```
+
+Operator reference:
+
+| Operator | Operands | Meaning |
+|---|---|---|
+| `eq` `ne` `lt` `lte` `gt` `gte` | `field` + exactly one of `value` / `to_field` | Equality / ordered comparison against a literal or another column. |
+| `one_of` `not_one_of` | `field` + `values` (non-empty) | Set membership. |
+| `between` | `field` + `lo` + `hi` | Inclusive range (`lo <= x <= hi`). |
+| `is_null` `not_null` | `field` only | Null-state test. |
+| `and` `or` | non-empty list of predicates | Boolean conjunction / disjunction. |
+| `not` | one predicate | Boolean negation. |
+
+The grammar is intentionally minimal — no substring, regex, or date
+arithmetic. Anything richer is precomputed by the caller before the
+data reaches Prism.
+
+## Calculate transform
+
+`calculate` appends one derived column, named by `as`, from a
+**structured expression tree** (again, never an expression string). A
+node is exactly one of:
+
+- a field reference — `{"field": "Horsepower"}`
+- a literal — `{"literal": 5}` (number, string, or bool; a null literal is rejected)
+- an arithmetic op — `{"op": "add"|"sub"|"mul"|"div"|"mod", "operands": [...]}`
+- a pure function — `{"fn": "abs"|"round"|"floor"|"ceil"|"neg"|"coalesce"|"min"|"max", "args": [...]}`
+- a string concat — `{"concat": [...]}`
+- a conditional — `{"case": [{"when": <predicate>, "then": <expr>}], "else": <expr>}`
+
+`add` and `mul` take **two or more** operands; `sub`, `div`, `mod` take
+**exactly two**. `abs`/`round`/`floor`/`ceil`/`neg` take **one**
+argument; `coalesce`/`min`/`max` take **two or more**. `case` requires
+at least one `when → then` branch and a mandatory `else` fallback (`if`
+is accepted as a decode-time alias for `case`).
+
+Arithmetic — `Horsepower / Weight`:
+
+```json
+{"calculate": {"op": "div", "operands": [{"field": "Horsepower"}, {"field": "Weight"}]}, "as": "power_ratio"}
+```
+
+Default a null with `coalesce`:
+
+```json
+{"calculate": {"fn": "coalesce", "args": [{"field": "quota"}, {"literal": 0}]}, "as": "quota_padded"}
+```
+
+Build a label with `concat`:
+
+```json
+{"calculate": {"concat": [{"field": "Origin"}, {"literal": " — "}, {"field": "Name"}]}, "as": "label"}
+```
+
+Bucket with `case`; each `when` arm reuses the **filter predicate
+grammar** verbatim:
+
+```json
+{"calculate": {
+  "case": [
+    {"when": {"op": "gte", "field": "score", "value": 0.9}, "then": {"literal": "A"}},
+    {"when": {"op": "gte", "field": "score", "value": 0.8}, "then": {"literal": "B"}}
+  ],
+  "else": {"literal": "C"}
+}, "as": "grade"}
+```
+
+The output column type is inferred: a numeric expression yields a float
+column, a string expression a categorical column.
+
+The grammar is intentionally minimal — no `log`/`sqrt`/`pow`/trig, no
+substring, no date arithmetic. Precompute anything richer upstream.
+
+### Null and division semantics
+
+Both `filter` and `calculate` use **two-valued** logic — there is no
+SQL-style three-valued "unknown".
+
+- **Filter leaves.** A null operand makes a leaf comparison,
+  `one_of` / `not_one_of`, or `between` evaluate **false** (the row is
+  excluded unless an enclosing `or` / `not` rescues it). Test for null
+  explicitly with `is_null` / `not_null`; `and` / `or` / `not` then
+  operate on plain booleans.
+- **Calculate null propagation.** Arithmetic
+  (`add`/`sub`/`mul`/`div`/`mod`) and the single-argument numeric
+  functions (`abs`/`round`/`floor`/`ceil`/`neg`) propagate nulls: any
+  null operand yields a null result. `min` / `max` skip null arguments
+  and return null only when every argument is null. `coalesce` returns
+  its first non-null argument. `concat` treats a null operand as the
+  empty string and always yields a (possibly empty) string. `case`
+  returns the `then` of the first branch whose `when` holds, else the
+  `else`.
+- **Division by zero.** A runtime zero divisor (`div` / `mod`) yields
+  **null silently** — no error, no warning. A *literal*-zero divisor
+  (e.g. `{"op": "div", "operands": [{"field": "x"}, {"literal": 0}]}`)
+  is a spec mistake and is **rejected at validate time** as
+  `PRISM_SPEC_038`.
+
+Validation codes:
+
+- `PRISM_SPEC_037` — filter predicate not well-formed (unknown field,
+  type-mismatched comparison, `between` with `lo > hi`, empty `values`
+  set).
+- `PRISM_SPEC_038` — calculate expression not well-formed (unknown
+  operand field, literal-zero divisor, `as` missing or shadowing a
+  source column).
+
 ## Crosstab transform
 
 The `crosstab` transform delegates a contingency-table computation to
@@ -270,7 +426,7 @@ ordinal, not a date) land in a follow-up.
 - Unknown fields error (typos like `xfield` vs `x.field` caught at parse).
 - Semantic violations error (agg op on incompatible field type, etc.).
 - 24+ `PRISM_SPEC_*` rules cover field-existence, channel-for-mark,
-  selection refs, expression parsing, scale type compatibility,
+  selection refs, structured filter / calculate predicates, scale type compatibility,
   animation easing / key constraints, and more. Run
   `prism errors lookup <code>` for details on any.
 

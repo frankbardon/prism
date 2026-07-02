@@ -70,14 +70,22 @@ var Codes = map[string]CodeMetadata{
 		},
 		SeeAlso: []string{"PRISM_RESOLVE_001"},
 	},
+	// PRISM_SPEC_006 is RETAINED but no longer emitted. Prism dropped its
+	// expression language: `filter`, `calculate`, and condition `test`
+	// are structured JSON built-ins whose shape errors surface as
+	// PRISM_SPEC_037 (filter) / PRISM_SPEC_038 (calculate) at validate
+	// time and are rejected at decode when a raw string is supplied. The
+	// entry stays so existing SeeAlso cross-references (PRISM_COMPILE_002,
+	// PRISM_SPEC_037) and `prism errors lookup PRISM_SPEC_006` still
+	// resolve.
 	"PRISM_SPEC_006": {
 		Code:    "PRISM_SPEC_006",
-		Message: `Expression failed to parse: {{.Reason}}.`,
+		Message: `Retired code: expression parsing was replaced by structured filter / calculate built-ins.`,
 		Fixups: []string{
-			`Check Pulse expression syntax. Expression: {{.Expression}}`,
-			`Quote string literals with single quotes ('value'), not double quotes.`,
-			`Use Pulse expression operators (and, or, not, ==, !=, <, <=, >, >=, +, -, *, /, %).`,
+			`Prism has no expression language. Write a structured predicate for filter (see PRISM_SPEC_037) and a structured expression tree for calculate (see PRISM_SPEC_038).`,
+			`A raw string where a predicate or expression is expected is rejected at decode time — replace it with {op, field, value} leaves / {op, operands} nodes.`,
 		},
+		SeeAlso: []string{"PRISM_SPEC_037", "PRISM_SPEC_038"},
 	},
 	"PRISM_SPEC_007": {
 		Code:    "PRISM_SPEC_007",
@@ -146,13 +154,13 @@ var Codes = map[string]CodeMetadata{
 	},
 	"PRISM_COMPILE_002": {
 		Code:    "PRISM_COMPILE_002",
-		Message: `Expression failed at runtime: {{.Reason}}.`,
+		Message: `Transform evaluation failed at runtime: {{.Reason}}.`,
 		Fixups: []string{
-			`Expression: {{.Expression}} (site: {{.Site}}).`,
-			`Run ` + "`prism validate`" + ` first — most parse errors surface as PRISM_SPEC_006 before they reach the compiler.`,
-			`Check field references match the upstream schema and that arithmetic does not divide by a possibly-zero value.`,
+			`Site: {{.Site}} — a structured filter / calculate built-in referenced an unknown column or an unsupported operator.`,
+			`Run ` + "`prism validate`" + ` first — well-formedness problems surface as PRISM_SPEC_037 (filter) / PRISM_SPEC_038 (calculate) before they reach the compiler.`,
+			`Check that every field / to_field operand matches the upstream schema. (A runtime zero divisor yields null silently; a literal-zero divisor is rejected by PRISM_SPEC_038.)`,
 		},
-		SeeAlso: []string{"PRISM_SPEC_006"},
+		SeeAlso: []string{"PRISM_SPEC_037", "PRISM_SPEC_038"},
 	},
 	"PRISM_COMPILE_003": {
 		Code:    "PRISM_COMPILE_003",

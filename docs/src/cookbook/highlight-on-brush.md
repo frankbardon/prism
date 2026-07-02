@@ -53,10 +53,12 @@ the underlying data.
 ## Variations
 
 - **Test-driven highlights** (no selection): swap the
-  `{"selection": ...}` entry for `{"test": "score >= 0.7", "value":
-  "#22c55e"}`. The encoder evaluates the expression at encode time
-  and bakes the result into each mark's style, so the highlight
-  appears in plain SVG output without any browser involvement.
+  `{"selection": ...}` entry for
+  `{"test": {"op": "gte", "field": "score", "value": 0.7}, "value": "#22c55e"}`.
+  The `test` is a structured predicate (the same grammar `filter`
+  uses); the encoder evaluates it row-by-row at encode time and bakes
+  the result into each mark's style, so the highlight appears in plain
+  SVG output without any browser involvement.
 - **Multiple conditions**: combine entries. Entries evaluate
   top-down, first match wins; the channel's own `value` is the
   final fallback.

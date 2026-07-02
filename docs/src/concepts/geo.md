@@ -40,7 +40,7 @@ otherwise). Combine with a filter transform to subset:
 ```json
 {
   "data": {"feature_collection": {"tier": "admin1-50m"}},
-  "transform": [{"filter": "parent == \"USA\""}],
+  "transform": [{"filter": {"op": "eq", "field": "parent", "value": "USA"}}],
   "mark": "geoshape",
   "projection": {"type": "albers_usa", "tier": "admin1-50m"},
   "encoding": {"feature": {"field": "id", "type": "nominal"}}

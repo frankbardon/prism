@@ -46,13 +46,13 @@ transform:
 ```json
 "transform": [
   {"join": {...}, "as": "joined"},
-  {"calculate": "quota == null ? 0 : quota", "as": "quota_padded"}
+  {"calculate": {"fn": "coalesce", "args": [{"field": "quota"}, {"literal": 0}]}, "as": "quota_padded"}
 ]
 ```
 
-Pulse expressions are strict on null inputs (any null input
-propagates to null), so use the comparison form above to default
-before downstream channels read the field.
+`calculate` arithmetic propagates nulls (any null operand yields a
+null result), so reach for `coalesce` — it returns the first non-null
+argument — to default the field before downstream channels read it.
 
 **Filter empty groups** when an aggregate over an all-null group
 would otherwise return null:
@@ -60,7 +60,7 @@ would otherwise return null:
 ```json
 "transform": [
   {"aggregate": [{"op": "mean", "field": "quota", "as": "quota_mean"}], ...},
-  {"filter": "quota_mean != null"}
+  {"filter": {"op": "not_null", "field": "quota_mean"}}
 ]
 ```
 

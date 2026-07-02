@@ -19,7 +19,7 @@ Compare two cohorts side-by-side via hash join.
      "aggregate": [{"op": "mean", "field": "score", "as": "prior_score"}],
      "as": "pri"},
     {"join": {"left": "cur", "right": "pri", "on": "brand_id"}, "as": "joined"},
-    {"data": "joined", "calculate": "current_score - prior_score", "as": "delta"}
+    {"data": "joined", "calculate": {"op": "sub", "operands": [{"field": "current_score"}, {"field": "prior_score"}]}, "as": "delta"}
   ],
   "mark": "bar",
   "encoding": {

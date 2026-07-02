@@ -19,7 +19,7 @@ guide to port specs in minutes.
 | `layer`, `concat`, `facet`, `repeat` | same | full composition v1 |
 | `condition` encodings | **dropped v1** | post-v1 feature |
 | `strokeWidth` (camelCase) | `stroke_width` | snake_case throughout |
-| Vega expression language | Pulse expression syntax | one language, no JS eval |
+| Vega expression language | structured `filter` / `calculate` built-ins | no expression language, no JS eval |
 
 ## snake_case (D019)
 
@@ -35,18 +35,27 @@ Vega-Lite vocabulary (`mark`, `encoding`, `transform`, `layer`,
 | `tickCount` | `tick_count` |
 | `labelOverlap` | `label_overlap` |
 
-## Pulse expression syntax (D005)
+## Structured transforms (D005)
 
-`filter` predicates and `calculate` computed columns use Pulse
-expression syntax, not Vega's JS-like language.
+Prism has **no expression language**. Vega-Lite's inline expression
+strings for `filter` predicates and `calculate` computed columns are
+replaced by **structured built-ins** — JSON object trees. A raw string
+where a predicate or expression is expected is rejected at decode
+time.
 
 | Vega-Lite | Prism |
 |---|---|
-| `"filter": "datum.score > 50"` | `"filter": "score > 50"` |
-| `"filter": "datum.region === 'NA'"` | `"filter": "region == 'NA'"` |
-| `"calculate": "datum.x * 2", "as": "y"` | `"calculate": "x * 2", "as": "y"` |
+| `"filter": "datum.score > 50"` | `"filter": {"op": "gt", "field": "score", "value": 50}` |
+| `"filter": "datum.region === 'NA'"` | `"filter": {"op": "eq", "field": "region", "value": "NA"}` |
+| `"filter": "datum.a > 0 && datum.b != null"` | `"filter": {"and": [{"op": "gt", "field": "a", "value": 0}, {"op": "not_null", "field": "b"}]}` |
+| `"calculate": "datum.x * 2", "as": "y"` | `"calculate": {"op": "mul", "operands": [{"field": "x"}, {"literal": 2}]}, "as": "y"` |
+| `"calculate": "datum.x == null ? 0 : datum.x", "as": "y"` | `"calculate": {"fn": "coalesce", "args": [{"field": "x"}, {"literal": 0}]}, "as": "y"` |
 
-No `datum.` prefix. `==` instead of `===`. No JS function calls.
+No `datum.` prefix, no operators, no JS function calls. See
+[Spec › Filter transform](concepts/spec.md#filter-transform) and
+[Spec › Calculate transform](concepts/spec.md#calculate-transform) for
+the full grammar (operators, functions, `case`, and null / division
+semantics).
 
 ## Aggregate aliases (D003)
 
@@ -64,8 +73,9 @@ Cohort-analytics extensions (Prism-only): `wmean ratio lift share`.
 
 - `params` / signals — no reactive runtime.
 - `condition` encodings — post-v1.
-- Inline Vega expressions everywhere — use Pulse expressions or
-  pre-compute via a `calculate` transform.
+- Inline Vega expressions everywhere — use the structured `filter` /
+  `calculate` built-ins, or pre-compute richer logic before the data
+  reaches Prism.
 - Vega-Lite tooltip template strings — Prism tooltips are
   pre-formatted `TooltipLine` lists.
 
@@ -105,7 +115,7 @@ Cohort-analytics extensions (Prism-only): `wmean ratio lift share`.
 {
   "$schema": "urn:prism:schema:v1:spec",
   "data": {"source": "cars.pulse"},
-  "transform": [{"filter": "Horsepower > 100"}],
+  "transform": [{"filter": {"op": "gt", "field": "Horsepower", "value": 100}}],
   "mark": {"type": "bar", "corner_radius": 4},
   "encoding": {
     "x": {"field": "Origin", "type": "nominal"},
@@ -118,7 +128,7 @@ Cohort-analytics extensions (Prism-only): `wmean ratio lift share`.
 Diffs:
 - `$schema`: URN form.
 - `data.url` → `data.source`; `.json` → `.pulse`.
-- `filter`: drop `datum.` prefix.
+- `filter`: expression string → structured `{op, field, value}` predicate.
 - `cornerRadius` → `corner_radius`.
 - `color` channel: explicit `type` (Vega-Lite infers; Prism is strict).
 
