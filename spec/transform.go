@@ -21,11 +21,12 @@ type Transform struct {
 	TimeUnit   *TimeUnitTransform
 }
 
-// FilterTransform: row predicate.
+// FilterTransform: structured row predicate (E2-S1). The `filter` value
+// is a Predicate tree, not a free-form expression string.
 type FilterTransform struct {
-	Filter string `json:"filter"`
-	Data   string `json:"data,omitempty"`
-	As     string `json:"as,omitempty"`
+	Filter Predicate `json:"filter"`
+	Data   string    `json:"data,omitempty"`
+	As     string    `json:"as,omitempty"`
 }
 
 // CalculateTransform: compute new column.

@@ -39,4 +39,5 @@ func init() {
 	validate.RegisterDefault(func() validate.SemanticRule { return CrosstabPosition{} })
 	validate.RegisterDefault(func() validate.SemanticRule { return RegressionPosition{} })
 	validate.RegisterDefault(func() validate.SemanticRule { return BulletBands{} })
+	validate.RegisterDefault(func() validate.SemanticRule { return FilterPredicate{} })
 }

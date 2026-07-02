@@ -53,13 +53,106 @@
     },
     "filter_transform": {
       "type": "object",
-      "description": "Row filter expressed as a Pulse expression predicate.",
+      "description": "Structured row filter (E2-S1). `filter` is a predicate tree, not an expression string.",
       "additionalProperties": false,
       "required": ["filter"],
       "properties": {
-        "filter": {"$ref": "shared.schema.json#/$defs/expression", "description": "Pulse expression evaluated per row; truthy rows pass."},
+        "filter": {"$ref": "transform.schema.json#/$defs/filter_predicate", "description": "Structured predicate; rows for which it evaluates true pass."},
         "data":   {"type": "string", "minLength": 1, "description": "Optional input alias."},
         "as":     {"type": "string", "minLength": 1, "description": "Optional output alias."}
+      }
+    },
+    "filter_predicate": {
+      "description": "One filter predicate node: a leaf test (comparison / set / between / null-check) or a boolean combinator (and / or / not). Exactly one form matches.",
+      "type": "object",
+      "oneOf": [
+        {"$ref": "transform.schema.json#/$defs/predicate_comparison"},
+        {"$ref": "transform.schema.json#/$defs/predicate_set"},
+        {"$ref": "transform.schema.json#/$defs/predicate_between"},
+        {"$ref": "transform.schema.json#/$defs/predicate_null"},
+        {"$ref": "transform.schema.json#/$defs/predicate_and"},
+        {"$ref": "transform.schema.json#/$defs/predicate_or"},
+        {"$ref": "transform.schema.json#/$defs/predicate_not"}
+      ]
+    },
+    "predicate_literal": {
+      "type": ["string", "number", "boolean"],
+      "description": "A scalar literal operand (string, number, or boolean)."
+    },
+    "predicate_comparison": {
+      "type": "object",
+      "description": "Binary comparison of a field against a literal (value) OR another column (to_field).",
+      "additionalProperties": false,
+      "required": ["op", "field"],
+      "properties": {
+        "op":       {"type": "string", "enum": ["eq", "ne", "lt", "lte", "gt", "gte"], "description": "Comparison operator."},
+        "field":    {"$ref": "shared.schema.json#/$defs/field_ref", "description": "Left operand column."},
+        "value":    {"$ref": "transform.schema.json#/$defs/predicate_literal", "description": "Right operand literal (mutually exclusive with to_field)."},
+        "to_field": {"type": "string", "minLength": 1, "description": "Right operand column for a field-vs-field compare (mutually exclusive with value)."}
+      },
+      "oneOf": [
+        {"required": ["value"]},
+        {"required": ["to_field"]}
+      ]
+    },
+    "predicate_set": {
+      "type": "object",
+      "description": "Set-membership test: field in / not in a non-empty candidate set.",
+      "additionalProperties": false,
+      "required": ["op", "field", "values"],
+      "properties": {
+        "op":     {"type": "string", "enum": ["one_of", "not_one_of"], "description": "Membership operator."},
+        "field":  {"$ref": "shared.schema.json#/$defs/field_ref", "description": "Field to test."},
+        "values": {"type": "array", "minItems": 1, "items": {"$ref": "transform.schema.json#/$defs/predicate_literal"}, "description": "Candidate values."}
+      }
+    },
+    "predicate_between": {
+      "type": "object",
+      "description": "Inclusive range test: lo <= field <= hi.",
+      "additionalProperties": false,
+      "required": ["op", "field", "lo", "hi"],
+      "properties": {
+        "op":    {"type": "string", "enum": ["between"], "description": "Range operator."},
+        "field": {"$ref": "shared.schema.json#/$defs/field_ref", "description": "Field to test."},
+        "lo":    {"$ref": "transform.schema.json#/$defs/predicate_literal", "description": "Inclusive lower bound."},
+        "hi":    {"$ref": "transform.schema.json#/$defs/predicate_literal", "description": "Inclusive upper bound."}
+      }
+    },
+    "predicate_null": {
+      "type": "object",
+      "description": "Null presence test.",
+      "additionalProperties": false,
+      "required": ["op", "field"],
+      "properties": {
+        "op":    {"type": "string", "enum": ["is_null", "not_null"], "description": "Null-check operator."},
+        "field": {"$ref": "shared.schema.json#/$defs/field_ref", "description": "Field to test."}
+      }
+    },
+    "predicate_and": {
+      "type": "object",
+      "description": "Logical AND of one or more predicates.",
+      "additionalProperties": false,
+      "required": ["and"],
+      "properties": {
+        "and": {"type": "array", "minItems": 1, "items": {"$ref": "transform.schema.json#/$defs/filter_predicate"}, "description": "Conjuncts."}
+      }
+    },
+    "predicate_or": {
+      "type": "object",
+      "description": "Logical OR of one or more predicates.",
+      "additionalProperties": false,
+      "required": ["or"],
+      "properties": {
+        "or": {"type": "array", "minItems": 1, "items": {"$ref": "transform.schema.json#/$defs/filter_predicate"}, "description": "Disjuncts."}
+      }
+    },
+    "predicate_not": {
+      "type": "object",
+      "description": "Logical negation of a predicate.",
+      "additionalProperties": false,
+      "required": ["not"],
+      "properties": {
+        "not": {"$ref": "transform.schema.json#/$defs/filter_predicate", "description": "Negated predicate."}
       }
     },
     "calculate_transform": {

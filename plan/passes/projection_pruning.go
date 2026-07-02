@@ -141,7 +141,7 @@ func neededColumnsForSource(
 func collectColsFromNode(n plan.Node, out map[string]struct{}) bool {
 	switch v := n.(type) {
 	case *nodes.FilterNode:
-		for _, c := range extractIdentifiers(v.Expr()) {
+		for _, c := range v.ReferencedFields() {
 			out[c] = struct{}{}
 		}
 		return true
@@ -186,7 +186,7 @@ func rewireSingleInput(n plan.Node, oldIn, newIn plan.NodeID) plan.Node {
 		if v.Inputs()[0] != oldIn {
 			return nil
 		}
-		return nodes.NewFilter(v.ID(), newIn, v.Expr())
+		return nodes.NewFilter(v.ID(), newIn, v.Predicate())
 	case *nodes.ProjectNode:
 		if v.Inputs()[0] != oldIn {
 			return nil

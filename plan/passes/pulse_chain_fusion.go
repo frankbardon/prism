@@ -138,11 +138,22 @@ func tryFuseChainFromSource(d *plan.DAG, src *nodes.SourceNode) (*plan.DAG, bool
 			if hasGroupAgg || hasSort {
 				return finaliseFusion(d, src, req, absorbed, summaryParts, lastAbsorbed)
 			}
+			// The Pulse chain reader consumes a FILTER_EXPRESSION string.
+			// Serialize the structured predicate to Pulse expression
+			// syntax; anything the serializer can't represent (should be
+			// nothing in the E2-S1 grammar) makes the filter a fusion
+			// boundary so it falls back to the in-mem evaluator. This
+			// serializer is transitional — it disappears with the Pulse
+			// backend eviction.
+			expr, ok := predicateToPulseExpr(n.Predicate())
+			if !ok {
+				return finaliseFusion(d, src, req, absorbed, summaryParts, lastAbsorbed)
+			}
 			req.Filterers = append(req.Filterers, &pulsetypes.Filterer{
 				Type:       pulsetypes.FILTER_EXPRESSION,
-				Expression: n.Expr(),
+				Expression: expr,
 			})
-			summaryParts = append(summaryParts, "filter("+n.Expr()+")")
+			summaryParts = append(summaryParts, "filter("+expr+")")
 		case *nodes.CalculateNode:
 			if hasGroupAgg || hasSort {
 				return finaliseFusion(d, src, req, absorbed, summaryParts, lastAbsorbed)

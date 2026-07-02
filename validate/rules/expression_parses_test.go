@@ -11,7 +11,6 @@ func TestExpressionParsesHappyPath(t *testing.T) {
 	s := &spec.Spec{
 		Schema: "urn:prism:schema:v1:spec",
 		Transform: []spec.Transform{
-			{Filter: &spec.FilterTransform{Filter: "score > 0 and brand_id != 'x'"}},
 			{Calculate: &spec.CalculateTransform{Calculate: "score * 2", As: "doubled"}},
 		},
 		Mark: &spec.Mark{Shorthand: "bar"},
@@ -26,7 +25,7 @@ func TestExpressionParsesFiresOnBadExpr(t *testing.T) {
 	s := &spec.Spec{
 		Schema: "urn:prism:schema:v1:spec",
 		Transform: []spec.Transform{
-			{Filter: &spec.FilterTransform{Filter: "score > "}},
+			{Calculate: &spec.CalculateTransform{Calculate: "score * ", As: "x"}},
 		},
 		Mark: &spec.Mark{Shorthand: "bar"},
 	}
@@ -40,7 +39,7 @@ func TestExpressionParsesIgnoresSelectionShorthand(t *testing.T) {
 	s := &spec.Spec{
 		Schema: "urn:prism:schema:v1:spec",
 		Transform: []spec.Transform{
-			{Filter: &spec.FilterTransform{Filter: "selection:brush and score > 0"}},
+			{Calculate: &spec.CalculateTransform{Calculate: "selection:brush and score > 0", As: "x"}},
 		},
 		Mark: &spec.Mark{Shorthand: "bar"},
 	}

@@ -12,6 +12,7 @@ import (
 	"github.com/frankbardon/prism/plan/nodes"
 	"github.com/frankbardon/prism/plan/passes"
 	"github.com/frankbardon/prism/resolve"
+	"github.com/frankbardon/prism/spec"
 )
 
 // repoRootForPasses returns the absolute repo root, derived from this
@@ -107,7 +108,7 @@ func TestPrismFilterPushdownLeftSide(t *testing.T) {
 	join := nodes.NewJoin("j1", left.ID(), right.ID(), []string{"brand_id"}, nodes.JoinInner, 0)
 	_ = b.AddNode(join)
 	// Filter references `score` — exclusively in the left schema.
-	filt := nodes.NewFilter("f1", join.ID(), "score > 0.5")
+	filt := nodes.NewFilter("f1", join.ID(), spec.Predicate{Op: spec.PredGt, Field: "score", Value: 0.5})
 	_ = b.AddNode(filt)
 	_ = b.MarkSink(filt.ID())
 	d, err := b.Build()
@@ -156,7 +157,7 @@ func TestPrismFilterPushdownRightSide(t *testing.T) {
 	_ = b.MarkRoot(right.ID())
 	join := nodes.NewJoin("j2", left.ID(), right.ID(), []string{"brand_id"}, nodes.JoinInner, 0)
 	_ = b.AddNode(join)
-	filt := nodes.NewFilter("f2", join.ID(), "label == 'alpha'")
+	filt := nodes.NewFilter("f2", join.ID(), spec.Predicate{Op: spec.PredEq, Field: "label", Value: "alpha"})
 	_ = b.AddNode(filt)
 	_ = b.MarkSink(filt.ID())
 	d, _ := b.Build()
@@ -199,7 +200,10 @@ func TestPrismFilterPushdownMixedColumnsNoOp(t *testing.T) {
 	join := nodes.NewJoin("j3", left.ID(), right.ID(), []string{"brand_id"}, nodes.JoinInner, 0)
 	_ = b.AddNode(join)
 	// Filter references columns from both sides.
-	filt := nodes.NewFilter("f3", join.ID(), "score > 0.5 and label != ''")
+	filt := nodes.NewFilter("f3", join.ID(), spec.Predicate{And: []spec.Predicate{
+		{Op: spec.PredGt, Field: "score", Value: 0.5},
+		{Op: spec.PredNe, Field: "label", Value: ""},
+	}})
 	_ = b.AddNode(filt)
 	_ = b.MarkSink(filt.ID())
 	d, _ := b.Build()

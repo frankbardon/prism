@@ -118,7 +118,7 @@ func rewireInputs(n plan.Node, rewire map[plan.NodeID]plan.NodeID) plan.Node {
 	case *nodes.FilterNode:
 		// FilterNode has only one input; the constructor signature lets
 		// us rebuild with the rewired input.
-		return nodes.NewFilter(v.ID(), resolve(v.Inputs()[0]), v.Expr())
+		return nodes.NewFilter(v.ID(), resolve(v.Inputs()[0]), v.Predicate())
 	case *nodes.ProjectNode:
 		return nodes.NewProject(v.ID(), resolve(v.Inputs()[0]), v.Fields())
 	case *nodes.JoinNode:

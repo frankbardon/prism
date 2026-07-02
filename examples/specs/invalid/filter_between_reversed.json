@@ -2,7 +2,7 @@
   "$schema": "urn:prism:schema:v1:spec",
   "data": {"values": [{"v": 1}]},
   "transform": [
-    {"filter": "selection:nope and v > 0"}
+    {"filter": {"op": "between", "field": "v", "lo": 10, "hi": 1}}
   ],
   "mark": "bar",
   "encoding": {

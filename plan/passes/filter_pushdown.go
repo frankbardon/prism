@@ -1,8 +1,6 @@
 package passes
 
 import (
-	"strings"
-
 	"github.com/frankbardon/prism/plan"
 	"github.com/frankbardon/prism/plan/nodes"
 )
@@ -12,14 +10,11 @@ import (
 // columns the filter references. Filters touching columns from both
 // sides stay where they are.
 //
-// Identifier extraction (P07): we lex the expr string and pull every
-// substring that matches `[A-Za-z_][A-Za-z0-9_]*` and isn't a reserved
-// word. The set is over-approximate (numeric-suffixed literals, etc.)
-// but conservative — the pass only pushes when EVERY identifier maps
-// exclusively to one side, so spurious identifiers cause the pass to
-// bail safely. When P14 ships a proper Pulse expression parser, swap
-// `extractIdentifiers` for the typed AST walk; the rest of the pass is
-// unchanged.
+// Column extraction (E2-S1): the referenced columns come straight from
+// the structured predicate via FilterNode.ReferencedFields() — no more
+// lexing an expression string. The pass only pushes when EVERY column
+// maps exclusively to one side, so a filter spanning both sides bails
+// safely.
 type FilterPushdownPass struct{}
 
 // Name implements plan.Pass.
@@ -53,7 +48,7 @@ func (FilterPushdownPass) Apply(d *plan.DAG) (*plan.DAG, bool, error) {
 		if !ok {
 			continue
 		}
-		cols := extractIdentifiers(fn.Expr())
+		cols := fn.ReferencedFields()
 		if len(cols) == 0 {
 			continue
 		}
@@ -117,75 +112,10 @@ func pushFilterUnderJoin(
 	default:
 		return d
 	}
-	rebuiltFilter := nodes.NewFilter(fn.ID(), newFilterInput, fn.Expr())
+	rebuiltFilter := nodes.NewFilter(fn.ID(), newFilterInput, fn.Predicate())
 	rebuiltJoin := nodes.NewJoin(jn.ID(), newJoinLeft, newJoinRight,
 		jn.On(), jn.JoinKind(), 0)
 	out := d.WithNode(rebuiltFilter)
 	out = out.WithNode(rebuiltJoin)
 	return out
-}
-
-// extractIdentifiers returns a deduplicated slice of identifier-like
-// tokens from expr. Reserved words and numeric tokens are filtered
-// out. Quoted string literals (single- or double-quoted) are skipped
-// entirely so a filter like `label == 'alpha'` only extracts `label`.
-// The function is intentionally tolerant: input that fails to parse
-// still produces a (possibly empty) result.
-func extractIdentifiers(expr string) []string {
-	seen := map[string]struct{}{}
-	var cur strings.Builder
-	flush := func() {
-		if cur.Len() == 0 {
-			return
-		}
-		token := cur.String()
-		cur.Reset()
-		if !isIdentLike(token) || isReserved(token) {
-			return
-		}
-		seen[token] = struct{}{}
-	}
-	inQuote := byte(0) // 0 = not in a quoted literal; otherwise the quote char.
-	for i := 0; i < len(expr); i++ {
-		c := expr[i]
-		if inQuote != 0 {
-			if c == inQuote {
-				inQuote = 0
-			}
-			continue
-		}
-		if c == '\'' || c == '"' {
-			flush()
-			inQuote = c
-			continue
-		}
-		switch {
-		case c == '_' || (c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') || (c >= '0' && c <= '9'):
-			cur.WriteByte(c)
-		default:
-			flush()
-		}
-	}
-	flush()
-	out := make([]string, 0, len(seen))
-	for k := range seen {
-		out = append(out, k)
-	}
-	return out
-}
-
-func isIdentLike(s string) bool {
-	if s == "" {
-		return false
-	}
-	r := s[0]
-	return r == '_' || (r >= 'a' && r <= 'z') || (r >= 'A' && r <= 'Z')
-}
-
-func isReserved(s string) bool {
-	switch s {
-	case "true", "false", "and", "or", "not", "in", "nil", "null":
-		return true
-	}
-	return false
 }

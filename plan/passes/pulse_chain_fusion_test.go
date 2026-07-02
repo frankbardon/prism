@@ -12,6 +12,7 @@ import (
 	"github.com/frankbardon/prism/plan/nodes"
 	"github.com/frankbardon/prism/plan/passes"
 	"github.com/frankbardon/prism/resolve"
+	"github.com/frankbardon/prism/spec"
 )
 
 // tinySchema matches the committed testdata/cohorts/tiny.pulse:
@@ -109,7 +110,7 @@ func TestPrismPulseChainFusionFiresOnAggChain(t *testing.T) {
 func TestPrismPulseChainFusionAbsorbsFilterCalcSort(t *testing.T) {
 	schema := tinySchema()
 	src, _ := srcWithSchema(t, "/a.pulse", schema)
-	fil := nodes.NewFilter("fil1", src.ID(), "score > 0")
+	fil := nodes.NewFilter("fil1", src.ID(), spec.Predicate{Op: spec.PredGt, Field: "score", Value: 0})
 	calc := nodes.NewCalculate("calc1", fil.ID(), "score * 2", "score2")
 	agg := nodes.NewGroupAggregate("agg1", calc.ID(),
 		[]string{"brand_id"},
@@ -169,7 +170,7 @@ func TestPrismPulseChainFusionSkipsBareSource(t *testing.T) {
 func TestPrismPulseChainFusionSkipsFilterOnly(t *testing.T) {
 	schema := tinySchema()
 	src, _ := srcWithSchema(t, "/a.pulse", schema)
-	fil := nodes.NewFilter("fil1", src.ID(), "score > 0")
+	fil := nodes.NewFilter("fil1", src.ID(), spec.Predicate{Op: spec.PredGt, Field: "score", Value: 0})
 	b := plan.NewBuilder()
 	_ = b.AddNode(src)
 	_ = b.AddNode(fil)

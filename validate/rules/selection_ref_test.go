@@ -7,36 +7,23 @@ import (
 	"github.com/frankbardon/prism/validate"
 )
 
-func TestSelectionRefHappyPath(t *testing.T) {
+// SelectionRef is dormant as of E2-S1: structured filter predicates
+// carry no selection references (the "selection:<name>" shorthand lived
+// in the old free-form filter expression string, which is gone), and
+// condition-encoding references land in v2. The rule reports nothing.
+func TestSelectionRefNoOp(t *testing.T) {
 	s := &spec.Spec{
 		Schema: "urn:prism:schema:v1:spec",
 		Selection: map[string]spec.Selection{
 			"brush": {Interval: &spec.IntervalSelection{Type: "interval", Encodings: []string{"x"}}},
 		},
 		Transform: []spec.Transform{{
-			Filter: &spec.FilterTransform{Filter: "selection:brush and score > 0"},
+			Filter: &spec.FilterTransform{Filter: spec.Predicate{Op: spec.PredGt, Field: "score", Value: 0}},
 		}},
 		Mark: &spec.Mark{Shorthand: "bar"},
 	}
 	errs := SelectionRef{}.Check(s, validate.EmptyLookup{})
 	if len(errs) != 0 {
 		t.Fatalf("expected no errors, got: %+v", errs)
-	}
-}
-
-func TestSelectionRefFiresOnUnknown(t *testing.T) {
-	s := &spec.Spec{
-		Schema: "urn:prism:schema:v1:spec",
-		Selection: map[string]spec.Selection{
-			"brush": {Interval: &spec.IntervalSelection{Type: "interval"}},
-		},
-		Transform: []spec.Transform{{
-			Filter: &spec.FilterTransform{Filter: "selection:typo"},
-		}},
-		Mark: &spec.Mark{Shorthand: "bar"},
-	}
-	errs := SelectionRef{}.Check(s, validate.EmptyLookup{})
-	if len(errs) != 1 || errs[0].Code != "PRISM_SPEC_004" {
-		t.Fatalf("expected one PRISM_SPEC_004, got: %+v", errs)
 	}
 }

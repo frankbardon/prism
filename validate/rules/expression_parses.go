@@ -12,8 +12,9 @@ import (
 	"github.com/frankbardon/prism/validate"
 )
 
-// ExpressionParses implements PRISM_SPEC_006: every Pulse expression
-// (filter predicates, calculate expressions) must parse successfully.
+// ExpressionParses implements PRISM_SPEC_006: every calculate-transform
+// expression must parse successfully. (Filter predicates are structured
+// as of E2-S1 and validated by FilterPredicate / PRISM_SPEC_037.)
 //
 // TODO(pulse): switch from expr-lang/expr to Pulse's wrapper as soon as
 // Pulse exposes a public expression parser. Pulse 0.8.4 uses
@@ -39,12 +40,10 @@ func (ExpressionParses) Check(s *spec.Spec, _ validate.SchemaLookup) []*errors.A
 	var out []*errors.AppError
 	for i, t := range s.Transform {
 		site := fmt.Sprintf("transform[%d]", i)
-		switch {
-		case t.Filter != nil:
-			if err := tryParse(t.Filter.Filter); err != nil {
-				out = append(out, expressionError(t.Filter.Filter, err, site+".filter"))
-			}
-		case t.Calculate != nil:
+		// Filter predicates are structured (spec.Predicate) as of E2-S1
+		// and validated by FilterPredicate (PRISM_SPEC_037); only the
+		// calculate transform still carries an expression string.
+		if t.Calculate != nil {
 			if err := tryParse(t.Calculate.Calculate); err != nil {
 				out = append(out, expressionError(t.Calculate.Calculate, err, site+".calculate"))
 			}

@@ -2,26 +2,29 @@ package nodes
 
 import (
 	"context"
+	"encoding/json"
 
 	"github.com/frankbardon/prism/plan"
+	"github.com/frankbardon/prism/spec"
 	"github.com/frankbardon/prism/table"
 )
 
-// FilterNode applies a Pulse expression predicate to its input table.
+// FilterNode applies a structured predicate (spec.Predicate) to its
+// input table (E2-S1 — replaces the old Pulse-expression string).
 // Execute routes through the injected backend; falls back to
 // PRISM_COMPILE_001 when no backend is wired (preserves P03 stub
 // behaviour for callers that haven't migrated). See D033.
 type FilterNode struct {
 	id      plan.NodeID
 	input   plan.NodeID
-	expr    string
+	pred    spec.Predicate
 	backend plan.Backend
 }
 
 // NewFilter constructs a FilterNode with a stable id derived from
-// (input, expr) so two equivalent filters share a fingerprint.
-func NewFilter(id, input plan.NodeID, expr string) *FilterNode {
-	return &FilterNode{id: id, input: input, expr: expr}
+// (input, predicate) so two equivalent filters share a fingerprint.
+func NewFilter(id, input plan.NodeID, pred spec.Predicate) *FilterNode {
+	return &FilterNode{id: id, input: input, pred: pred}
 }
 
 // ID implements plan.Node.
@@ -49,16 +52,33 @@ func (n *FilterNode) Execute(ctx context.Context, in []*table.Table) (*table.Tab
 // their P03 signatures stable. See D033.
 func (n *FilterNode) SetBackend(b plan.Backend) { n.backend = b }
 
-// Fingerprint implements plan.Node.
+// Fingerprint implements plan.Node. Derived from the canonical JSON of
+// the predicate so equivalent predicates fingerprint identically.
 func (n *FilterNode) Fingerprint() string {
-	return fingerprintFor("FilterNode", string(n.input), n.expr)
+	return fingerprintFor("FilterNode", string(n.input), n.predKey())
 }
 
-// Expr exposes the predicate string for renderers + tests.
-func (n *FilterNode) Expr() string { return n.expr }
+// Predicate exposes the structured predicate for the executor,
+// optimizer passes, and tests.
+func (n *FilterNode) Predicate() spec.Predicate { return n.pred }
+
+// ReferencedFields returns the columns the predicate reads. Used by the
+// filter-pushdown pass to decide which join side a filter belongs to.
+func (n *FilterNode) ReferencedFields() []string { return n.pred.ReferencedFields() }
+
+// predKey renders the predicate as canonical JSON for fingerprinting +
+// summaries. Marshal errors collapse to an empty string (a filter that
+// cannot marshal cannot execute either).
+func (n *FilterNode) predKey() string {
+	b, err := json.Marshal(n.pred)
+	if err != nil {
+		return ""
+	}
+	return string(b)
+}
 
 // Kind implements plan.Labeled.
 func (n *FilterNode) Kind() string { return "FilterNode" }
 
 // Summary implements plan.Labeled.
-func (n *FilterNode) Summary() string { return "expr: " + n.expr }
+func (n *FilterNode) Summary() string { return "predicate: " + n.predKey() }

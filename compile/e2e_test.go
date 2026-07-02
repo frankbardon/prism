@@ -31,7 +31,7 @@ func TestPrismSingleSourceLinearPipeline(t *testing.T) {
 	s := &spec.Spec{
 		Data: &spec.Data{Source: cohortPath},
 		Transform: []spec.Transform{
-			{Filter: &spec.FilterTransform{Filter: "score > 0.5"}},
+			{Filter: &spec.FilterTransform{Filter: spec.Predicate{Op: spec.PredGt, Field: "score", Value: 0.5}}},
 			{Aggregate: &spec.AggregateTransform{
 				Groupby:   []string{"brand_id"},
 				Aggregate: []spec.AggregateOp{{Op: "mean", Field: "score", As: "avg"}},

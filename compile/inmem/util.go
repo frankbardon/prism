@@ -115,6 +115,23 @@ func pickRowsByMask(col table.Column, mask []bool) table.Column {
 			}
 		}
 		return out
+	case table.NullableColumn:
+		inner := pickRowsByMask(c.Inner, mask)
+		if c.Nulls == nil {
+			return table.NullableColumn{Inner: inner}
+		}
+		nb := table.NewNullBitmap(keep)
+		j := 0
+		for i, m := range mask {
+			if !m {
+				continue
+			}
+			if c.Nulls.IsNull(i) {
+				nb.Set(j)
+			}
+			j++
+		}
+		return table.NullableColumn{Inner: inner, Nulls: nb}
 	}
 	return col
 }
@@ -154,6 +171,18 @@ func pickRowsByIndex(col table.Column, idx []int) table.Column {
 			out[i] = c[k]
 		}
 		return out
+	case table.NullableColumn:
+		inner := pickRowsByIndex(c.Inner, idx)
+		if c.Nulls == nil {
+			return table.NullableColumn{Inner: inner}
+		}
+		nb := table.NewNullBitmap(len(idx))
+		for j, k := range idx {
+			if c.Nulls.IsNull(k) {
+				nb.Set(j)
+			}
+		}
+		return table.NullableColumn{Inner: inner, Nulls: nb}
 	}
 	return col
 }

@@ -757,6 +757,15 @@ var Codes = map[string]CodeMetadata{
 		},
 		SeeAlso: []string{"PRISM_SPEC_003"},
 	},
+	"PRISM_SPEC_037": {
+		Code:    "PRISM_SPEC_037",
+		Message: `Filter predicate is not well-formed ({{.Reason}}) at {{.Site}}.`,
+		Fixups: []string{
+			`A filter predicate is a structured node, not an expression string. Use a leaf like ` + "`{op: \"gt\", field: \"Horsepower\", value: 100}`" + ` (or ` + "`to_field`" + ` for a field-vs-field compare) and nest with ` + "`{and: [...]}`" + `, ` + "`{or: [...]}`" + `, ` + "`{not: {...}}`" + `.`,
+			`Every ` + "`field`" + ` / ` + "`to_field`" + ` must exist in the source schema, comparisons must be type-compatible (numeric vs numeric, string vs string), a ` + "`between`" + ` must have ` + "`lo`" + ` <= ` + "`hi`" + `, and ` + "`one_of`" + ` / ` + "`not_one_of`" + ` need a non-empty ` + "`values`" + ` set.`,
+		},
+		SeeAlso: []string{"PRISM_SPEC_001", "PRISM_SPEC_006"},
+	},
 	"PRISM_WARN_NETWORK_CYCLE": {
 		Code:    "PRISM_WARN_NETWORK_CYCLE",
 		Message: `network input graph contains a cycle; force layout may produce a visually messy result.`,

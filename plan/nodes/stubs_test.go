@@ -9,6 +9,7 @@ import (
 	prismerrors "github.com/frankbardon/prism/errors"
 	"github.com/frankbardon/prism/plan"
 	"github.com/frankbardon/prism/plan/nodes"
+	"github.com/frankbardon/prism/spec"
 	"github.com/frankbardon/prism/table"
 )
 
@@ -42,7 +43,7 @@ func assertNotImplemented(t *testing.T, kind string, err error) {
 }
 
 func TestPrismFilterNodeStub(t *testing.T) {
-	n := nodes.NewFilter("filter:1", "src:1", "score > 0.5")
+	n := nodes.NewFilter("filter:1", "src:1", spec.Predicate{Op: spec.PredGt, Field: "score", Value: 0.5})
 	if n.ID() != "filter:1" {
 		t.Fatalf("ID=%q", n.ID())
 	}
@@ -59,13 +60,13 @@ func TestPrismFilterNodeStub(t *testing.T) {
 	_, err = n.Execute(context.Background(), nil)
 	assertNotImplemented(t, "FilterNode", err)
 	// Fingerprint determinism + sensitivity.
-	m := nodes.NewFilter("filter:1", "src:1", "score > 0.5")
+	m := nodes.NewFilter("filter:1", "src:1", spec.Predicate{Op: spec.PredGt, Field: "score", Value: 0.5})
 	if n.Fingerprint() != m.Fingerprint() {
 		t.Errorf("fingerprint mismatch for identical filters")
 	}
-	d := nodes.NewFilter("filter:1", "src:1", "score < 0.5")
+	d := nodes.NewFilter("filter:1", "src:1", spec.Predicate{Op: spec.PredLt, Field: "score", Value: 0.5})
 	if n.Fingerprint() == d.Fingerprint() {
-		t.Errorf("fingerprint collision for different exprs")
+		t.Errorf("fingerprint collision for different predicates")
 	}
 }
 

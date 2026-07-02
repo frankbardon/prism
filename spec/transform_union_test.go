@@ -13,12 +13,16 @@ func TestTransformDiscriminator(t *testing.T) {
 		errSub string
 	}{
 		"filter": {
-			json: `{"filter":"x > 0"}`,
+			json: `{"filter":{"op":"gt","field":"x","value":0}}`,
 			check: func(t *testing.T, tr *Transform) {
-				if tr.Filter == nil || tr.Filter.Filter != "x > 0" {
+				if tr.Filter == nil || tr.Filter.Filter.Op != PredGt || tr.Filter.Filter.Field != "x" {
 					t.Errorf("filter not parsed: %+v", tr)
 				}
 			},
+		},
+		"filter-rejects-string": {
+			json:   `{"filter":"x > 0"}`,
+			errSub: "structured object",
 		},
 		"aggregate": {
 			json: `{"aggregate":[{"op":"mean","field":"score","as":"score_mean"}]}`,
@@ -37,7 +41,7 @@ func TestTransformDiscriminator(t *testing.T) {
 			errSub: "multiple discriminator",
 		},
 		"unknown-field-in-variant": {
-			json:   `{"filter":"x","wat":1}`,
+			json:   `{"filter":{"op":"gt","field":"x","value":0},"wat":1}`,
 			errSub: `unknown field "wat"`,
 		},
 	}
