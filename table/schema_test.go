@@ -1,10 +1,6 @@
 package table
 
-import (
-	"testing"
-
-	"github.com/frankbardon/pulse/encoding"
-)
+import "testing"
 
 // TestKindFromFieldType covers every native FieldType, including the ones
 // that fold to KindUnknown (set types), so the mapping stays total.
@@ -37,29 +33,6 @@ func TestKindFromFieldType(t *testing.T) {
 				t.Fatalf("KindFromFieldType(%s) = %s, want %s", c.ft, got, c.want)
 			}
 		})
-	}
-}
-
-// TestKindFromFieldTypeMatchesPulse asserts the native kind mapping agrees
-// with the legacy Pulse-backed one for every type both understand. This is
-// the invariant the E1-S2/E1-S3 migration relies on. Removed with the shim
-// in E4.
-func TestKindFromFieldTypeMatchesPulse(t *testing.T) {
-	pulseTypes := []encoding.FieldType{
-		encoding.FieldTypeU8, encoding.FieldTypeU16, encoding.FieldTypeU32,
-		encoding.FieldTypeU64, encoding.FieldTypeF32, encoding.FieldTypeF64,
-		encoding.FieldTypeU4, encoding.FieldTypeDate, encoding.FieldTypePackedBool,
-		encoding.FieldTypeCategoricalU8, encoding.FieldTypeCategoricalU16,
-		encoding.FieldTypeCategoricalU32, encoding.FieldTypeDecimal128,
-	}
-	for _, pt := range pulseTypes {
-		nt := FromPulseFieldType(pt)
-		if got, want := KindFromFieldType(nt), KindFromPulseFieldType(pt); got != want {
-			t.Fatalf("kind mismatch for %s: native=%s pulse=%s", pt, got, want)
-		}
-		if nt.String() != pt.String() {
-			t.Fatalf("String mismatch: native=%q pulse=%q", nt.String(), pt.String())
-		}
 	}
 }
 
@@ -132,43 +105,5 @@ func TestSchemaFieldLookup(t *testing.T) {
 	var nilSchema *Schema
 	if nilSchema.Field("x") != nil {
 		t.Fatal("nil-schema Field should return nil")
-	}
-}
-
-// TestSchemaRoundTrip exercises the temporary Pulse conversion shims: a
-// native schema survives native -> Pulse -> native unchanged, including the
-// categorical dictionary. Removed with the shim in E4.
-func TestSchemaRoundTrip(t *testing.T) {
-	dict := NewDictionary()
-	_, _ = dict.Add("US")
-	_, _ = dict.Add("CA")
-
-	orig := &Schema{Fields: []Field{
-		{Name: "id", Type: FieldTypeU64, Nullable: false},
-		{Name: "amount", Type: FieldTypeDecimal128, Precision: 18, Scale: 2, Nullable: true},
-		{Name: "country", Type: FieldTypeCategoricalU8, Dictionary: dict, Description: "iso code"},
-	}}
-
-	got := FromPulseSchema(ToPulseSchema(orig))
-	if len(got.Fields) != len(orig.Fields) {
-		t.Fatalf("field count %d, want %d", len(got.Fields), len(orig.Fields))
-	}
-	for i := range orig.Fields {
-		of, gf := orig.Fields[i], got.Fields[i]
-		if of.Name != gf.Name || of.Type != gf.Type || of.Nullable != gf.Nullable ||
-			of.Precision != gf.Precision || of.Scale != gf.Scale || of.Description != gf.Description {
-			t.Fatalf("field %d mismatch: orig=%+v got=%+v", i, of, gf)
-		}
-	}
-	rt, ok := got.Categorical("country")
-	if !ok {
-		t.Fatal("round-tripped country lost its dictionary")
-	}
-	if v := rt.Values(); len(v) != 2 || v[0] != "US" || v[1] != "CA" {
-		t.Fatalf("round-tripped dictionary values = %v", v)
-	}
-
-	if FromPulseSchema(nil) != nil || ToPulseSchema(nil) != nil {
-		t.Fatal("nil schema conversion should stay nil")
 	}
 }

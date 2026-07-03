@@ -32,7 +32,7 @@ func mkTableFor(t *testing.T, schema *table.Schema, cols map[string]table.Column
 // brandSide produces a 3-row left table with brand_id + score columns.
 func brandSide(t *testing.T) *table.Table {
 	t.Helper()
-	// Use a real categorical type so KindFromPulseFieldType resolves
+	// Use a real categorical type so KindFromFieldType resolves
 	// to KindString without dictionary plumbing.
 	s := mkSchema(
 		table.Field{Name: "brand_id", Type: table.FieldTypeCategoricalU8},

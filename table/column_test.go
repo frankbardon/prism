@@ -1,37 +1,6 @@
 package table
 
-import (
-	"testing"
-
-	"github.com/frankbardon/pulse/encoding"
-)
-
-func TestKindFromPulseFieldType(t *testing.T) {
-	cases := []struct {
-		ft   encoding.FieldType
-		want Kind
-	}{
-		{encoding.FieldTypeU8, KindInt},
-		{encoding.FieldTypeU64, KindInt},
-		{encoding.FieldTypeU4, KindInt},
-		{encoding.FieldTypeF32, KindFloat},
-		{encoding.FieldTypeF64, KindFloat},
-		{encoding.FieldTypeDecimal128, KindFloat},
-		{encoding.FieldTypePackedBool, KindBool},
-		{encoding.FieldTypeDate, KindDate},
-		{encoding.FieldTypeCategoricalU8, KindString},
-		{encoding.FieldTypeCategoricalU16, KindString},
-		{encoding.FieldTypeCategoricalU32, KindString},
-	}
-	for _, c := range cases {
-		t.Run(c.ft.String(), func(t *testing.T) {
-			got := KindFromPulseFieldType(c.ft)
-			if got != c.want {
-				t.Fatalf("KindFromPulseFieldType(%s) = %s, want %s", c.ft, got, c.want)
-			}
-		})
-	}
-}
+import "testing"
 
 func TestKindString(t *testing.T) {
 	for _, c := range []struct {

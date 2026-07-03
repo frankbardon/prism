@@ -3,14 +3,12 @@ package table
 import "fmt"
 
 // This file defines Prism's native schema vocabulary — Schema, Field,
-// FieldType, and Dictionary — the Pulse-free replacement for
-// github.com/frankbardon/pulse/encoding.{Schema,Field,FieldType,Dictionary}.
+// FieldType, and Dictionary. It is the sole owner of Prism's column-type
+// model and carries no external data-layer dependency.
 //
-// It carries no Pulse import: the type definitions here are the anchor of
-// the Pulse-eviction effort (epic E1). The FieldType constant block mirrors
-// Pulse's byte layout (identical iota order) so the temporary conversion
-// shims in pulse_shim.go are a direct cast and so migrated call sites keep
-// the same constant names (encoding.FieldTypeF64 -> table.FieldTypeF64).
+// The FieldType constant block is a fixed byte layout: migrated call sites
+// reference the constants by name (table.FieldTypeF64) and the inline JSON
+// loader maps its wire tokens onto them.
 //
 // Only the predicate surface Prism actually consults is exposed
 // (IsNumeric / IsCategorical / IsDecimal / IsBitPacked / IsSet / IsKnown /
@@ -200,8 +198,7 @@ func (s *Schema) Categorical(name string) (*Dictionary, bool) {
 }
 
 // KindFromFieldType folds a native FieldType into one of the five Prism
-// Kinds. It is the Pulse-free replacement for KindFromPulseFieldType and
-// preserves the same lossy mapping: decimal128 -> KindFloat (surfaced as a
+// Kinds with a lossy mapping: decimal128 -> KindFloat (surfaced as a
 // numeric scalar in v1); categorical -> KindString; date -> KindDate;
 // packed_bool -> KindBool; the unsigned-integer family (incl. u4) -> KindInt.
 // Nullability is orthogonal — callers consult Field.Nullable separately.
