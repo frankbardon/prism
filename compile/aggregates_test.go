@@ -3,8 +3,6 @@ package compile
 import (
 	"sort"
 	"testing"
-
-	"github.com/frankbardon/pulse/types"
 )
 
 // expectedAliases mirrors the 23 friendly aliases the validator
@@ -19,9 +17,9 @@ var expectedAliases = []string{
 }
 
 // TestPrismAggOpEnumCoverage is the PHASE.md test gate: every Prism
-// alias must have an entry in AliasToPulse. Entries either resolve to
-// a Pulse AggregationType or carry the deferred-from-Pulse marker
-// (Type == "").
+// alias must have an entry in the shared aggregate registry
+// (compile.Aliases). The registry is a name catalogue only — every
+// alias is computed client-side by the in-memory backend.
 func TestPrismAggOpEnumCoverage(t *testing.T) {
 	got := AllAliases()
 	if len(got) != len(expectedAliases) {
@@ -37,60 +35,22 @@ func TestPrismAggOpEnumCoverage(t *testing.T) {
 		}
 	}
 
-	deferred := map[string]bool{
-		"lift": true, "share": true,
-	}
 	for _, alias := range got {
-		m, ok := AliasToPulse[alias]
-		if !ok {
-			t.Errorf("alias %q not in AliasToPulse", alias)
-			continue
-		}
-		if m.Alias != alias {
-			t.Errorf("alias %q: mapping.Alias = %q (drift)", alias, m.Alias)
-		}
-		if deferred[alias] {
-			if !m.IsDeferredFromPulse() {
-				t.Errorf("alias %q: expected deferred-from-Pulse, got Pulse Type %q", alias, m.Type)
-			}
-		} else {
-			if m.IsDeferredFromPulse() {
-				t.Errorf("alias %q: expected a Pulse Type, got deferred marker", alias)
-			}
+		if !IsAlias(alias) {
+			t.Errorf("alias %q not in Aliases", alias)
 		}
 	}
 }
 
-// TestPrismAggOpPulseTypesValid asserts every non-deferred mapping
-// resolves to a real types.AggregationType the Pulse package
-// recognises. Catches typos in AliasToPulse at compile/test time
-// instead of at execute time.
-func TestPrismAggOpPulseTypesValid(t *testing.T) {
-	valid := map[types.AggregationType]bool{}
-	for _, at := range types.AllAggregationTypes() {
-		valid[at] = true
-	}
-	for alias, m := range AliasToPulse {
-		if m.IsDeferredFromPulse() {
-			continue
-		}
-		if !valid[m.Type] {
-			t.Errorf("alias %q resolves to %q which is not in types.AllAggregationTypes()", alias, m.Type)
+// TestPrismAggOpIsAlias asserts IsAlias accepts every catalogued alias
+// and rejects an unknown one.
+func TestPrismAggOpIsAlias(t *testing.T) {
+	for _, alias := range expectedAliases {
+		if !IsAlias(alias) {
+			t.Errorf("IsAlias(%q) = false; want true", alias)
 		}
 	}
-}
-
-// TestPrismPulseBackedAliasesSubset asserts PulseBackedAliases() is
-// the complement of the deferred set inside the full alias enum.
-func TestPrismPulseBackedAliasesSubset(t *testing.T) {
-	backed := PulseBackedAliases()
-	for _, alias := range backed {
-		m := AliasToPulse[alias]
-		if m.IsDeferredFromPulse() {
-			t.Errorf("PulseBackedAliases includes deferred alias %q", alias)
-		}
-	}
-	if len(backed)+2 != len(AllAliases()) {
-		t.Errorf("PulseBackedAliases len = %d; expected 21 (23 total - 2 deferred)", len(backed))
+	if IsAlias("not_an_aggregate") {
+		t.Error("IsAlias(\"not_an_aggregate\") = true; want false")
 	}
 }

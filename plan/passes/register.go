@@ -4,9 +4,8 @@ import "github.com/frankbardon/prism/plan"
 
 // init registers the canonical pass list with plan.DefaultPasses.
 // Order = D047: semantics-preserving passes first, sampling last.
-// PulseChainFusion slots between AggregateFusion (so sibling
-// GroupAggregates merge first) and SampleInjection (so chain-fused
-// sources are no longer SourceNodes when the sampler walks roots).
+// AggregateFusion runs before SampleInjection so sibling
+// GroupAggregates merge before the sampler probes source row counts.
 //
 // Side-effect package init is the only avenue here — plan/passes/
 // imports plan/, so plan/ cannot import passes/ directly without
@@ -19,7 +18,6 @@ func init() {
 		FilterPushdownPass{},
 		ProjectionPruningPass{},
 		AggregateFusionPass{},
-		PulseChainFusionPass{},
 		SampleInjectionPass{},
 	})
 }

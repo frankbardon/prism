@@ -1,12 +1,12 @@
 //go:build !js
 
-// Error interceptor: maps *prismerrors.AppError and Pulse
-// *CodedError (and unknown errors) to Twirp status codes by code
-// prefix. See D085 for the full mapping table.
+// Error interceptor: maps *prismerrors.AppError (and unknown errors)
+// to Twirp status codes by code prefix. See D085 for the full mapping
+// table.
 //
-// Original PRISM_* / PULSE_* code is preserved as meta on the
-// returned twirp.Error under the "code" key. AppError fixups +
-// context attach as "fixups" and "context".
+// Original PRISM_* code is preserved as meta on the returned
+// twirp.Error under the "code" key. AppError fixups + context attach
+// as "fixups" and "context".
 
 package rpc
 
@@ -17,8 +17,6 @@ import (
 	"strings"
 
 	"github.com/twitchtv/twirp"
-
-	pulseerrors "github.com/frankbardon/pulse/errors"
 
 	prismerrors "github.com/frankbardon/prism/errors"
 )
@@ -63,15 +61,6 @@ func toTwirpError(err error) twirp.Error {
 				out = out.WithMeta("context", string(b))
 			}
 		}
-		return out
-	}
-
-	// *pulseerrors.CodedError → mapping by PULSE_ prefix.
-	var ce *pulseerrors.CodedError
-	if errors.As(err, &ce) {
-		code := twirpStatusForCode(string(ce.Code))
-		out := twirp.NewError(code, ce.Error()).
-			WithMeta("code", string(ce.Code))
 		return out
 	}
 
@@ -120,30 +109,8 @@ func twirpStatusForCode(code string) twirp.ErrorCode {
 	case strings.HasPrefix(code, "PRISM_RENDER_"),
 		strings.HasPrefix(code, "PRISM_WARN_"):
 		return twirp.Internal
-
-	// PULSE domain. Pulse codes do not all use a PULSE_ prefix —
-	// the catalog groups them by domain word (ENCODING_*,
-	// PROCESSING_*, DATA_*, SERVICE_*, PULSE_*, CLI_*, IO_*).
-	// Map by leading domain word.
-	case strings.HasPrefix(code, "IO_"),
-		strings.HasPrefix(code, "ENCODING_IO"),
-		strings.HasPrefix(code, "DATA_FILE"):
-		return twirp.Unavailable
-	case strings.HasPrefix(code, "ENCODING_INVALID"),
-		strings.HasPrefix(code, "ENCODING_TYPE_MISMATCH"),
-		strings.HasPrefix(code, "DATA_PARSE"),
-		strings.HasPrefix(code, "DATA_CONFIG"),
-		strings.HasPrefix(code, "SERVICE_VALIDATION"),
-		strings.HasPrefix(code, "PULSE_IMPORT_"):
-		return twirp.InvalidArgument
-	case strings.HasPrefix(code, "ENCODING_"),
-		strings.HasPrefix(code, "PROCESSING_"),
-		strings.HasPrefix(code, "DATA_"),
-		strings.HasPrefix(code, "SERVICE_"),
-		strings.HasPrefix(code, "PULSE_"),
-		strings.HasPrefix(code, "CLI_"):
-		return twirp.Internal
 	}
 
+	// Unknown / non-PRISM code → Internal.
 	return twirp.Internal
 }

@@ -203,14 +203,13 @@ func appendOneCell(out, src table.Column, i int) table.Column {
 // computeAggregate dispatches one AggOp over the row indices.
 func computeAggregate(tbl *table.Table, op nodes.AggOp, idx []int, shareTotals map[string]float64) (float64, error) {
 	alias := strings.ToLower(op.Op)
-	mapping, known := compile.AliasToPulse[alias]
-	if !known {
+	if !compile.IsAlias(alias) {
 		return 0, prismerrors.New("PRISM_COMPILE_003",
-			fmt.Sprintf("Aggregate alias %q is not in compile.AliasToPulse.", op.Op),
+			fmt.Sprintf("Aggregate alias %q is not a known aggregate.", op.Op),
 			map[string]any{"Alias": op.Op, "Backend": "inmem"},
 		)
 	}
-	_ = mapping // alias is supported; below we compute it client-side.
+	// alias is supported; below we compute it client-side.
 
 	// "count" works even when Field is empty. count(*) counts every
 	// row in the group; count(field) skips nulls (matches PostgreSQL

@@ -82,7 +82,7 @@ prism/
 │   ├── builder.go          # Spec → DAG
 │   ├── execute.go          # Bounded worker pool, partial failure
 │   ├── cache.go cache_lru.go # Table cache (LRU)
-│   ├── optimize.go passes/ # DedupSources, FilterPushdown, ProjectionPruning, AggregateFusion, PulseChainFusion, SampleInjection
+│   ├── optimize.go passes/ # DedupSources, FilterPushdown, ProjectionPruning, AggregateFusion, SampleInjection
 │   ├── render.go           # Plan diagnostics (text / dot / json)
 │   └── nodes/              # Source, Filter, Bin, Calculate, GroupAggregate, Join, Limit, Pivot, Project, Sample, Sort, Union, Unpivot, Window, Inline
 ├── compile/                # Plan/transform → Pulse request
@@ -181,7 +181,7 @@ Rules register through `validate/rules/register.go` (loaded via `init()`). Add a
 
 ### Plan + Execute
 
-`plan.Build(spec, registry) (*Plan, error)` constructs the DAG without executing. `plan.Execute(ctx, p, opts)` runs it. Topological order with bounded worker fan-out per `ExecOpts.Workers` (0 ⇒ `PRISM_QUERY_WORKERS` env ⇒ `runtime.NumCPU()`; 1 ⇒ serial). Partial-failure policy controlled by `ExecOpts.FailFast` (defaults true). Optimizer passes run between Build and Execute in this order: `DedupSources`, `FilterPushdown`, `ProjectionPruning`, `AggregateFusion`, `PulseChainFusion`, `SampleInjection`. `PulseChainFusion` collapses a source-rooted linear chain (`Filter`/`Calculate`/`GroupAggregate`/`Sort`) into one `pulse.ProcessChain` call so Pulse pushes filters down at the cohort reader and Prism never materialises the source `table.Table`; it requires a `GroupAggregate` (win condition) and falls back to per-node execution with `PRISM_PLAN_CHAIN_NOT_MERGEABLE` if a stage trips Pulse's chain gate. Add new passes via `plan/passes/register.go`.
+`plan.Build(spec, registry) (*Plan, error)` constructs the DAG without executing. `plan.Execute(ctx, p, opts)` runs it. Topological order with bounded worker fan-out per `ExecOpts.Workers` (0 ⇒ `PRISM_QUERY_WORKERS` env ⇒ `runtime.NumCPU()`; 1 ⇒ serial). Partial-failure policy controlled by `ExecOpts.FailFast` (defaults true). Optimizer passes run between Build and Execute in this order: `DedupSources`, `FilterPushdown`, `ProjectionPruning`, `AggregateFusion`, `SampleInjection`. All transforms execute over the in-memory backend against the materialised `table.Table`. Add new passes via `plan/passes/register.go`.
 
 ### Composition
 

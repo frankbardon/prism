@@ -407,13 +407,18 @@ var Codes = map[string]CodeMetadata{
 		},
 		SeeAlso: []string{"PRISM_PLAN_002", "PRISM_SPEC_007", "PRISM_RESOLVE_DUPLICATE_DATASET"},
 	},
+	// PRISM_PLAN_CHAIN_NOT_MERGEABLE is RETIRED but retained so
+	// `prism errors lookup` still resolves it. It was emitted by the
+	// chain-fusion optimizer pass, which pushed a source-rooted linear
+	// chain down to an external columnar reader. Prism now materialises
+	// every source into a table.Table and computes all filters and
+	// aggregates client-side over the in-memory backend, so there is no
+	// chain gate that can reject a fused stage.
 	"PRISM_PLAN_CHAIN_NOT_MERGEABLE": {
 		Code:    "PRISM_PLAN_CHAIN_NOT_MERGEABLE",
-		Message: `Pulse rejected a fused chain stage as non-mergeable for {{.Ref}}: {{.Reason}}.`,
+		Message: `Retired code: chain-fusion was removed; all transforms run over the in-memory backend.`,
 		Fixups: []string{
-			`Disable the Pulse-chain fusion pass and re-run; the chain falls back to per-node execution against the inmem backend.`,
-			`Check that every aggregate in the failing stage emits a scalar (mode/frequency are excluded by the v1 chain gate).`,
-			`Inspect the offending request via ` + "`prism plan <spec> --format json`" + ` to confirm which stage Pulse rejected.`,
+			`This code is no longer emitted. Filters, group-aggregates, and sorts all execute client-side against the materialised table — there is no fused chain that can fail.`,
 		},
 		SeeAlso: []string{"PRISM_PLAN_003"},
 	},

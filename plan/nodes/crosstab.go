@@ -5,7 +5,6 @@ import (
 	"crypto/sha256"
 	"encoding/hex"
 	"fmt"
-	"sort"
 	"strings"
 
 	"github.com/spf13/afero"
@@ -210,9 +209,9 @@ func overlayColumnName(o spec.CrosstabOverlay) string {
 
 // validateCrosstabCell checks the cell aggregate is a known friendly
 // alias and that a field is supplied when the aggregate requires one.
-// The alias set is the shared aggregate registry (compile.AliasToPulse
-// as the name catalogue only — the in-memory backend maps each alias
-// straight to its client-side computation, so no AGG_* value is read).
+// The alias set is the shared aggregate registry (compile.Aliases as the
+// name catalogue only — the in-memory backend maps each alias straight
+// to its client-side computation).
 func validateCrosstabCell(cell spec.CrosstabCell) error {
 	if cell.Aggregate == "" {
 		return prismerrors.New(
@@ -221,11 +220,11 @@ func validateCrosstabCell(cell spec.CrosstabCell) error {
 			map[string]any{},
 		)
 	}
-	if _, ok := compile.AliasToPulse[cell.Aggregate]; !ok {
+	if !compile.IsAlias(cell.Aggregate) {
 		return prismerrors.New(
 			"PRISM_SPEC_032",
 			fmt.Sprintf("crosstab.cell.aggregate %q is not a known aggregate alias.", cell.Aggregate),
-			map[string]any{"Aggregate": cell.Aggregate, "Known": sortedAliases()},
+			map[string]any{"Aggregate": cell.Aggregate, "Known": compile.AllAliases()},
 		)
 	}
 	if cell.Field == "" && cell.Aggregate != "count" {
@@ -236,15 +235,6 @@ func validateCrosstabCell(cell spec.CrosstabCell) error {
 		)
 	}
 	return nil
-}
-
-func sortedAliases() []string {
-	out := make([]string, 0, len(compile.AliasToPulse))
-	for k := range compile.AliasToPulse {
-		out = append(out, k)
-	}
-	sort.Strings(out)
-	return out
 }
 
 // crosstabDateComponents is the calendar-component set the date grouper

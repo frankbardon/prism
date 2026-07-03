@@ -65,8 +65,8 @@ func (FilterPushdownPass) Apply(d *plan.DAG) (*plan.DAG, bool, error) {
 		if err != nil {
 			continue
 		}
-		leftCols := schemaColSetFromEncoding(leftSchema)
-		rightCols := schemaColSetFromEncoding(rightSchema)
+		leftCols := schemaColSet(leftSchema)
+		rightCols := schemaColSet(rightSchema)
 
 		onlyLeft, onlyRight := true, true
 		for _, c := range cols {
