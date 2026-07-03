@@ -2,7 +2,7 @@
 
 ## Project Overview
 
-Prism is a visualization library for `.pulse` files. Ships as a Go library (`github.com/frankbardon/prism`) and a CLI binary (`cmd/prism/`). Library is primary; CLI is a thin adapter.
+Prism is a visualization library for materialized tabular data. Ships as a Go library (`github.com/frankbardon/prism`) and a CLI binary (`cmd/prism/`). Library is primary; CLI is a thin adapter.
 
 **Design principles:**
 
@@ -11,7 +11,7 @@ Prism is a visualization library for `.pulse` files. Ships as a Go library (`git
 - **Vega-Lite vocabulary, snake_case keys.** Single-word terms (`mark`, `encoding`, `transform`, `layer`, `facet`, `concat`, `repeat`) match Vega-Lite verbatim. Multi-word keys are snake_case throughout (`stroke_width`, `corner_radius`, `font_size`).
 - **Structured, expression-free transforms.** Prism has NO expression language. `filter` predicates, `calculate` derived columns, and condition `test` clauses are structured JSON built-ins (`spec/predicate.go` + `spec/calc_expr.go`): comparison / set / range / null-check leaves plus `and`/`or`/`not` combinators for filters; `op`/`fn`/`concat`/`case` nodes for calculate. A raw string where a predicate or expression is expected is rejected at decode. No `datum.` prefix, no operators, no JS function calls, no Vega expression eval. Anything richer is precomputed upstream by the caller.
 - **No-execute predict & validate.** `validate/` reads only the spec + optional schema (no row I/O); `plan` builds the DAG without executing it. Network and filesystem I/O happen only at `plan.Execute` time.
-- **Pulse relationship.** Prism depends on `github.com/frankbardon/pulse` for `.pulse` decoding, request compilation, and data ops. Pulse has no dependency on Prism. Custom cohort-analytics aliases `lift` and `share` are implemented client-side in `compile/inmem/` until Pulse upstreams them; `wmean`, `ratio`, `ci0`, `ci1` are first-class Pulse `AGG_*` ops as of Pulse v0.10.0.
+- **Pulse-free — consumes materialized data.** Prism has NO dependency on `github.com/frankbardon/pulse` and never reads `.pulse` files (the dependency was evicted in epic E4; a `go list -deps` firewall keeps it out — see Non-Skippable Gates). Prism renders **already-materialized rows**: inline `data.values` / `datasets.*.values`, or lazily via a caller-supplied `resolve.DataResolver` (`data: {ref}`). The downstream/consuming library owns 100% of Pulse — it runs the Pulse query and converts the response into a Prism spec with rows inlined. Every transform (including aggregates, `crosstab`, and `regression`) executes in-memory over `table.Table` in `compile/inmem/`; the aggregate aliases (`count`, `sum`, `mean`, …, `wmean`, `ratio`, `lift`, `share`, `ci0`, `ci1`) are all client-side computations with no backend op constant.
 
 ## The Update Demand
 
@@ -22,7 +22,7 @@ Any change to Prism code, configuration, spec vocabulary, schema bundle, or publ
 | A mark in `encode/marks/` | `docs/src/concepts/marks.md` + add a gallery entry under `docs/src/gallery/<family>/` if user-visible |
 | An encoding channel | `docs/src/concepts/encoding.md` + `schema/v1/` JSON Schema for the channel shape |
 | A transform (`filter`, `aggregate`, `bin`, `calculate`, `join`, `pivot`, `sample`, `sort`, `unpivot`, `window`, `crosstab`, `regression`, `timeunit`) | `docs/src/concepts/spec.md` (transform section) + add a Plan node under `plan/nodes/` + add a `Spec*Transform` union variant in `spec/transform_union.go` + register `transformDiscriminators` + `transformAsName` switch in `plan/build/build.go` + JSON Schema variant in `schema/v1/transform.schema.json` (`oneOf` entry + `$def`). The `filter` predicate grammar lives in `spec/predicate.go` and `calculate` in `spec/calc_expr.go` (structured built-ins, no expression string) — extending either operator/function set also touches those types, the `predicate_*` / `calc_expr` `$defs` in `schema/v1/transform.schema.json`, the `compile/inmem/filter.go` / `calculate.go` evaluators, and the `PRISM_SPEC_037` / `PRISM_SPEC_038` validate rules |
-| A Pulse request section newly consumed by Prism (e.g. `Crosstab`, `Joins`, `Regressions`, `Tests`) | New leaf plan node under `plan/nodes/` (mirror `pulse_chain.go` / `crosstab.go` — opens `pulse.Pulse` directly, no in-memory cohort handoff) + matching spec transform variant + validate rule constraining position (must be the first transform on the chain — Pulse has no in-memory cohort constructor) + `PRISM_PLAN_<SECTION>_REQUIRES_SOURCE` error code + plan-build dispatch that calls `Builder.RemoveNode(srcID)` to drop the dangling SourceNode |
+| A source-rooted analytic transform that pivots/fits the whole materialized table (e.g. `crosstab`, `regression`) | New leaf plan node under `plan/nodes/` (mirror `crosstab.go` / `regression.go` — consumes the upstream `SourceNode`'s materialized `table.Table`, computed pure-Go in `compile/inmem/`) + matching spec transform variant + validate rule constraining position (must be the first transform on the chain — there is no in-memory cohort constructor for a derived alias) + `PRISM_PLAN_<NAME>_REQUIRES_SOURCE` error code + plan-build dispatch in `plan/build/build.go` that resolves the immediate input to a `*nodes.SourceNode` (inline `data.values` binds an `InlineNode`, so such a fixture is validate-only unless a `datasets`-registered source ref is bound) |
 | A composition operator (`layer`, `concat`, `hconcat`, `vconcat`, `facet`, `repeat`) | `docs/src/concepts/composition.md` + composite encoder under `encode/encode_composite.go` |
 | A scale type | `docs/src/concepts/encoding.md` (scale section) + `encode/scale/` implementation + tick generator under `encode/ticks*.go` |
 | A theme (or built-in theme value) | `docs/src/concepts/themes.md` + `theme/<name>.go` + register in `theme/registry.go` + token entry in `theme/css.go` + gallery fixture in `docs/src/gallery/themes/` + gallery index row in `docs/src/gallery/index.md` |
@@ -74,7 +74,7 @@ prism/
 ├── validate/               # Shape + semantic validation (no row I/O)
 │   ├── shape.go            # Schema-aware structural checks
 │   ├── semantic.go         # Rule registry runner
-│   ├── lookup.go           # Field/dataset lookup (pulse-backed + static)
+│   ├── lookup.go           # Field/dataset lookup (native schema shim + static inline)
 │   ├── RULES.md            # PRISM_SPEC_NNN rule catalogue
 │   └── rules/              # One file per semantic rule
 ├── plan/                   # DAG builder + sequential/parallel executor
@@ -84,11 +84,10 @@ prism/
 │   ├── cache.go cache_lru.go # Table cache (LRU)
 │   ├── optimize.go passes/ # DedupSources, FilterPushdown, ProjectionPruning, AggregateFusion, SampleInjection
 │   ├── render.go           # Plan diagnostics (text / dot / json)
-│   └── nodes/              # Source, Filter, Bin, Calculate, GroupAggregate, Join, Limit, Pivot, Project, Sample, Sort, Union, Unpivot, Window, Inline
-├── compile/                # Plan/transform → Pulse request
-│   ├── aggregates.go       # Friendly alias → AGG_* table
-│   ├── expression.go       # Pulse expression compiler
-│   └── inmem/              # In-memory backend for hash join + client-side aggregates
+│   └── nodes/              # Source, Inline, Filter, Bin, Calculate, GroupAggregate, Join, Limit, Pivot, Project, Sample, Sort, TimeUnit, Union, Unpivot, Window, Crosstab, Regression
+├── compile/                # Transform → in-memory execution over table.Table
+│   ├── aggregates.go       # Friendly aggregate-alias catalogue (names only; all client-side)
+│   └── inmem/              # In-memory backend: filter/calculate/aggregate, hash join, crosstab pivot, OLS regression
 ├── encode/                 # Scene IR + scales + axis + legend + palette
 │   ├── encode.go           # Main spec → scene encoder
 │   ├── encode_composite.go # layer / concat / facet / repeat
@@ -107,7 +106,7 @@ prism/
 │   ├── svg/                # Go SVG renderer (canonical)
 │   └── canvas/             # Vendored ESM web component bridge (see `static/`)
 ├── resolve/                # Data source resolution
-│   ├── default.go          # Pulse-backed + file / archive / shard
+│   ├── default.go          # Inline-rows resolver (InlineResolver seam; no `.pulse` I/O)
 │   ├── registry_dataset.go # `datasets` block + `PRISM_DATASETS` env
 │   ├── data_resolver.go    # DataResolver interface + Dataset (runtime `data: {ref}` variant)
 │   └── resolver.go         # Resolver interface
@@ -148,7 +147,7 @@ Documentation lives in `docs/` (mdBook, published to <https://frankbardon.github
 - All identifiers, comments, docs are Prism-native. Module path: `github.com/frankbardon/prism`.
 - `PRISM_*` is reserved for error codes and environment variables. Use `PRISM_<DOMAIN>_NNN` (`PRISM_SPEC_001`) for numbered codes and `PRISM_<DOMAIN>_<DESCRIPTOR>` (`PRISM_RENDER_FORMAT_UNAVAILABLE`, `PRISM_JOIN_MAX_ROWS`) for descriptor-style codes. Warnings use the `PRISM_WARN_*` prefix.
 - Spec field keys are snake_case (`stroke_width`, `corner_radius`, `font_size`). Single-word Vega-Lite vocabulary (`mark`, `encoding`, `transform`, `layer`, `facet`) stays as-is. Channel names (`x`, `y`, `x2`, `y2`, `color`, `size`, `shape`, `opacity`, `text`, `tooltip`, `href`, `theta`, `radius`) stay verbatim from Vega-Lite.
-- Pulse aggregate aliases mirror Vega-Lite: `count`, `sum`, `mean`, `median`, `min`, `max`, `stdev`, `variance`, `q1`, `q3`, `ci0`, `ci1`. Prism adds `distinct`, `mode`, `frequency`, and the v0.22 distribution-shape scalars `range`, `skewness`, `kurtosis`, `null_count` (`distinct`, `mode`, `frequency`, `null_count` are universal — any field type; the distribution-shape scalars are quantitative/temporal only). Cohort-analytics extensions are `wmean`, `ratio`, `lift`, `share`. `frequency` aliases `AGG_FREQUENCY` for its SCALAR contract only — the modal count (occurrences of the most frequent value, the multiplicity companion to `mode`); its per-value cardinality map lives on Pulse's `MetaAggregator` `Components()`/`Rich()` surface, which Prism's row-shaped `Response.Data` path does not consume, so no map column kind is needed. `AGG_ZSCORE` (degenerate per group — mean z-score is always 0) is intentionally NOT aliased.
+- Aggregate aliases mirror Vega-Lite and are all computed client-side over the materialized `table.Table` (`compile/inmem/group_aggregate.go`; `compile/aggregates.go` is a name catalogue only — no backend op constant): `count`, `sum`, `mean`, `median`, `min`, `max`, `stdev`, `variance`, `q1`, `q3`, `ci0`, `ci1`. Prism adds `distinct`, `mode`, `frequency`, and the distribution-shape scalars `range`, `skewness`, `kurtosis`, `null_count` (`distinct`, `mode`, `frequency`, `null_count` are universal — any field type; the distribution-shape scalars are quantitative/temporal only). Cohort-analytics extensions are `wmean`, `ratio`, `lift`, `share`. `frequency` is the SCALAR modal count (occurrences of the most frequent value, the multiplicity companion to `mode`). A `zscore` aggregate is intentionally NOT offered — a per-group mean z-score is always 0.
 - Mark names are bare nouns: `bar`, `line`, `area`, `point`, `rule`, `text`, `tick`, `rect`, `arc`, `pie`, `donut`, `histogram`, `heatmap`, `boxplot`, `violin`, `sankey`, `funnel`, `sparkline`, `sparkbar`, `winloss`, `sparkarea`, `bullet`, `image`, `path`.
 
 ### Error handling
@@ -259,6 +258,7 @@ These tests live in `internal/gates/` and per-package `*_test.go` files. CI is c
 - **Smoke tests** — `cmd/prism/*_smoke_test.go` covers every CLI leaf end-to-end against fixtures. New CLI leaves require a smoke test.
 - **Gallery freshness** — `docs/src/gallery/` SVGs are regenerated by `render/svg/goldens_test.go` outputs; gallery changes require a matching test fixture update.
 - **MCP import firewall** — `internal/gates/mcp_firewall_test.go` asserts the SDK-free `mcp/` core never transitively imports an MCP SDK (`github.com/modelcontextprotocol/go-sdk` or `github.com/mark3labs/mcp-go`); the go-sdk binding stays quarantined in `mcp/gosdk/`. The companion `mcp/catalog_test.go` asserts every tool's input/output schema still reflects from struct tags via jsonschema-go.
+- **Pulse-free import firewall** — `internal/gates/pulse_firewall_test.go` shells out to `go list -deps` over the whole host module (regular + `-test` graphs) and the `cmd/prismwasm` entry under `GOOS=js/GOARCH=wasm`, and fails if any dependency path matches `github.com/frankbardon/pulse` or its former expression engine `github.com/expr-lang/expr`. This locks in the eviction: the core never re-acquires Pulse (or expr-lang) on any platform.
 
 ## What NOT to Do
 

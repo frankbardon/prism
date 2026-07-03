@@ -8,7 +8,7 @@ guide to port specs in minutes.
 
 | Vega-Lite | Prism | Why divergence |
 |---|---|---|
-| `data.url` | `data.source` | Pulse refs aren't URLs (could be cohort ID, GCS path, archive#shard). |
+| `data.url` | inline `data.values` / `datasets.*.values` (or a runtime `ref`) | Prism reads already-materialized rows; it never fetches a URL or reads a `.pulse` file. |
 | `transform[].aggregate` | same shape | identical |
 | `op: "mean"` | same | friendly aliases match Vega-Lite verbatim |
 | `mark`, `encoding` | same vocabulary | same |
@@ -17,7 +17,7 @@ guide to port specs in minutes.
 | `selection` | same shape | point + interval supported v1 |
 | `params` / signals | **dropped** | no reactive runtime |
 | `layer`, `concat`, `facet`, `repeat` | same | full composition v1 |
-| `condition` encodings | **dropped v1** | post-v1 feature |
+| `condition` encodings | same shape | selection + test predicate conditions supported |
 | `strokeWidth` (camelCase) | `stroke_width` | snake_case throughout |
 | Vega expression language | structured `filter` / `calculate` built-ins | no expression language, no JS eval |
 
@@ -65,14 +65,13 @@ Vega-Lite parity:
 count sum mean median min max stdev variance q1 q3 ci0 ci1
 ```
 
-Pulse adds: `distinct mode`.
+Prism adds: `distinct mode`.
 
 Cohort-analytics extensions (Prism-only): `wmean ratio lift share`.
 
 ## Dropped features (v1)
 
 - `params` / signals — no reactive runtime.
-- `condition` encodings — post-v1.
 - Inline Vega expressions everywhere — use the structured `filter` /
   `calculate` built-ins, or pre-compute richer logic before the data
   reaches Prism.
@@ -114,7 +113,11 @@ Cohort-analytics extensions (Prism-only): `wmean ratio lift share`.
 ```json
 {
   "$schema": "urn:prism:schema:v1:spec",
-  "data": {"source": "cars.pulse"},
+  "data": {"values": [
+    {"Origin": "USA",    "Horsepower": 130},
+    {"Origin": "Europe", "Horsepower": 105},
+    {"Origin": "Japan",  "Horsepower": 95}
+  ]},
   "transform": [{"filter": {"op": "gt", "field": "Horsepower", "value": 100}}],
   "mark": {"type": "bar", "corner_radius": 4},
   "encoding": {
@@ -127,7 +130,7 @@ Cohort-analytics extensions (Prism-only): `wmean ratio lift share`.
 
 Diffs:
 - `$schema`: URN form.
-- `data.url` → `data.source`; `.json` → `.pulse`.
+- `data.url` → inline `data.values` (the caller materializes the rows; Prism reads no URL or `.pulse` file).
 - `filter`: expression string → structured `{op, field, value}` predicate.
 - `cornerRadius` → `corner_radius`.
 - `color` channel: explicit `type` (Vega-Lite infers; Prism is strict).

@@ -11,8 +11,13 @@ This cookbook shows how to handle the warning intentionally.
 {
   "$schema": "urn:prism:schema:v1:spec",
   "datasets": {
-    "sales":  {"source": "cohorts/q1_sales.pulse"},
-    "quotas": {"source": "cohorts/q1_quotas.pulse"}
+    "sales": {"values": [
+      {"region": "north", "amount": 1200},
+      {"region": "south", "amount": 900}
+    ]},
+    "quotas": {"values": [
+      {"region": "north", "target": 1000}
+    ]}
   },
   "data": {"name": "joined"},
   "transform": [{

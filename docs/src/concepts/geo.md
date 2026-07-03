@@ -51,7 +51,11 @@ For a choropleth, bind your own data and a color channel:
 
 ```json
 {
-  "data": {"source": "country_metrics.pulse"},
+  "data": {"values": [
+    {"iso_a3": "USA", "gdp_per_capita": 76300},
+    {"iso_a3": "CAN", "gdp_per_capita": 55500},
+    {"iso_a3": "GBR", "gdp_per_capita": 46100}
+  ]},
   "mark": "geoshape",
   "projection": {"type": "naturalearth"},
   "encoding": {

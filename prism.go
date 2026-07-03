@@ -44,7 +44,8 @@ type CompileOptions struct {
 // CompiledPlan is the structured output of Compile: the same
 // information the renderer would consume, exposed as a stable JSON
 // shape. Callers can inspect the plan, diff two plans against each
-// other, or hand it to a renderer separately via RenderPlan.
+// other, or hand its Scene to a renderer separately (a render.Renderer,
+// e.g. render/svg).
 //
 // The Scene field carries the canonical IR; the flattened views
 // (Marks, Scales, Data, Layout) summarise it for programmatic
@@ -112,9 +113,10 @@ type Diagnostic struct {
 }
 
 // Compile runs Validate → Plan → Execute → Encode and returns a
-// CompiledPlan. The result is renderer-agnostic; pass it to
-// RenderPlan to produce pixel bytes. Typical cost is dominated by
-// the executor (data I/O + aggregation); the marshalled CompiledPlan
+// CompiledPlan. The result is renderer-agnostic; pass its Scene to a
+// render.Renderer (e.g. render/svg) to produce bytes. Typical cost is
+// dominated by the executor (aggregation over the materialised rows);
+// the marshalled CompiledPlan
 // itself is light. Callers that want only the plan summary can
 // discard CompiledPlan.Scene to drop the full IR.
 func Compile(ctx context.Context, s *spec.Spec, opts CompileOptions) (*CompiledPlan, error) {
@@ -128,9 +130,10 @@ func Compile(ctx context.Context, s *spec.Spec, opts CompileOptions) (*CompiledP
 	if buildOpts.Resolver == nil {
 		// Pulse-free resolver: data enters via inline data.values /
 		// datasets or a caller-supplied DataResolver. When a DataResolver
-		// is present, wire it through the inline path so a spec's
-		// data.source ref binds to the caller's rows too (data.ref uses
-		// buildOpts.DataResolver directly).
+		// is present, wire it through the inline path so a name-bound
+		// source (populated by the DatasetRegistry) resolves to the
+		// caller's rows too (data.ref uses buildOpts.DataResolver
+		// directly).
 		if buildOpts.DataResolver != nil {
 			buildOpts.Resolver = resolve.NewWithData(nil, buildOpts.DataResolver)
 		} else {

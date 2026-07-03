@@ -95,7 +95,7 @@ For live interactive rendering in a browser, see [`index.html`](index.html).
 |---|---|
 | [actual_vs_benchmark](multi-source/actual_vs_benchmark.prism.json) | <img src="multi-source/actual_vs_benchmark.svg" width="240"> |
 | [multi_source_join](multi-source/multi_source_join.prism.json) | <img src="multi-source/multi_source_join.svg" width="240"> |
-| [bar_pulse_backed](multi-source/bar_pulse_backed.prism.json) | <img src="multi-source/bar_pulse_backed.svg" width="240"> |
+| [bar_inline](multi-source/bar_inline.prism.json) | <img src="multi-source/bar_inline.svg" width="240"> |
 
 ## Transforms
 

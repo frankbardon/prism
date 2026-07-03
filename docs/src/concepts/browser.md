@@ -77,14 +77,17 @@ attribute:
 <prism-chart spec="/specs/brand_score.prism.json"></prism-chart>
 ```
 
-The browser fetches any referenced `.pulse` files via the
-[fetch-backed afero.Fs](#fetch-backed-fs), runs the full pipeline
-in WASM, and mounts the resulting SVG. Inline data
-(`data: {values: [...]}`) skips the fetch path entirely.
+The spec carries its own rows: inline `data: {values: [...]}` /
+`datasets.*.values`, or a `datasets` attribute on the element. For
+lazy or large data, register a JS `DataResolver` via
+`prism.setDataResolver(...)` and reference it with `data: {ref}`. Prism
+never fetches or decodes a `.pulse` file in the browser — the host
+materializes the rows and hands them to Prism. WASM then runs the full
+pipeline and mounts the resulting SVG.
 
 ### Server compile (opt-in)
 
-Hosts that prefer to keep Pulse loading behind a trusted backend
+Hosts that prefer to offload the compile stage to a trusted backend
 add a `compile-server` attribute:
 
 ```html
@@ -117,8 +120,8 @@ const plan = JSON.parse(planJSON);
 // plan.scene         — full Scene IR (same as `prism.execute` output)
 ```
 
-Cost is dominated by data I/O + aggregation (the executor); the
-flattened plan view itself is light. For specs whose data fits
+Cost is dominated by aggregation over the materialized rows (the
+executor); the flattened plan view itself is light. For specs whose data fits
 in memory, compile-only typically runs 10–50× faster than a
 full `prism.execute` + `prism.render` pair, since the encode +
 SVG-emit stages are skipped.
@@ -138,28 +141,21 @@ Use cases:
 - **Pre-render previews** — show the user "3 marks across
   2 facets" before committing to a render.
 
-## Fetch-backed Fs
+## Fetch-backed assets
 
-Dataset references resolve through an `afero.Fs` adapter backed
-by browser `fetch`. The first access to a `.pulse` URL issues a
-`GET` and buffers the body in memory; subsequent opens reuse the
-cached bytes for the page lifetime.
+Prism never fetches or decodes data rows in the browser — the host
+supplies them inline (`data.values` / `datasets.*.values`) or through a
+JS `DataResolver` registered with `prism.setDataResolver(...)`. The only
+assets Prism itself fetches are **geodata tiers** (`geoshape` / `geopoint`
+marks), pulled from `${origin}/static/prism/geodata/` (override via
+`prism.geo.setBundleURL(url)`), and any URL-referenced Scene JSON the
+page loads directly. Those `GET`s go through a fetch adapter that
+dedupes by URL and buffers the body for the page lifetime.
 
-Inline data and short single-shard cohorts work out of the box.
-Archive shard references (`archive.pulse#shard.pulse`) work when
-the origin serves the archive in one response — random-access
-range reads are a v2 enhancement (see
-[BACKLOG.md](https://github.com/frankbardon/prism/blob/main/.planning/BACKLOG.md)).
-
-Two error codes surface fetch problems:
-
-- `PRISM_WASM_001` — fetch failure (CORS, network, non-2xx).
-- `PRISM_WASM_002` — origin server rejects `Range:` requests
-  (only matters once range support lands).
-
-Both arrive in the JS bridge as standard `{ok:false, error}`
-envelopes; `prism.mjs` rethrows them as `Error` instances with
-`prismCode` + `prismFixups` attached.
+A failed asset fetch surfaces as `PRISM_WASM_001` (CORS, network, or
+non-2xx). It arrives in the JS bridge as a standard `{ok:false, error}`
+envelope; `prism.mjs` rethrows it as an `Error` with `prismCode` +
+`prismFixups` attached.
 
 ## What's still in JS
 

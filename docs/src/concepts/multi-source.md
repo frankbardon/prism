@@ -1,6 +1,6 @@
 # Multi-source
 
-Composing N Pulse queries into one chart is a first-class workflow.
+Composing N materialized datasets into one chart is a first-class workflow.
 
 ## Datasets block
 
@@ -81,8 +81,8 @@ Wire shared aliases via a JSON config file:
 ```json
 {
   "datasets": {
-    "current": "cohorts/brand_q1.pulse",
-    "prior":   "cohorts/brand_q4.pulse"
+    "current": "brand_q1",
+    "prior":   "brand_q4"
   }
 }
 ```
@@ -93,13 +93,15 @@ prism serve --datasets-config datasets.json --addr :8080
 ```
 
 Specs that reference `{"data": {"name": "current"}}` resolve through
-the registry. Server-side cache deduplicates fetches across requests.
+the registry to an opaque ref, which a caller-supplied `DataResolver`
+turns into materialized rows (Prism reads no file itself). Server-side
+cache deduplicates resolution across requests.
 
 ## Browser-side dataset registry
 
 ```html
-<prism-dataset name="current" src="cohorts/brand_q1.pulse"></prism-dataset>
-<prism-dataset name="prior"   src="cohorts/brand_q4.pulse"></prism-dataset>
+<prism-dataset name="current" src="cohorts/brand_q1.rows.json"></prism-dataset>
+<prism-dataset name="prior"   src="cohorts/brand_q4.rows.json"></prism-dataset>
 
 <prism-chart spec="overview.prism.json"></prism-chart>
 <prism-chart spec="detail.prism.json"></prism-chart>

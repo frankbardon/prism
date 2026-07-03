@@ -7,7 +7,12 @@ Render one mini-chart per partition of a categorical field.
 ```json
 {
   "$schema": "urn:prism:schema:v1:spec",
-  "data": {"source": "cohorts/q1.pulse"},
+  "data": {"values": [
+    {"region": "north", "brand_id": "alpha", "score": 0.62},
+    {"region": "north", "brand_id": "beta",  "score": 0.48},
+    {"region": "south", "brand_id": "alpha", "score": 0.55},
+    {"region": "south", "brand_id": "beta",  "score": 0.51}
+  ]},
   "facet": {"column": {"field": "region"}},
   "spec": {
     "$schema": "urn:prism:schema:v1:spec",

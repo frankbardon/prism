@@ -78,11 +78,12 @@ loaded instance.
 ## 3. Share datasets across charts
 
 `<prism-dataset>` declares an alias the WASM bridge resolves at
-fetch time:
+fetch time. The `src` must serve **materialized rows** (a JSON array
+of row objects) — Prism does not decode `.pulse` files:
 
 ```html
-<prism-dataset name="current" src="/data/q1.pulse"></prism-dataset>
-<prism-dataset name="bench"   src="/data/industry.pulse"></prism-dataset>
+<prism-dataset name="current" src="/data/q1.rows.json"></prism-dataset>
+<prism-dataset name="bench"   src="/data/industry.rows.json"></prism-dataset>
 
 <prism-chart spec="/specs/actual_vs_benchmark.prism.json"></prism-chart>
 <prism-chart spec="/specs/trend.prism.json"></prism-chart>
@@ -134,8 +135,8 @@ components register globally; any page that uses
 - **Preload the wasm**:
   `<link rel="preload" as="fetch" type="application/wasm" href="prism.wasm" crossorigin>`
   starts the download in parallel with the page parse.
-- **Set CORS**: when the dataset origin differs from the page
-  origin, the `.pulse` host must return `Access-Control-Allow-
+- **Set CORS**: when the dataset (or geodata) origin differs from
+  the page origin, that host must return `Access-Control-Allow-
   Origin` matching the page. Errors surface as `PRISM_WASM_001`.
 - **Theme switching**: set `theme="dark"` on `<prism-chart>` —
   the browser re-runs `executeSpec` with the new theme. Fast
@@ -145,6 +146,6 @@ components register globally; any page that uses
 
 - Initial WASM download is ~12 MiB gzipped. Cache aggressively
   (immutable hashed filename + 1-year Cache-Control).
-- Large `.pulse` files (>50 MB) decode slowly in the browser on
-  mid-range hardware. Pre-aggregate at build time when the
-  chart's audience is mobile.
+- Large inline datasets (>50 MB of rows) parse and aggregate slowly
+  in the browser on mid-range hardware. Pre-aggregate upstream when
+  the chart's audience is mobile.
