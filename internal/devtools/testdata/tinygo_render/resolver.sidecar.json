@@ -1,0 +1,11 @@
+{
+  "resolver": {
+    "cohort": {
+      "values": [
+        {"label": "alpha", "score": 0.42},
+        {"label": "delta", "score": 0.71},
+        {"label": "gamma", "score": 0.58}
+      ]
+    }
+  }
+}

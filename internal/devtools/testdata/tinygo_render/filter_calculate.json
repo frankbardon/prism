@@ -1,0 +1,22 @@
+{
+  "$schema": "urn:prism:schema:v1:spec",
+  "title": "ARPU by region (structured filter + calculate)",
+  "data": {
+    "name": "cohort",
+    "values": [
+      {"region": "north", "revenue": 14000, "users": 200},
+      {"region": "south", "revenue": 9000,  "users": 150},
+      {"region": "east",  "revenue": 12000, "users": 90},
+      {"region": "west",  "revenue": 8000,  "users": 40}
+    ]
+  },
+  "transform": [
+    {"filter": {"op": "gt", "field": "users", "value": 100}},
+    {"calculate": {"op": "div", "operands": [{"field": "revenue"}, {"field": "users"}]}, "as": "arpu"}
+  ],
+  "mark": "bar",
+  "encoding": {
+    "x": {"field": "region", "type": "nominal"},
+    "y": {"field": "arpu",   "type": "quantitative"}
+  }
+}

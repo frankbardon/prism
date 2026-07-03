@@ -1,0 +1,25 @@
+{
+  "datasets": {"cohort": "cohort_src"},
+  "resolver": {
+    "cohort_src": {
+      "values": [
+        {"region": "north", "quarter": "Q1", "revenue": 14000},
+        {"region": "north", "quarter": "Q2", "revenue": 14800},
+        {"region": "north", "quarter": "Q3", "revenue": 15600},
+        {"region": "north", "quarter": "Q4", "revenue": 16400},
+        {"region": "south", "quarter": "Q1", "revenue": 10880},
+        {"region": "south", "quarter": "Q2", "revenue": 11680},
+        {"region": "south", "quarter": "Q3", "revenue": 12480},
+        {"region": "south", "quarter": "Q4", "revenue": 13280},
+        {"region": "east",  "quarter": "Q1", "revenue": 12260},
+        {"region": "east",  "quarter": "Q2", "revenue": 13060},
+        {"region": "east",  "quarter": "Q3", "revenue": 13860},
+        {"region": "east",  "quarter": "Q4", "revenue": 14660},
+        {"region": "west",  "quarter": "Q1", "revenue": 8640},
+        {"region": "west",  "quarter": "Q2", "revenue": 9440},
+        {"region": "west",  "quarter": "Q3", "revenue": 10240},
+        {"region": "west",  "quarter": "Q4", "revenue": 11040}
+      ]
+    }
+  }
+}
