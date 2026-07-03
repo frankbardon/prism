@@ -7,7 +7,7 @@ import (
 	"sort"
 	"strings"
 
-	"github.com/spf13/afero"
+	"github.com/frankbardon/prism/internal/vfs"
 )
 
 // DatasetRegistry resolves spec-level dataset aliases (`{"data":
@@ -87,11 +87,11 @@ func (EmptyDatasetRegistry) Names() []string { return nil }
 //
 // Returns an empty registry (not nil) when the file is absent so
 // callers can chain it through ChainDatasetRegistries unconditionally.
-func LoadDatasetRegistryFile(path string, fs afero.Fs) (DatasetRegistry, error) {
+func LoadDatasetRegistryFile(path string, fs vfs.Fs) (DatasetRegistry, error) {
 	if fs == nil {
-		fs = afero.NewOsFs()
+		fs = vfs.OsFs()
 	}
-	data, err := afero.ReadFile(fs, path)
+	data, err := vfs.ReadFile(fs, path)
 	if err != nil {
 		if os.IsNotExist(err) {
 			return MapDatasetRegistry{}, nil

@@ -10,10 +10,9 @@ import (
 	"encoding/hex"
 	"fmt"
 
-	"github.com/spf13/afero"
-
 	prismerrors "github.com/frankbardon/prism/errors"
 	"github.com/frankbardon/prism/internal/limits"
+	"github.com/frankbardon/prism/internal/vfs"
 	"github.com/frankbardon/prism/plan"
 	"github.com/frankbardon/prism/resolve"
 	"github.com/frankbardon/prism/table"
@@ -27,7 +26,7 @@ import (
 type SourceNode struct {
 	id       plan.NodeID
 	ref      string
-	fs       afero.Fs
+	fs       vfs.Fs
 	resolver resolve.Resolver
 }
 
@@ -36,7 +35,7 @@ type SourceNode struct {
 // honours at execute time (test code passes afero.NewMemMapFs()).
 // resolver must be non-nil; pass resolve.New(nil) for the default
 // EmptyRegistry-backed implementation.
-func New(ref string, fs afero.Fs, r resolve.Resolver) *SourceNode {
+func New(ref string, fs vfs.Fs, r resolve.Resolver) *SourceNode {
 	return &SourceNode{
 		id:       plan.NodeID(deriveID(ref)),
 		ref:      ref,
@@ -66,7 +65,7 @@ func (n *SourceNode) Ref() string { return n.ref }
 // Optimizer passes that rewrite a source-rooted subtree (e.g.
 // PulseChainFusionPass) reuse this fs so the replacement node still
 // honours an in-memory test environment.
-func (n *SourceNode) FS() afero.Fs { return n.fs }
+func (n *SourceNode) FS() vfs.Fs { return n.fs }
 
 // Kind implements plan.Labeled.
 func (n *SourceNode) Kind() string { return "SourceNode" }

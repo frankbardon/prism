@@ -7,9 +7,8 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/spf13/afero"
-
 	prismerrors "github.com/frankbardon/prism/errors"
+	"github.com/frankbardon/prism/internal/vfs"
 	"github.com/frankbardon/prism/plan"
 	"github.com/frankbardon/prism/spec"
 	"github.com/frankbardon/prism/table"
@@ -31,7 +30,7 @@ type RegressionNode struct {
 	id        plan.NodeID
 	input     plan.NodeID
 	ref       string
-	fs        afero.Fs
+	fs        vfs.Fs
 	body      spec.RegressionBody
 	outSchema *table.Schema
 	predictor string
@@ -41,7 +40,7 @@ type RegressionNode struct {
 
 // NewRegression constructs a RegressionNode. inSchema is the upstream
 // input's schema; the output schema is {predictor, fitted}, two rows.
-func NewRegression(id, input plan.NodeID, ref string, fs afero.Fs, inSchema *table.Schema, t *spec.RegressionTransform) (*RegressionNode, error) {
+func NewRegression(id, input plan.NodeID, ref string, fs vfs.Fs, inSchema *table.Schema, t *spec.RegressionTransform) (*RegressionNode, error) {
 	if inSchema == nil {
 		return nil, fmt.Errorf("regression: nil input schema")
 	}
@@ -114,7 +113,7 @@ func (n *RegressionNode) Fingerprint() string {
 func (n *RegressionNode) Ref() string { return n.ref }
 
 // FS returns the afero filesystem this node was constructed with.
-func (n *RegressionNode) FS() afero.Fs { return n.fs }
+func (n *RegressionNode) FS() vfs.Fs { return n.fs }
 
 // Body returns the regression body for renderer + test inspection.
 func (n *RegressionNode) Body() spec.RegressionBody { return n.body }

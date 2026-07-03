@@ -6,9 +6,8 @@ import (
 	"io"
 	"strings"
 
-	"github.com/spf13/afero"
-
 	prismerrors "github.com/frankbardon/prism/errors"
+	"github.com/frankbardon/prism/internal/vfs"
 	"github.com/frankbardon/prism/table"
 )
 
@@ -54,7 +53,7 @@ const maxRegistryDepth = 4
 // Resolve implements Resolver. The Pulse byte-loader is gone, so there
 // are no source bytes to stream: every ref reports
 // PRISM_RESOLVE_REF_UNRESOLVED. Callers wanting rows use ResolveInline.
-func (r *DefaultResolver) Resolve(ref string, _ afero.Fs) (io.ReadCloser, *table.Schema, error) {
+func (r *DefaultResolver) Resolve(ref string, _ vfs.Fs) (io.ReadCloser, *table.Schema, error) {
 	return nil, nil, unresolvedRef(ref)
 }
 

@@ -204,9 +204,11 @@ Three built-in themes ship: `light` (default), `dark`, `print`. Each lives in `t
 
 ## Build / Env
 
-`make build` (default), `make build-wasm`, `make test`, `make test-race`, `make fmt`, `make fmt-check`, `make vet`, `make lint`, `make cover`, `make clean`, `make proto`, `make docs`, `make docs-serve`, `make docs-clean`. A `.env` at repo root is auto-loaded by the Makefile.
+`make build` (default), `make build-wasm`, `make build-wasm-tinygo`, `make test`, `make test-race`, `make fmt`, `make fmt-check`, `make vet`, `make lint`, `make cover`, `make clean`, `make proto`, `make docs`, `make docs-serve`, `make docs-clean`. A `.env` at repo root is auto-loaded by the Makefile.
 
 `make build-wasm` produces `bin/prism.wasm` from `cmd/prismwasm` under `GOOS=js GOARCH=wasm -ldflags="-s -w" -trimpath -buildvcs=false`. The companion `wasm_exec.js` is copied from `$(go env GOROOT)/lib/wasm/wasm_exec.js` and asserted byte-identical by `cmd/prism/static_bundle_smoke_test.go`.
+
+`make build-wasm-tinygo` is the parallel **TinyGo** wasm build (`tinygo build -target=wasm -stack-size=$(TINYGO_STACK_SIZE) -o bin/prism.wasm ./cmd/prismwasm`, TinyGo 0.41.1+). It produces a much smaller module than the Go toolchain (~7.2 MB raw / ~2.2 MB gzip vs ~14.5 MB / ~3.5 MB). Its companion `wasm_exec.js` comes from `$(tinygo env TINYGOROOT)/targets/wasm_exec.js` and is **NOT** byte-compatible with Go's — the two build paths must not be crossed (each binary pairs with its own loader). The filesystem seam is routed through `internal/vfs` (a host alias for `github.com/spf13/afero`, a native afero-free interface under the `wasm` build tag) so afero — and thus `net/http`, which TinyGo cannot compile for js/wasm — never enters the WASM import graph. `-stack-size` is raised from TinyGo's ~16 KB default because the JSON-Schema shape validator recurses deep enough to trap a small stack. `cmd/prismwasm/main.go` parks `main` on a package-level channel (not `select{}`, which TinyGo folds to a deadlock panic).
 
 **Environment variables:**
 

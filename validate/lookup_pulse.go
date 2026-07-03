@@ -1,8 +1,7 @@
 package validate
 
 import (
-	"github.com/spf13/afero"
-
+	"github.com/frankbardon/prism/internal/vfs"
 	"github.com/frankbardon/prism/resolve"
 )
 
@@ -25,7 +24,7 @@ type PulseLookup struct {
 // NewPulseLookup constructs a PulseLookup. The resolver and fs
 // parameters are retained for call-site compatibility but are no longer
 // consulted (no `.pulse` is read); bindings start empty.
-func NewPulseLookup(_ resolve.Resolver, _ afero.Fs) *PulseLookup {
+func NewPulseLookup(_ resolve.Resolver, _ vfs.Fs) *PulseLookup {
 	return &PulseLookup{bindings: map[string]string{}}
 }
 

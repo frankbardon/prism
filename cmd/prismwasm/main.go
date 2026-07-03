@@ -70,8 +70,27 @@ func main() {
 
 	// main returning unloads the WASM module; block forever so the
 	// exported funcs remain callable for the page lifetime.
-	select {}
+	//
+	// The block is a receive on keepAlive, not `select {}` nor a receive
+	// on an inline channel: TinyGo's compiler folds a *provably*-
+	// senderless block into runtime.deadlock(), which panics under the
+	// js/wasm asyncify scheduler. The close below — reachable but taken
+	// only when the host sets globalThis.__prismHalt (it never does in
+	// normal operation) — gives keepAlive a reachable sender, so TinyGo
+	// keeps the receive as a real channel park. The parked main goroutine
+	// leaves the run queue, the asyncify scheduler returns to the JS event
+	// loop, and the js.Func callbacks stay invocable. Standard Go blocks
+	// here identically (the branch is simply not taken).
+	if js.Global().Get("__prismHalt").Truthy() {
+		close(keepAlive)
+	}
+	<-keepAlive
 }
+
+// keepAlive parks main for the module lifetime. Package-level with the
+// reachable close() in main so TinyGo does not fold the `<-keepAlive`
+// receive into a deadlock panic (see the note in main).
+var keepAlive = make(chan struct{})
 
 // versionFunc returns the Prism version string verbatim.
 func versionFunc(_ js.Value, _ []js.Value) any { return versionString }

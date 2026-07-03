@@ -18,8 +18,7 @@ import (
 	"context"
 	"io"
 
-	"github.com/spf13/afero"
-
+	"github.com/frankbardon/prism/internal/vfs"
 	"github.com/frankbardon/prism/table"
 )
 
@@ -30,7 +29,7 @@ import (
 // existing call sites (prism.go, CLI, wasm) keep compiling until E4-S1b
 // migrates them; new code should use InlineResolver.
 type Resolver interface {
-	Resolve(ref string, fs afero.Fs) (io.ReadCloser, *table.Schema, error)
+	Resolve(ref string, fs vfs.Fs) (io.ReadCloser, *table.Schema, error)
 }
 
 // InlineResolver is the Pulse-free rows seam. A Resolver that can serve

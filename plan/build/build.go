@@ -39,9 +39,8 @@ import (
 	"fmt"
 	"strconv"
 
-	"github.com/spf13/afero"
-
 	prismerrors "github.com/frankbardon/prism/errors"
+	"github.com/frankbardon/prism/internal/vfs"
 	"github.com/frankbardon/prism/plan"
 	"github.com/frankbardon/prism/plan/nodes"
 	"github.com/frankbardon/prism/resolve"
@@ -62,7 +61,7 @@ import (
 // registry; the builder behaviour reverts to P03–P06 (name-only ref
 // raises PRISM_PLAN_003 when the alias is undeclared inline).
 type Options struct {
-	FS              afero.Fs
+	FS              vfs.Fs
 	Resolver        resolve.Resolver
 	Backend         plan.Backend
 	DatasetRegistry resolve.DatasetRegistry
@@ -87,7 +86,7 @@ func Build(s *spec.Spec, opts Options) (*plan.DAG, plan.NodeID, error) {
 		return nil, "", err
 	}
 	if opts.FS == nil {
-		opts.FS = afero.NewOsFs()
+		opts.FS = vfs.OsFs()
 	}
 	if opts.Resolver == nil {
 		opts.Resolver = resolve.New(nil)

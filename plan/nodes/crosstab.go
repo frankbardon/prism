@@ -7,10 +7,9 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/spf13/afero"
-
 	"github.com/frankbardon/prism/compile"
 	prismerrors "github.com/frankbardon/prism/errors"
+	"github.com/frankbardon/prism/internal/vfs"
 	"github.com/frankbardon/prism/plan"
 	"github.com/frankbardon/prism/spec"
 	"github.com/frankbardon/prism/table"
@@ -36,7 +35,7 @@ type CrosstabNode struct {
 	id        plan.NodeID
 	input     plan.NodeID
 	ref       string
-	fs        afero.Fs
+	fs        vfs.Fs
 	body      spec.CrosstabBody
 	outSchema *table.Schema
 	cellAs    string
@@ -47,7 +46,7 @@ type CrosstabNode struct {
 // input's schema — used to compute the row / column grouper output
 // types so the downstream encoder sees the right column kinds. The
 // caller (plan/build) obtains it via SourceNode.Schema(nil).
-func NewCrosstab(id, input plan.NodeID, ref string, fs afero.Fs, inSchema *table.Schema, body spec.CrosstabBody) (*CrosstabNode, error) {
+func NewCrosstab(id, input plan.NodeID, ref string, fs vfs.Fs, inSchema *table.Schema, body spec.CrosstabBody) (*CrosstabNode, error) {
 	if inSchema == nil {
 		return nil, fmt.Errorf("crosstab: nil input schema")
 	}
@@ -107,7 +106,7 @@ func (n *CrosstabNode) Fingerprint() string {
 func (n *CrosstabNode) Ref() string { return n.ref }
 
 // FS returns the afero filesystem this node was constructed with.
-func (n *CrosstabNode) FS() afero.Fs { return n.fs }
+func (n *CrosstabNode) FS() vfs.Fs { return n.fs }
 
 // Body returns the crosstab body for the backend + test inspection.
 func (n *CrosstabNode) Body() spec.CrosstabBody { return n.body }
