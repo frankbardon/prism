@@ -277,6 +277,40 @@ PRISM_CROSS_IMPL=1 go test ./internal/devtools/
 
 The runner needs `node` on `PATH`; no `npm install` is required.
 
+### TinyGo ↔ standard-Go float parity
+
+Prism ships a second WASM build path (`make build-wasm-tinygo`)
+that produces a much smaller module. TinyGo links its own
+`strconv`, and **every** SVG coordinate funnels through the single
+`render.FormatFloat` helper (`render/precision.go`, pinned to 3
+decimals). If TinyGo rounded or stringified floats differently
+from standard Go, the coordinate goldens would drift — this was
+flagged as the highest risk of the TinyGo migration.
+
+It does not drift. A dedicated parity harness proves it:
+
+```bash
+PRISM_CROSS_IMPL_TINYGO=1 go test ./internal/devtools/ -run TinyGo
+```
+
+- `TestTinyGoWasmSVGParity` builds a TinyGo `js/wasm` module from
+  `cmd/prismwasm`, renders a float-diverse fixture corpus (bars,
+  curves, trigonometric arcs, bezier ribbons, dense rect/box/violin
+  layouts) under Node with TinyGo's paired `wasm_exec.js`, and
+  diffs each SVG byte-for-byte against the committed standard-Go
+  `go.svg`. All fixtures are byte-identical.
+- `TestTinyGoFloatFormatParity` drives `render.FormatFloat` over an
+  edge-case corpus (half-way rounding, trailing-zero trimming,
+  negative zero, magnitude extremes, `NaN`/`±Inf`) in three builds —
+  host-native, standard-Go wasm, and TinyGo wasm — and asserts all
+  three agree. The host-side pin lives in
+  `render/precision_test.go`.
+
+Because parity holds unmodified, **no float-emission change was
+needed**: standard-Go and TinyGo already produce identical bytes.
+The harness is opt-in (mirroring `PRISM_CROSS_IMPL`) because it
+needs both `node` and `tinygo` on `PATH`.
+
 ## Standalone HTML demo
 
 `prism static-bundle --wasm ./public/prism` writes a working

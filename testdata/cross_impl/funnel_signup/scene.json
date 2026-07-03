@@ -50,178 +50,85 @@
             "h": 510
           },
           "title": {
-            "content": "Brand score (basic bar)",
+            "content": "Signup funnel",
             "x": 410,
             "y": 20,
             "style": {}
           },
-          "axes": [
+          "legends": [
             {
-              "id": "x-axis",
-              "channel": "x",
-              "position": "bottom",
-              "scale": {
-                "type": "band",
-                "domain": [
-                  "alpha",
-                  "beta",
-                  "gamma"
-                ],
-                "range": [
-                  40,
-                  780
-                ],
-                "padding": 0.1
-              },
-              "ticks": [
+              "id": "legend-color",
+              "channel": "color",
+              "position": "top-right",
+              "title": "stage",
+              "entries": [
                 {
-                  "value": "alpha",
-                  "pixel": 163.33333333333334,
-                  "label": "alpha"
+                  "label": "Visit",
+                  "swatch": {
+                    "type": "solid",
+                    "color": {
+                      "r": 76,
+                      "g": 120,
+                      "b": 168,
+                      "a": 255
+                    }
+                  }
                 },
                 {
-                  "value": "beta",
-                  "pixel": 409.99999999999994,
-                  "label": "beta"
+                  "label": "Signup",
+                  "swatch": {
+                    "type": "solid",
+                    "color": {
+                      "r": 245,
+                      "g": 133,
+                      "b": 24,
+                      "a": 255
+                    }
+                  }
                 },
                 {
-                  "value": "gamma",
-                  "pixel": 656.6666666666666,
-                  "label": "gamma"
+                  "label": "Activate",
+                  "swatch": {
+                    "type": "solid",
+                    "color": {
+                      "r": 228,
+                      "g": 87,
+                      "b": 86,
+                      "a": 255
+                    }
+                  }
+                },
+                {
+                  "label": "Purchase",
+                  "swatch": {
+                    "type": "solid",
+                    "color": {
+                      "r": 114,
+                      "g": 183,
+                      "b": 178,
+                      "a": 255
+                    }
+                  }
                 }
               ],
-              "title": "brand_id",
-              "domain": {
-                "x1": 40,
-                "y1": 560,
-                "x2": 780,
-                "y2": 560
+              "frame": {
+                "x": 676,
+                "y": 50,
+                "w": 104,
+                "h": 72
               },
-              "grid": [
-                {
-                  "x1": 163.33333333333334,
-                  "y1": 50,
-                  "x2": 163.33333333333334,
-                  "y2": 560
-                },
-                {
-                  "x1": 409.99999999999994,
-                  "y1": 50,
-                  "x2": 409.99999999999994,
-                  "y2": 560
-                },
-                {
-                  "x1": 656.6666666666666,
-                  "y1": 50,
-                  "x2": 656.6666666666666,
-                  "y2": 560
-                }
-              ],
-              "label_style": {},
-              "title_style": {}
-            },
-            {
-              "id": "y-axis",
-              "channel": "y",
-              "position": "left",
-              "scale": {
-                "type": "linear",
-                "domain": [
-                  0,
-                  0.71
-                ],
-                "range": [
-                  560,
-                  50
-                ]
-              },
-              "ticks": [
-                {
-                  "value": 0,
-                  "pixel": 560,
-                  "label": "0"
-                },
-                {
-                  "value": 0.1,
-                  "pixel": 488.169014084507,
-                  "label": "",
-                  "minor": true
-                },
-                {
-                  "value": 0.2,
-                  "pixel": 416.3380281690141,
-                  "label": "0.2",
-                  "label_hidden": true
-                },
-                {
-                  "value": 0.30000000000000004,
-                  "pixel": 344.5070422535211,
-                  "label": "",
-                  "minor": true
-                },
-                {
-                  "value": 0.4,
-                  "pixel": 272.67605633802816,
-                  "label": "0.4"
-                },
-                {
-                  "value": 0.5,
-                  "pixel": 200.84507042253517,
-                  "label": "",
-                  "minor": true
-                },
-                {
-                  "value": 0.6,
-                  "pixel": 129.01408450704227,
-                  "label": "0.6",
-                  "label_hidden": true
-                }
-              ],
-              "title": "score",
-              "domain": {
-                "x1": 40,
-                "y1": 50,
-                "x2": 40,
-                "y2": 560
-              },
-              "grid": [
-                {
-                  "x1": 40,
-                  "y1": 560,
-                  "x2": 780,
-                  "y2": 560
-                },
-                {
-                  "x1": 40,
-                  "y1": 416.3380281690141,
-                  "x2": 780,
-                  "y2": 416.3380281690141
-                },
-                {
-                  "x1": 40,
-                  "y1": 272.67605633802816,
-                  "x2": 780,
-                  "y2": 272.67605633802816
-                },
-                {
-                  "x1": 40,
-                  "y1": 129.01408450704227,
-                  "x2": 780,
-                  "y2": 129.01408450704227
-                }
-              ],
-              "label_style": {},
-              "title_style": {}
+              "title_style": {},
+              "label_style": {}
             }
           ],
           "layers": [
             {
               "id": "layer-0",
-              "mark": "rect",
+              "mark": "funnel",
               "marks": [
                 {
-                  "type": "rect",
-                  "id": "bar-0",
+                  "type": "path",
+                  "id": "funnel-stage-Visit",
                   "style": {
                     "fill": {
                       "r": 76,
@@ -235,44 +142,35 @@
                     "layer_id": "layer-0",
                     "row_id": 0
                   },
-                  "rect": {
-                    "x": 52.333333333333336,
-                    "y": 258.3098591549296,
-                    "w": 222,
-                    "h": 301.6901408450704
+                  "path": {
+                    "d": "M40,50 L780,50 L558,177.5 L262,177.5 Z"
                   }
                 },
                 {
-                  "type": "rect",
-                  "id": "bar-1",
-                  "style": {
-                    "fill": {
-                      "r": 76,
-                      "g": 120,
-                      "b": 168,
-                      "a": 255
-                    },
-                    "opacity": 1
-                  },
+                  "type": "text",
+                  "id": "funnel-label-Visit",
+                  "style": {},
                   "datum": {
                     "layer_id": "layer-0",
                     "row_id": 1
                   },
-                  "rect": {
-                    "x": 298.99999999999994,
-                    "y": 50,
-                    "w": 222,
-                    "h": 510
+                  "text": {
+                    "x": 410,
+                    "y": 113.75,
+                    "content": "1000",
+                    "anchor": "middle",
+                    "baseline": "middle",
+                    "font_size": 12
                   }
                 },
                 {
-                  "type": "rect",
-                  "id": "bar-2",
+                  "type": "path",
+                  "id": "funnel-stage-Signup",
                   "style": {
                     "fill": {
-                      "r": 76,
-                      "g": 120,
-                      "b": 168,
+                      "r": 245,
+                      "g": 133,
+                      "b": 24,
                       "a": 255
                     },
                     "opacity": 1
@@ -281,11 +179,83 @@
                     "layer_id": "layer-0",
                     "row_id": 2
                   },
-                  "rect": {
-                    "x": 545.6666666666666,
-                    "y": 143.38028169014083,
-                    "w": 222,
-                    "h": 416.6197183098592
+                  "path": {
+                    "d": "M262,177.5 L558,177.5 L484,305 L336,305 Z"
+                  }
+                },
+                {
+                  "type": "text",
+                  "id": "funnel-label-Signup",
+                  "style": {},
+                  "datum": {
+                    "layer_id": "layer-0",
+                    "row_id": 3
+                  },
+                  "text": {
+                    "x": 410,
+                    "y": 241.25,
+                    "content": "400",
+                    "anchor": "middle",
+                    "baseline": "middle",
+                    "font_size": 12
+                  }
+                },
+                {
+                  "type": "path",
+                  "id": "funnel-stage-Activate",
+                  "style": {
+                    "fill": {
+                      "r": 228,
+                      "g": 87,
+                      "b": 86,
+                      "a": 255
+                    },
+                    "opacity": 1
+                  },
+                  "path": {
+                    "d": "M336,305 L484,305 L447,432.5 L373,432.5 Z"
+                  }
+                },
+                {
+                  "type": "text",
+                  "id": "funnel-label-Activate",
+                  "style": {},
+                  "text": {
+                    "x": 410,
+                    "y": 368.75,
+                    "content": "200",
+                    "anchor": "middle",
+                    "baseline": "middle",
+                    "font_size": 12
+                  }
+                },
+                {
+                  "type": "path",
+                  "id": "funnel-stage-Purchase",
+                  "style": {
+                    "fill": {
+                      "r": 114,
+                      "g": 183,
+                      "b": 178,
+                      "a": 255
+                    },
+                    "opacity": 1
+                  },
+                  "path": {
+                    "d": "M373,432.5 L447,432.5 L447,560 L373,560 Z"
+                  }
+                },
+                {
+                  "type": "text",
+                  "id": "funnel-label-Purchase",
+                  "style": {},
+                  "text": {
+                    "x": 410,
+                    "y": 496.25,
+                    "content": "100",
+                    "anchor": "middle",
+                    "baseline": "middle",
+                    "font_size": 12
                   }
                 }
               ]
