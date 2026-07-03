@@ -12,9 +12,9 @@ bundle:
 
 ```
 <out-dir>/
-├── prism.wasm           # cmd/prismwasm binary (GOOS=js GOARCH=wasm), ~69 MiB raw
-├── prism.wasm.gz        # gzipped binary (~12 MiB) — what the loader fetches
-├── wasm_exec.js         # toolchain-pinned WASM loader (Go runtime)
+├── prism.wasm           # cmd/prismwasm binary (GOOS=js GOARCH=wasm); ~14.5 MiB raw (Go) / ~6.9 MiB (TinyGo)
+├── prism.wasm.gz        # gzipped binary (~3.5 MiB Go / ~2.2 MiB TinyGo) — what the loader fetches
+├── wasm_exec.js         # toolchain-pinned WASM loader (matches the build toolchain)
 ├── prism.mjs            # thin bootstrapper + SceneHandle facade
 ├── prism-element.mjs    # <prism-chart> / <prism-dataset> / <prism-coordinator>
 ├── prism-resolver.mjs   # page-level dataset registry
@@ -22,33 +22,63 @@ bundle:
 └── index.html           # minimal loader example
 ```
 
+### Two build toolchains
+
+Prism's WASM module builds two ways, and both write the same
+`bin/prism.wasm` + `bin/wasm_exec.js` (paired loader — never mix a
+binary from one toolchain with the loader from the other):
+
+| Build | Command | Raw | Gzipped | Loader |
+|---|---|---|---|---|
+| Standard Go | `make build-wasm` | ~14.5 MiB | ~3.5 MiB | Go's `wasm_exec.js` |
+| **TinyGo** (recommended) | `make build-wasm-tinygo` | ~6.9 MiB (7,239,767 B) | **~2.2 MiB (2,232,605 B)** | TinyGo's `wasm_exec.js` |
+
+The **TinyGo build is the recommended browser artifact.** It links a
+leaner runtime and GC, roughly halving both the raw and gzipped size
+while producing byte-identical SVG to the standard-Go build (E5-S2
+verified 16/16 parity). The standard-Go build stays fully supported
+as the fallback for environments where TinyGo is unavailable, and it
+remains the default `make build-wasm` target so `make build` needs no
+extra toolchain. TinyGo 0.41.1+ is required for the TinyGo target
+(`brew tap tinygo-org/tools && brew install tinygo`); it uses
+`-stack-size=8MB` so the JSON-Schema shape validator's recursion does
+not trap.
+
 ### Wire size and the raw/gzip gap
 
-The Go WASM target is large uncompressed — **~69 MiB raw** — but
-compresses to **~12 MiB gzipped** (the runtime, reflection, and GC
-are all linked in; `-s -w -trimpath` are already applied and TinyGo
-is not used). The wire size you actually pay depends entirely on
-compression:
+The WASM module is larger uncompressed than on the wire; the size you
+actually pay depends entirely on compression:
 
-- **The bundle ships both `prism.wasm` and `prism.wasm.gz`.** The
-  standalone loader fetches the `.gz` and decompresses it in-page via
-  `DecompressionStream("gzip")`, so the **~12 MiB** payload is what
-  crosses the wire even on a dumb static host that does no
-  content-negotiation. The raw `prism.wasm` stays as a fallback
-  (`WebAssembly.instantiateStreaming`) for environments without
-  `DecompressionStream` or where the `.gz` is absent.
+- **The `prism static-bundle --wasm` bundle ships both `prism.wasm`
+  and `prism.wasm.gz`.** The standalone loader fetches the `.gz` and
+  decompresses it in-page via `DecompressionStream("gzip")`, so the
+  gzipped payload is what crosses the wire even on a dumb static host
+  that does no content-negotiation. The raw `prism.wasm` stays as a
+  fallback (`WebAssembly.instantiateStreaming`) for environments
+  without `DecompressionStream` or where the `.gz` is absent.
 - **If you wire up your own loader**, either fetch `prism.wasm.gz`
   and decompress as above, or serve `prism.wasm` with
   `Content-Encoding: gzip`/`br` so the browser decompresses
-  transparently. Do **not** serve the raw `prism.wasm` uncompressed —
-  users download the full ~69 MiB. (nginx: add `application/wasm` to
-  `gzip_types`; most CDNs negotiate automatically but some skip files
-  over a size cap.)
+  transparently. Do **not** serve the raw `prism.wasm` uncompressed.
+  (nginx: add `application/wasm` to `gzip_types`; most CDNs negotiate
+  automatically but some skip files over a size cap.)
 
-The CI size gate (`internal/gates/wasm_size_test.go`) now guards
-**both** the gzipped size (`PRISM_WASM_MAX_BYTES`, 16 MiB) and the
-raw size (`PRISM_WASM_RAW_MAX_BYTES`, 80 MiB) so the uncompressed
-artifact cannot balloon unnoticed behind the gzipped check.
+### CI size gates
+
+The standard-Go artifact is guarded by
+`internal/gates/wasm_size_test.go`, which checks **both** the gzipped
+size (`PRISM_WASM_MAX_BYTES`, 16 MiB) and the raw size
+(`PRISM_WASM_RAW_MAX_BYTES`, 80 MiB) so the uncompressed artifact
+cannot balloon unnoticed behind the gzipped check.
+
+The TinyGo artifact has its own, much tighter gate in
+`internal/gates/wasm_tinygo_size_test.go`
+(`PRISM_WASM_TINYGO_MAX_BYTES`, 4 MiB gzipped;
+`PRISM_WASM_TINYGO_RAW_MAX_BYTES`, 12 MiB raw). Because it needs the
+TinyGo toolchain, the gate **skips cleanly when `tinygo` is not on
+`PATH`** (default CI lanes stay green) and **runs when it is
+present** — building a fresh TinyGo module into a temp directory so
+the measurement is independent of whatever last populated `bin/`.
 
 ## Load modes
 

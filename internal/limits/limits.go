@@ -62,18 +62,44 @@ const (
 	// not fail the build; only exceeding DefaultWasmRawMaxBytes (or the
 	// env override) does.
 	SoftWarnWasmRawMaxBytes = 72 * 1024 * 1024
+
+	// DefaultWasmTinygoMaxBytes is the gzipped-size ceiling on the
+	// TinyGo-built `bin/prism.wasm`. The TinyGo toolchain produces a far
+	// smaller module than the standard Go toolchain, so it carries its
+	// own (much tighter) budget. Measured 2.23 MiB gzipped
+	// (2,232,605 bytes) at E5-S1/S2 via `make build-wasm-tinygo`
+	// (-stack-size=8MB); the 4 MiB ceiling leaves ~1.7x headroom for
+	// dependency growth. See PRISM_WASM_TINYGO_MAX_BYTES.
+	DefaultWasmTinygoMaxBytes = 4 * 1024 * 1024
+
+	// SoftWarnWasmTinygoMaxBytes triggers a non-failing log message when
+	// the TinyGo gzipped binary creeps past ~75% of its ceiling.
+	SoftWarnWasmTinygoMaxBytes = 3 * 1024 * 1024
+
+	// DefaultWasmTinygoRawMaxBytes is the uncompressed-size ceiling on
+	// the TinyGo-built `bin/prism.wasm`, guarding the raw bytes naive
+	// static hosts serve without Content-Encoding negotiation. Measured
+	// 6.9 MiB raw (7,239,767 bytes); the 12 MiB ceiling leaves ~1.65x
+	// headroom. See PRISM_WASM_TINYGO_RAW_MAX_BYTES.
+	DefaultWasmTinygoRawMaxBytes = 12 * 1024 * 1024
+
+	// SoftWarnWasmTinygoRawMaxBytes triggers a non-failing log message
+	// when the TinyGo raw binary creeps toward its raw ceiling.
+	SoftWarnWasmTinygoRawMaxBytes = 10 * 1024 * 1024
 )
 
 // Env var names. Exported so callers (CLI help text, error fixups) can
 // reference the canonical names without typo risk.
 const (
-	EnvTableMaxRows    = "PRISM_TABLE_MAX_ROWS"
-	EnvJoinMaxRows     = "PRISM_JOIN_MAX_ROWS"
-	EnvRenderMaxMarks  = "PRISM_RENDER_MAX_MARKS"
-	EnvQueryWorkers    = "PRISM_QUERY_WORKERS"
-	EnvTableCacheSize  = "PRISM_TABLE_CACHE_SIZE"
-	EnvWasmMaxBytes    = "PRISM_WASM_MAX_BYTES"
-	EnvWasmRawMaxBytes = "PRISM_WASM_RAW_MAX_BYTES"
+	EnvTableMaxRows          = "PRISM_TABLE_MAX_ROWS"
+	EnvJoinMaxRows           = "PRISM_JOIN_MAX_ROWS"
+	EnvRenderMaxMarks        = "PRISM_RENDER_MAX_MARKS"
+	EnvQueryWorkers          = "PRISM_QUERY_WORKERS"
+	EnvTableCacheSize        = "PRISM_TABLE_CACHE_SIZE"
+	EnvWasmMaxBytes          = "PRISM_WASM_MAX_BYTES"
+	EnvWasmRawMaxBytes       = "PRISM_WASM_RAW_MAX_BYTES"
+	EnvWasmTinygoMaxBytes    = "PRISM_WASM_TINYGO_MAX_BYTES"
+	EnvWasmTinygoRawMaxBytes = "PRISM_WASM_TINYGO_RAW_MAX_BYTES"
 )
 
 // TableMaxRows returns the effective cap for any single Table. The
@@ -167,6 +193,34 @@ func WasmRawMaxBytes() (int, bool) {
 // MustWasmRawMaxBytes mirrors MustTableMaxRows.
 func MustWasmRawMaxBytes() int {
 	v, _ := WasmRawMaxBytes()
+	return v
+}
+
+// WasmTinygoMaxBytes returns the gzipped-size ceiling enforced on the
+// TinyGo-built `bin/prism.wasm`. The second return is false when the
+// env var was set but unparseable or non-positive; callers fall back to
+// the default value (also returned in that case).
+func WasmTinygoMaxBytes() (int, bool) {
+	return lookup(EnvWasmTinygoMaxBytes, DefaultWasmTinygoMaxBytes)
+}
+
+// MustWasmTinygoMaxBytes mirrors MustTableMaxRows.
+func MustWasmTinygoMaxBytes() int {
+	v, _ := WasmTinygoMaxBytes()
+	return v
+}
+
+// WasmTinygoRawMaxBytes returns the uncompressed-size ceiling enforced
+// on the TinyGo-built `bin/prism.wasm`. The second return is false when
+// the env var was set but unparseable or non-positive; callers fall back
+// to the default value (also returned in that case).
+func WasmTinygoRawMaxBytes() (int, bool) {
+	return lookup(EnvWasmTinygoRawMaxBytes, DefaultWasmTinygoRawMaxBytes)
+}
+
+// MustWasmTinygoRawMaxBytes mirrors MustTableMaxRows.
+func MustWasmTinygoRawMaxBytes() int {
+	v, _ := WasmTinygoRawMaxBytes()
 	return v
 }
 
