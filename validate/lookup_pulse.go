@@ -4,55 +4,43 @@ import (
 	"github.com/spf13/afero"
 
 	"github.com/frankbardon/prism/resolve"
-	"github.com/frankbardon/prism/table"
 )
 
-// PulseLookup is a SchemaLookup backed by a real Resolver. It is the
-// production replacement for StaticLookup once a spec binds a dataset
-// to a `.pulse` source (path, archive#shard, or cohort:<id>).
+// PulseLookup enumerates the dataset names bound to a `data.source`
+// (or `cohort:<id>`) reference. It once resolved each ref's `.pulse`
+// header to a field schema, but the Pulse loader was removed in epic E4
+// and Prism never reads `.pulse` bytes. Field schema for inline data
+// (`data.values` / `data.fields`) is supplied by StaticLookup; a
+// source-bound dataset has no inline schema, so PulseLookup.Schema is
+// best-effort — it reports a miss and semantic rules skip field-existence
+// checks for that dataset rather than firing false positives (validate
+// reads the spec plus an *optional* schema).
 //
-// Construction:
-//
-//	pl := validate.NewPulseLookup(resolve.New(nil), afero.NewOsFs())
-//	pl.Register("brand_scores", "testdata/cohorts/tiny.pulse")
-//
-// Lookups resolve through the Resolver and fold the returned native
-// *table.Schema into the minimal *PulseSchemaShim that semantic
-// rules consume. Results are cached by dataset name for the lifetime
-// of the PulseLookup — Validate is a one-shot caller, so the cache is
-// scoped to a single validation pass.
+// Register still records the names so the dataset-reference rule can
+// treat externally-bound datasets as declared.
 type PulseLookup struct {
-	resolver resolve.Resolver
-	fs       afero.Fs
 	bindings map[string]string
-	cache    map[string]*PulseSchemaShim
 }
 
-// NewPulseLookup constructs a PulseLookup. resolver and fs must be
-// non-nil; bindings start empty (use Register before validating).
-func NewPulseLookup(r resolve.Resolver, fs afero.Fs) *PulseLookup {
-	return &PulseLookup{
-		resolver: r,
-		fs:       fs,
-		bindings: map[string]string{},
-		cache:    map[string]*PulseSchemaShim{},
-	}
+// NewPulseLookup constructs a PulseLookup. The resolver and fs
+// parameters are retained for call-site compatibility but are no longer
+// consulted (no `.pulse` is read); bindings start empty.
+func NewPulseLookup(_ resolve.Resolver, _ afero.Fs) *PulseLookup {
+	return &PulseLookup{bindings: map[string]string{}}
 }
 
-// Register binds a dataset name to a ref the Resolver knows how to
-// open. Re-registration replaces the binding and invalidates the cache
-// entry. A no-op when name or ref is empty.
+// Register records a dataset name bound to a source ref. A no-op when
+// name or ref is empty.
 func (l *PulseLookup) Register(name, ref string) {
 	if name == "" || ref == "" {
 		return
 	}
 	l.bindings[name] = ref
-	delete(l.cache, name)
 }
 
 // Names returns every registered dataset name in arbitrary order.
 // Used by the dataset-ref semantic rule to enumerate externally
-// declared datasets without forcing the rule to know about Resolver.
+// declared datasets.
 func (l *PulseLookup) Names() []string {
 	if l == nil {
 		return nil
@@ -64,79 +52,13 @@ func (l *PulseLookup) Names() []string {
 	return out
 }
 
-// Schema implements SchemaLookup.
-//
-// Resolves the dataset's ref via the Resolver, folds the native schema
-// into a *PulseSchemaShim, and returns it. Returns (nil, false) when
-// the name is not registered or the Resolver returns an error — the
-// validator interprets a missing schema as "no checks possible" rather
-// than firing false-positive rule errors.
-func (l *PulseLookup) Schema(name string) (*PulseSchemaShim, bool) {
-	if l == nil {
-		return nil, false
-	}
-	if cached, ok := l.cache[name]; ok {
-		return cached, cached != nil
-	}
-	ref, ok := l.bindings[name]
-	if !ok {
-		return nil, false
-	}
-	rc, schema, err := l.resolver.Resolve(ref, l.fs)
-	if err != nil {
-		// Cache the miss so a single Validate pass does not retry the
-		// same failed Resolve once per rule.
-		l.cache[name] = nil
-		return nil, false
-	}
-	if rc != nil {
-		_ = rc.Close()
-	}
-	// The resolver returns the native *table.Schema (E1-S2); fold it
-	// straight into the shim — no Pulse round-trip.
-	shim := schemaToShim(name, schema)
-	l.cache[name] = shim
-	return shim, true
-}
-
-// schemaToShim folds a native *table.Schema into the minimal
-// PulseSchemaShim P01 rules consume. Type bucketing:
-//
-//	IsNumeric()    -> "quantitative"
-//	IsCategorical() -> "nominal"
-//	FieldTypeDate   -> "temporal"
-//	bool (packed/nullable) -> "nominal"
-//	anything else   -> "nominal" (conservative fallback)
-func schemaToShim(name string, schema *table.Schema) *PulseSchemaShim {
-	shim := &PulseSchemaShim{Name: name}
-	if schema == nil {
-		return shim
-	}
-	for _, f := range schema.Fields {
-		shim.Fields = append(shim.Fields, FieldShim{
-			Name: f.Name,
-			Type: measureTypeFor(f.Type),
-		})
-	}
-	return shim
-}
-
-// measureTypeFor returns the Prism measure-type bucket for a native
-// table.FieldType. Exposed here (lower-case) for internal reuse; the
-// public surface stays through PulseLookup.
-func measureTypeFor(ft table.FieldType) string {
-	switch {
-	case ft == table.FieldTypeDate:
-		return "temporal"
-	case ft.IsNumeric():
-		return "quantitative"
-	case ft.IsCategorical():
-		return "nominal"
-	case ft == table.FieldTypePackedBool:
-		return "nominal"
-	default:
-		return "nominal"
-	}
+// Schema implements SchemaLookup. Source-bound datasets carry no inline
+// schema (Prism no longer reads `.pulse`), so lookups are best-effort:
+// Schema always reports a miss and rules skip field checks for the
+// dataset. Inline `data.values` / `data.fields` are served by
+// StaticLookup.
+func (l *PulseLookup) Schema(string) (*PulseSchemaShim, bool) {
+	return nil, false
 }
 
 // CompositeLookup tries lookups in order and returns the first hit.

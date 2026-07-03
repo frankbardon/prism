@@ -1,23 +1,21 @@
-// Package resolve maps user-facing dataset refs to a (ReadCloser,
-// Schema) pair. Four ref forms are supported:
+// Package resolve maps user-facing dataset refs to inline rows.
 //
-//   - cohort.pulse                 local OsFs path
-//   - archive.pulse#shard.pulse    anchor inside a Pulse shard archive
-//   - gs://bucket/path.pulse       GCS-backed file (PUNT in v1: returns
-//     PRISM_RESOLVE_GCS_UNAVAILABLE)
-//   - cohort:<id>                  registry lookup; the resolved string
-//     is recursively resolved (one level)
+// Prism no longer reads `.pulse` bytes: the Pulse loader was removed in
+// epic E4. Data now enters exclusively through:
 //
-// Every read goes through an afero.Fs so tests can use NewMemMapFs.
-// The Resolver does not cache; it leaves caching to the DAG executor
-// via Table.Hash() + per-node fingerprint.
+//   - inline `data.values` / `data.fields` (materialised by
+//     table.FromInline, wired via InlineNode);
+//   - named `datasets` blocks (same inline path);
+//   - a caller-supplied DataResolver (the `data: {ref}` variant),
+//     surfaced here through the InlineResolver seam.
 //
-// GCS is intentionally not wired in P02. Pulse 0.8.4 does not ship a
-// generic GCS afero.Fs; adding a real GCS SDK in this phase violates
-// the dep-parity rule and inflates v1 scope. See D027.
+// A `cohort:<id>` ref is still resolved through the Registry to its
+// backing name before the DataResolver is consulted (one level, bounded
+// by maxRegistryDepth). `gs://` refs remain unavailable.
 package resolve
 
 import (
+	"context"
 	"io"
 
 	"github.com/spf13/afero"
@@ -25,16 +23,23 @@ import (
 	"github.com/frankbardon/prism/table"
 )
 
-// Resolver resolves a ref to a streaming reader plus the cohort's
-// schema. The returned ReadCloser, when non-nil, owns its underlying
-// file handle; callers must Close it. Schema is always non-nil on
-// success.
-//
-// Concrete implementations:
-//   - DefaultResolver (resolve/default.go): the production path.
-//   - tests may swap in a fake that returns canned bytes + schema.
+// Resolver is the legacy byte-seam. Before E4 it streamed `.pulse`
+// bytes plus the cohort schema; with the Pulse loader removed there are
+// no source bytes to stream, so DefaultResolver.Resolve now always
+// reports PRISM_RESOLVE_REF_UNRESOLVED. The interface is retained so
+// existing call sites (prism.go, CLI, wasm) keep compiling until E4-S1b
+// migrates them; new code should use InlineResolver.
 type Resolver interface {
 	Resolve(ref string, fs afero.Fs) (io.ReadCloser, *table.Schema, error)
+}
+
+// InlineResolver is the Pulse-free rows seam. A Resolver that can serve
+// a ref as inline rows (DefaultResolver, backed by a DataResolver)
+// implements it; SourceNode uses it to materialise a native
+// table.Table via table.FromInline without touching Pulse. Refs that
+// cannot be served return PRISM_RESOLVE_REF_UNRESOLVED.
+type InlineResolver interface {
+	ResolveInline(ctx context.Context, ref string) (*Dataset, error)
 }
 
 // Registry maps a cohort id (`cohort:<id>`) to its backing ref (path,

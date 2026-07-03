@@ -1,19 +1,15 @@
-// Package nodes holds the DAG node implementations. P02 ships SourceNode
-// — the leaf that reads a .pulse via Resolver and materialises a Table.
-// Future phases (P03+) add Filter, Project, GroupAggregate, Join, etc.
+// Package nodes holds the DAG node implementations. SourceNode is the
+// leaf bound to `data.source`; since the Pulse loader was removed in
+// epic E4 it materialises rows through the resolver's inline path
+// (InlineResolver) rather than decoding `.pulse` bytes.
 package nodes
 
 import (
-	"bytes"
 	"context"
 	"crypto/sha256"
 	"encoding/hex"
 	"fmt"
-	"io"
 
-	"github.com/cespare/xxhash/v2"
-	"github.com/frankbardon/pulse"
-	"github.com/frankbardon/pulse/encoding"
 	"github.com/spf13/afero"
 
 	prismerrors "github.com/frankbardon/prism/errors"
@@ -23,14 +19,11 @@ import (
 	"github.com/frankbardon/prism/table"
 )
 
-// SourceNode is the leaf DAG node. It resolves a ref to a .pulse cohort
-// (or shard), materialises every record into typed columns, and emits
-// a *table.Table tagged with the content hash of the on-disk bytes.
-//
-// SourceNode satisfies the full plan.Node interface (P03 widened it
-// to include Schema(in)). The Schema method delegates to
-// OutputSchema, which is kept for backwards compatibility with the
-// P02 callers (validate.PulseLookup) that already use it.
+// SourceNode is the leaf DAG node bound to `data.source`. It resolves a
+// ref to its inline rows via the resolver's InlineResolver seam and
+// materialises them into a native *table.Table with table.FromInline.
+// A resolver that cannot serve the ref (no DataResolver wired) yields
+// PRISM_RESOLVE_REF_UNRESOLVED.
 type SourceNode struct {
 	id       plan.NodeID
 	ref      string
@@ -81,161 +74,104 @@ func (n *SourceNode) Kind() string { return "SourceNode" }
 // Summary implements plan.Labeled — the ref string the user wrote.
 func (n *SourceNode) Summary() string { return n.ref }
 
-// OutputSchema resolves the ref so the schema is discoverable without
-// materialising records. The ReadCloser returned by Resolve is closed
-// immediately. Kept as a public method for backwards compatibility with
-// the Pulse-typed callers (validate.PulseLookup, NewCrosstab,
-// NewRegression) that still consume a *encoding.Schema; it converts the
-// native schema the resolver now returns back to the Pulse shape via the
-// E1 shim. New callers should prefer Schema(nil).
-func (n *SourceNode) OutputSchema() (*encoding.Schema, error) {
-	rc, schema, err := n.resolver.Resolve(n.ref, n.fs)
-	if err != nil {
-		return nil, err
-	}
-	if rc != nil {
-		_ = rc.Close()
-	}
-	return table.ToPulseSchema(schema), nil
+// OutputSchema returns the native output schema of the source. Kept as
+// a public method for the optimizer passes (ProjectionPruning) that read
+// a source's fields; it delegates to Schema(nil). Since E4 it returns a
+// native *table.Schema — the Pulse shim is gone.
+func (n *SourceNode) OutputSchema() (*table.Schema, error) {
+	return n.Schema(nil)
 }
 
 // Schema implements plan.Node. Source nodes ignore the `in` slice (they
-// have no upstream); the output schema is whatever the resolver reports
-// for the underlying .pulse cohort, in the native Prism shape.
+// have no upstream); the output schema is inferred from the inline rows
+// the resolver serves for this ref, in the native Prism shape.
 func (n *SourceNode) Schema(_ []*table.Schema) (*table.Schema, error) {
-	rc, schema, err := n.resolver.Resolve(n.ref, n.fs)
+	ds, err := n.rows(context.Background())
 	if err != nil {
 		return nil, err
 	}
-	if rc != nil {
-		_ = rc.Close()
+	_, schema, err := table.FromInline(n.ref, ds.Values, ds.Fields)
+	if err != nil {
+		return nil, err
 	}
 	return schema, nil
 }
 
-// RowCount returns the record count from the cohort's Pulse header
-// without materialising any records. Backed by pulse.CountRecords
-// (available since pulse v0.10.0). Used by the SampleInjection
-// optimizer pass to decide whether to inject a SampleNode below a
-// Source whose row count exceeds PRISM_RENDER_MAX_MARKS.
+// RowCount returns the number of inline rows the resolver serves for
+// this ref. Used by the SampleInjection optimizer pass to decide
+// whether to inject a SampleNode below a Source whose row count exceeds
+// PRISM_RENDER_MAX_MARKS. The pass skips the source on any error, so an
+// unresolvable ref simply disables sampling for it.
 func (n *SourceNode) RowCount(ctx context.Context) (uint64, error) {
-	if n.fs == nil {
-		return 0, fmt.Errorf("source: fs is nil")
-	}
-	p, err := pulse.New(pulse.Options{FS: n.fs})
+	ds, err := n.rows(ctx)
 	if err != nil {
 		return 0, err
 	}
-	return p.CountRecords(ctx, n.ref)
+	return uint64(len(ds.Values)), nil
 }
 
-// Execute implements plan.Node. Reads the resolved payload bytes,
-// computes their xxhash64, then decodes every record into typed
-// column slices and constructs the Table. Row count is gated by
-// limits.TableMaxRows() — once the counter would exceed the cap,
-// Execute returns PRISM_RESOLVE_007 immediately (no further decode).
-func (n *SourceNode) Execute(ctx context.Context, _ []*table.Table) (*table.Table, error) {
+// rows fetches the inline dataset for this source's ref via the
+// resolver's InlineResolver seam. A resolver that does not implement
+// InlineResolver, or one that cannot satisfy the ref, yields
+// PRISM_RESOLVE_REF_UNRESOLVED.
+func (n *SourceNode) rows(ctx context.Context) (*resolve.Dataset, error) {
 	if n.resolver == nil {
 		return nil, fmt.Errorf("source: resolver is nil")
 	}
+	ir, ok := n.resolver.(resolve.InlineResolver)
+	if !ok {
+		return nil, prismerrors.New(
+			"PRISM_RESOLVE_REF_UNRESOLVED",
+			fmt.Sprintf("Data ref %q was not resolved by the active DataResolver.", n.ref),
+			map[string]any{"Ref": n.ref},
+		)
+	}
+	ds, err := ir.ResolveInline(ctx, n.ref)
+	if err != nil {
+		return nil, err
+	}
+	if ds == nil {
+		return nil, prismerrors.New(
+			"PRISM_RESOLVE_REF_UNRESOLVED",
+			fmt.Sprintf("Data ref %q resolved to a nil dataset.", n.ref),
+			map[string]any{"Ref": n.ref},
+		)
+	}
+	return ds, nil
+}
+
+// Execute implements plan.Node. Materialises the resolver's inline rows
+// into a native Table via table.FromInline. Row count is gated by
+// limits.TableMaxRows() — a larger dataset returns PRISM_RESOLVE_007.
+func (n *SourceNode) Execute(ctx context.Context, _ []*table.Table) (*table.Table, error) {
 	if err := ctx.Err(); err != nil {
 		return nil, err
 	}
-
-	rc, _, err := n.resolver.Resolve(n.ref, n.fs)
+	ds, err := n.rows(ctx)
 	if err != nil {
 		return nil, err
 	}
-	defer func() { _ = rc.Close() }()
-
-	// Materialise the entire payload to compute the content hash and to
-	// have a seekable byte stream for header+schema skipping.
-	payload, err := io.ReadAll(rc)
-	if err != nil {
-		return nil, prismerrors.Wrap(
-			"PRISM_RESOLVE_006",
-			fmt.Sprintf("Pulse failed to read payload for %s: %v.", n.ref, err),
-			map[string]any{"Ref": n.ref, "Reason": err.Error()},
-			err,
+	if cap, ok := limits.TableMaxRows(); ok && len(ds.Values) > cap {
+		return nil, prismerrors.New(
+			"PRISM_RESOLVE_007",
+			fmt.Sprintf("Materialisation refused: %d rows would exceed PRISM_TABLE_MAX_ROWS=%d.", len(ds.Values), cap),
+			map[string]any{"Actual": len(ds.Values), "Limit": cap},
 		)
 	}
-	contentHash := fmt.Sprintf("xxh64:%016x", xxhash.Sum64(payload))
-
-	// Position the reader at the first record byte. The payload always
-	// starts with HeaderSize bytes (magic + version) followed by the
-	// encoded schema; parsing the schema both advances the reader cursor
-	// and yields the authoritative *encoding.Schema the Pulse record
-	// reader needs (dictionaries + field types) to decode the records.
-	br := bytes.NewReader(payload)
-	if err := encoding.ReadHeader(br); err != nil {
-		return nil, prismerrors.Wrap(
-			"PRISM_RESOLVE_006",
-			fmt.Sprintf("Pulse header invalid for %s: %v.", n.ref, err),
-			map[string]any{"Ref": n.ref, "Reason": err.Error()},
-			err,
-		)
-	}
-	schema, err := encoding.ReadSchema(br)
-	if err != nil {
-		return nil, prismerrors.Wrap(
-			"PRISM_RESOLVE_006",
-			fmt.Sprintf("Pulse schema unreadable for %s: %v.", n.ref, err),
-			map[string]any{"Ref": n.ref, "Reason": err.Error()},
-			err,
-		)
-	}
-
-	tbl, err := materialise(schema, br, contentHash, n.ref)
+	tbl, _, err := table.FromInline(n.ref, ds.Values, ds.Fields)
 	if err != nil {
 		return nil, err
 	}
 	return tbl, nil
 }
 
-// materialise drains the RecordReader into per-column slices, enforcing
-// the row cap inline. Returns the constructed Table on success.
-func materialise(schema *encoding.Schema, r io.Reader, hash, ref string) (*table.Table, error) {
-	cap, _ := limits.TableMaxRows()
-	rr := encoding.NewRecordReader(r, schema)
-
-	cols := newColumnBuilders(schema)
-
-	values := make(map[string]float64, len(schema.Fields))
-	nulls := make(map[string]bool, len(schema.Fields))
-
-	rowCount := 0
-	for {
-		if err := rr.ReadRecord(values, nulls); err != nil {
-			if err == io.EOF {
-				break
-			}
-			return nil, prismerrors.Wrap(
-				"PRISM_RESOLVE_006",
-				fmt.Sprintf("Pulse decode failed for %s at row %d: %v.", ref, rowCount, err),
-				map[string]any{"Ref": ref, "Reason": err.Error()},
-				err,
-			)
-		}
-		if rowCount >= cap {
-			return nil, prismerrors.New(
-				"PRISM_RESOLVE_007",
-				fmt.Sprintf("Materialisation refused: more than %d rows would exceed PRISM_TABLE_MAX_ROWS=%d.", rowCount, cap),
-				map[string]any{"Actual": rowCount + 1, "Limit": cap},
-			)
-		}
-		appendRow(cols, schema, values, nulls)
-		rowCount++
-	}
-
-	return table.NewTable(table.FromPulseSchema(schema), finaliseColumns(cols, schema), rowCount, hash)
-}
-
 // columnBuilder is a per-field accumulator chosen by Kind. Storage is
 // the same as table.Column impls; we hold a pointer to the backing
-// slice so appendRow can grow it in place without re-allocating the
-// map entry on every iteration. `nulls` tracks per-row null markers
-// for nullable fields; nil otherwise so non-nullable columns stay
-// plain slice-backed Column impls.
+// slice so the join/union builders can grow it in place without
+// re-allocating the map entry on every iteration. `nulls` tracks
+// per-row null markers for nullable fields; nil otherwise so
+// non-nullable columns stay plain slice-backed Column impls. The type
+// and currentLen are shared by join_execute.go and union_execute.go.
 type columnBuilder struct {
 	kind     table.Kind
 	nullable bool
@@ -245,70 +181,6 @@ type columnBuilder struct {
 	strs     *[]string
 	bools    *[]bool
 	dates    *[]int64
-}
-
-func newColumnBuilders(schema *encoding.Schema) map[string]*columnBuilder {
-	out := make(map[string]*columnBuilder, len(schema.Fields))
-	for i := range schema.Fields {
-		f := &schema.Fields[i]
-		kind := table.KindFromPulseFieldType(f.Type)
-		cb := &columnBuilder{kind: kind, nullable: f.Nullable}
-		if f.Nullable {
-			cb.nulls = table.NewNullBitmap(0)
-		}
-		switch kind {
-		case table.KindInt:
-			s := make([]int64, 0)
-			cb.ints = &s
-		case table.KindFloat:
-			s := make([]float64, 0)
-			cb.floats = &s
-		case table.KindString:
-			s := make([]string, 0)
-			cb.strs = &s
-		case table.KindBool:
-			s := make([]bool, 0)
-			cb.bools = &s
-		case table.KindDate:
-			s := make([]int64, 0)
-			cb.dates = &s
-		}
-		out[f.Name] = cb
-	}
-	return out
-}
-
-func appendRow(cols map[string]*columnBuilder, schema *encoding.Schema, values map[string]float64, nulls map[string]bool) {
-	for i := range schema.Fields {
-		f := &schema.Fields[i]
-		cb := cols[f.Name]
-		v := values[f.Name]
-		isNull := cb.nullable && nulls[f.Name]
-		// Record the position once we know which row this is (which is
-		// the current per-column length before the append below).
-		if isNull && cb.nulls != nil {
-			cb.nulls.Set(currentLen(cb))
-		}
-		switch cb.kind {
-		case table.KindInt:
-			*cb.ints = append(*cb.ints, int64(v))
-		case table.KindFloat:
-			*cb.floats = append(*cb.floats, v)
-		case table.KindString:
-			// Categorical: v is the dictionary id; resolve through the
-			// field's dictionary. Missing dictionary falls back to the
-			// numeric form so we never panic on malformed schemas.
-			if f.Dictionary != nil {
-				*cb.strs = append(*cb.strs, f.Dictionary.Resolve(uint32(v)))
-			} else {
-				*cb.strs = append(*cb.strs, fmt.Sprintf("%d", uint32(v)))
-			}
-		case table.KindBool:
-			*cb.bools = append(*cb.bools, v != 0)
-		case table.KindDate:
-			*cb.dates = append(*cb.dates, int64(v))
-		}
-	}
 }
 
 func currentLen(cb *columnBuilder) int {
@@ -325,33 +197,6 @@ func currentLen(cb *columnBuilder) int {
 		return len(*cb.dates)
 	}
 	return 0
-}
-
-func finaliseColumns(cols map[string]*columnBuilder, schema *encoding.Schema) map[string]table.Column {
-	out := make(map[string]table.Column, len(cols))
-	for i := range schema.Fields {
-		name := schema.Fields[i].Name
-		cb := cols[name]
-		var inner table.Column
-		switch cb.kind {
-		case table.KindInt:
-			inner = table.IntColumn(*cb.ints)
-		case table.KindFloat:
-			inner = table.FloatColumn(*cb.floats)
-		case table.KindString:
-			inner = table.StringColumn(*cb.strs)
-		case table.KindBool:
-			inner = table.BoolColumn(*cb.bools)
-		case table.KindDate:
-			inner = table.DateColumn(*cb.dates)
-		}
-		if cb.nulls != nil && cb.nulls.Count() > 0 {
-			out[name] = table.NullableColumn{Inner: inner, Nulls: cb.nulls}
-		} else {
-			out[name] = inner
-		}
-	}
-	return out
 }
 
 // deriveID picks a stable, readable NodeID from a ref. We hash the ref
