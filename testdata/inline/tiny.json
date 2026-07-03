@@ -1,0 +1,5002 @@
+[
+  {
+    "age": 35,
+    "brand_id": "beta",
+    "score": 0.4848457363591052
+  },
+  {
+    "age": 42,
+    "brand_id": "alpha",
+    "score": 0.4975141899391975
+  },
+  {
+    "age": 46,
+    "brand_id": "gamma",
+    "score": 0.4403012918805588
+  },
+  {
+    "age": 21,
+    "brand_id": "alpha",
+    "score": 0.4438546061169588
+  },
+  {
+    "age": 59,
+    "brand_id": "alpha",
+    "score": 0.512163458023914
+  },
+  {
+    "age": 30,
+    "brand_id": "alpha",
+    "score": 0.5123663617164945
+  },
+  {
+    "age": 43,
+    "brand_id": "alpha",
+    "score": 0.4549233008761815
+  },
+  {
+    "age": 36,
+    "brand_id": "delta",
+    "score": 0.6872728987392489
+  },
+  {
+    "age": 28,
+    "brand_id": "beta",
+    "score": 0.44535262433423634
+  },
+  {
+    "age": 39,
+    "brand_id": "alpha",
+    "score": 0.687053518058987
+  },
+  {
+    "age": 51,
+    "brand_id": "delta",
+    "score": 0
+  },
+  {
+    "age": 30,
+    "brand_id": "gamma",
+    "score": 0.7897151494517717
+  },
+  {
+    "age": 34,
+    "brand_id": "alpha",
+    "score": 0.47905170356400184
+  },
+  {
+    "age": 50,
+    "brand_id": "beta",
+    "score": 0.428342371993242
+  },
+  {
+    "age": 33,
+    "brand_id": "alpha",
+    "score": 0.5618305860595944
+  },
+  {
+    "age": 34,
+    "brand_id": "beta",
+    "score": 0.5322496065944684
+  },
+  {
+    "age": 18,
+    "brand_id": "alpha",
+    "score": 0.302646457107767
+  },
+  {
+    "age": 27,
+    "brand_id": "beta",
+    "score": 0.5174283351681155
+  },
+  {
+    "age": 18,
+    "brand_id": "delta",
+    "score": 0.5976515378774125
+  },
+  {
+    "age": 28,
+    "brand_id": "delta",
+    "score": 0.4784101996750054
+  },
+  {
+    "age": 33,
+    "brand_id": "alpha",
+    "score": 0.4291501143635792
+  },
+  {
+    "age": 26,
+    "brand_id": "alpha",
+    "score": 0.5369500889750309
+  },
+  {
+    "age": 18,
+    "brand_id": "delta",
+    "score": 0.5238246170969643
+  },
+  {
+    "age": 33,
+    "brand_id": "alpha",
+    "score": 0.6103460209973195
+  },
+  {
+    "age": 27,
+    "brand_id": "delta",
+    "score": 0.5340747364024899
+  },
+  {
+    "age": 39,
+    "brand_id": "gamma",
+    "score": 0.8005370524523125
+  },
+  {
+    "age": 30,
+    "brand_id": "alpha",
+    "score": 0.538652675705078
+  },
+  {
+    "age": 30,
+    "brand_id": "alpha",
+    "score": 0.5320381980535676
+  },
+  {
+    "age": 34,
+    "brand_id": "beta",
+    "score": 0.5332943092757982
+  },
+  {
+    "age": 45,
+    "brand_id": "gamma",
+    "score": 0.17984997499332145
+  },
+  {
+    "age": 26,
+    "brand_id": "gamma",
+    "score": 0.14431352690436106
+  },
+  {
+    "age": 32,
+    "brand_id": "beta",
+    "score": 0.6049317574288531
+  },
+  {
+    "age": 22,
+    "brand_id": "gamma",
+    "score": 0.6140504157358876
+  },
+  {
+    "age": 49,
+    "brand_id": "alpha",
+    "score": 0.6061931429712167
+  },
+  {
+    "age": 33,
+    "brand_id": "alpha",
+    "score": 0.667407041815566
+  },
+  {
+    "age": 42,
+    "brand_id": "beta",
+    "score": 0.46329340673739544
+  },
+  {
+    "age": 52,
+    "brand_id": "beta",
+    "score": 0.4623420204069011
+  },
+  {
+    "age": 38,
+    "brand_id": "beta",
+    "score": 0.606477054872304
+  },
+  {
+    "age": 21,
+    "brand_id": "gamma",
+    "score": 0.35291232736563755
+  },
+  {
+    "age": 22,
+    "brand_id": "alpha",
+    "score": 0.6374691293425222
+  },
+  {
+    "age": 41,
+    "brand_id": "gamma",
+    "score": 0.4621403896022101
+  },
+  {
+    "age": 35,
+    "brand_id": "beta",
+    "score": 0.49680006148091965
+  },
+  {
+    "age": 41,
+    "brand_id": "alpha",
+    "score": 0.4966694734043726
+  },
+  {
+    "age": 41,
+    "brand_id": "alpha",
+    "score": 0.28437133376568446
+  },
+  {
+    "age": 57,
+    "brand_id": "gamma",
+    "score": 0.5935715392195319
+  },
+  {
+    "age": 40,
+    "brand_id": "alpha",
+    "score": 0.6503643474408514
+  },
+  {
+    "age": 23,
+    "brand_id": "alpha",
+    "score": 0.5823723456671576
+  },
+  {
+    "age": 51,
+    "brand_id": "beta",
+    "score": 0.5078216297183585
+  },
+  {
+    "age": 48,
+    "brand_id": "delta",
+    "score": 0.9191491216547075
+  },
+  {
+    "age": 39,
+    "brand_id": "beta",
+    "score": 0.44064917987018914
+  },
+  {
+    "age": 30,
+    "brand_id": "alpha",
+    "score": 0.5132260018131822
+  },
+  {
+    "age": 33,
+    "brand_id": "alpha",
+    "score": 0.6630251613921111
+  },
+  {
+    "age": 30,
+    "brand_id": "beta",
+    "score": 0.6157474603178839
+  },
+  {
+    "age": 36,
+    "brand_id": "beta",
+    "score": 0.39979846082996334
+  },
+  {
+    "age": 35,
+    "brand_id": "gamma",
+    "score": 0.439670146505824
+  },
+  {
+    "age": 43,
+    "brand_id": "gamma",
+    "score": 0.5694570201313391
+  },
+  {
+    "age": 20,
+    "brand_id": "alpha",
+    "score": 0.5283670770460679
+  },
+  {
+    "age": 23,
+    "brand_id": "alpha",
+    "score": 0.4417929779332845
+  },
+  {
+    "age": 34,
+    "brand_id": "delta",
+    "score": 0.577913850426434
+  },
+  {
+    "age": 37,
+    "brand_id": "alpha",
+    "score": 0.5366038917452371
+  },
+  {
+    "age": 36,
+    "brand_id": "alpha",
+    "score": 0.4591008331874275
+  },
+  {
+    "age": 43,
+    "brand_id": "alpha",
+    "score": 0.4590029865013717
+  },
+  {
+    "age": 57,
+    "brand_id": "alpha",
+    "score": 0.47312628776133164
+  },
+  {
+    "age": 47,
+    "brand_id": "alpha",
+    "score": 0.347351705413457
+  },
+  {
+    "age": 26,
+    "brand_id": "gamma",
+    "score": 0.4325391565032711
+  },
+  {
+    "age": 30,
+    "brand_id": "alpha",
+    "score": 0.5503571823231725
+  },
+  {
+    "age": 51,
+    "brand_id": "alpha",
+    "score": 0.716079455293863
+  },
+  {
+    "age": 39,
+    "brand_id": "beta",
+    "score": 0.5356190089009136
+  },
+  {
+    "age": 38,
+    "brand_id": "delta",
+    "score": 0.34968061876600276
+  },
+  {
+    "age": 39,
+    "brand_id": "gamma",
+    "score": 0.4829477468423638
+  },
+  {
+    "age": 40,
+    "brand_id": "alpha",
+    "score": 0.4647315025082265
+  },
+  {
+    "age": 34,
+    "brand_id": "delta",
+    "score": 0.27354401281990476
+  },
+  {
+    "age": 36,
+    "brand_id": "gamma",
+    "score": 0.39724186305690945
+  },
+  {
+    "age": 53,
+    "brand_id": "alpha",
+    "score": 0.15273861608607722
+  },
+  {
+    "age": 44,
+    "brand_id": "delta",
+    "score": 0.5590990447410253
+  },
+  {
+    "age": 29,
+    "brand_id": "beta",
+    "score": 0.43432216762176645
+  },
+  {
+    "age": 33,
+    "brand_id": "gamma",
+    "score": 0.5299140878995227
+  },
+  {
+    "age": 25,
+    "brand_id": "alpha",
+    "score": 0.6008504849309596
+  },
+  {
+    "age": 28,
+    "brand_id": "beta",
+    "score": 0.4641310587164646
+  },
+  {
+    "age": 36,
+    "brand_id": "alpha",
+    "score": 0.538230461942939
+  },
+  {
+    "age": 18,
+    "brand_id": "delta",
+    "score": 0.43743728833165213
+  },
+  {
+    "age": 33,
+    "brand_id": "alpha",
+    "score": 0.5613036132798137
+  },
+  {
+    "age": 43,
+    "brand_id": "beta",
+    "score": 0.7237488515410954
+  },
+  {
+    "age": 45,
+    "brand_id": "delta",
+    "score": 0.36619351146422274
+  },
+  {
+    "age": 37,
+    "brand_id": "alpha",
+    "score": 0.33516951530525596
+  },
+  {
+    "age": 27,
+    "brand_id": "alpha",
+    "score": 0.31013171498988074
+  },
+  {
+    "age": 39,
+    "brand_id": "gamma",
+    "score": 0.4141592555922221
+  },
+  {
+    "age": 27,
+    "brand_id": "alpha",
+    "score": 0.4870521195061472
+  },
+  {
+    "age": 44,
+    "brand_id": "delta",
+    "score": 0.619600386014547
+  },
+  {
+    "age": 22,
+    "brand_id": "beta",
+    "score": 0.557308630889266
+  },
+  {
+    "age": 38,
+    "brand_id": "beta",
+    "score": 0.39924849139280993
+  },
+  {
+    "age": 28,
+    "brand_id": "alpha",
+    "score": 0.29568858142282656
+  },
+  {
+    "age": 28,
+    "brand_id": "beta",
+    "score": 0.26738223612412404
+  },
+  {
+    "age": 32,
+    "brand_id": "delta",
+    "score": 0.3399297187832929
+  },
+  {
+    "age": 33,
+    "brand_id": "gamma",
+    "score": 0.5014234735253611
+  },
+  {
+    "age": 42,
+    "brand_id": "alpha",
+    "score": 0.7103684680894169
+  },
+  {
+    "age": 53,
+    "brand_id": "alpha",
+    "score": 0.3583547685643391
+  },
+  {
+    "age": 18,
+    "brand_id": "delta",
+    "score": 0.46059507423060386
+  },
+  {
+    "age": 43,
+    "brand_id": "beta",
+    "score": 0.5015620960135485
+  },
+  {
+    "age": 42,
+    "brand_id": "alpha",
+    "score": 0.5328257406318142
+  },
+  {
+    "age": 33,
+    "brand_id": "beta",
+    "score": 0.5729576398087315
+  },
+  {
+    "age": 33,
+    "brand_id": "delta",
+    "score": 0.3628505407278661
+  },
+  {
+    "age": 63,
+    "brand_id": "alpha",
+    "score": 0.630963749686943
+  },
+  {
+    "age": 31,
+    "brand_id": "beta",
+    "score": 0.24706721055737707
+  },
+  {
+    "age": 18,
+    "brand_id": "beta",
+    "score": 0.25914859346992597
+  },
+  {
+    "age": 33,
+    "brand_id": "beta",
+    "score": 0.374679202605407
+  },
+  {
+    "age": 33,
+    "brand_id": "gamma",
+    "score": 0.3253690373809697
+  },
+  {
+    "age": 18,
+    "brand_id": "alpha",
+    "score": 0.25769098371175864
+  },
+  {
+    "age": 27,
+    "brand_id": "gamma",
+    "score": 0.3210844395224105
+  },
+  {
+    "age": 34,
+    "brand_id": "beta",
+    "score": 0.5561671578423543
+  },
+  {
+    "age": 46,
+    "brand_id": "alpha",
+    "score": 0.3778255385632952
+  },
+  {
+    "age": 38,
+    "brand_id": "alpha",
+    "score": 0.6452987576286469
+  },
+  {
+    "age": 24,
+    "brand_id": "alpha",
+    "score": 0.3824768346847975
+  },
+  {
+    "age": 41,
+    "brand_id": "alpha",
+    "score": 0.5077154699713902
+  },
+  {
+    "age": 31,
+    "brand_id": "alpha",
+    "score": 0.800570308760552
+  },
+  {
+    "age": 44,
+    "brand_id": "alpha",
+    "score": 0.6680964120635856
+  },
+  {
+    "age": 37,
+    "brand_id": "beta",
+    "score": 0.3708500153122868
+  },
+  {
+    "age": 50,
+    "brand_id": "alpha",
+    "score": 0.733033322506973
+  },
+  {
+    "age": 43,
+    "brand_id": "delta",
+    "score": 0.4604399716971059
+  },
+  {
+    "age": 35,
+    "brand_id": "alpha",
+    "score": 0.24691277233325626
+  },
+  {
+    "age": 44,
+    "brand_id": "delta",
+    "score": 0.5634458016565482
+  },
+  {
+    "age": 32,
+    "brand_id": "alpha",
+    "score": 0.6014321175462252
+  },
+  {
+    "age": 39,
+    "brand_id": "alpha",
+    "score": 0.5779151842832949
+  },
+  {
+    "age": 27,
+    "brand_id": "beta",
+    "score": 0.4475865816025191
+  },
+  {
+    "age": 41,
+    "brand_id": "alpha",
+    "score": 0.8268277858234323
+  },
+  {
+    "age": 40,
+    "brand_id": "beta",
+    "score": 0.6495621220761056
+  },
+  {
+    "age": 40,
+    "brand_id": "beta",
+    "score": 0.5079431830143696
+  },
+  {
+    "age": 40,
+    "brand_id": "alpha",
+    "score": 0.6419616413370001
+  },
+  {
+    "age": 20,
+    "brand_id": "alpha",
+    "score": 0.4890385067471988
+  },
+  {
+    "age": 38,
+    "brand_id": "gamma",
+    "score": 0.7951978255126145
+  },
+  {
+    "age": 32,
+    "brand_id": "beta",
+    "score": 0.37528857899491774
+  },
+  {
+    "age": 39,
+    "brand_id": "delta",
+    "score": 0.4903284198557108
+  },
+  {
+    "age": 22,
+    "brand_id": "beta",
+    "score": 0.5409040562658299
+  },
+  {
+    "age": 18,
+    "brand_id": "beta",
+    "score": 0.5451737228782374
+  },
+  {
+    "age": 31,
+    "brand_id": "beta",
+    "score": 0.5428753557398521
+  },
+  {
+    "age": 48,
+    "brand_id": "alpha",
+    "score": 0.6030448952766085
+  },
+  {
+    "age": 30,
+    "brand_id": "beta",
+    "score": 0.45535275190047
+  },
+  {
+    "age": 44,
+    "brand_id": "alpha",
+    "score": 0.7694110412548307
+  },
+  {
+    "age": 36,
+    "brand_id": "beta",
+    "score": 0.41354858220383206
+  },
+  {
+    "age": 37,
+    "brand_id": "delta",
+    "score": 0.5173023097402331
+  },
+  {
+    "age": 45,
+    "brand_id": "alpha",
+    "score": 0.4997391196773956
+  },
+  {
+    "age": 40,
+    "brand_id": "beta",
+    "score": 0.32332836755473365
+  },
+  {
+    "age": 34,
+    "brand_id": "delta",
+    "score": 0.4618689379583222
+  },
+  {
+    "age": 25,
+    "brand_id": "alpha",
+    "score": 0.5905531687062998
+  },
+  {
+    "age": 40,
+    "brand_id": "alpha",
+    "score": 0.47493377005832554
+  },
+  {
+    "age": 27,
+    "brand_id": "delta",
+    "score": 0.48090201966272816
+  },
+  {
+    "age": 53,
+    "brand_id": "gamma",
+    "score": 0.6669451879487969
+  },
+  {
+    "age": 28,
+    "brand_id": "delta",
+    "score": 0.5935936916783939
+  },
+  {
+    "age": 37,
+    "brand_id": "gamma",
+    "score": 0.5006552950512388
+  },
+  {
+    "age": 18,
+    "brand_id": "alpha",
+    "score": 0.5538977039540424
+  },
+  {
+    "age": 54,
+    "brand_id": "gamma",
+    "score": 0.39369246383785583
+  },
+  {
+    "age": 29,
+    "brand_id": "alpha",
+    "score": 0.46814078080077204
+  },
+  {
+    "age": 27,
+    "brand_id": "gamma",
+    "score": 0.33211218736633125
+  },
+  {
+    "age": 31,
+    "brand_id": "gamma",
+    "score": 0.7474685930685654
+  },
+  {
+    "age": 48,
+    "brand_id": "beta",
+    "score": 0.5363204482217782
+  },
+  {
+    "age": 21,
+    "brand_id": "alpha",
+    "score": 0.6648115599521094
+  },
+  {
+    "age": 33,
+    "brand_id": "beta",
+    "score": 0.3651506507803822
+  },
+  {
+    "age": 28,
+    "brand_id": "beta",
+    "score": 0.44138927921518883
+  },
+  {
+    "age": 52,
+    "brand_id": "alpha",
+    "score": 0.4983711333275325
+  },
+  {
+    "age": 51,
+    "brand_id": "alpha",
+    "score": 0.533204999154675
+  },
+  {
+    "age": 42,
+    "brand_id": "delta",
+    "score": 0.44190121945811134
+  },
+  {
+    "age": 47,
+    "brand_id": "gamma",
+    "score": 0.6703280985997827
+  },
+  {
+    "age": 23,
+    "brand_id": "beta",
+    "score": 0.3328200173674447
+  },
+  {
+    "age": 27,
+    "brand_id": "beta",
+    "score": 0.3153102865502809
+  },
+  {
+    "age": 37,
+    "brand_id": "beta",
+    "score": 0.6638946153475349
+  },
+  {
+    "age": 41,
+    "brand_id": "beta",
+    "score": 0.7351533897114857
+  },
+  {
+    "age": 26,
+    "brand_id": "alpha",
+    "score": 0.7589571697397005
+  },
+  {
+    "age": 25,
+    "brand_id": "beta",
+    "score": 0.6573993826686467
+  },
+  {
+    "age": 44,
+    "brand_id": "alpha",
+    "score": 0.40931614729515803
+  },
+  {
+    "age": 43,
+    "brand_id": "alpha",
+    "score": 0.489878401090712
+  },
+  {
+    "age": 18,
+    "brand_id": "delta",
+    "score": 0.6008998173124652
+  },
+  {
+    "age": 44,
+    "brand_id": "alpha",
+    "score": 0.26621738927126865
+  },
+  {
+    "age": 20,
+    "brand_id": "alpha",
+    "score": 0.37390506138349583
+  },
+  {
+    "age": 48,
+    "brand_id": "beta",
+    "score": 0.7437222942878298
+  },
+  {
+    "age": 21,
+    "brand_id": "alpha",
+    "score": 0.49956926877920865
+  },
+  {
+    "age": 44,
+    "brand_id": "alpha",
+    "score": 0.5032856112693709
+  },
+  {
+    "age": 40,
+    "brand_id": "beta",
+    "score": 0.6277637013021343
+  },
+  {
+    "age": 18,
+    "brand_id": "alpha",
+    "score": 0.6805048469304709
+  },
+  {
+    "age": 43,
+    "brand_id": "beta",
+    "score": 0.44248780404742744
+  },
+  {
+    "age": 27,
+    "brand_id": "alpha",
+    "score": 0.4387222015725749
+  },
+  {
+    "age": 36,
+    "brand_id": "beta",
+    "score": 0.4397329185519008
+  },
+  {
+    "age": 23,
+    "brand_id": "alpha",
+    "score": 0.8999156388467248
+  },
+  {
+    "age": 25,
+    "brand_id": "beta",
+    "score": 0.5084457813458112
+  },
+  {
+    "age": 20,
+    "brand_id": "beta",
+    "score": 0.5695310421867081
+  },
+  {
+    "age": 21,
+    "brand_id": "beta",
+    "score": 0.6913523015348125
+  },
+  {
+    "age": 38,
+    "brand_id": "beta",
+    "score": 0.4924459389464464
+  },
+  {
+    "age": 30,
+    "brand_id": "alpha",
+    "score": 0.5888554397177853
+  },
+  {
+    "age": 22,
+    "brand_id": "alpha",
+    "score": 0.36230857724688115
+  },
+  {
+    "age": 38,
+    "brand_id": "alpha",
+    "score": 0.4467896362650897
+  },
+  {
+    "age": 39,
+    "brand_id": "alpha",
+    "score": 0.501164880138274
+  },
+  {
+    "age": 49,
+    "brand_id": "alpha",
+    "score": 0.3831502405343732
+  },
+  {
+    "age": 48,
+    "brand_id": "gamma",
+    "score": 0.35102799515607985
+  },
+  {
+    "age": 31,
+    "brand_id": "alpha",
+    "score": 0.42247846488900126
+  },
+  {
+    "age": 34,
+    "brand_id": "gamma",
+    "score": 0.7683927081900342
+  },
+  {
+    "age": 21,
+    "brand_id": "beta",
+    "score": 0.5039383830712542
+  },
+  {
+    "age": 40,
+    "brand_id": "alpha",
+    "score": 0.24586887857056383
+  },
+  {
+    "age": 44,
+    "brand_id": "alpha",
+    "score": 0.9174640673711618
+  },
+  {
+    "age": 36,
+    "brand_id": "alpha",
+    "score": 0.41942505974869615
+  },
+  {
+    "age": 40,
+    "brand_id": "alpha",
+    "score": 0.5903649873988528
+  },
+  {
+    "age": 37,
+    "brand_id": "gamma",
+    "score": 0.48028172519097506
+  },
+  {
+    "age": 38,
+    "brand_id": "delta",
+    "score": 0.360469229626896
+  },
+  {
+    "age": 18,
+    "brand_id": "alpha",
+    "score": 0.4395926906446687
+  },
+  {
+    "age": 30,
+    "brand_id": "alpha",
+    "score": 0.7226623044416127
+  },
+  {
+    "age": 48,
+    "brand_id": "alpha",
+    "score": 0.5204316014308321
+  },
+  {
+    "age": 60,
+    "brand_id": "gamma",
+    "score": 0.6554623788963783
+  },
+  {
+    "age": 23,
+    "brand_id": "gamma",
+    "score": 0.5680771093029631
+  },
+  {
+    "age": 32,
+    "brand_id": "alpha",
+    "score": 0.7535791231145048
+  },
+  {
+    "age": 18,
+    "brand_id": "beta",
+    "score": 0.2887711084860865
+  },
+  {
+    "age": 52,
+    "brand_id": "beta",
+    "score": 0.5195579290932436
+  },
+  {
+    "age": 21,
+    "brand_id": "alpha",
+    "score": 0.4315277000141281
+  },
+  {
+    "age": 19,
+    "brand_id": "beta",
+    "score": 0.5153173355728156
+  },
+  {
+    "age": 34,
+    "brand_id": "gamma",
+    "score": 0.5221620276076885
+  },
+  {
+    "age": 33,
+    "brand_id": "gamma",
+    "score": 0.3978783725218209
+  },
+  {
+    "age": 29,
+    "brand_id": "beta",
+    "score": 0.6724331623340707
+  },
+  {
+    "age": 44,
+    "brand_id": "beta",
+    "score": 0.585593120552302
+  },
+  {
+    "age": 18,
+    "brand_id": "alpha",
+    "score": 0.5382283407237061
+  },
+  {
+    "age": 31,
+    "brand_id": "beta",
+    "score": 0.6227632148552403
+  },
+  {
+    "age": 25,
+    "brand_id": "alpha",
+    "score": 0.4310302795343017
+  },
+  {
+    "age": 33,
+    "brand_id": "gamma",
+    "score": 0.5442075828254194
+  },
+  {
+    "age": 26,
+    "brand_id": "alpha",
+    "score": 0.6723663846098672
+  },
+  {
+    "age": 28,
+    "brand_id": "delta",
+    "score": 0.4625614353822334
+  },
+  {
+    "age": 46,
+    "brand_id": "gamma",
+    "score": 0.3950283739037976
+  },
+  {
+    "age": 33,
+    "brand_id": "alpha",
+    "score": 0.8690751153953759
+  },
+  {
+    "age": 40,
+    "brand_id": "alpha",
+    "score": 0.6273992144977686
+  },
+  {
+    "age": 27,
+    "brand_id": "delta",
+    "score": 0.4647947934521214
+  },
+  {
+    "age": 40,
+    "brand_id": "delta",
+    "score": 0.5335818725707128
+  },
+  {
+    "age": 45,
+    "brand_id": "alpha",
+    "score": 0.4310594974708545
+  },
+  {
+    "age": 42,
+    "brand_id": "beta",
+    "score": 0.37795154538210285
+  },
+  {
+    "age": 18,
+    "brand_id": "alpha",
+    "score": 0.5237753668003678
+  },
+  {
+    "age": 33,
+    "brand_id": "gamma",
+    "score": 0.713329196318271
+  },
+  {
+    "age": 48,
+    "brand_id": "beta",
+    "score": 0.6944686302392781
+  },
+  {
+    "age": 55,
+    "brand_id": "alpha",
+    "score": 0.6558135412155482
+  },
+  {
+    "age": 46,
+    "brand_id": "alpha",
+    "score": 0.3521882306656876
+  },
+  {
+    "age": 54,
+    "brand_id": "alpha",
+    "score": 0.21497667334793752
+  },
+  {
+    "age": 37,
+    "brand_id": "gamma",
+    "score": 0.3285863058154353
+  },
+  {
+    "age": 37,
+    "brand_id": "alpha",
+    "score": 0.531246165431759
+  },
+  {
+    "age": 47,
+    "brand_id": "beta",
+    "score": 0.6511424203318609
+  },
+  {
+    "age": 24,
+    "brand_id": "gamma",
+    "score": 0.3932957586064759
+  },
+  {
+    "age": 32,
+    "brand_id": "gamma",
+    "score": 0.40758069016795645
+  },
+  {
+    "age": 30,
+    "brand_id": "delta",
+    "score": 0.46724702822096226
+  },
+  {
+    "age": 53,
+    "brand_id": "alpha",
+    "score": 0.21506500101919965
+  },
+  {
+    "age": 50,
+    "brand_id": "alpha",
+    "score": 0.5004632933940383
+  },
+  {
+    "age": 43,
+    "brand_id": "beta",
+    "score": 0.9802453973404129
+  },
+  {
+    "age": 27,
+    "brand_id": "gamma",
+    "score": 0.6138398253749819
+  },
+  {
+    "age": 30,
+    "brand_id": "alpha",
+    "score": 0.46851753648613664
+  },
+  {
+    "age": 29,
+    "brand_id": "alpha",
+    "score": 0.5200305904631747
+  },
+  {
+    "age": 32,
+    "brand_id": "alpha",
+    "score": 0.2494495334844976
+  },
+  {
+    "age": 30,
+    "brand_id": "alpha",
+    "score": 0.2951207013141827
+  },
+  {
+    "age": 36,
+    "brand_id": "beta",
+    "score": 0.7444729160311385
+  },
+  {
+    "age": 58,
+    "brand_id": "alpha",
+    "score": 0.8223611312578445
+  },
+  {
+    "age": 31,
+    "brand_id": "beta",
+    "score": 0.6851201648136364
+  },
+  {
+    "age": 49,
+    "brand_id": "alpha",
+    "score": 0.36247400910984745
+  },
+  {
+    "age": 52,
+    "brand_id": "beta",
+    "score": 0.5688054612620754
+  },
+  {
+    "age": 51,
+    "brand_id": "alpha",
+    "score": 0.46134807251551146
+  },
+  {
+    "age": 27,
+    "brand_id": "gamma",
+    "score": 0.510083163674183
+  },
+  {
+    "age": 33,
+    "brand_id": "alpha",
+    "score": 0.3753515591751904
+  },
+  {
+    "age": 30,
+    "brand_id": "beta",
+    "score": 0.60232283015472
+  },
+  {
+    "age": 40,
+    "brand_id": "gamma",
+    "score": 0.32326567808981754
+  },
+  {
+    "age": 42,
+    "brand_id": "alpha",
+    "score": 0.5193524738922274
+  },
+  {
+    "age": 25,
+    "brand_id": "alpha",
+    "score": 0.4461846676289118
+  },
+  {
+    "age": 42,
+    "brand_id": "alpha",
+    "score": 0.6237506892425638
+  },
+  {
+    "age": 24,
+    "brand_id": "beta",
+    "score": 0.48548386429413276
+  },
+  {
+    "age": 26,
+    "brand_id": "alpha",
+    "score": 0.6185941126132773
+  },
+  {
+    "age": 35,
+    "brand_id": "beta",
+    "score": 0.5312851712762411
+  },
+  {
+    "age": 24,
+    "brand_id": "beta",
+    "score": 0.6282472018055685
+  },
+  {
+    "age": 29,
+    "brand_id": "beta",
+    "score": 0.4113489688409784
+  },
+  {
+    "age": 27,
+    "brand_id": "beta",
+    "score": 0.5152772093640781
+  },
+  {
+    "age": 40,
+    "brand_id": "delta",
+    "score": 0.44771490184393675
+  },
+  {
+    "age": 40,
+    "brand_id": "alpha",
+    "score": 0.3972806258682244
+  },
+  {
+    "age": 25,
+    "brand_id": "alpha",
+    "score": 0.5547787417563279
+  },
+  {
+    "age": 49,
+    "brand_id": "gamma",
+    "score": 0.5838979032832586
+  },
+  {
+    "age": 41,
+    "brand_id": "beta",
+    "score": 0.4978083225445484
+  },
+  {
+    "age": 37,
+    "brand_id": "alpha",
+    "score": 0.4232095646666405
+  },
+  {
+    "age": 29,
+    "brand_id": "beta",
+    "score": 0.43861471555164866
+  },
+  {
+    "age": 36,
+    "brand_id": "beta",
+    "score": 0.21529380579368093
+  },
+  {
+    "age": 39,
+    "brand_id": "beta",
+    "score": 0.3292257547615152
+  },
+  {
+    "age": 53,
+    "brand_id": "gamma",
+    "score": 0.8827701202056496
+  },
+  {
+    "age": 36,
+    "brand_id": "gamma",
+    "score": 0.5555642781437944
+  },
+  {
+    "age": 25,
+    "brand_id": "gamma",
+    "score": 0.7628058905047572
+  },
+  {
+    "age": 30,
+    "brand_id": "alpha",
+    "score": 0.6461877129541889
+  },
+  {
+    "age": 40,
+    "brand_id": "gamma",
+    "score": 0.47400234552952036
+  },
+  {
+    "age": 38,
+    "brand_id": "alpha",
+    "score": 0.46416442586461526
+  },
+  {
+    "age": 43,
+    "brand_id": "delta",
+    "score": 0.3138864117678479
+  },
+  {
+    "age": 37,
+    "brand_id": "gamma",
+    "score": 0.4642258295489972
+  },
+  {
+    "age": 44,
+    "brand_id": "alpha",
+    "score": 0.6590931617289002
+  },
+  {
+    "age": 37,
+    "brand_id": "beta",
+    "score": 0.3530973985351499
+  },
+  {
+    "age": 40,
+    "brand_id": "gamma",
+    "score": 0.5137518381667536
+  },
+  {
+    "age": 36,
+    "brand_id": "beta",
+    "score": 0.4785352586376456
+  },
+  {
+    "age": 22,
+    "brand_id": "alpha",
+    "score": 0.44358043104089456
+  },
+  {
+    "age": 26,
+    "brand_id": "gamma",
+    "score": 0.5089052047881452
+  },
+  {
+    "age": 33,
+    "brand_id": "alpha",
+    "score": 0.6103631636411296
+  },
+  {
+    "age": 46,
+    "brand_id": "alpha",
+    "score": 0.5217254953764348
+  },
+  {
+    "age": 33,
+    "brand_id": "gamma",
+    "score": 0.3059314003639902
+  },
+  {
+    "age": 28,
+    "brand_id": "gamma",
+    "score": 0.5051396637113835
+  },
+  {
+    "age": 22,
+    "brand_id": "alpha",
+    "score": 0.5362305206637039
+  },
+  {
+    "age": 19,
+    "brand_id": "alpha",
+    "score": 0.4920107717646967
+  },
+  {
+    "age": 29,
+    "brand_id": "delta",
+    "score": 0.49024781103773135
+  },
+  {
+    "age": 52,
+    "brand_id": "beta",
+    "score": 0.4072106296575058
+  },
+  {
+    "age": 46,
+    "brand_id": "alpha",
+    "score": 0.6981288742376023
+  },
+  {
+    "age": 51,
+    "brand_id": "alpha",
+    "score": 0.5464452232433531
+  },
+  {
+    "age": 40,
+    "brand_id": "alpha",
+    "score": 0.4534193133820804
+  },
+  {
+    "age": 26,
+    "brand_id": "beta",
+    "score": 0.47756247626459786
+  },
+  {
+    "age": 43,
+    "brand_id": "alpha",
+    "score": 0.5270612304956767
+  },
+  {
+    "age": 26,
+    "brand_id": "alpha",
+    "score": 0.42771016451755395
+  },
+  {
+    "age": 40,
+    "brand_id": "delta",
+    "score": 0.6035207179079543
+  },
+  {
+    "age": 45,
+    "brand_id": "delta",
+    "score": 0.45810360532592864
+  },
+  {
+    "age": 38,
+    "brand_id": "delta",
+    "score": 0.5715102255855266
+  },
+  {
+    "age": 38,
+    "brand_id": "delta",
+    "score": 0.5517623388133477
+  },
+  {
+    "age": 35,
+    "brand_id": "gamma",
+    "score": 0.453991656069407
+  },
+  {
+    "age": 58,
+    "brand_id": "gamma",
+    "score": 0.48257860160389937
+  },
+  {
+    "age": 29,
+    "brand_id": "alpha",
+    "score": 0.2461591807241132
+  },
+  {
+    "age": 35,
+    "brand_id": "gamma",
+    "score": 0.47257392326548875
+  },
+  {
+    "age": 35,
+    "brand_id": "alpha",
+    "score": 0.6600800426209962
+  },
+  {
+    "age": 28,
+    "brand_id": "alpha",
+    "score": 0.21608876307783192
+  },
+  {
+    "age": 51,
+    "brand_id": "alpha",
+    "score": 0.48779651873726715
+  },
+  {
+    "age": 27,
+    "brand_id": "alpha",
+    "score": 0.4009626734496511
+  },
+  {
+    "age": 36,
+    "brand_id": "alpha",
+    "score": 0.48466158537313736
+  },
+  {
+    "age": 26,
+    "brand_id": "delta",
+    "score": 0.5380383580600085
+  },
+  {
+    "age": 22,
+    "brand_id": "alpha",
+    "score": 0.4112192811456022
+  },
+  {
+    "age": 41,
+    "brand_id": "beta",
+    "score": 0.6936831081436777
+  },
+  {
+    "age": 47,
+    "brand_id": "beta",
+    "score": 0.45327125213354746
+  },
+  {
+    "age": 29,
+    "brand_id": "alpha",
+    "score": 0.33103219646499904
+  },
+  {
+    "age": 31,
+    "brand_id": "beta",
+    "score": 0.37006340285113104
+  },
+  {
+    "age": 26,
+    "brand_id": "alpha",
+    "score": 0.32607063946061093
+  },
+  {
+    "age": 25,
+    "brand_id": "beta",
+    "score": 0.6890413125530566
+  },
+  {
+    "age": 31,
+    "brand_id": "delta",
+    "score": 0.7244105984311221
+  },
+  {
+    "age": 59,
+    "brand_id": "beta",
+    "score": 0.5084985327501279
+  },
+  {
+    "age": 39,
+    "brand_id": "alpha",
+    "score": 0.504580793761419
+  },
+  {
+    "age": 25,
+    "brand_id": "gamma",
+    "score": 0.5314072563124125
+  },
+  {
+    "age": 48,
+    "brand_id": "beta",
+    "score": 0.5230320357714353
+  },
+  {
+    "age": 47,
+    "brand_id": "alpha",
+    "score": 0.5894114432655237
+  },
+  {
+    "age": 59,
+    "brand_id": "gamma",
+    "score": 0.6214758261408119
+  },
+  {
+    "age": 55,
+    "brand_id": "beta",
+    "score": 0.3423293489178489
+  },
+  {
+    "age": 37,
+    "brand_id": "alpha",
+    "score": 0.5574081377721957
+  },
+  {
+    "age": 32,
+    "brand_id": "alpha",
+    "score": 0.49528368243826987
+  },
+  {
+    "age": 46,
+    "brand_id": "beta",
+    "score": 0.48110572060271406
+  },
+  {
+    "age": 40,
+    "brand_id": "alpha",
+    "score": 0.28066205714592274
+  },
+  {
+    "age": 39,
+    "brand_id": "alpha",
+    "score": 0.16423353133313526
+  },
+  {
+    "age": 53,
+    "brand_id": "alpha",
+    "score": 0.645838781927588
+  },
+  {
+    "age": 60,
+    "brand_id": "delta",
+    "score": 0.6681119839605352
+  },
+  {
+    "age": 38,
+    "brand_id": "gamma",
+    "score": 0.421644955480088
+  },
+  {
+    "age": 34,
+    "brand_id": "alpha",
+    "score": 0.6838704806724561
+  },
+  {
+    "age": 60,
+    "brand_id": "beta",
+    "score": 0.6249092573813682
+  },
+  {
+    "age": 57,
+    "brand_id": "alpha",
+    "score": 0.6064464100105819
+  },
+  {
+    "age": 42,
+    "brand_id": "beta",
+    "score": 0.5320019841724923
+  },
+  {
+    "age": 40,
+    "brand_id": "alpha",
+    "score": 0.5898097089702823
+  },
+  {
+    "age": 30,
+    "brand_id": "alpha",
+    "score": 0.5650802845143894
+  },
+  {
+    "age": 23,
+    "brand_id": "delta",
+    "score": 0.6730223801159334
+  },
+  {
+    "age": 36,
+    "brand_id": "alpha",
+    "score": 0.4664503086433072
+  },
+  {
+    "age": 49,
+    "brand_id": "beta",
+    "score": 0.33647122405970203
+  },
+  {
+    "age": 27,
+    "brand_id": "alpha",
+    "score": 0.6587916358207476
+  },
+  {
+    "age": 37,
+    "brand_id": "alpha",
+    "score": 0.6192563808861434
+  },
+  {
+    "age": 39,
+    "brand_id": "beta",
+    "score": 0.7898955583579473
+  },
+  {
+    "age": 26,
+    "brand_id": "delta",
+    "score": 0.6517124634960062
+  },
+  {
+    "age": 32,
+    "brand_id": "gamma",
+    "score": 0.5211294615769377
+  },
+  {
+    "age": 34,
+    "brand_id": "alpha",
+    "score": 0.48353015041595576
+  },
+  {
+    "age": 44,
+    "brand_id": "beta",
+    "score": 0.49684152569422063
+  },
+  {
+    "age": 43,
+    "brand_id": "gamma",
+    "score": 0.5792631234393298
+  },
+  {
+    "age": 21,
+    "brand_id": "beta",
+    "score": 0.19058944893041463
+  },
+  {
+    "age": 33,
+    "brand_id": "gamma",
+    "score": 0.5494789463261577
+  },
+  {
+    "age": 47,
+    "brand_id": "beta",
+    "score": 0.5510481951354308
+  },
+  {
+    "age": 53,
+    "brand_id": "beta",
+    "score": 0.4836610451985975
+  },
+  {
+    "age": 35,
+    "brand_id": "alpha",
+    "score": 0.560997652469433
+  },
+  {
+    "age": 27,
+    "brand_id": "gamma",
+    "score": 0.4372708148212526
+  },
+  {
+    "age": 35,
+    "brand_id": "alpha",
+    "score": 0.3682545444792059
+  },
+  {
+    "age": 44,
+    "brand_id": "alpha",
+    "score": 0.4468854802128154
+  },
+  {
+    "age": 18,
+    "brand_id": "beta",
+    "score": 0.3211722516575927
+  },
+  {
+    "age": 33,
+    "brand_id": "beta",
+    "score": 0.3557762934739815
+  },
+  {
+    "age": 48,
+    "brand_id": "alpha",
+    "score": 0.30790203417786505
+  },
+  {
+    "age": 34,
+    "brand_id": "alpha",
+    "score": 0.590972664319756
+  },
+  {
+    "age": 29,
+    "brand_id": "beta",
+    "score": 0.43125243414459546
+  },
+  {
+    "age": 28,
+    "brand_id": "gamma",
+    "score": 0.44374083904277684
+  },
+  {
+    "age": 45,
+    "brand_id": "beta",
+    "score": 0.31428845838145525
+  },
+  {
+    "age": 22,
+    "brand_id": "alpha",
+    "score": 0.6608978792060473
+  },
+  {
+    "age": 37,
+    "brand_id": "beta",
+    "score": 0.43753755902065106
+  },
+  {
+    "age": 42,
+    "brand_id": "alpha",
+    "score": 0.47772642398011356
+  },
+  {
+    "age": 39,
+    "brand_id": "alpha",
+    "score": 0.373169745301348
+  },
+  {
+    "age": 37,
+    "brand_id": "delta",
+    "score": 0.7204654163757968
+  },
+  {
+    "age": 24,
+    "brand_id": "alpha",
+    "score": 0.9927196416020506
+  },
+  {
+    "age": 36,
+    "brand_id": "beta",
+    "score": 0.5304067333917216
+  },
+  {
+    "age": 32,
+    "brand_id": "beta",
+    "score": 0.3076892029634298
+  },
+  {
+    "age": 46,
+    "brand_id": "beta",
+    "score": 0.5274818456819474
+  },
+  {
+    "age": 28,
+    "brand_id": "alpha",
+    "score": 0.2712775796321791
+  },
+  {
+    "age": 40,
+    "brand_id": "beta",
+    "score": 0.6795331853894012
+  },
+  {
+    "age": 55,
+    "brand_id": "beta",
+    "score": 0.4214435944285073
+  },
+  {
+    "age": 35,
+    "brand_id": "alpha",
+    "score": 0.5177276176715587
+  },
+  {
+    "age": 22,
+    "brand_id": "gamma",
+    "score": 0.38522832689023234
+  },
+  {
+    "age": 31,
+    "brand_id": "gamma",
+    "score": 0.5058899332354532
+  },
+  {
+    "age": 34,
+    "brand_id": "gamma",
+    "score": 0.7533229090044474
+  },
+  {
+    "age": 50,
+    "brand_id": "beta",
+    "score": 0.35646566240849126
+  },
+  {
+    "age": 39,
+    "brand_id": "beta",
+    "score": 0.6983904172181064
+  },
+  {
+    "age": 25,
+    "brand_id": "alpha",
+    "score": 0.6106631222786228
+  },
+  {
+    "age": 23,
+    "brand_id": "alpha",
+    "score": 0.4003226878829095
+  },
+  {
+    "age": 29,
+    "brand_id": "gamma",
+    "score": 0.4664171050647667
+  },
+  {
+    "age": 18,
+    "brand_id": "delta",
+    "score": 0.7556017827720167
+  },
+  {
+    "age": 44,
+    "brand_id": "alpha",
+    "score": 0.3529213951097855
+  },
+  {
+    "age": 43,
+    "brand_id": "alpha",
+    "score": 0.47181308916840253
+  },
+  {
+    "age": 42,
+    "brand_id": "beta",
+    "score": 0.6965833509317039
+  },
+  {
+    "age": 27,
+    "brand_id": "gamma",
+    "score": 0.47271245461985856
+  },
+  {
+    "age": 44,
+    "brand_id": "alpha",
+    "score": 0.28264091343753667
+  },
+  {
+    "age": 45,
+    "brand_id": "beta",
+    "score": 0.5092803514869312
+  },
+  {
+    "age": 53,
+    "brand_id": "beta",
+    "score": 0.43527651485363117
+  },
+  {
+    "age": 48,
+    "brand_id": "beta",
+    "score": 0.41324026639628075
+  },
+  {
+    "age": 37,
+    "brand_id": "alpha",
+    "score": 0.6676390535974395
+  },
+  {
+    "age": 30,
+    "brand_id": "beta",
+    "score": 0.6730158020746808
+  },
+  {
+    "age": 46,
+    "brand_id": "delta",
+    "score": 0.44532203733628606
+  },
+  {
+    "age": 35,
+    "brand_id": "alpha",
+    "score": 0.2533400175904009
+  },
+  {
+    "age": 43,
+    "brand_id": "alpha",
+    "score": 0.6421985527444937
+  },
+  {
+    "age": 32,
+    "brand_id": "alpha",
+    "score": 0.36997187180833646
+  },
+  {
+    "age": 33,
+    "brand_id": "beta",
+    "score": 0.6765519765870119
+  },
+  {
+    "age": 36,
+    "brand_id": "gamma",
+    "score": 0.4432126615085898
+  },
+  {
+    "age": 37,
+    "brand_id": "beta",
+    "score": 0.48274372366114
+  },
+  {
+    "age": 27,
+    "brand_id": "beta",
+    "score": 0.620705773051019
+  },
+  {
+    "age": 39,
+    "brand_id": "beta",
+    "score": 0.536954810483717
+  },
+  {
+    "age": 48,
+    "brand_id": "beta",
+    "score": 0.705169277855185
+  },
+  {
+    "age": 28,
+    "brand_id": "alpha",
+    "score": 0.4132123641294318
+  },
+  {
+    "age": 29,
+    "brand_id": "gamma",
+    "score": 0.3822099659076348
+  },
+  {
+    "age": 36,
+    "brand_id": "beta",
+    "score": 0.41667992411275206
+  },
+  {
+    "age": 36,
+    "brand_id": "delta",
+    "score": 0.5158951328504937
+  },
+  {
+    "age": 18,
+    "brand_id": "beta",
+    "score": 0.7378730975045028
+  },
+  {
+    "age": 34,
+    "brand_id": "alpha",
+    "score": 0.6555580264450375
+  },
+  {
+    "age": 43,
+    "brand_id": "alpha",
+    "score": 0.5515372559711869
+  },
+  {
+    "age": 23,
+    "brand_id": "alpha",
+    "score": 0.27457292457659893
+  },
+  {
+    "age": 25,
+    "brand_id": "beta",
+    "score": 0.5349995360321109
+  },
+  {
+    "age": 35,
+    "brand_id": "alpha",
+    "score": 0.27910789569991146
+  },
+  {
+    "age": 34,
+    "brand_id": "beta",
+    "score": 0.7187575268008778
+  },
+  {
+    "age": 28,
+    "brand_id": "beta",
+    "score": 0.45078631721466816
+  },
+  {
+    "age": 52,
+    "brand_id": "gamma",
+    "score": 0.24343906700468568
+  },
+  {
+    "age": 18,
+    "brand_id": "gamma",
+    "score": 0.44403116054940495
+  },
+  {
+    "age": 53,
+    "brand_id": "alpha",
+    "score": 0.4072110925917358
+  },
+  {
+    "age": 47,
+    "brand_id": "delta",
+    "score": 0.3802941463879397
+  },
+  {
+    "age": 49,
+    "brand_id": "alpha",
+    "score": 0.33817727379918705
+  },
+  {
+    "age": 18,
+    "brand_id": "alpha",
+    "score": 0.6829721233869903
+  },
+  {
+    "age": 32,
+    "brand_id": "beta",
+    "score": 0.3838541317490366
+  },
+  {
+    "age": 36,
+    "brand_id": "beta",
+    "score": 0.701824547832137
+  },
+  {
+    "age": 36,
+    "brand_id": "beta",
+    "score": 0.38193915910353843
+  },
+  {
+    "age": 41,
+    "brand_id": "gamma",
+    "score": 0.6127782317690245
+  },
+  {
+    "age": 19,
+    "brand_id": "beta",
+    "score": 0.7035319602085774
+  },
+  {
+    "age": 51,
+    "brand_id": "beta",
+    "score": 0.6944087695821931
+  },
+  {
+    "age": 39,
+    "brand_id": "alpha",
+    "score": 0.5109896264180319
+  },
+  {
+    "age": 45,
+    "brand_id": "alpha",
+    "score": 0.7214852358834505
+  },
+  {
+    "age": 33,
+    "brand_id": "alpha",
+    "score": 0.7374667738749665
+  },
+  {
+    "age": 39,
+    "brand_id": "gamma",
+    "score": 0.13159351029785515
+  },
+  {
+    "age": 38,
+    "brand_id": "alpha",
+    "score": 0.6686018696254175
+  },
+  {
+    "age": 29,
+    "brand_id": "gamma",
+    "score": 0.5973896284981671
+  },
+  {
+    "age": 38,
+    "brand_id": "gamma",
+    "score": 0.5255540429440105
+  },
+  {
+    "age": 55,
+    "brand_id": "beta",
+    "score": 0.5898848843922073
+  },
+  {
+    "age": 45,
+    "brand_id": "beta",
+    "score": 0.5016748631074635
+  },
+  {
+    "age": 32,
+    "brand_id": "alpha",
+    "score": 0.32625518539603643
+  },
+  {
+    "age": 20,
+    "brand_id": "gamma",
+    "score": 0.4005435691730715
+  },
+  {
+    "age": 44,
+    "brand_id": "beta",
+    "score": 0.5048500584748218
+  },
+  {
+    "age": 49,
+    "brand_id": "gamma",
+    "score": 0.29931363907884784
+  },
+  {
+    "age": 18,
+    "brand_id": "alpha",
+    "score": 0.23031353471522573
+  },
+  {
+    "age": 32,
+    "brand_id": "alpha",
+    "score": 0.4920827013567369
+  },
+  {
+    "age": 43,
+    "brand_id": "gamma",
+    "score": 0.5562465274028485
+  },
+  {
+    "age": 35,
+    "brand_id": "delta",
+    "score": 0.3198847886809279
+  },
+  {
+    "age": 36,
+    "brand_id": "delta",
+    "score": 0.5745588387277271
+  },
+  {
+    "age": 24,
+    "brand_id": "alpha",
+    "score": 0.4276239504642452
+  },
+  {
+    "age": 39,
+    "brand_id": "beta",
+    "score": 0.2961638372126179
+  },
+  {
+    "age": 30,
+    "brand_id": "gamma",
+    "score": 0.39604763721130937
+  },
+  {
+    "age": 45,
+    "brand_id": "beta",
+    "score": 0.5198049904451437
+  },
+  {
+    "age": 27,
+    "brand_id": "gamma",
+    "score": 0.19114973973109242
+  },
+  {
+    "age": 32,
+    "brand_id": "alpha",
+    "score": 0.5557537292129723
+  },
+  {
+    "age": 21,
+    "brand_id": "delta",
+    "score": 0.6490456647627015
+  },
+  {
+    "age": 41,
+    "brand_id": "gamma",
+    "score": 0.33978231571572737
+  },
+  {
+    "age": 32,
+    "brand_id": "gamma",
+    "score": 0.4590881569143379
+  },
+  {
+    "age": 47,
+    "brand_id": "beta",
+    "score": 0.44248370864264785
+  },
+  {
+    "age": 59,
+    "brand_id": "beta",
+    "score": 0.26601821305671586
+  },
+  {
+    "age": 36,
+    "brand_id": "alpha",
+    "score": 0.2781137625138247
+  },
+  {
+    "age": 39,
+    "brand_id": "beta",
+    "score": 0.434060258143305
+  },
+  {
+    "age": 50,
+    "brand_id": "beta",
+    "score": 0.4054814021304521
+  },
+  {
+    "age": 18,
+    "brand_id": "delta",
+    "score": 0.6546566464232049
+  },
+  {
+    "age": 45,
+    "brand_id": "alpha",
+    "score": 0.33208744816662494
+  },
+  {
+    "age": 28,
+    "brand_id": "beta",
+    "score": 0.5469497018728128
+  },
+  {
+    "age": 46,
+    "brand_id": "beta",
+    "score": 0.2893623405780362
+  },
+  {
+    "age": 31,
+    "brand_id": "alpha",
+    "score": 0.18014179032063754
+  },
+  {
+    "age": 37,
+    "brand_id": "beta",
+    "score": 0.5069849809149806
+  },
+  {
+    "age": 35,
+    "brand_id": "beta",
+    "score": 0.6477941049875149
+  },
+  {
+    "age": 37,
+    "brand_id": "gamma",
+    "score": 0.5540913154255224
+  },
+  {
+    "age": 31,
+    "brand_id": "alpha",
+    "score": 0.3404587595586629
+  },
+  {
+    "age": 30,
+    "brand_id": "delta",
+    "score": 0.5267897813745983
+  },
+  {
+    "age": 27,
+    "brand_id": "gamma",
+    "score": 0.3790934267073098
+  },
+  {
+    "age": 43,
+    "brand_id": "alpha",
+    "score": 0.7444922209549273
+  },
+  {
+    "age": 28,
+    "brand_id": "beta",
+    "score": 0.37418583109060105
+  },
+  {
+    "age": 21,
+    "brand_id": "gamma",
+    "score": 0.3082779952931873
+  },
+  {
+    "age": 46,
+    "brand_id": "gamma",
+    "score": 0.4412775843308212
+  },
+  {
+    "age": 40,
+    "brand_id": "alpha",
+    "score": 0.4907754322970295
+  },
+  {
+    "age": 29,
+    "brand_id": "beta",
+    "score": 0.4281893214589091
+  },
+  {
+    "age": 42,
+    "brand_id": "alpha",
+    "score": 0.8140388001436866
+  },
+  {
+    "age": 59,
+    "brand_id": "alpha",
+    "score": 0.6369944740089286
+  },
+  {
+    "age": 32,
+    "brand_id": "beta",
+    "score": 0.584382311112745
+  },
+  {
+    "age": 20,
+    "brand_id": "alpha",
+    "score": 0.3519298823863565
+  },
+  {
+    "age": 36,
+    "brand_id": "beta",
+    "score": 0.3766550395312444
+  },
+  {
+    "age": 45,
+    "brand_id": "alpha",
+    "score": 0.5142289461965275
+  },
+  {
+    "age": 51,
+    "brand_id": "alpha",
+    "score": 0.345840108839146
+  },
+  {
+    "age": 28,
+    "brand_id": "alpha",
+    "score": 0.4831075939825669
+  },
+  {
+    "age": 18,
+    "brand_id": "alpha",
+    "score": 0.552299403400797
+  },
+  {
+    "age": 23,
+    "brand_id": "beta",
+    "score": 0.555577765511746
+  },
+  {
+    "age": 32,
+    "brand_id": "beta",
+    "score": 0.5868128934043835
+  },
+  {
+    "age": 30,
+    "brand_id": "gamma",
+    "score": 0.6427979012577303
+  },
+  {
+    "age": 31,
+    "brand_id": "alpha",
+    "score": 0.5188235199931516
+  },
+  {
+    "age": 28,
+    "brand_id": "gamma",
+    "score": 0.49636998279460987
+  },
+  {
+    "age": 31,
+    "brand_id": "gamma",
+    "score": 0.5966429539609207
+  },
+  {
+    "age": 18,
+    "brand_id": "alpha",
+    "score": 0.7689070317030868
+  },
+  {
+    "age": 23,
+    "brand_id": "gamma",
+    "score": 0.3469856197083394
+  },
+  {
+    "age": 23,
+    "brand_id": "alpha",
+    "score": 0.45708157154285095
+  },
+  {
+    "age": 21,
+    "brand_id": "gamma",
+    "score": 0.30642402876730074
+  },
+  {
+    "age": 19,
+    "brand_id": "alpha",
+    "score": 0.516969442621904
+  },
+  {
+    "age": 18,
+    "brand_id": "beta",
+    "score": 0.133629153704558
+  },
+  {
+    "age": 33,
+    "brand_id": "beta",
+    "score": 0.5358069953083696
+  },
+  {
+    "age": 48,
+    "brand_id": "beta",
+    "score": 0.3790554321444677
+  },
+  {
+    "age": 18,
+    "brand_id": "alpha",
+    "score": 0.6357930649434688
+  },
+  {
+    "age": 18,
+    "brand_id": "alpha",
+    "score": 0.4903041217998797
+  },
+  {
+    "age": 45,
+    "brand_id": "gamma",
+    "score": 0.4991662978299885
+  },
+  {
+    "age": 28,
+    "brand_id": "beta",
+    "score": 0.4610784604627083
+  },
+  {
+    "age": 50,
+    "brand_id": "delta",
+    "score": 0.6469240541737361
+  },
+  {
+    "age": 26,
+    "brand_id": "alpha",
+    "score": 0.6201537857871939
+  },
+  {
+    "age": 42,
+    "brand_id": "gamma",
+    "score": 0.6816399511368951
+  },
+  {
+    "age": 44,
+    "brand_id": "beta",
+    "score": 0.3788284447092587
+  },
+  {
+    "age": 46,
+    "brand_id": "beta",
+    "score": 0.8213451629508677
+  },
+  {
+    "age": 44,
+    "brand_id": "alpha",
+    "score": 0.5524398886240802
+  },
+  {
+    "age": 34,
+    "brand_id": "beta",
+    "score": 0.691017827980103
+  },
+  {
+    "age": 40,
+    "brand_id": "beta",
+    "score": 0.523361498159763
+  },
+  {
+    "age": 27,
+    "brand_id": "delta",
+    "score": 0.4190558305253558
+  },
+  {
+    "age": 38,
+    "brand_id": "gamma",
+    "score": 0.5027433040580425
+  },
+  {
+    "age": 35,
+    "brand_id": "alpha",
+    "score": 0.4449302319807026
+  },
+  {
+    "age": 32,
+    "brand_id": "gamma",
+    "score": 0.458109790724225
+  },
+  {
+    "age": 57,
+    "brand_id": "delta",
+    "score": 0.4881948594669443
+  },
+  {
+    "age": 40,
+    "brand_id": "beta",
+    "score": 0.47850360131998537
+  },
+  {
+    "age": 29,
+    "brand_id": "alpha",
+    "score": 0.8088120187026361
+  },
+  {
+    "age": 18,
+    "brand_id": "alpha",
+    "score": 0.31068204647002734
+  },
+  {
+    "age": 33,
+    "brand_id": "beta",
+    "score": 0.7702783935799736
+  },
+  {
+    "age": 45,
+    "brand_id": "alpha",
+    "score": 0.44175116193504166
+  },
+  {
+    "age": 25,
+    "brand_id": "beta",
+    "score": 0.5327963733619956
+  },
+  {
+    "age": 19,
+    "brand_id": "gamma",
+    "score": 0.6442108417886556
+  },
+  {
+    "age": 48,
+    "brand_id": "beta",
+    "score": 0.4597042384473014
+  },
+  {
+    "age": 30,
+    "brand_id": "gamma",
+    "score": 0.4782862255006255
+  },
+  {
+    "age": 18,
+    "brand_id": "alpha",
+    "score": 0.3215698496974803
+  },
+  {
+    "age": 39,
+    "brand_id": "beta",
+    "score": 0.5323469884670431
+  },
+  {
+    "age": 26,
+    "brand_id": "gamma",
+    "score": 0.22212780517300218
+  },
+  {
+    "age": 34,
+    "brand_id": "beta",
+    "score": 0.4723718367555212
+  },
+  {
+    "age": 37,
+    "brand_id": "gamma",
+    "score": 0.7892154611342104
+  },
+  {
+    "age": 30,
+    "brand_id": "alpha",
+    "score": 0.4216473907998663
+  },
+  {
+    "age": 41,
+    "brand_id": "alpha",
+    "score": 0.785401113028865
+  },
+  {
+    "age": 40,
+    "brand_id": "beta",
+    "score": 0.6107804599321848
+  },
+  {
+    "age": 38,
+    "brand_id": "gamma",
+    "score": 0.47449897067389313
+  },
+  {
+    "age": 35,
+    "brand_id": "gamma",
+    "score": 0.5169041423327128
+  },
+  {
+    "age": 38,
+    "brand_id": "alpha",
+    "score": 0.14704655579421833
+  },
+  {
+    "age": 34,
+    "brand_id": "gamma",
+    "score": 0.41807453887955986
+  },
+  {
+    "age": 35,
+    "brand_id": "gamma",
+    "score": 0.623725966324359
+  },
+  {
+    "age": 34,
+    "brand_id": "delta",
+    "score": 0.37292033054653273
+  },
+  {
+    "age": 25,
+    "brand_id": "alpha",
+    "score": 0.5530120427568166
+  },
+  {
+    "age": 50,
+    "brand_id": "gamma",
+    "score": 0.30357090910630075
+  },
+  {
+    "age": 35,
+    "brand_id": "alpha",
+    "score": 0.5497196776094226
+  },
+  {
+    "age": 40,
+    "brand_id": "beta",
+    "score": 0.5193337325687299
+  },
+  {
+    "age": 44,
+    "brand_id": "gamma",
+    "score": 0.5369043968262279
+  },
+  {
+    "age": 24,
+    "brand_id": "beta",
+    "score": 0.5318359692845369
+  },
+  {
+    "age": 43,
+    "brand_id": "gamma",
+    "score": 0.7143442981087161
+  },
+  {
+    "age": 33,
+    "brand_id": "gamma",
+    "score": 0.6732299868416841
+  },
+  {
+    "age": 46,
+    "brand_id": "delta",
+    "score": 0.24864605166984396
+  },
+  {
+    "age": 40,
+    "brand_id": "delta",
+    "score": 0.6390066392117919
+  },
+  {
+    "age": 18,
+    "brand_id": "beta",
+    "score": 0.5795589583423365
+  },
+  {
+    "age": 36,
+    "brand_id": "beta",
+    "score": 0.6664104964867376
+  },
+  {
+    "age": 39,
+    "brand_id": "gamma",
+    "score": 0.4557561717605723
+  },
+  {
+    "age": 27,
+    "brand_id": "gamma",
+    "score": 0.5906472443050262
+  },
+  {
+    "age": 36,
+    "brand_id": "delta",
+    "score": 0.637852956627448
+  },
+  {
+    "age": 27,
+    "brand_id": "beta",
+    "score": 0.5629804175842417
+  },
+  {
+    "age": 32,
+    "brand_id": "beta",
+    "score": 0.6574521452957781
+  },
+  {
+    "age": 22,
+    "brand_id": "alpha",
+    "score": 0.6788563420048472
+  },
+  {
+    "age": 58,
+    "brand_id": "beta",
+    "score": 0.6470116652637523
+  },
+  {
+    "age": 33,
+    "brand_id": "beta",
+    "score": 0.5275492244812798
+  },
+  {
+    "age": 36,
+    "brand_id": "beta",
+    "score": 0.4049609961833041
+  },
+  {
+    "age": 26,
+    "brand_id": "delta",
+    "score": 0.5015226046993178
+  },
+  {
+    "age": 38,
+    "brand_id": "beta",
+    "score": 0.2641949983890038
+  },
+  {
+    "age": 33,
+    "brand_id": "delta",
+    "score": 0.5316102948001258
+  },
+  {
+    "age": 39,
+    "brand_id": "delta",
+    "score": 0.6157980198644531
+  },
+  {
+    "age": 28,
+    "brand_id": "delta",
+    "score": 0.5005805108073185
+  },
+  {
+    "age": 43,
+    "brand_id": "delta",
+    "score": 0.5625679736207843
+  },
+  {
+    "age": 43,
+    "brand_id": "gamma",
+    "score": 0.5269245795498121
+  },
+  {
+    "age": 33,
+    "brand_id": "beta",
+    "score": 0.4630302234744698
+  },
+  {
+    "age": 18,
+    "brand_id": "alpha",
+    "score": 0.4380808521861038
+  },
+  {
+    "age": 46,
+    "brand_id": "beta",
+    "score": 0.4306583201346466
+  },
+  {
+    "age": 23,
+    "brand_id": "beta",
+    "score": 0.6605634963732446
+  },
+  {
+    "age": 50,
+    "brand_id": "gamma",
+    "score": 0.6739086726552027
+  },
+  {
+    "age": 27,
+    "brand_id": "alpha",
+    "score": 0.4024250980654614
+  },
+  {
+    "age": 30,
+    "brand_id": "beta",
+    "score": 0.69661236107597
+  },
+  {
+    "age": 41,
+    "brand_id": "alpha",
+    "score": 0.3961254552378654
+  },
+  {
+    "age": 58,
+    "brand_id": "alpha",
+    "score": 0.55021122550598
+  },
+  {
+    "age": 47,
+    "brand_id": "gamma",
+    "score": 0.7216935548301757
+  },
+  {
+    "age": 19,
+    "brand_id": "beta",
+    "score": 0.48990853300870985
+  },
+  {
+    "age": 55,
+    "brand_id": "alpha",
+    "score": 0.4516298836234903
+  },
+  {
+    "age": 24,
+    "brand_id": "gamma",
+    "score": 0.5898977661713787
+  },
+  {
+    "age": 18,
+    "brand_id": "gamma",
+    "score": 0.5631515507357012
+  },
+  {
+    "age": 36,
+    "brand_id": "delta",
+    "score": 0.6794627729253602
+  },
+  {
+    "age": 55,
+    "brand_id": "delta",
+    "score": 0.5546790725824002
+  },
+  {
+    "age": 42,
+    "brand_id": "alpha",
+    "score": 0.3165670510349385
+  },
+  {
+    "age": 38,
+    "brand_id": "alpha",
+    "score": 0.721618392171629
+  },
+  {
+    "age": 28,
+    "brand_id": "alpha",
+    "score": 0.48646224501502616
+  },
+  {
+    "age": 39,
+    "brand_id": "gamma",
+    "score": 0.6776789279320601
+  },
+  {
+    "age": 52,
+    "brand_id": "beta",
+    "score": 0.41639184922565214
+  },
+  {
+    "age": 18,
+    "brand_id": "delta",
+    "score": 0.5646904843245514
+  },
+  {
+    "age": 18,
+    "brand_id": "beta",
+    "score": 0.4684672243217904
+  },
+  {
+    "age": 45,
+    "brand_id": "beta",
+    "score": 0.6128293235787452
+  },
+  {
+    "age": 41,
+    "brand_id": "alpha",
+    "score": 0.7613404421236007
+  },
+  {
+    "age": 37,
+    "brand_id": "beta",
+    "score": 0.5205506010024716
+  },
+  {
+    "age": 26,
+    "brand_id": "alpha",
+    "score": 0.5130810955339857
+  },
+  {
+    "age": 39,
+    "brand_id": "gamma",
+    "score": 0.3330624958681909
+  },
+  {
+    "age": 38,
+    "brand_id": "alpha",
+    "score": 0.5953487235024117
+  },
+  {
+    "age": 42,
+    "brand_id": "beta",
+    "score": 0.4906413341255343
+  },
+  {
+    "age": 25,
+    "brand_id": "alpha",
+    "score": 0.41114108066889316
+  },
+  {
+    "age": 36,
+    "brand_id": "gamma",
+    "score": 0.4863603825561715
+  },
+  {
+    "age": 54,
+    "brand_id": "gamma",
+    "score": 0.4408143476105083
+  },
+  {
+    "age": 40,
+    "brand_id": "alpha",
+    "score": 0.6123012670042921
+  },
+  {
+    "age": 25,
+    "brand_id": "gamma",
+    "score": 0.3612446208989751
+  },
+  {
+    "age": 37,
+    "brand_id": "alpha",
+    "score": 0.43903986138916024
+  },
+  {
+    "age": 33,
+    "brand_id": "gamma",
+    "score": 0.3872026327447884
+  },
+  {
+    "age": 24,
+    "brand_id": "beta",
+    "score": 0.7151856710221678
+  },
+  {
+    "age": 35,
+    "brand_id": "alpha",
+    "score": 0.7332714992124003
+  },
+  {
+    "age": 45,
+    "brand_id": "gamma",
+    "score": 0.5109240903246481
+  },
+  {
+    "age": 30,
+    "brand_id": "alpha",
+    "score": 0.5761527012975224
+  },
+  {
+    "age": 26,
+    "brand_id": "alpha",
+    "score": 0.4975466300033105
+  },
+  {
+    "age": 21,
+    "brand_id": "gamma",
+    "score": 0.6241447921141977
+  },
+  {
+    "age": 55,
+    "brand_id": "alpha",
+    "score": 0.2725739998693445
+  },
+  {
+    "age": 26,
+    "brand_id": "delta",
+    "score": 0.651768651630518
+  },
+  {
+    "age": 47,
+    "brand_id": "beta",
+    "score": 0.42077891972580117
+  },
+  {
+    "age": 26,
+    "brand_id": "gamma",
+    "score": 0.24991616336365055
+  },
+  {
+    "age": 38,
+    "brand_id": "gamma",
+    "score": 0.5431238130397782
+  },
+  {
+    "age": 21,
+    "brand_id": "gamma",
+    "score": 0.6076649430596579
+  },
+  {
+    "age": 27,
+    "brand_id": "gamma",
+    "score": 0.49591701028370583
+  },
+  {
+    "age": 29,
+    "brand_id": "alpha",
+    "score": 0.43859903841566034
+  },
+  {
+    "age": 41,
+    "brand_id": "beta",
+    "score": 0.513090436512007
+  },
+  {
+    "age": 37,
+    "brand_id": "beta",
+    "score": 0.45583568058860086
+  },
+  {
+    "age": 30,
+    "brand_id": "alpha",
+    "score": 0.21082108661184418
+  },
+  {
+    "age": 43,
+    "brand_id": "gamma",
+    "score": 0.3629520148569767
+  },
+  {
+    "age": 38,
+    "brand_id": "gamma",
+    "score": 0.20869235819758325
+  },
+  {
+    "age": 29,
+    "brand_id": "delta",
+    "score": 0.6502808050915683
+  },
+  {
+    "age": 34,
+    "brand_id": "alpha",
+    "score": 0.2828145471715426
+  },
+  {
+    "age": 21,
+    "brand_id": "alpha",
+    "score": 0.5062531263847173
+  },
+  {
+    "age": 25,
+    "brand_id": "alpha",
+    "score": 0.5626569690088313
+  },
+  {
+    "age": 36,
+    "brand_id": "alpha",
+    "score": 0.4889257827965088
+  },
+  {
+    "age": 26,
+    "brand_id": "alpha",
+    "score": 0.6269873248828403
+  },
+  {
+    "age": 45,
+    "brand_id": "beta",
+    "score": 0.3978781432861721
+  },
+  {
+    "age": 27,
+    "brand_id": "alpha",
+    "score": 0.4050342275121866
+  },
+  {
+    "age": 42,
+    "brand_id": "beta",
+    "score": 0.1361927082359774
+  },
+  {
+    "age": 50,
+    "brand_id": "gamma",
+    "score": 0.5587038919921986
+  },
+  {
+    "age": 35,
+    "brand_id": "beta",
+    "score": 0.5834356449818912
+  },
+  {
+    "age": 33,
+    "brand_id": "beta",
+    "score": 0.16196177377578738
+  },
+  {
+    "age": 46,
+    "brand_id": "beta",
+    "score": 0.4756653121063982
+  },
+  {
+    "age": 18,
+    "brand_id": "alpha",
+    "score": 0.46495547586958286
+  },
+  {
+    "age": 44,
+    "brand_id": "gamma",
+    "score": 0.6374052351705373
+  },
+  {
+    "age": 18,
+    "brand_id": "beta",
+    "score": 0.6618197922233985
+  },
+  {
+    "age": 18,
+    "brand_id": "gamma",
+    "score": 0.4456594885674465
+  },
+  {
+    "age": 18,
+    "brand_id": "alpha",
+    "score": 0.407523178280776
+  },
+  {
+    "age": 34,
+    "brand_id": "beta",
+    "score": 0.7504962057974535
+  },
+  {
+    "age": 39,
+    "brand_id": "gamma",
+    "score": 0.3173481999075433
+  },
+  {
+    "age": 52,
+    "brand_id": "alpha",
+    "score": 0.5592203987619357
+  },
+  {
+    "age": 53,
+    "brand_id": "gamma",
+    "score": 0.20643789858997225
+  },
+  {
+    "age": 24,
+    "brand_id": "beta",
+    "score": 0.4944245293509528
+  },
+  {
+    "age": 36,
+    "brand_id": "gamma",
+    "score": 0.5124102979294064
+  },
+  {
+    "age": 44,
+    "brand_id": "alpha",
+    "score": 0.4556968946201553
+  },
+  {
+    "age": 41,
+    "brand_id": "alpha",
+    "score": 0.6999092904998343
+  },
+  {
+    "age": 52,
+    "brand_id": "gamma",
+    "score": 0.6083696606511583
+  },
+  {
+    "age": 39,
+    "brand_id": "alpha",
+    "score": 0.32023212635832166
+  },
+  {
+    "age": 22,
+    "brand_id": "gamma",
+    "score": 0.5957898607475436
+  },
+  {
+    "age": 38,
+    "brand_id": "alpha",
+    "score": 0.1708390011478012
+  },
+  {
+    "age": 45,
+    "brand_id": "delta",
+    "score": 0.6368918098813091
+  },
+  {
+    "age": 32,
+    "brand_id": "beta",
+    "score": 0.6406579749474497
+  },
+  {
+    "age": 38,
+    "brand_id": "delta",
+    "score": 0.5877041660807252
+  },
+  {
+    "age": 31,
+    "brand_id": "beta",
+    "score": 0.6164411832427147
+  },
+  {
+    "age": 28,
+    "brand_id": "delta",
+    "score": 0.5772982098839164
+  },
+  {
+    "age": 24,
+    "brand_id": "gamma",
+    "score": 0.670160075419973
+  },
+  {
+    "age": 24,
+    "brand_id": "beta",
+    "score": 0.5777958246682047
+  },
+  {
+    "age": 45,
+    "brand_id": "delta",
+    "score": 0.6146077656879498
+  },
+  {
+    "age": 26,
+    "brand_id": "beta",
+    "score": 0.4837512146514996
+  },
+  {
+    "age": 18,
+    "brand_id": "beta",
+    "score": 0.6984974875680942
+  },
+  {
+    "age": 36,
+    "brand_id": "alpha",
+    "score": 0.8013595903614507
+  },
+  {
+    "age": 42,
+    "brand_id": "delta",
+    "score": 0.5287786138498787
+  },
+  {
+    "age": 41,
+    "brand_id": "alpha",
+    "score": 0.5879496116976833
+  },
+  {
+    "age": 42,
+    "brand_id": "beta",
+    "score": 0.428420154677809
+  },
+  {
+    "age": 23,
+    "brand_id": "alpha",
+    "score": 0.4000208274859989
+  },
+  {
+    "age": 36,
+    "brand_id": "alpha",
+    "score": 0.6118382913750232
+  },
+  {
+    "age": 42,
+    "brand_id": "delta",
+    "score": 0.4610144199882473
+  },
+  {
+    "age": 37,
+    "brand_id": "beta",
+    "score": 0.39096223974571287
+  },
+  {
+    "age": 32,
+    "brand_id": "delta",
+    "score": 0.7341699795195761
+  },
+  {
+    "age": 55,
+    "brand_id": "beta",
+    "score": 0.43348929985783596
+  },
+  {
+    "age": 34,
+    "brand_id": "alpha",
+    "score": 0.7277081029627204
+  },
+  {
+    "age": 51,
+    "brand_id": "beta",
+    "score": 0.5174101326540845
+  },
+  {
+    "age": 18,
+    "brand_id": "beta",
+    "score": 0.5659004269118235
+  },
+  {
+    "age": 52,
+    "brand_id": "beta",
+    "score": 0.289026035553767
+  },
+  {
+    "age": 25,
+    "brand_id": "delta",
+    "score": 0.5057011645603783
+  },
+  {
+    "age": 28,
+    "brand_id": "alpha",
+    "score": 0.4794269627338118
+  },
+  {
+    "age": 35,
+    "brand_id": "alpha",
+    "score": 0.4767010163753861
+  },
+  {
+    "age": 51,
+    "brand_id": "alpha",
+    "score": 0.5139824604087899
+  },
+  {
+    "age": 26,
+    "brand_id": "delta",
+    "score": 0.5226296946321203
+  },
+  {
+    "age": 41,
+    "brand_id": "gamma",
+    "score": 0.6596186053126474
+  },
+  {
+    "age": 18,
+    "brand_id": "alpha",
+    "score": 0.44681927345966044
+  },
+  {
+    "age": 50,
+    "brand_id": "beta",
+    "score": 0.41735212117479464
+  },
+  {
+    "age": 36,
+    "brand_id": "beta",
+    "score": 0.652819743077425
+  },
+  {
+    "age": 30,
+    "brand_id": "alpha",
+    "score": 0.7109456755836764
+  },
+  {
+    "age": 31,
+    "brand_id": "gamma",
+    "score": 0.5439042420782503
+  },
+  {
+    "age": 35,
+    "brand_id": "beta",
+    "score": 0.19077304931472602
+  },
+  {
+    "age": 39,
+    "brand_id": "beta",
+    "score": 0.5099994947666208
+  },
+  {
+    "age": 21,
+    "brand_id": "gamma",
+    "score": 0.6704217900005073
+  },
+  {
+    "age": 32,
+    "brand_id": "alpha",
+    "score": 0.5313555930190196
+  },
+  {
+    "age": 30,
+    "brand_id": "beta",
+    "score": 0.4574283502739266
+  },
+  {
+    "age": 18,
+    "brand_id": "gamma",
+    "score": 0.5242464046846933
+  },
+  {
+    "age": 45,
+    "brand_id": "alpha",
+    "score": 0.5405933385070715
+  },
+  {
+    "age": 34,
+    "brand_id": "delta",
+    "score": 0.7484405820917419
+  },
+  {
+    "age": 18,
+    "brand_id": "beta",
+    "score": 0.46550050875492865
+  },
+  {
+    "age": 18,
+    "brand_id": "beta",
+    "score": 0.37276546479278166
+  },
+  {
+    "age": 51,
+    "brand_id": "beta",
+    "score": 0.7612115439647239
+  },
+  {
+    "age": 29,
+    "brand_id": "gamma",
+    "score": 0.29553444929521117
+  },
+  {
+    "age": 31,
+    "brand_id": "beta",
+    "score": 0.32405983070913225
+  },
+  {
+    "age": 50,
+    "brand_id": "alpha",
+    "score": 0.4124687272949599
+  },
+  {
+    "age": 36,
+    "brand_id": "alpha",
+    "score": 0.5415822117411673
+  },
+  {
+    "age": 34,
+    "brand_id": "beta",
+    "score": 0.43986570683622106
+  },
+  {
+    "age": 38,
+    "brand_id": "alpha",
+    "score": 0.30855975640848093
+  },
+  {
+    "age": 27,
+    "brand_id": "beta",
+    "score": 0.28371434486152397
+  },
+  {
+    "age": 35,
+    "brand_id": "alpha",
+    "score": 0.37800049110781014
+  },
+  {
+    "age": 34,
+    "brand_id": "alpha",
+    "score": 0.622176218045857
+  },
+  {
+    "age": 54,
+    "brand_id": "alpha",
+    "score": 0.39835645988982094
+  },
+  {
+    "age": 45,
+    "brand_id": "alpha",
+    "score": 0.20108915814359563
+  },
+  {
+    "age": 29,
+    "brand_id": "alpha",
+    "score": 0.6792493076570857
+  },
+  {
+    "age": 39,
+    "brand_id": "beta",
+    "score": 0.32993739543002054
+  },
+  {
+    "age": 40,
+    "brand_id": "beta",
+    "score": 0.44902567967201357
+  },
+  {
+    "age": 31,
+    "brand_id": "gamma",
+    "score": 0.5617049289993666
+  },
+  {
+    "age": 19,
+    "brand_id": "delta",
+    "score": 0.6381916746643649
+  },
+  {
+    "age": 49,
+    "brand_id": "alpha",
+    "score": 0.54169559989798
+  },
+  {
+    "age": 39,
+    "brand_id": "gamma",
+    "score": 0.49444830511904564
+  },
+  {
+    "age": 62,
+    "brand_id": "beta",
+    "score": 0.48758512726612885
+  },
+  {
+    "age": 32,
+    "brand_id": "alpha",
+    "score": 0.7170904691028833
+  },
+  {
+    "age": 22,
+    "brand_id": "alpha",
+    "score": 0.6734144810191827
+  },
+  {
+    "age": 28,
+    "brand_id": "gamma",
+    "score": 0.7052285650524845
+  },
+  {
+    "age": 50,
+    "brand_id": "alpha",
+    "score": 0.5124224802854276
+  },
+  {
+    "age": 28,
+    "brand_id": "alpha",
+    "score": 0.5100038376174811
+  },
+  {
+    "age": 18,
+    "brand_id": "gamma",
+    "score": 0.5301868018405421
+  },
+  {
+    "age": 27,
+    "brand_id": "alpha",
+    "score": 0.7226454869109362
+  },
+  {
+    "age": 43,
+    "brand_id": "alpha",
+    "score": 0.5758801182034476
+  },
+  {
+    "age": 36,
+    "brand_id": "alpha",
+    "score": 0.7177788948136641
+  },
+  {
+    "age": 18,
+    "brand_id": "beta",
+    "score": 0.625977301245249
+  },
+  {
+    "age": 51,
+    "brand_id": "beta",
+    "score": 0.5935514964057645
+  },
+  {
+    "age": 32,
+    "brand_id": "beta",
+    "score": 0.49507129336509037
+  },
+  {
+    "age": 50,
+    "brand_id": "beta",
+    "score": 0.30877286370243556
+  },
+  {
+    "age": 34,
+    "brand_id": "alpha",
+    "score": 0.3230352616133005
+  },
+  {
+    "age": 55,
+    "brand_id": "alpha",
+    "score": 0.2595860652724273
+  },
+  {
+    "age": 34,
+    "brand_id": "alpha",
+    "score": 0.49929151422818546
+  },
+  {
+    "age": 45,
+    "brand_id": "beta",
+    "score": 0.6620602256466914
+  },
+  {
+    "age": 33,
+    "brand_id": "alpha",
+    "score": 0.44445947313445905
+  },
+  {
+    "age": 36,
+    "brand_id": "alpha",
+    "score": 0.33110229772437444
+  },
+  {
+    "age": 19,
+    "brand_id": "beta",
+    "score": 0.6497679910140947
+  },
+  {
+    "age": 23,
+    "brand_id": "beta",
+    "score": 0.5793400088909482
+  },
+  {
+    "age": 29,
+    "brand_id": "beta",
+    "score": 0.3736043620757023
+  },
+  {
+    "age": 22,
+    "brand_id": "beta",
+    "score": 0.5410661908412279
+  },
+  {
+    "age": 48,
+    "brand_id": "beta",
+    "score": 0.2757068362769412
+  },
+  {
+    "age": 37,
+    "brand_id": "alpha",
+    "score": 0.4580092576866823
+  },
+  {
+    "age": 53,
+    "brand_id": "alpha",
+    "score": 0.2468029375512198
+  },
+  {
+    "age": 18,
+    "brand_id": "beta",
+    "score": 0.6073576815994196
+  },
+  {
+    "age": 45,
+    "brand_id": "alpha",
+    "score": 0.42177546012183403
+  },
+  {
+    "age": 25,
+    "brand_id": "beta",
+    "score": 0.4867754538655286
+  },
+  {
+    "age": 18,
+    "brand_id": "delta",
+    "score": 0.6467871520987153
+  },
+  {
+    "age": 38,
+    "brand_id": "alpha",
+    "score": 0.1603434622680028
+  },
+  {
+    "age": 54,
+    "brand_id": "delta",
+    "score": 0.6564690246928334
+  },
+  {
+    "age": 39,
+    "brand_id": "beta",
+    "score": 0.42042185227992235
+  },
+  {
+    "age": 25,
+    "brand_id": "alpha",
+    "score": 0.3536601769452652
+  },
+  {
+    "age": 23,
+    "brand_id": "gamma",
+    "score": 0.4404892645819874
+  },
+  {
+    "age": 48,
+    "brand_id": "alpha",
+    "score": 0.1639053749297879
+  },
+  {
+    "age": 44,
+    "brand_id": "delta",
+    "score": 0.7229387611745685
+  },
+  {
+    "age": 47,
+    "brand_id": "alpha",
+    "score": 0.754953158643162
+  },
+  {
+    "age": 43,
+    "brand_id": "gamma",
+    "score": 0.2800752549330231
+  },
+  {
+    "age": 33,
+    "brand_id": "alpha",
+    "score": 0.29076078244109793
+  },
+  {
+    "age": 36,
+    "brand_id": "alpha",
+    "score": 0.6576053359589608
+  },
+  {
+    "age": 42,
+    "brand_id": "alpha",
+    "score": 0.5505313985233443
+  },
+  {
+    "age": 30,
+    "brand_id": "alpha",
+    "score": 0.606137546862504
+  },
+  {
+    "age": 18,
+    "brand_id": "alpha",
+    "score": 0.5120805898110466
+  },
+  {
+    "age": 21,
+    "brand_id": "beta",
+    "score": 0.3326800987520475
+  },
+  {
+    "age": 25,
+    "brand_id": "beta",
+    "score": 0.5060571674138638
+  },
+  {
+    "age": 39,
+    "brand_id": "beta",
+    "score": 0.6225224892517714
+  },
+  {
+    "age": 44,
+    "brand_id": "beta",
+    "score": 0.6850663109011785
+  },
+  {
+    "age": 36,
+    "brand_id": "alpha",
+    "score": 0.7292806526226138
+  },
+  {
+    "age": 25,
+    "brand_id": "beta",
+    "score": 0.37099299872241215
+  },
+  {
+    "age": 50,
+    "brand_id": "beta",
+    "score": 0.3657599851215605
+  },
+  {
+    "age": 18,
+    "brand_id": "alpha",
+    "score": 0.2910608790139887
+  },
+  {
+    "age": 18,
+    "brand_id": "alpha",
+    "score": 0.8012226463612057
+  },
+  {
+    "age": 43,
+    "brand_id": "delta",
+    "score": 0.5358312244952591
+  },
+  {
+    "age": 39,
+    "brand_id": "alpha",
+    "score": 0.6765189120808583
+  },
+  {
+    "age": 52,
+    "brand_id": "alpha",
+    "score": 0.4449781879978797
+  },
+  {
+    "age": 43,
+    "brand_id": "alpha",
+    "score": 0.6540856133325057
+  },
+  {
+    "age": 40,
+    "brand_id": "beta",
+    "score": 0.293680449122955
+  },
+  {
+    "age": 33,
+    "brand_id": "delta",
+    "score": 0.43046926088120635
+  },
+  {
+    "age": 28,
+    "brand_id": "delta",
+    "score": 0.26752124503185837
+  },
+  {
+    "age": 26,
+    "brand_id": "beta",
+    "score": 0.362508257733421
+  },
+  {
+    "age": 38,
+    "brand_id": "beta",
+    "score": 0.41427617478076684
+  },
+  {
+    "age": 26,
+    "brand_id": "delta",
+    "score": 0.566048593369274
+  },
+  {
+    "age": 51,
+    "brand_id": "gamma",
+    "score": 0.47110920870940837
+  },
+  {
+    "age": 38,
+    "brand_id": "alpha",
+    "score": 0.498861161566872
+  },
+  {
+    "age": 37,
+    "brand_id": "delta",
+    "score": 0.7939651598758923
+  },
+  {
+    "age": 18,
+    "brand_id": "alpha",
+    "score": 0.13436911499133722
+  },
+  {
+    "age": 37,
+    "brand_id": "alpha",
+    "score": 0.4815308687871676
+  },
+  {
+    "age": 49,
+    "brand_id": "gamma",
+    "score": 0.37243195694951114
+  },
+  {
+    "age": 28,
+    "brand_id": "beta",
+    "score": 0.39915622936639605
+  },
+  {
+    "age": 27,
+    "brand_id": "beta",
+    "score": 0.6039571332301268
+  },
+  {
+    "age": 35,
+    "brand_id": "gamma",
+    "score": 0.30647401348381015
+  },
+  {
+    "age": 38,
+    "brand_id": "gamma",
+    "score": 0.666978445666699
+  },
+  {
+    "age": 20,
+    "brand_id": "gamma",
+    "score": 0.4521325799060314
+  },
+  {
+    "age": 18,
+    "brand_id": "alpha",
+    "score": 0.4764948807973976
+  },
+  {
+    "age": 39,
+    "brand_id": "alpha",
+    "score": 0.5664278048111698
+  },
+  {
+    "age": 44,
+    "brand_id": "alpha",
+    "score": 0.29747956394085645
+  },
+  {
+    "age": 37,
+    "brand_id": "gamma",
+    "score": 0.5188581140011372
+  },
+  {
+    "age": 28,
+    "brand_id": "beta",
+    "score": 0.44573573417434686
+  },
+  {
+    "age": 31,
+    "brand_id": "alpha",
+    "score": 0.42630247882654393
+  },
+  {
+    "age": 24,
+    "brand_id": "alpha",
+    "score": 0.5252173448469208
+  },
+  {
+    "age": 33,
+    "brand_id": "beta",
+    "score": 0.4118308720171519
+  },
+  {
+    "age": 32,
+    "brand_id": "gamma",
+    "score": 0.4743804463339968
+  },
+  {
+    "age": 28,
+    "brand_id": "alpha",
+    "score": 0.5674128923854452
+  },
+  {
+    "age": 24,
+    "brand_id": "gamma",
+    "score": 0.35155944625806745
+  },
+  {
+    "age": 39,
+    "brand_id": "beta",
+    "score": 0.33594337154999104
+  },
+  {
+    "age": 31,
+    "brand_id": "gamma",
+    "score": 0.4377470546146658
+  },
+  {
+    "age": 19,
+    "brand_id": "beta",
+    "score": 0.5799383994140538
+  },
+  {
+    "age": 34,
+    "brand_id": "alpha",
+    "score": 0.3482465001807526
+  },
+  {
+    "age": 19,
+    "brand_id": "alpha",
+    "score": 0.5329794821493088
+  },
+  {
+    "age": 45,
+    "brand_id": "beta",
+    "score": 0.3903169530767987
+  },
+  {
+    "age": 32,
+    "brand_id": "beta",
+    "score": 0.4588955471213648
+  },
+  {
+    "age": 47,
+    "brand_id": "alpha",
+    "score": 0.48124803921381326
+  },
+  {
+    "age": 22,
+    "brand_id": "alpha",
+    "score": 0.44094250339078334
+  },
+  {
+    "age": 40,
+    "brand_id": "gamma",
+    "score": 0.33263956961764546
+  },
+  {
+    "age": 37,
+    "brand_id": "beta",
+    "score": 0.5182061530642115
+  },
+  {
+    "age": 20,
+    "brand_id": "beta",
+    "score": 0.5001230674831049
+  },
+  {
+    "age": 42,
+    "brand_id": "alpha",
+    "score": 0.7681417844479772
+  },
+  {
+    "age": 43,
+    "brand_id": "beta",
+    "score": 0.6077816988174406
+  },
+  {
+    "age": 33,
+    "brand_id": "alpha",
+    "score": 0.5650581781417553
+  },
+  {
+    "age": 54,
+    "brand_id": "alpha",
+    "score": 0.46139178139623493
+  },
+  {
+    "age": 50,
+    "brand_id": "alpha",
+    "score": 0.5841510213601155
+  },
+  {
+    "age": 38,
+    "brand_id": "alpha",
+    "score": 0.3418219931322502
+  },
+  {
+    "age": 37,
+    "brand_id": "beta",
+    "score": 0.7211737508834409
+  },
+  {
+    "age": 35,
+    "brand_id": "beta",
+    "score": 0.4954542381220806
+  },
+  {
+    "age": 51,
+    "brand_id": "gamma",
+    "score": 0.6347119971480429
+  },
+  {
+    "age": 24,
+    "brand_id": "beta",
+    "score": 0.7760096368575604
+  },
+  {
+    "age": 29,
+    "brand_id": "gamma",
+    "score": 0.19124350862872133
+  },
+  {
+    "age": 44,
+    "brand_id": "alpha",
+    "score": 0.5212010130358773
+  },
+  {
+    "age": 33,
+    "brand_id": "alpha",
+    "score": 0.29437323385827613
+  },
+  {
+    "age": 24,
+    "brand_id": "gamma",
+    "score": 0.5651595041175208
+  },
+  {
+    "age": 45,
+    "brand_id": "beta",
+    "score": 0.6286211689908028
+  },
+  {
+    "age": 40,
+    "brand_id": "alpha",
+    "score": 0.5643203269499403
+  },
+  {
+    "age": 35,
+    "brand_id": "delta",
+    "score": 0.30922392118187203
+  },
+  {
+    "age": 45,
+    "brand_id": "alpha",
+    "score": 0.5696379485782577
+  },
+  {
+    "age": 33,
+    "brand_id": "alpha",
+    "score": 0.26526299659866037
+  },
+  {
+    "age": 34,
+    "brand_id": "beta",
+    "score": 0.48737161495105336
+  },
+  {
+    "age": 27,
+    "brand_id": "gamma",
+    "score": 0.5929858347892885
+  },
+  {
+    "age": 35,
+    "brand_id": "alpha",
+    "score": 0.6788139451040154
+  },
+  {
+    "age": 30,
+    "brand_id": "alpha",
+    "score": 0.6570822338069833
+  },
+  {
+    "age": 42,
+    "brand_id": "alpha",
+    "score": 0.6591611290180935
+  },
+  {
+    "age": 18,
+    "brand_id": "gamma",
+    "score": 0.4386681957132124
+  },
+  {
+    "age": 34,
+    "brand_id": "gamma",
+    "score": 0.8037690656827303
+  },
+  {
+    "age": 29,
+    "brand_id": "gamma",
+    "score": 0.26732779415914126
+  },
+  {
+    "age": 41,
+    "brand_id": "gamma",
+    "score": 0.4580351626518811
+  },
+  {
+    "age": 37,
+    "brand_id": "beta",
+    "score": 0.4696277496071154
+  },
+  {
+    "age": 30,
+    "brand_id": "gamma",
+    "score": 0.48460679397633266
+  },
+  {
+    "age": 37,
+    "brand_id": "gamma",
+    "score": 0.2828721607572719
+  },
+  {
+    "age": 21,
+    "brand_id": "alpha",
+    "score": 0.3425344427305417
+  },
+  {
+    "age": 38,
+    "brand_id": "beta",
+    "score": 0.8746696484265302
+  },
+  {
+    "age": 32,
+    "brand_id": "beta",
+    "score": 0.43948979404298993
+  },
+  {
+    "age": 48,
+    "brand_id": "alpha",
+    "score": 0.5403082482699889
+  },
+  {
+    "age": 59,
+    "brand_id": "beta",
+    "score": 0.24672026327759342
+  },
+  {
+    "age": 36,
+    "brand_id": "beta",
+    "score": 0.4785046811725594
+  },
+  {
+    "age": 46,
+    "brand_id": "beta",
+    "score": 0.3623317991889079
+  },
+  {
+    "age": 60,
+    "brand_id": "delta",
+    "score": 0.7736343511075842
+  },
+  {
+    "age": 25,
+    "brand_id": "beta",
+    "score": 0.3367995403603495
+  },
+  {
+    "age": 37,
+    "brand_id": "alpha",
+    "score": 0.6025566348321976
+  },
+  {
+    "age": 18,
+    "brand_id": "beta",
+    "score": 0.458907067831638
+  },
+  {
+    "age": 27,
+    "brand_id": "gamma",
+    "score": 0.45188676597746225
+  },
+  {
+    "age": 27,
+    "brand_id": "beta",
+    "score": 0.18622194584683893
+  },
+  {
+    "age": 35,
+    "brand_id": "alpha",
+    "score": 0.2944667344860209
+  },
+  {
+    "age": 46,
+    "brand_id": "delta",
+    "score": 0
+  },
+  {
+    "age": 18,
+    "brand_id": "delta",
+    "score": 0.34788995758554775
+  },
+  {
+    "age": 42,
+    "brand_id": "beta",
+    "score": 0.5627597024376988
+  },
+  {
+    "age": 39,
+    "brand_id": "delta",
+    "score": 0.4835871006034534
+  },
+  {
+    "age": 33,
+    "brand_id": "beta",
+    "score": 0.5188297288458408
+  },
+  {
+    "age": 36,
+    "brand_id": "alpha",
+    "score": 0.49312935163191846
+  },
+  {
+    "age": 34,
+    "brand_id": "gamma",
+    "score": 0.4586473838912553
+  },
+  {
+    "age": 39,
+    "brand_id": "gamma",
+    "score": 0.55590126430931
+  },
+  {
+    "age": 31,
+    "brand_id": "gamma",
+    "score": 0.36655169284529276
+  },
+  {
+    "age": 33,
+    "brand_id": "beta",
+    "score": 0.6020743534636613
+  },
+  {
+    "age": 36,
+    "brand_id": "alpha",
+    "score": 0.5809711505609121
+  },
+  {
+    "age": 38,
+    "brand_id": "alpha",
+    "score": 0.6361111269143681
+  },
+  {
+    "age": 37,
+    "brand_id": "gamma",
+    "score": 0.34650192832734483
+  },
+  {
+    "age": 53,
+    "brand_id": "gamma",
+    "score": 0.5038759826652746
+  },
+  {
+    "age": 36,
+    "brand_id": "beta",
+    "score": 0.6307018045761535
+  },
+  {
+    "age": 43,
+    "brand_id": "alpha",
+    "score": 0.11749990261053342
+  },
+  {
+    "age": 53,
+    "brand_id": "delta",
+    "score": 0.5828048475746883
+  },
+  {
+    "age": 54,
+    "brand_id": "gamma",
+    "score": 0.34788757800954656
+  },
+  {
+    "age": 36,
+    "brand_id": "alpha",
+    "score": 0.32471193478581595
+  },
+  {
+    "age": 24,
+    "brand_id": "delta",
+    "score": 0.19705921757727385
+  },
+  {
+    "age": 18,
+    "brand_id": "gamma",
+    "score": 0.4773957467773979
+  },
+  {
+    "age": 31,
+    "brand_id": "beta",
+    "score": 0.7836975353121507
+  },
+  {
+    "age": 20,
+    "brand_id": "beta",
+    "score": 0.5585398014675883
+  },
+  {
+    "age": 56,
+    "brand_id": "beta",
+    "score": 0.3576564850236299
+  },
+  {
+    "age": 22,
+    "brand_id": "alpha",
+    "score": 0.5684369646702354
+  },
+  {
+    "age": 39,
+    "brand_id": "alpha",
+    "score": 0.5556607729814725
+  },
+  {
+    "age": 38,
+    "brand_id": "beta",
+    "score": 0.7027484726807354
+  },
+  {
+    "age": 43,
+    "brand_id": "alpha",
+    "score": 0.6954225582737616
+  },
+  {
+    "age": 34,
+    "brand_id": "beta",
+    "score": 0.4847302190968629
+  },
+  {
+    "age": 39,
+    "brand_id": "alpha",
+    "score": 0.5247386274029981
+  },
+  {
+    "age": 32,
+    "brand_id": "alpha",
+    "score": 0.5603957852417566
+  },
+  {
+    "age": 60,
+    "brand_id": "alpha",
+    "score": 0.49219923085587314
+  },
+  {
+    "age": 31,
+    "brand_id": "beta",
+    "score": 0.695593211267278
+  },
+  {
+    "age": 40,
+    "brand_id": "alpha",
+    "score": 0.5152394224426874
+  },
+  {
+    "age": 18,
+    "brand_id": "alpha",
+    "score": 0.635717705584192
+  },
+  {
+    "age": 27,
+    "brand_id": "beta",
+    "score": 0.6653047739042519
+  },
+  {
+    "age": 48,
+    "brand_id": "gamma",
+    "score": 0.6195473892515061
+  },
+  {
+    "age": 41,
+    "brand_id": "beta",
+    "score": 0.6714902935424257
+  },
+  {
+    "age": 28,
+    "brand_id": "beta",
+    "score": 0.4511110851434596
+  },
+  {
+    "age": 52,
+    "brand_id": "beta",
+    "score": 0.42377111651530835
+  },
+  {
+    "age": 40,
+    "brand_id": "alpha",
+    "score": 0.5405368328096649
+  },
+  {
+    "age": 26,
+    "brand_id": "alpha",
+    "score": 0.5933597286316463
+  },
+  {
+    "age": 26,
+    "brand_id": "alpha",
+    "score": 0.39633050399008085
+  },
+  {
+    "age": 42,
+    "brand_id": "beta",
+    "score": 0.3915887279166155
+  },
+  {
+    "age": 39,
+    "brand_id": "delta",
+    "score": 0.5107256335215713
+  },
+  {
+    "age": 23,
+    "brand_id": "gamma",
+    "score": 0.7106518251074527
+  },
+  {
+    "age": 18,
+    "brand_id": "beta",
+    "score": 0.16905700975733887
+  },
+  {
+    "age": 26,
+    "brand_id": "beta",
+    "score": 0.4924963628190205
+  },
+  {
+    "age": 19,
+    "brand_id": "gamma",
+    "score": 0.4679910529728033
+  },
+  {
+    "age": 18,
+    "brand_id": "delta",
+    "score": 0.6457728596029272
+  },
+  {
+    "age": 43,
+    "brand_id": "beta",
+    "score": 0.5227616738901638
+  },
+  {
+    "age": 39,
+    "brand_id": "gamma",
+    "score": 0.33298232712572057
+  },
+  {
+    "age": 37,
+    "brand_id": "gamma",
+    "score": 0.24570596809644446
+  },
+  {
+    "age": 44,
+    "brand_id": "alpha",
+    "score": 0.3230994301040877
+  },
+  {
+    "age": 19,
+    "brand_id": "alpha",
+    "score": 0.591992820740814
+  },
+  {
+    "age": 30,
+    "brand_id": "beta",
+    "score": 0.416355466283405
+  },
+  {
+    "age": 34,
+    "brand_id": "beta",
+    "score": 0.4882161983101726
+  },
+  {
+    "age": 31,
+    "brand_id": "beta",
+    "score": 0.526999228537173
+  },
+  {
+    "age": 56,
+    "brand_id": "alpha",
+    "score": 0.4543049431419668
+  },
+  {
+    "age": 51,
+    "brand_id": "alpha",
+    "score": 0.8062058311427702
+  },
+  {
+    "age": 37,
+    "brand_id": "beta",
+    "score": 0.5350094195111705
+  },
+  {
+    "age": 40,
+    "brand_id": "beta",
+    "score": 0.29668613605547706
+  },
+  {
+    "age": 53,
+    "brand_id": "beta",
+    "score": 0.39475040386105836
+  },
+  {
+    "age": 61,
+    "brand_id": "alpha",
+    "score": 0.5135525467238086
+  },
+  {
+    "age": 59,
+    "brand_id": "alpha",
+    "score": 0.5210948407441046
+  },
+  {
+    "age": 36,
+    "brand_id": "gamma",
+    "score": 0.44605255954082906
+  },
+  {
+    "age": 18,
+    "brand_id": "alpha",
+    "score": 0.5695276472647731
+  },
+  {
+    "age": 39,
+    "brand_id": "gamma",
+    "score": 0.6736554426919937
+  },
+  {
+    "age": 18,
+    "brand_id": "gamma",
+    "score": 0.5883884698236036
+  },
+  {
+    "age": 18,
+    "brand_id": "beta",
+    "score": 0.4929719578085012
+  },
+  {
+    "age": 35,
+    "brand_id": "beta",
+    "score": 0.29948368817987614
+  },
+  {
+    "age": 36,
+    "brand_id": "gamma",
+    "score": 0.21030886696511342
+  },
+  {
+    "age": 45,
+    "brand_id": "beta",
+    "score": 0.44606106890543196
+  },
+  {
+    "age": 23,
+    "brand_id": "gamma",
+    "score": 0.5224591891902051
+  },
+  {
+    "age": 38,
+    "brand_id": "alpha",
+    "score": 0.2906835182596062
+  },
+  {
+    "age": 29,
+    "brand_id": "alpha",
+    "score": 0.4495475724645178
+  },
+  {
+    "age": 18,
+    "brand_id": "gamma",
+    "score": 0.5860823099936923
+  },
+  {
+    "age": 44,
+    "brand_id": "delta",
+    "score": 0.6850851330973231
+  },
+  {
+    "age": 28,
+    "brand_id": "delta",
+    "score": 0.38036987699256825
+  },
+  {
+    "age": 42,
+    "brand_id": "alpha",
+    "score": 0.21625990135632006
+  },
+  {
+    "age": 29,
+    "brand_id": "alpha",
+    "score": 0.5140635250901264
+  },
+  {
+    "age": 27,
+    "brand_id": "gamma",
+    "score": 0.3811657124954704
+  },
+  {
+    "age": 37,
+    "brand_id": "gamma",
+    "score": 0.2109866032208899
+  },
+  {
+    "age": 42,
+    "brand_id": "gamma",
+    "score": 0.5873409823377614
+  },
+  {
+    "age": 31,
+    "brand_id": "beta",
+    "score": 0.47337454405180895
+  },
+  {
+    "age": 45,
+    "brand_id": "gamma",
+    "score": 0.37352026184259923
+  },
+  {
+    "age": 23,
+    "brand_id": "alpha",
+    "score": 0.3661688569806761
+  },
+  {
+    "age": 31,
+    "brand_id": "beta",
+    "score": 0.19875184720435077
+  },
+  {
+    "age": 26,
+    "brand_id": "alpha",
+    "score": 0.5520714703486755
+  },
+  {
+    "age": 37,
+    "brand_id": "delta",
+    "score": 0.28624622687518364
+  },
+  {
+    "age": 27,
+    "brand_id": "beta",
+    "score": 0.425807103796781
+  },
+  {
+    "age": 34,
+    "brand_id": "alpha",
+    "score": 0.6571931908354869
+  },
+  {
+    "age": 37,
+    "brand_id": "beta",
+    "score": 0.33925382680898397
+  },
+  {
+    "age": 25,
+    "brand_id": "beta",
+    "score": 0.6818940917863368
+  },
+  {
+    "age": 30,
+    "brand_id": "alpha",
+    "score": 0.33099656609203065
+  },
+  {
+    "age": 38,
+    "brand_id": "alpha",
+    "score": 0.8108234993166252
+  },
+  {
+    "age": 38,
+    "brand_id": "gamma",
+    "score": 0.3567786766275307
+  },
+  {
+    "age": 18,
+    "brand_id": "beta",
+    "score": 0.5481172113825017
+  },
+  {
+    "age": 32,
+    "brand_id": "beta",
+    "score": 0.5722438690394686
+  },
+  {
+    "age": 28,
+    "brand_id": "gamma",
+    "score": 0.5247195855404732
+  },
+  {
+    "age": 29,
+    "brand_id": "alpha",
+    "score": 0.6121216278485344
+  },
+  {
+    "age": 38,
+    "brand_id": "beta",
+    "score": 0.6576278847111254
+  },
+  {
+    "age": 27,
+    "brand_id": "gamma",
+    "score": 0.28319338887834744
+  },
+  {
+    "age": 55,
+    "brand_id": "beta",
+    "score": 0.5599641805910435
+  },
+  {
+    "age": 63,
+    "brand_id": "alpha",
+    "score": 0.599995388569595
+  },
+  {
+    "age": 38,
+    "brand_id": "beta",
+    "score": 0.4321649227659279
+  },
+  {
+    "age": 27,
+    "brand_id": "gamma",
+    "score": 0.601687835990298
+  },
+  {
+    "age": 29,
+    "brand_id": "beta",
+    "score": 0.2506502769985303
+  },
+  {
+    "age": 20,
+    "brand_id": "gamma",
+    "score": 0.5083597057349888
+  },
+  {
+    "age": 35,
+    "brand_id": "beta",
+    "score": 0.5546594355694033
+  },
+  {
+    "age": 56,
+    "brand_id": "gamma",
+    "score": 0.5223488632082377
+  },
+  {
+    "age": 34,
+    "brand_id": "beta",
+    "score": 0.5937383380266037
+  },
+  {
+    "age": 30,
+    "brand_id": "gamma",
+    "score": 0.771042819640061
+  },
+  {
+    "age": 36,
+    "brand_id": "delta",
+    "score": 0.38536658702479576
+  },
+  {
+    "age": 51,
+    "brand_id": "alpha",
+    "score": 0.4945778726469087
+  },
+  {
+    "age": 29,
+    "brand_id": "beta",
+    "score": 0.5330188898729942
+  },
+  {
+    "age": 57,
+    "brand_id": "alpha",
+    "score": 0.5234293126586246
+  },
+  {
+    "age": 44,
+    "brand_id": "beta",
+    "score": 0.3047994522195578
+  },
+  {
+    "age": 44,
+    "brand_id": "beta",
+    "score": 0.6258094445234087
+  },
+  {
+    "age": 18,
+    "brand_id": "beta",
+    "score": 0.5168996515155156
+  },
+  {
+    "age": 42,
+    "brand_id": "beta",
+    "score": 0.3198022905249116
+  },
+  {
+    "age": 45,
+    "brand_id": "delta",
+    "score": 0.47709560575247384
+  },
+  {
+    "age": 18,
+    "brand_id": "alpha",
+    "score": 0.5656816470982095
+  },
+  {
+    "age": 47,
+    "brand_id": "alpha",
+    "score": 0.7127132962311714
+  },
+  {
+    "age": 31,
+    "brand_id": "gamma",
+    "score": 0.4987785230517864
+  },
+  {
+    "age": 18,
+    "brand_id": "alpha",
+    "score": 0.7065236415533676
+  },
+  {
+    "age": 42,
+    "brand_id": "alpha",
+    "score": 0.6154287365473997
+  },
+  {
+    "age": 56,
+    "brand_id": "alpha",
+    "score": 0.21455243473412586
+  }
+]

@@ -2,6 +2,7 @@ package passes_test
 
 import (
 	"path/filepath"
+	"runtime"
 	"strings"
 	"testing"
 
@@ -14,6 +15,48 @@ import (
 	"github.com/frankbardon/prism/resolve"
 	"github.com/frankbardon/prism/spec"
 )
+
+// repoRootForPasses returns the absolute repo root, derived from this
+// test file's location so the committed tiny.pulse fixture resolves
+// regardless of `go test ./...` cwd. (Lives here alongside the
+// remaining Pulse-coupled chain-fusion tests; E4-S2 removes it with the
+// rest of the pulse_chain surface.)
+func repoRootForPasses(t *testing.T) string {
+	t.Helper()
+	_, here, _, ok := runtime.Caller(0)
+	if !ok {
+		t.Fatal("runtime.Caller failed")
+	}
+	return filepath.Join(filepath.Dir(here), "..", "..")
+}
+
+// memFSWithSchema produces a memory-backed afero with a stub .pulse file
+// carrying a header + schema + 0 records. Only SourceNode.OutputSchema()
+// reads it; the bytes are never materialised.
+func memFSWithSchema(t *testing.T, name string, schema *encoding.Schema) afero.Fs {
+	t.Helper()
+	fs := afero.NewMemMapFs()
+	f, err := fs.Create(name)
+	if err != nil {
+		t.Fatalf("create: %v", err)
+	}
+	defer f.Close()
+	if err := encoding.WriteHeader(f); err != nil {
+		t.Fatalf("write header: %v", err)
+	}
+	if err := encoding.WriteSchema(f, schema); err != nil {
+		t.Fatalf("write schema: %v", err)
+	}
+	return fs
+}
+
+// srcWithSchema builds a SourceNode over a stub .pulse whose header
+// declares schema. Retained for the Pulse-coupled chain-fusion tests.
+func srcWithSchema(t *testing.T, ref string, schema *encoding.Schema) (*nodes.SourceNode, afero.Fs) {
+	t.Helper()
+	fs := memFSWithSchema(t, ref, schema)
+	return nodes.New(ref, fs, resolve.New(nil)), fs
+}
 
 // tinySchema matches the committed testdata/cohorts/tiny.pulse:
 // brand_id (categorical), score (f64), age (f64).

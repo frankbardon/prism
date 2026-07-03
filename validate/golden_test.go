@@ -138,7 +138,6 @@ var negativeCodeMap = map[string]string{
 	"log_scale_on_categorical.json":   "PRISM_SPEC_007",
 	"pie_without_theta.json":          "PRISM_SPEC_008",
 	"bad_schema_ref.json":             "PRISM_SPEC_009",
-	"unknown_field_pulse_backed.json": "PRISM_SPEC_001",
 	"selection_encoding_unbound.json": "PRISM_SPEC_019",
 	"selection_interval_color.json":   "PRISM_SPEC_020",
 }

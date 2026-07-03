@@ -97,7 +97,7 @@ func TestPrismScaleResolveShared(t *testing.T) {
 	}
 	c, err := build.BuildComposite(s, build.Options{
 		FS:       afero.NewOsFs(),
-		Resolver: resolve.New(nil),
+		Resolver: inlineCohortResolver(t),
 		Backend:  inmem.New(),
 	})
 	if err != nil {
@@ -172,7 +172,7 @@ func TestPrismScaleResolveIncompatible(t *testing.T) {
 	// 2) Encoder path (defense-in-depth).
 	c, err := build.BuildComposite(s, build.Options{
 		FS:       afero.NewOsFs(),
-		Resolver: resolve.New(nil),
+		Resolver: inlineCohortResolver(t),
 		Backend:  inmem.New(),
 	})
 	if err != nil {
@@ -194,6 +194,45 @@ func TestPrismScaleResolveIncompatible(t *testing.T) {
 	if !errors.As(err, &ae) || ae.Code != "PRISM_PLAN_005" {
 		t.Errorf("encoder: expected PRISM_PLAN_005, got %v", err)
 	}
+}
+
+// inlineCohortResolver serves the two cohorts the actual_vs_benchmark
+// composition fixture binds via `datasets.*.source`, using rows frozen
+// under testdata/inline/ (captured from the retired
+// testdata/cohorts/*.pulse fixtures via pulse.Sample). Epic E4 removed
+// the Pulse loader, so the source refs resolve through the Pulse-free
+// inline DataResolver seam instead. Fixtures that use inline
+// `data.values` never consult the resolver, so this is a safe superset.
+func inlineCohortResolver(t *testing.T) resolve.Resolver {
+	t.Helper()
+	load := func(name string) []map[string]any {
+		body, err := os.ReadFile(filepath.Join(repoRoot(t), "testdata", "inline", name))
+		if err != nil {
+			t.Fatalf("read %s: %v", name, err)
+		}
+		var rows []map[string]any
+		if err := json.Unmarshal(body, &rows); err != nil {
+			t.Fatalf("decode %s: %v", name, err)
+		}
+		return rows
+	}
+	data := resolve.MapDataResolver{
+		"testdata/cohorts/actual.pulse": {
+			Values: load("actual.json"),
+			Fields: []spec.FieldSpec{
+				{Name: "brand_id", Type: "categorical_u8"},
+				{Name: "score", Type: "f64"},
+			},
+		},
+		"testdata/cohorts/benchmark.pulse": {
+			Values: load("benchmark.json"),
+			Fields: []spec.FieldSpec{
+				{Name: "brand_id", Type: "categorical_u8"},
+				{Name: "median_score", Type: "f64"},
+			},
+		},
+	}
+	return resolve.NewWithData(nil, data)
 }
 
 // chdirRepoRootSVG chdirs into the prism repo root for the lifetime
@@ -227,7 +266,7 @@ func renderCompositeFromRoot(t *testing.T, fixture string) []byte {
 	}
 	c, err := build.BuildComposite(s, build.Options{
 		FS:       afero.NewOsFs(),
-		Resolver: resolve.New(nil),
+		Resolver: inlineCohortResolver(t),
 		Backend:  inmem.New(),
 	})
 	if err != nil {

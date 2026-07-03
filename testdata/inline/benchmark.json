@@ -1,0 +1,322 @@
+[
+  {
+    "brand_id": "beta",
+    "median_score": 0.4949485787863684
+  },
+  {
+    "brand_id": "alpha",
+    "median_score": 0.46061896620475845
+  },
+  {
+    "brand_id": "beta",
+    "median_score": 0.5324949618273852
+  },
+  {
+    "brand_id": "delta",
+    "median_score": 0.4801004306268529
+  },
+  {
+    "brand_id": "alpha",
+    "median_score": 0.4857708781255746
+  },
+  {
+    "brand_id": "gamma",
+    "median_score": 0.43734307380669535
+  },
+  {
+    "brand_id": "alpha",
+    "median_score": 0.5040544860079713
+  },
+  {
+    "brand_id": "gamma",
+    "median_score": 0.4422216126700844
+  },
+  {
+    "brand_id": "delta",
+    "median_score": 0.513472201282499
+  },
+  {
+    "brand_id": "alpha",
+    "median_score": 0.5383736922517698
+  },
+  {
+    "brand_id": "delta",
+    "median_score": 0.5624242995797496
+  },
+  {
+    "brand_id": "delta",
+    "median_score": 0.5586666401505317
+  },
+  {
+    "brand_id": "beta",
+    "median_score": 0.4660050297521724
+  },
+  {
+    "brand_id": "alpha",
+    "median_score": 0.5623511726863291
+  },
+  {
+    "brand_id": "delta",
+    "median_score": 0.465893744548866
+  },
+  {
+    "brand_id": "gamma",
+    "median_score": 0.5492680695126136
+  },
+  {
+    "brand_id": "beta",
+    "median_score": 0.5724908173023072
+  },
+  {
+    "brand_id": "gamma",
+    "median_score": 0.5965717164839239
+  },
+  {
+    "brand_id": "delta",
+    "median_score": 0.45049931964780815
+  },
+  {
+    "brand_id": "alpha",
+    "median_score": 0.49456635974381863
+  },
+  {
+    "brand_id": "gamma",
+    "median_score": 0.47611412399774733
+  },
+  {
+    "brand_id": "gamma",
+    "median_score": 0.500676102539786
+  },
+  {
+    "brand_id": "beta",
+    "median_score": 0.5770453462072891
+  },
+  {
+    "brand_id": "delta",
+    "median_score": 0.5306037245466028
+  },
+  {
+    "brand_id": "alpha",
+    "median_score": 0.4965946150467516
+  },
+  {
+    "brand_id": "beta",
+    "median_score": 0.434215485702589
+  },
+  {
+    "brand_id": "delta",
+    "median_score": 0.438273904985111
+  },
+  {
+    "brand_id": "delta",
+    "median_score": 0.46184466161177273
+  },
+  {
+    "brand_id": "delta",
+    "median_score": 0.5325505126258042
+  },
+  {
+    "brand_id": "beta",
+    "median_score": 0.49221198391657384
+  },
+  {
+    "brand_id": "beta",
+    "median_score": 0.47020665083372326
+  },
+  {
+    "brand_id": "alpha",
+    "median_score": 0.4763833714545264
+  },
+  {
+    "brand_id": "alpha",
+    "median_score": 0.46077186471186216
+  },
+  {
+    "brand_id": "beta",
+    "median_score": 0.45777342244955865
+  },
+  {
+    "brand_id": "delta",
+    "median_score": 0.5079415390323214
+  },
+  {
+    "brand_id": "beta",
+    "median_score": 0.5076838854441434
+  },
+  {
+    "brand_id": "alpha",
+    "median_score": 0.49294137581497927
+  },
+  {
+    "brand_id": "delta",
+    "median_score": 0.5113582454674966
+  },
+  {
+    "brand_id": "delta",
+    "median_score": 0.4868859906544101
+  },
+  {
+    "brand_id": "delta",
+    "median_score": 0.5199747894604555
+  },
+  {
+    "brand_id": "beta",
+    "median_score": 0.512884225235026
+  },
+  {
+    "brand_id": "delta",
+    "median_score": 0.5033099790039212
+  },
+  {
+    "brand_id": "alpha",
+    "median_score": 0.4770249001595437
+  },
+  {
+    "brand_id": "beta",
+    "median_score": 0.5110981030919327
+  },
+  {
+    "brand_id": "delta",
+    "median_score": 0.5264650512642853
+  },
+  {
+    "brand_id": "delta",
+    "median_score": 0.5458106751437667
+  },
+  {
+    "brand_id": "gamma",
+    "median_score": 0.38143784230145367
+  },
+  {
+    "brand_id": "delta",
+    "median_score": 0.5547347301438321
+  },
+  {
+    "brand_id": "gamma",
+    "median_score": 0.48456225117585106
+  },
+  {
+    "brand_id": "delta",
+    "median_score": 0.5380168052452959
+  },
+  {
+    "brand_id": "delta",
+    "median_score": 0.5100215874936974
+  },
+  {
+    "brand_id": "delta",
+    "median_score": 0.563086519813317
+  },
+  {
+    "brand_id": "alpha",
+    "median_score": 0.5558023472718553
+  },
+  {
+    "brand_id": "delta",
+    "median_score": 0.4917275505946523
+  },
+  {
+    "brand_id": "delta",
+    "median_score": 0.5306363902396533
+  },
+  {
+    "brand_id": "gamma",
+    "median_score": 0.4874473401356337
+  },
+  {
+    "brand_id": "gamma",
+    "median_score": 0.4884540000317841
+  },
+  {
+    "brand_id": "alpha",
+    "median_score": 0.5150373896736717
+  },
+  {
+    "brand_id": "gamma",
+    "median_score": 0.45097077578854583
+  },
+  {
+    "brand_id": "delta",
+    "median_score": 0.5439890828611202
+  },
+  {
+    "brand_id": "beta",
+    "median_score": 0.5298828796091964
+  },
+  {
+    "brand_id": "gamma",
+    "median_score": 0.4870682074654131
+  },
+  {
+    "brand_id": "delta",
+    "median_score": 0.5283205918195327
+  },
+  {
+    "brand_id": "gamma",
+    "median_score": 0.49893335382697324
+  },
+  {
+    "brand_id": "alpha",
+    "median_score": 0.414706323881589
+  },
+  {
+    "brand_id": "delta",
+    "median_score": 0.5263130490515131
+  },
+  {
+    "brand_id": "alpha",
+    "median_score": 0.4281237779218948
+  },
+  {
+    "brand_id": "gamma",
+    "median_score": 0.45227680686187915
+  },
+  {
+    "brand_id": "delta",
+    "median_score": 0.5978183152233996
+  },
+  {
+    "brand_id": "beta",
+    "median_score": 0.5501214491469505
+  },
+  {
+    "brand_id": "gamma",
+    "median_score": 0.4985663181721085
+  },
+  {
+    "brand_id": "delta",
+    "median_score": 0.44741162310120164
+  },
+  {
+    "brand_id": "gamma",
+    "median_score": 0.5026072099061195
+  },
+  {
+    "brand_id": "beta",
+    "median_score": 0.4825915480248646
+  },
+  {
+    "brand_id": "alpha",
+    "median_score": 0.5601976708745359
+  },
+  {
+    "brand_id": "beta",
+    "median_score": 0.48021639329006305
+  },
+  {
+    "brand_id": "gamma",
+    "median_score": 0.5804807712636164
+  },
+  {
+    "brand_id": "beta",
+    "median_score": 0.4780159369632838
+  },
+  {
+    "brand_id": "alpha",
+    "median_score": 0.5543417204640371
+  },
+  {
+    "brand_id": "gamma",
+    "median_score": 0.44037667621259413
+  }
+]

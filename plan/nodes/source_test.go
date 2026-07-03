@@ -2,6 +2,8 @@ package nodes_test
 
 import (
 	"context"
+	"encoding/json"
+	"os"
 	"path/filepath"
 	"runtime"
 	"testing"
@@ -10,12 +12,15 @@ import (
 
 	"github.com/frankbardon/prism/plan/nodes"
 	"github.com/frankbardon/prism/resolve"
+	"github.com/frankbardon/prism/spec"
 )
 
-// fixturePath returns the absolute path to the tiny .pulse cohort
-// committed under testdata/. The lookup walks up from this test file's
-// directory so `go test ./...` works regardless of cwd.
-func fixturePath(t *testing.T) string {
+// tinyInlineRows loads the frozen tiny cohort rows committed under
+// testdata/inline/tiny.json. The rows were captured from the retired
+// tiny.pulse fixture (via pulse.Sample) at the point Pulse left the
+// ingestion path, so a SourceNode backed by these rows materialises the
+// same 1000-row, three-column table the .pulse loader once produced.
+func tinyInlineRows(t *testing.T) []map[string]any {
 	t.Helper()
 	_, here, _, ok := runtime.Caller(0)
 	if !ok {
@@ -23,14 +28,38 @@ func fixturePath(t *testing.T) string {
 	}
 	// here = .../prism/plan/nodes/source_test.go
 	root := filepath.Join(filepath.Dir(here), "..", "..")
-	return filepath.Join(root, "testdata", "cohorts", "tiny.pulse")
+	body, err := os.ReadFile(filepath.Join(root, "testdata", "inline", "tiny.json"))
+	if err != nil {
+		t.Fatalf("read tiny.json: %v", err)
+	}
+	var rows []map[string]any
+	if err := json.Unmarshal(body, &rows); err != nil {
+		t.Fatalf("decode tiny.json: %v", err)
+	}
+	return rows
+}
+
+// tinyResolver wires a DataResolver serving the frozen tiny rows under
+// the ref "tiny". Fields are declared explicitly so the materialised
+// schema preserves the brand_id, score, age column order the loader
+// emitted.
+func tinyResolver(t *testing.T) resolve.Resolver {
+	t.Helper()
+	data := resolve.MapDataResolver{
+		"tiny": {
+			Values: tinyInlineRows(t),
+			Fields: []spec.FieldSpec{
+				{Name: "brand_id", Type: "categorical_u8"},
+				{Name: "score", Type: "f64"},
+				{Name: "age", Type: "u8"},
+			},
+		},
+	}
+	return resolve.NewWithData(nil, data)
 }
 
 func TestPrismSourceNodeExecute(t *testing.T) {
-	path := fixturePath(t)
-	fs := afero.NewOsFs()
-	r := resolve.New(nil)
-	node := nodes.New(path, fs, r)
+	node := nodes.New("tiny", afero.NewMemMapFs(), tinyResolver(t))
 
 	tbl, err := node.Execute(context.Background(), nil)
 	if err != nil {
@@ -50,9 +79,9 @@ func TestPrismSourceNodeExecute(t *testing.T) {
 		}
 	}
 
-	// Hash stability: Execute again, confirm same hash. SourceNode
-	// hashes the underlying bytes so identical input must yield
-	// identical hash regardless of map iteration order.
+	// Hash stability: Execute again, confirm same hash. FromInline hashes
+	// the rows in schema order so identical input yields identical hash
+	// regardless of map iteration order.
 	tbl2, err := node.Execute(context.Background(), nil)
 	if err != nil {
 		t.Fatalf("Execute 2: %v", err)
@@ -64,8 +93,8 @@ func TestPrismSourceNodeExecute(t *testing.T) {
 		t.Fatal("hash is empty")
 	}
 
-	// Spot check a categorical: brand_id values should all be one of
-	// the four declared categories.
+	// Spot check a categorical: brand_id values should all be one of the
+	// declared categories.
 	brandCol, ok := tbl.Column("brand_id")
 	if !ok {
 		t.Fatal("brand_id column missing")
@@ -78,7 +107,7 @@ func TestPrismSourceNodeExecute(t *testing.T) {
 		}
 	}
 
-	// Spot check a numeric column has finite values.
+	// Spot check a numeric column has finite values in the synth range.
 	scoreCol, ok := tbl.Column("score")
 	if !ok {
 		t.Fatal("score column missing")
@@ -92,10 +121,7 @@ func TestPrismSourceNodeExecute(t *testing.T) {
 }
 
 func TestSourceNodeOutputSchema(t *testing.T) {
-	path := fixturePath(t)
-	fs := afero.NewOsFs()
-	r := resolve.New(nil)
-	node := nodes.New(path, fs, r)
+	node := nodes.New("tiny", afero.NewMemMapFs(), tinyResolver(t))
 
 	schema, err := node.OutputSchema()
 	if err != nil {
@@ -107,12 +133,12 @@ func TestSourceNodeOutputSchema(t *testing.T) {
 }
 
 func TestSourceNodeFingerprintStable(t *testing.T) {
-	a := nodes.New("foo.pulse", nil, nil)
-	b := nodes.New("foo.pulse", nil, nil)
+	a := nodes.New("foo", nil, nil)
+	b := nodes.New("foo", nil, nil)
 	if a.Fingerprint() != b.Fingerprint() {
 		t.Fatalf("fingerprint differs for identical ref: %s vs %s", a.Fingerprint(), b.Fingerprint())
 	}
-	c := nodes.New("bar.pulse", nil, nil)
+	c := nodes.New("bar", nil, nil)
 	if a.Fingerprint() == c.Fingerprint() {
 		t.Fatalf("fingerprint same for different refs: %s", a.Fingerprint())
 	}

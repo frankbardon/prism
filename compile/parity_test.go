@@ -3,79 +3,63 @@ package compile_test
 import (
 	"context"
 	"math"
-	"path/filepath"
-	"runtime"
 	"testing"
 
-	"github.com/frankbardon/pulse"
-	"github.com/frankbardon/pulse/types"
 	"github.com/spf13/afero"
 
-	"github.com/frankbardon/prism/compile"
 	"github.com/frankbardon/prism/compile/inmem"
 	"github.com/frankbardon/prism/plan"
 	"github.com/frankbardon/prism/plan/build"
-	"github.com/frankbardon/prism/resolve"
 	specpkg "github.com/frankbardon/prism/spec"
-	"github.com/frankbardon/prism/table"
 )
 
-// fixturePath returns the absolute path of testdata/cohorts/tiny.pulse,
-// resolved relative to this test file so `go test ./...` works
-// regardless of cwd.
-func fixturePath(t *testing.T) string {
-	t.Helper()
-	_, here, _, ok := runtime.Caller(0)
-	if !ok {
-		t.Fatal("runtime.Caller failed")
-	}
-	root := filepath.Join(filepath.Dir(here), "..")
-	return filepath.Join(root, "testdata", "cohorts", "tiny.pulse")
+// frozenAggregateParity is the per-brand value Pulse produced for each
+// aggregate alias over the tiny cohort (groupby brand_id, field score),
+// captured via pulse.Process at the point Pulse left the ingestion path.
+// distinct / mode are excluded (non-numeric semantics on score); wmean /
+// ratio need sibling columns the fixture lacks. See inline_fixture_test.go.
+var frozenAggregateParity = map[string]map[string]float64{
+	"ci0":        {"alpha": 0.48800750120297964, "beta": 0.4834411379461078, "delta": 0.49234532326657476, "gamma": 0.4670611330908475},
+	"ci1":        {"alpha": 0.5189373283927206, "beta": 0.5141967503760725, "delta": 0.5508974237545249, "gamma": 0.5075610619306765},
+	"count":      {"alpha": 383.0, "beta": 314.0, "delta": 103.0, "gamma": 200.0},
+	"frequency":  {"alpha": 1.0, "beta": 1.0, "delta": 2.0, "gamma": 1.0},
+	"kurtosis":   {"alpha": -0.128547318058295, "beta": 0.054680995778235264, "delta": 1.5364883560948295, "gamma": -0.21899457910906373},
+	"max":        {"alpha": 0.9927196416020506, "beta": 0.9802453973404129, "delta": 0.9191491216547075, "gamma": 0.8827701202056496},
+	"mean":       {"alpha": 0.5034724147978498, "beta": 0.49881894416109007, "delta": 0.5216213735105499, "gamma": 0.4873110975107617},
+	"median":     {"alpha": 0.5109896264180319, "beta": 0.49612714980150013, "delta": 0.5316102948001258, "gamma": 0.48548358826625204},
+	"min":        {"alpha": 0.11749990261053342, "beta": 0.133629153704558, "delta": 0.0, "gamma": 0.13159351029785515},
+	"null_count": {"alpha": 0.0, "beta": 0.0, "delta": 0.0, "gamma": 0.0},
+	"q1":         {"alpha": 0.4073671354362559, "beta": 0.41331734534816855, "delta": 0.4529092535849327, "gamma": 0.3867090562811494},
+	"q3":         {"alpha": 0.6061653449168604, "beta": 0.5926348434023753, "delta": 0.6373723832543785, "gamma": 0.587602854209222},
+	"range":      {"alpha": 0.8752197389915172, "beta": 0.846616243635855, "delta": 0.9191491216547075, "gamma": 0.7511766099077944},
+	"skewness":   {"alpha": -0.013092448558578176, "beta": 0.04084784597778826, "delta": -0.6984367756542236, "gamma": 0.03533235560422917},
+	"stdev":      {"alpha": 0.15421658731126814, "beta": 0.13880926721571848, "delta": 0.15085665672950635, "gamma": 0.14574803615051243},
+	"sum":        {"alpha": 192.82993486757647, "beta": 156.62914846658228, "delta": 53.72700147158665, "gamma": 97.46221950215234},
+	"variance":   {"alpha": 0.023782755801933987, "beta": 0.019268012664964737, "delta": 0.022757730879604112, "gamma": 0.021242490041731083},
 }
 
-// TestPrismAggregateValueParity is the PHASE.md test gate. For every
+// TestPrismAggregateValueParity is the frozen parity gate. For every
 // Pulse-backed aggregate alias, computing the aggregate via Prism's
-// in-memory backend on tiny.pulse must equal what pulse.Process
-// returns for the same request. Tolerance is 1e-9 (Welford-style
-// rounding drifts within ULP per Pulse's docs).
+// in-memory backend over the tiny cohort's inline rows must equal the
+// value Pulse produced for the same request (captured in
+// frozenAggregateParity). Tolerance is 1e-6.
 func TestPrismAggregateValueParity(t *testing.T) {
-	cohortPath := fixturePath(t)
-	fs := afero.NewOsFs()
+	fs := afero.NewMemMapFs()
+	resolver := tinyResolver(t)
 
-	// --- Prism side: build a tiny spec and execute it.
-	prismResults := map[string]map[string]float64{}
-	for _, alias := range compile.PulseBackedAliases() {
-		// Skip aliases whose semantics are non-numeric on the score
-		// field (distinct counts distinct strings; mode picks the
-		// most-frequent value — both meaningful but require deeper
-		// fixtures to compare exactly. count we cover separately.)
-		if alias == "distinct" || alias == "mode" {
-			continue
-		}
-		// wmean / ratio bind to the sibling-column convention
-		// (`<field>_weight`, `<field>_denom`). tiny.pulse has no
-		// siblings, so neither side can produce a value — parity
-		// for these two aliases will land when the cohort-analytics
-		// fixture grows (tracked as follow-up to pulse v0.10.0).
-		if alias == "wmean" || alias == "ratio" {
-			continue
-		}
-		field := "score"
-		if alias == "count" {
-			field = "score" // pulse.AGG_COUNT counts non-null score
-		}
+	for alias, want := range frozenAggregateParity {
 		s := &specpkg.Spec{
-			Data: &specpkg.Data{Source: cohortPath},
+			Data: &specpkg.Data{Source: tinyRef},
 			Transform: []specpkg.Transform{
 				{Aggregate: &specpkg.AggregateTransform{
 					Groupby:   []string{"brand_id"},
-					Aggregate: []specpkg.AggregateOp{{Op: alias, Field: field, As: "value"}},
+					Aggregate: []specpkg.AggregateOp{{Op: alias, Field: "score", As: "value"}},
 				}},
 			},
 		}
 		dag, _, err := build.Build(s, build.Options{
 			FS:       fs,
-			Resolver: resolve.New(nil),
+			Resolver: resolver,
 			Backend:  inmem.New(),
 		})
 		if err != nil {
@@ -89,108 +73,21 @@ func TestPrismAggregateValueParity(t *testing.T) {
 		if final == nil {
 			t.Fatalf("%s: no tip table", alias)
 		}
-		prismResults[alias] = tableToBrandValueMap(t, final, "value")
-	}
+		got := tableToBrandValueMap(t, final, "value")
 
-	// --- Pulse side: direct pulse.Process calls.
-	pulseInst, err := pulse.New(pulse.Options{FS: fs})
-	if err != nil {
-		t.Fatalf("pulse.New: %v", err)
-	}
-
-	pulseResults := map[string]map[string]float64{}
-	for alias, mapping := range pulseAliasSet(t) {
-		if alias == "distinct" || alias == "mode" {
-			continue
+		if len(got) != len(want) {
+			t.Errorf("%s: group count Prism=%d frozen=%d", alias, len(got), len(want))
 		}
-		if alias == "wmean" || alias == "ratio" {
-			continue
-		}
-		field := "score"
-		req := &pulse.Request{
-			Cohort: &types.Cohort{Filename: cohortPath},
-			Groups: []*types.Group{{Type: types.GROUP_CATEGORY, Field: "brand_id"}},
-			Aggregations: []*types.Aggregation{{
-				Type:   mapping.Type,
-				Field:  field,
-				Label:  "value",
-				Params: mapping.Params,
-			}},
-		}
-		resp, err := pulseInst.Process(context.Background(), req)
-		if err != nil {
-			t.Fatalf("%s: pulse.Process: %v", alias, err)
-		}
-		out := map[string]float64{}
-		for _, row := range resp.Data {
-			brand, _ := row["brand_id"].(string)
-			val, _ := row["value"].(float64)
-			out[brand] = val
-		}
-		pulseResults[alias] = out
-	}
-
-	// --- Compare.
-	for alias, prism := range prismResults {
-		pulseVals := pulseResults[alias]
-		if len(prism) != len(pulseVals) {
-			t.Errorf("%s: group count Prism=%d Pulse=%d", alias, len(prism), len(pulseVals))
-		}
-		for brand, prismVal := range prism {
-			pulseVal, ok := pulseVals[brand]
+		for brand, wantVal := range want {
+			gotVal, ok := got[brand]
 			if !ok {
-				t.Errorf("%s: brand %q present in Prism but missing from Pulse", alias, brand)
+				t.Errorf("%s: brand %q missing from Prism output", alias, brand)
 				continue
 			}
-			if math.Abs(prismVal-pulseVal) > 1e-6 {
-				t.Errorf("%s/%s: Prism=%v Pulse=%v (delta=%g)",
-					alias, brand, prismVal, pulseVal, math.Abs(prismVal-pulseVal))
+			if math.Abs(gotVal-wantVal) > 1e-6 {
+				t.Errorf("%s/%s: Prism=%v frozen(Pulse)=%v (delta=%g)",
+					alias, brand, gotVal, wantVal, math.Abs(gotVal-wantVal))
 			}
 		}
 	}
-}
-
-// pulseAliasSet returns the subset of AliasToPulse entries we exercise
-// for parity. Helper kept in the test file so the parity surface is
-// explicit and easy to scan.
-func pulseAliasSet(t *testing.T) map[string]compile.AggregateMapping {
-	t.Helper()
-	out := map[string]compile.AggregateMapping{}
-	for _, alias := range compile.PulseBackedAliases() {
-		out[alias] = compile.AliasToPulse[alias]
-	}
-	return out
-}
-
-// finalTable locates the tip node's output table inside an
-// ExecResult. The builder marks the tip as the DAG's sole sink so
-// the existing Sinks() accessor still finds it (D040 retired the
-// synthetic SinkNode that D030 originally wired).
-func finalTable(dag *plan.DAG, res *plan.ExecResult) *table.Table {
-	for _, id := range dag.Sinks() {
-		if t, ok := res.Tables[id]; ok {
-			return t
-		}
-	}
-	return nil
-}
-
-// tableToBrandValueMap projects (brand_id, value) into a map.
-func tableToBrandValueMap(t *testing.T, tbl *table.Table, valueCol string) map[string]float64 {
-	t.Helper()
-	out := map[string]float64{}
-	brand, ok := tbl.Column("brand_id")
-	if !ok {
-		t.Fatal("brand_id column missing from prism table")
-	}
-	val, ok := tbl.Column(valueCol)
-	if !ok {
-		t.Fatalf("%s column missing", valueCol)
-	}
-	for i := 0; i < tbl.NumRows(); i++ {
-		key, _ := brand.ValueAt(i).(string)
-		v, _ := val.ValueAt(i).(float64)
-		out[key] = v
-	}
-	return out
 }

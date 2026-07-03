@@ -1,8 +1,6 @@
 package validate_test
 
 import (
-	"path/filepath"
-	"runtime"
 	"testing"
 
 	"github.com/spf13/afero"
@@ -11,45 +9,29 @@ import (
 	"github.com/frankbardon/prism/validate"
 )
 
-func fixturePath(t *testing.T) string {
-	t.Helper()
-	_, here, _, ok := runtime.Caller(0)
-	if !ok {
-		t.Fatal("runtime.Caller failed")
-	}
-	root := filepath.Join(filepath.Dir(here), "..")
-	return filepath.Join(root, "testdata", "cohorts", "tiny.pulse")
-}
+// TestPulseLookupSourceBoundIsBestEffortMiss pins the post-E4 behavior:
+// PulseLookup no longer reads a `.pulse` header (the loader was removed),
+// so a source-bound dataset carries no inline schema. Schema is a
+// best-effort miss — semantic rules skip field-existence checks for that
+// dataset rather than firing false positives against a schema Prism can
+// no longer read. Register still records the name so the dataset-ref
+// rule treats the externally-bound dataset as declared.
+func TestPulseLookupSourceBoundIsBestEffortMiss(t *testing.T) {
+	pl := validate.NewPulseLookup(resolve.New(nil), afero.NewMemMapFs())
+	pl.Register("tiny", "tiny")
 
-func TestPulseLookupSchemaResolvesRealCohort(t *testing.T) {
-	path := fixturePath(t)
-	pl := validate.NewPulseLookup(resolve.New(nil), afero.NewOsFs())
-	pl.Register("tiny", path)
-
-	shim, ok := pl.Schema("tiny")
-	if !ok {
-		t.Fatal("Schema(tiny) miss; want hit")
-	}
-	if shim.Name != "tiny" {
-		t.Fatalf("shim.Name = %q, want tiny", shim.Name)
+	if _, ok := pl.Schema("tiny"); ok {
+		t.Fatal("Schema(tiny) hit; want best-effort miss (Pulse loader removed in E4)")
 	}
 
-	wantTypes := map[string]string{
-		"brand_id": "nominal",
-		"score":    "quantitative",
-		"age":      "quantitative",
-	}
-	if len(shim.Fields) != len(wantTypes) {
-		t.Fatalf("Fields len = %d, want %d (%+v)", len(shim.Fields), len(wantTypes), shim.Fields)
-	}
-	for _, f := range shim.Fields {
-		want, ok := wantTypes[f.Name]
-		if !ok {
-			t.Fatalf("unexpected field %q", f.Name)
+	found := false
+	for _, n := range pl.Names() {
+		if n == "tiny" {
+			found = true
 		}
-		if f.Type != want {
-			t.Fatalf("field %q type = %q, want %q", f.Name, f.Type, want)
-		}
+	}
+	if !found {
+		t.Fatalf("Names()=%v, want to include the registered name \"tiny\"", pl.Names())
 	}
 }
 
