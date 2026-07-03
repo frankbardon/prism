@@ -67,10 +67,27 @@ func TestPrismGalleryFixtures(t *testing.T) {
 		"composite-marks/crosstab_significance_shading.prism.json": true,
 	}
 
+	// E4-S3 removed the `data.source` wire variant; these gallery
+	// fixtures still bind an external Pulse `source` and no longer
+	// decode. E4-S5 owns migrating them to inline `values` + regenerating
+	// their goldens — until then they are skipped end-to-end (validate
+	// would fail decode with PRISM_SPEC_039). See E4-S5.
+	sourceVariantSkip := map[string]bool{
+		"multi-source/actual_vs_benchmark.prism.json":              true,
+		"multi-source/bar_pulse_backed.prism.json":                 true,
+		"composite-marks/crosstab_heatmap.prism.json":              true,
+		"composite-marks/crosstab_overlay_share.prism.json":        true,
+		"composite-marks/regression_trend.prism.json":              true,
+		"composite-marks/crosstab_significance_shading.prism.json": true,
+	}
+
 	updateGoldens := os.Getenv("UPDATE_GOLDENS") == "1"
 
 	for _, fx := range fixtures {
 		t.Run(fx.name, func(t *testing.T) {
+			if sourceVariantSkip[fx.name] {
+				t.Skip("data.source removed in E4-S3; fixture migrates to inline values in E4-S5")
+			}
 			out, exit := runCLI(t, "prism", "validate", fx.spec)
 			if exit != 0 {
 				t.Errorf("validate exit %d: %s", exit, firstChars(out, 200))

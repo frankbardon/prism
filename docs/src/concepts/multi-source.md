@@ -4,12 +4,17 @@ Composing N Pulse queries into one chart is a first-class workflow.
 
 ## Datasets block
 
+Each named dataset carries its rows inline via `values` (or defers them
+to a runtime `ref` resolved by a `DataResolver` — see below). Prism does
+not open `.pulse` files; the host materialises the rows and hands Prism a
+Pulse-free spec.
+
 ```json
 {
   "datasets": {
-    "current": {"source": "cohorts/q1.pulse"},
-    "prior":   {"source": "cohorts/q4_2025.pulse"},
-    "bench":   {"source": "benchmarks/industry.pulse"}
+    "current": {"values": [{"brand_id": "a", "score": 0.62}, {"brand_id": "b", "score": 0.55}]},
+    "prior":   {"values": [{"brand_id": "a", "score": 0.58}, {"brand_id": "b", "score": 0.57}]},
+    "bench":   {"ref": "industry_benchmark"}
   },
   "transform": [
     {"data": "current", "groupby": ["brand_id"],
@@ -164,11 +169,15 @@ via `resolve.ChainDataResolvers`. An unresolved ref surfaces as
 
 | Variant | Discriminator key | Use when |
 |---|---|---|
-| `data: {source: "…"}` | `source` | Static Pulse path / archive shard |
-| `data: {name: "…"}` | `name` | Datasets-block alias |
-| `data: {ref: "…"}` | `ref` | Caller-resolved opaque identifier |
 | `data: {values: […]}` | `values` | Inline literal rows |
+| `data: {ref: "…"}` | `ref` | Caller-resolved opaque identifier (`DataResolver`) |
+| `data: {name: "…"}` | `name` | Datasets-block alias |
 | `data: {feature_collection: {…}}` | `feature_collection` | Geodata basemap |
+
+> The `data: {source: "…"}` variant (an external Pulse path) was removed
+> in v0.x: Prism no longer reads `.pulse`. A spec that still carries a
+> `source` key is rejected at decode with `PRISM_SPEC_039` — inline the
+> rows via `values` or defer them to a `DataResolver` via `ref`.
 
 ## Partial failure
 

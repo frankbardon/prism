@@ -788,6 +788,15 @@ var Codes = map[string]CodeMetadata{
 		},
 		SeeAlso: []string{"PRISM_SPEC_001", "PRISM_SPEC_037"},
 	},
+	"PRISM_SPEC_039": {
+		Code:    "PRISM_SPEC_039",
+		Message: `The data ` + "`source`" + ` variant was removed: Prism no longer opens .pulse files, so a spec cannot name an external source.`,
+		Fixups: []string{
+			`Inline the rows: replace ` + "`{\"data\": {\"source\": \"cohort.pulse\"}}`" + ` with ` + "`{\"data\": {\"values\": [{\"col\": 1}, …]}}`" + ` (or a named ` + "`datasets`" + ` entry whose value carries inline ` + "`values`" + `).`,
+			`Or keep the spec portable and defer the data to the host: use ` + "`{\"data\": {\"ref\": \"<id>\"}}`" + ` and supply a ` + "`resolve.DataResolver`" + ` (server / ` + "`prism.setDataResolver`" + ` in the browser) that returns the rows for that ref.`,
+		},
+		SeeAlso: []string{"PRISM_SPEC_009", "PRISM_RESOLVE_REF_UNRESOLVED"},
+	},
 	"PRISM_WARN_NETWORK_CYCLE": {
 		Code:    "PRISM_WARN_NETWORK_CYCLE",
 		Message: `network input graph contains a cycle; force layout may produce a visually messy result.`,

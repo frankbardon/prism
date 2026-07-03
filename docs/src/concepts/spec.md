@@ -17,7 +17,7 @@ Spec (JSON) → Parse → Validate → Plan → Compile → Encode → Render �
 ```json
 {
   "$schema": "urn:prism:schema:v1:spec",
-  "data": {"source": "cohort.pulse"},
+  "data": {"values": [{"brand_id": "a", "score": 0.62}, {"brand_id": "b", "score": 0.55}]},
   "mark": "bar",
   "encoding": {
     "x": {"field": "brand_id", "type": "nominal"},
@@ -31,7 +31,7 @@ Five top-level keys are typically present:
 | Key | Purpose |
 |---|---|
 | `$schema` | URN identifier (`urn:prism:schema:v1:spec`) for editor autocomplete + version pinning. |
-| `data` | Where to read rows from — a `.pulse` source, an inline `values` array, a named alias, etc. |
+| `data` | Where the rows come from — an inline `values` array, a runtime `ref` (resolved by a `DataResolver`), a named alias, or a geodata `feature_collection`. The external `.pulse` `source` variant was removed (`PRISM_SPEC_039`). |
 | `transform` | Optional array of row-level operations (filter, calculate, aggregate, sort, ...). |
 | `mark` | What to draw — `bar`, `line`, `point`, `pie`, `sankey`, ... |
 | `encoding` | How to bind data fields to visual channels (x/y/color/size/...). |
@@ -267,7 +267,7 @@ and returns long-form rows ready for a heatmap encoder.
 ```json
 {
   "$schema": "urn:prism:schema:v1:spec",
-  "data": {"source": "sales.pulse"},
+  "data": {"name": "sales"},
   "transform": [{
     "crosstab": {
       "rows":    [{"field": "region"}],
@@ -345,6 +345,13 @@ Cells are evenly numbered through `PRISM_SPEC_032` (shape rule),
 `PRISM_SPEC_033` (position rule), `PRISM_SPEC_034` (normalize enum).
 Run `prism errors lookup <code>` for details + fixups.
 
+> Crosstab (and regression) must consume a **source-bound** dataset —
+> the transform re-materialises the whole cohort, so it must be the
+> first transform on the chain (`PRISM_PLAN_CROSSTAB_REQUIRES_SOURCE`).
+> The `data.source` wire variant was removed in v0.x; bind the cohort by
+> `name` (a `datasets` entry / server-registered dataset) so it resolves
+> to the source leaf these transforms require.
+
 ## Regression transform
 
 The `regression` transform fits an ordinary-least-squares regression over
@@ -358,7 +365,7 @@ target)` for the classic regression overlay.
 ```json
 {
   "$schema": "urn:prism:schema:v1:spec",
-  "data": {"source": "sales.pulse"},
+  "data": {"name": "sales"},
   "layer": [
     {"mark": "point", "encoding": {
       "x": {"field": "spend", "type": "quantitative"},

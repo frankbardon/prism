@@ -6,36 +6,12 @@
   "$defs": {
     "data": {
       "oneOf": [
-        {"$ref": "data.schema.json#/$defs/data_source"},
         {"$ref": "data.schema.json#/$defs/data_named_ref"},
         {"$ref": "data.schema.json#/$defs/data_runtime_ref"},
         {"$ref": "data.schema.json#/$defs/data_inline"},
         {"$ref": "data.schema.json#/$defs/data_feature_collection"}
       ],
-      "description": "Data binding: an external Pulse source, a named dataset reference, a runtime resolver reference, inline values, or a synthesized geodata feature collection."
-    },
-    "data_source": {
-      "type": "object",
-      "description": "External Pulse data source identified by path or cohort id.",
-      "additionalProperties": false,
-      "required": ["source"],
-      "properties": {
-        "source": {
-          "type": "string",
-          "description": "Pulse source reference (path, cohort id, or archive#shard form).",
-          "minLength": 1
-        },
-        "format": {
-          "type": "string",
-          "description": "Optional hint that overrides the inferred source format.",
-          "enum": ["pulse", "parquet", "csv", "json", "ndjson", "arrow"]
-        },
-        "name": {
-          "type": "string",
-          "description": "Optional logical name used to refer to this binding within the spec.",
-          "minLength": 1
-        }
-      }
+      "description": "Data binding: a named dataset reference, a runtime resolver reference, inline values, or a synthesized geodata feature collection. The external `source` variant was removed in E4-S3 (Prism no longer reads .pulse) — inline the rows via `values` or defer them to a DataResolver via `ref`."
     },
     "data_named_ref": {
       "type": "object",

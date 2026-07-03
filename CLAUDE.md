@@ -45,7 +45,7 @@ Any change to Prism code, configuration, spec vocabulary, schema bundle, or publ
 | `prism static-bundle` output shape | `cmd/prism/cmd_static_bundle.go` + `static/staticfs.go` + smoke test |
 | A playground example (`docs/src/playground/examples/`) | `docs/src/playground/examples/manifest.json` (id + title + file) + the new `<id>.json` spec file. Specs must use inline `data.values` or `datasets.*.values` — the playground has no `.pulse` fetch path |
 | A projection in `encode/projection/` or a feature in `geodata/` | `docs/src/concepts/geo.md` + `schema/v1/projection.schema.json` (the `type` enum) + manifest regeneration via `make geodata` when admin-level data changes |
-| A `data` block variant (`source`, `name`, `ref`, `values`, `feature_collection`) | `spec/data.go` (struct field + UnmarshalJSON discriminator) + `schema/v1/data.schema.json` (oneOf entry) + `plan/build/build.go` registerDataset case + `docs/src/concepts/geo.md` for geo-specific variants + `docs/src/concepts/multi-source.md` for runtime-ref variants (caller-supplied `DataResolver` in `resolve/data_resolver.go`) |
+| A `data` block variant (`name`, `ref`, `values`, `feature_collection`) | `spec/data.go` (struct field + UnmarshalJSON discriminator) + `schema/v1/data.schema.json` (oneOf entry) + `plan/build/build.go` registerDataset case + `docs/src/concepts/geo.md` for geo-specific variants + `docs/src/concepts/multi-source.md` for runtime-ref variants (caller-supplied `DataResolver` in `resolve/data_resolver.go`). The external `source` (`.pulse`) variant was removed in E4-S3 — Prism never reads `.pulse`; a `source` key is rejected at decode with `PRISM_SPEC_039`. `spec.Data.Source` survives only as an internal (`json:"-"`) binding target populated by the server-side `DatasetRegistry` (a `name` reference resolving through `PRISM_DATASETS`/`--datasets-config`) and by test harnesses. |
 | An easing in `spec.AnimationEasings` or any field in `spec.Animation` | `spec/animation.go` (const list + struct) + `schema/v1/animation.schema.json` (enum / properties) + `docs/src/concepts/spec.md` (Animation table) + `static/vendor/prism/prism-animator.mjs` (`EASINGS` table + `_normaliseAnimation`) + `internal/devtools/cross-impl-runner/animator-tween.mjs` if behaviour changes |
 | A numeric or color SVG attr the animator should tween | `static/vendor/prism/prism-animator.mjs` (`NUMERIC_ATTRS` or `COLOR_ATTRS`) + `docs/src/concepts/browser.md` (Animation section) + `internal/devtools/cross-impl-runner/animator-tween.mjs` fixture coverage |
 | A gallery fixture under `docs/src/gallery/animation/` | new `<name>.prism.json` + golden `<name>.svg` (regen via `UPDATE_GOLDENS=1 go test ./cmd/prism/ -run TestPrismGalleryFixtures`) + entry in `docs/src/gallery/index.md` Animation section + `<prism-chart>` card in `docs/src/gallery/index.html`. `.scene.json` is built by `make docs-scenes` and gitignored |
@@ -211,7 +211,7 @@ Three built-in themes ship: `light` (default), `dark`, `print`. Each lives in `t
 
 **Environment variables:**
 
-- `PRISM_DATASETS` — semicolon-separated `name=ref` list registering named datasets for `data.source` lookup. `ref` is a `.pulse` path, an archive shard ref (`archive.pulse#shard.pulse`), or a future-supported source URL. Layered behind `--datasets-config` JSON file (file wins). Defined in `resolve/registry_dataset.go` (`EnvDatasetVar`).
+- `PRISM_DATASETS` — semicolon-separated `name=ref` list registering named datasets for `data.name` lookup (a `{"data": {"name": "…"}}` reference resolves through this registry to a source-bound leaf). `ref` is an opaque resolver identifier. Layered behind `--datasets-config` JSON file (file wins). Defined in `resolve/registry_dataset.go` (`EnvDatasetVar`).
 - `PRISM_GEODATA` — single directory path holding the map tier bundles (`<dir>/<tier>.geo.json` for `world-110m`, `world-50m`, `admin1-50m`) consumed at render time by `plot`, `scene`, `serve`, `mcp`, and `static-bundle` (the `--geodata-dir` flag is the per-command equivalent; flag wins). Host tiers are no longer embedded, so this (or the flag) must be set for any `geoshape`/`geopoint` mark — unset + a geo mark hard-fails with `PRISM_GEODATA_DIR_UNSET`; a configured dir missing the requested tier fails with `PRISM_GEODATA_TIER_MISSING`. This is a path, NOT numeric, so it does NOT live in `internal/limits/limits.go`; the flag is wired in `cmd/prism/geodata_dir.go` and consumed by the host loader in `geodata/`. The no-execute leaves (`validate`, `plan`) and the data-only `execute` leaf use only the embedded manifest and ignore it.
 - `PRISM_TABLE_MAX_ROWS` — cap on any single materialised `table.Table`. Default 50,000,000. Defined in `internal/limits/limits.go`.
 - `PRISM_JOIN_MAX_ROWS` — cap on left × right product for the hash-join node. Default 5,000,000. Overflow → `PRISM_JOIN_001`.
@@ -232,7 +232,7 @@ Hermetic testing: `afero.NewMemMapFs()` is the default for tests under `validate
 ```json
 {
   "$schema": "urn:prism:schema:v1:spec",
-  "data":    {"source": "cohort.pulse"},
+  "data":    {"values": [{"Origin": "USA", "Horsepower": 130}, {"Origin": "Europe", "Horsepower": 90}]},
   "mark":    {"type": "bar"},
   "encoding": {
     "x": {"field": "Origin", "type": "nominal"},
@@ -242,7 +242,7 @@ Hermetic testing: `afero.NewMemMapFs()` is the default for tests under `validate
 ```
 
 - `$schema` is the URN form `urn:prism:schema:v1:spec`. Schema bundle lives in `schema/v1/` (`//go:embed`'d into the binary). `prism init` writes the JSON Schema files into `.prism/schemas/` for editor autocomplete.
-- `data.source` is the Pulse ref (single-file `.pulse`, archive-shard anchor, or `PRISM_DATASETS`/`datasets`-registered name). Vega-Lite's `data.url` is **not** accepted — port via `prism validate --fix-suggestions`.
+- `data` supplies rows as inline `values`, a runtime `ref` (resolved by a caller-supplied `DataResolver`), a `datasets`-block `name`, or a geodata `feature_collection`. The external `data.source` (`.pulse`) variant was removed in E4-S3 — Prism never reads `.pulse`; a `source` key is rejected at decode with `PRISM_SPEC_039`. Vega-Lite's `data.url` is **not** accepted either.
 - `type` is required on every channel encoding (Prism is strict — Vega-Lite's inference is not implemented).
 - Vega-Lite's `params` / signals and per-encoding `condition` blocks are not implemented in v1.
 
