@@ -126,7 +126,16 @@ func Compile(ctx context.Context, s *spec.Spec, opts CompileOptions) (*CompiledP
 		buildOpts.Backend = inmem.New()
 	}
 	if buildOpts.Resolver == nil {
-		buildOpts.Resolver = resolve.New(nil)
+		// Pulse-free resolver: data enters via inline data.values /
+		// datasets or a caller-supplied DataResolver. When a DataResolver
+		// is present, wire it through the inline path so a spec's
+		// data.source ref binds to the caller's rows too (data.ref uses
+		// buildOpts.DataResolver directly).
+		if buildOpts.DataResolver != nil {
+			buildOpts.Resolver = resolve.NewWithData(nil, buildOpts.DataResolver)
+		} else {
+			buildOpts.Resolver = resolve.New(nil)
+		}
 	}
 
 	doc, err := runPipeline(ctx, s, buildOpts, opts.Exec, opts.Encode)

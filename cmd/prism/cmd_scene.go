@@ -14,7 +14,6 @@ import (
 	"github.com/frankbardon/prism/encode"
 	"github.com/frankbardon/prism/plan"
 	"github.com/frankbardon/prism/plan/build"
-	"github.com/frankbardon/prism/resolve"
 	"github.com/frankbardon/prism/spec"
 )
 
@@ -69,6 +68,7 @@ func sceneCommand() *cli.Command {
 				Usage: "Emit minified JSON (default: pretty-printed with 2-space indent)",
 			},
 			datasetsConfigFlag(),
+			dataFlag(),
 			geodataDirFlag(),
 		},
 		Action: runScene,
@@ -97,11 +97,16 @@ func runScene(ctx context.Context, cmd *cli.Command) error {
 	if err != nil {
 		return cli.Exit(fmt.Sprintf("load --datasets-config: %v", err), 2)
 	}
+	dataResolver, err := loadDataResolver(cmd)
+	if err != nil {
+		return cli.Exit(fmt.Sprintf("load --data: %v", err), 2)
+	}
 	buildOpts := build.Options{
 		FS:              afero.NewOsFs(),
-		Resolver:        resolve.New(nil),
+		Resolver:        hostResolver(dataResolver),
 		Backend:         inmem.New(),
 		DatasetRegistry: registry,
+		DataResolver:    dataResolver,
 	}
 	execOpts := plan.ExecOpts{
 		Workers:      cmd.Int("workers"),

@@ -19,7 +19,6 @@ import (
 	"github.com/frankbardon/prism/plan/build"
 	"github.com/frankbardon/prism/render"
 	"github.com/frankbardon/prism/render/svg"
-	"github.com/frankbardon/prism/resolve"
 	"github.com/frankbardon/prism/spec"
 	"github.com/frankbardon/prism/table"
 )
@@ -72,6 +71,7 @@ func plotCommand() *cli.Command {
 				Usage: "Stop on the first node error instead of skipping dependents",
 			},
 			datasetsConfigFlag(),
+			dataFlag(),
 			geodataDirFlag(),
 		},
 		Action: runPlot,
@@ -110,11 +110,16 @@ func runPlot(ctx context.Context, cmd *cli.Command) error {
 	if err != nil {
 		return cli.Exit(fmt.Sprintf("load --datasets-config: %v", err), 2)
 	}
+	dataResolver, err := loadDataResolver(cmd)
+	if err != nil {
+		return cli.Exit(fmt.Sprintf("load --data: %v", err), 2)
+	}
 	buildOpts := build.Options{
 		FS:              afero.NewOsFs(),
-		Resolver:        resolve.New(nil),
+		Resolver:        hostResolver(dataResolver),
 		Backend:         inmem.New(),
 		DatasetRegistry: registry,
+		DataResolver:    dataResolver,
 	}
 	execOpts := plan.ExecOpts{
 		Workers:      cmd.Int("workers"),

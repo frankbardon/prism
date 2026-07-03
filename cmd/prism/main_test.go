@@ -59,27 +59,6 @@ func TestValidateCLISmoke(t *testing.T) {
 		}
 	})
 
-	// Pulse-backed positive + negative. The negative variant proves the
-	// field-existence rule fires against the real cohort schema (P02
-	// wires PulseLookup behind the existing validator).
-	t.Run("valid-pulse-backed", func(t *testing.T) {
-		root := repoFile(t, "")
-		originalCwd, _ := os.Getwd()
-		if err := os.Chdir(root); err != nil {
-			t.Fatalf("chdir(%s): %v", root, err)
-		}
-		t.Cleanup(func() { _ = os.Chdir(originalCwd) })
-
-		fixture := filepath.Join("examples", "specs", "bar_pulse_backed.json")
-		out, exit := runCLI(t, "prism", "validate", fixture)
-		if exit != 0 {
-			t.Fatalf("expected exit 0, got %d (stdout=%q)", exit, out)
-		}
-		if !strings.Contains(out, "valid") {
-			t.Errorf("expected stdout to contain \"valid\", got: %q", out)
-		}
-	})
-
 	t.Run("plan-dot", func(t *testing.T) {
 		fixture := repoFile(t, "examples", "specs", "bar_basic.json")
 		out, exit := runCLI(t, "prism", "plan", fixture)
@@ -167,7 +146,10 @@ func TestValidateCLISmoke(t *testing.T) {
 		}
 	})
 
-	t.Run("execute-pulse-backed", func(t *testing.T) {
+	// The --data flag supplies materialized rows for a spec whose data
+	// block names an external source. The Pulse loader is gone, so the
+	// host CLI feeds a JSON rows file through the resolver's inline path.
+	t.Run("execute-data-flag", func(t *testing.T) {
 		root := repoFile(t, "")
 		originalCwd, _ := os.Getwd()
 		if err := os.Chdir(root); err != nil {
@@ -175,8 +157,14 @@ func TestValidateCLISmoke(t *testing.T) {
 		}
 		t.Cleanup(func() { _ = os.Chdir(originalCwd) })
 
+		rowsPath := filepath.Join(t.TempDir(), "rows.json")
+		rowsJSON := `[{"brand_id":"alpha","score":0.42},{"brand_id":"beta","score":0.71}]`
+		if err := os.WriteFile(rowsPath, []byte(rowsJSON), 0o644); err != nil {
+			t.Fatalf("write rows.json: %v", err)
+		}
+
 		fixture := filepath.Join("examples", "specs", "bar_pulse_backed.json")
-		out, exit := runCLI(t, "prism", "execute", fixture, "--format", "json")
+		out, exit := runCLI(t, "prism", "execute", fixture, "--data", rowsPath, "--format", "json")
 		if exit != 0 {
 			t.Fatalf("expected exit 0, got %d (stdout=%q)", exit, out)
 		}
@@ -184,8 +172,10 @@ func TestValidateCLISmoke(t *testing.T) {
 		if err := json.Unmarshal([]byte(out), &rows); err != nil {
 			t.Fatalf("execute json parse: %v\n%s", err, out)
 		}
-		if len(rows) != 4 {
-			t.Errorf("expected 4 brand rows, got %d (%v)", len(rows), rows)
+		// The spec aggregates mean(score) grouped by brand_id, so each
+		// distinct brand collapses to one row.
+		if len(rows) != 2 {
+			t.Errorf("expected 2 brand rows, got %d (%v)", len(rows), rows)
 		}
 		for _, row := range rows {
 			score, ok := row["score"].(float64)
@@ -204,27 +194,6 @@ func TestValidateCLISmoke(t *testing.T) {
 		_, exit := runCLI(t, "prism", "execute", fixture, "--format", "yaml")
 		if exit != 2 {
 			t.Fatalf("expected exit 2 for bad format, got %d", exit)
-		}
-	})
-
-	t.Run("invalid-pulse-backed", func(t *testing.T) {
-		root := repoFile(t, "")
-		originalCwd, _ := os.Getwd()
-		if err := os.Chdir(root); err != nil {
-			t.Fatalf("chdir(%s): %v", root, err)
-		}
-		t.Cleanup(func() { _ = os.Chdir(originalCwd) })
-
-		fixture := filepath.Join("examples", "specs", "invalid", "unknown_field_pulse_backed.json")
-		out, exit := runCLI(t, "prism", "validate", fixture)
-		if exit != 1 {
-			t.Fatalf("expected exit 1, got %d (stdout=%q)", exit, out)
-		}
-		if !strings.Contains(out, "PRISM_SPEC_001") {
-			t.Errorf("expected stdout to mention PRISM_SPEC_001, got: %q", out)
-		}
-		if !strings.Contains(out, "scor") {
-			t.Errorf("expected stdout to identify the typoed field 'scor', got: %q", out)
 		}
 	})
 

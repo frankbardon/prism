@@ -199,10 +199,10 @@ func doPlan(specJSON, datasetsJSON string) (string, error) {
 }
 
 // executeFunc shape: prism.execute(specJSON, datasetsJSON?, optsJSON?)
-// → SceneDoc JSON. The browser passes a dataset alias map (alias →
-// URL) so the fetch-backed Fs knows where to load each `.pulse`
-// reference. optsJSON carries the optional encode knobs
-// {width, height, theme}.
+// → SceneDoc JSON. Data enters via inline `data.values` in the spec or
+// the JS-side resolver registered through prism.setDataResolver; the
+// optional datasetsJSON maps a `data.name` alias to a backing ref.
+// optsJSON carries the optional encode knobs {width, height, theme}.
 func executeFunc(_ js.Value, args []js.Value) any {
 	if len(args) < 1 || args[0].IsUndefined() {
 		return errEnvelope("PRISM_WASM_001", "execute(specJSON, datasetsJSON?, optsJSON?): missing specJSON argument")
@@ -572,12 +572,13 @@ func newBuildOptions(datasetsJSON string) (build.Options, error) {
 			reg[k] = v
 		}
 	}
+	dr := wasmDataResolver{}
 	return build.Options{
 		FS:              resolve.NewFetchFs(),
-		Resolver:        resolve.New(nil),
+		Resolver:        resolve.NewWithData(nil, dr),
 		Backend:         inmem.New(),
 		DatasetRegistry: reg,
-		DataResolver:    wasmDataResolver{},
+		DataResolver:    dr,
 	}, nil
 }
 

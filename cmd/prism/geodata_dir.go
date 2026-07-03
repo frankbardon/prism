@@ -14,9 +14,9 @@ import (
 // for the flag value.
 //
 // Only plot and scene materialise geometry at encode time. The
-// no-execute leaves (validate, plan, inspect) and the data-only leaf
-// (execute) consult the embedded manifest and never touch tier geometry,
-// so they do not carry this flag.
+// no-execute leaves (validate, plan) and the data-only leaf (execute)
+// consult the embedded manifest and never touch tier geometry, so they
+// do not carry this flag.
 func geodataDirFlag() *cli.StringFlag {
 	return &cli.StringFlag{
 		Name:    "geodata-dir",

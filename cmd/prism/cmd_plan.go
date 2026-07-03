@@ -13,7 +13,6 @@ import (
 	prismerrors "github.com/frankbardon/prism/errors"
 	"github.com/frankbardon/prism/plan"
 	"github.com/frankbardon/prism/plan/build"
-	"github.com/frankbardon/prism/resolve"
 	"github.com/frankbardon/prism/spec"
 )
 
@@ -35,6 +34,7 @@ func planCommand() *cli.Command {
 				Usage: "Output format: dot | text | json",
 			},
 			datasetsConfigFlag(),
+			dataFlag(),
 		},
 		Action: runPlan,
 	}
@@ -63,10 +63,15 @@ func runPlan(_ context.Context, cmd *cli.Command) error {
 	if err != nil {
 		return cli.Exit(fmt.Sprintf("load --datasets-config: %v", err), 2)
 	}
+	dataResolver, err := loadDataResolver(cmd)
+	if err != nil {
+		return cli.Exit(fmt.Sprintf("load --data: %v", err), 2)
+	}
 	buildOpts := build.Options{
 		FS:              afero.NewOsFs(),
-		Resolver:        resolve.New(nil),
+		Resolver:        hostResolver(dataResolver),
 		DatasetRegistry: registry,
+		DataResolver:    dataResolver,
 	}
 
 	// Composite specs (P08): dump each child sub-DAG under a

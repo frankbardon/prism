@@ -45,7 +45,6 @@ func newApp() *cli.Command {
 			staticBundleCommand(),
 			serveCommand(),
 			mcpCommand(),
-			inspectCommand(),
 			examplesCommand(),
 			schemaCommand(),
 			initCommand(),
