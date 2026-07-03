@@ -711,8 +711,13 @@ func (c *buildCtx) applyOneTransform(input plan.NodeID, t spec.Transform) (plan.
 // pattern. Returns PRISM_PLAN_CROSSTAB_REQUIRES_SOURCE when the
 // immediate input is not a SourceNode.
 // buildRegression walks back to the upstream SourceNode (the only legal
-// input — regression fits the cohort directly via pulse.Process) and
-// replaces it with a leaf RegressionNode, mirroring buildCrosstab.
+// input for a regression transform — the position rule enforces it) and
+// emits a RegressionNode consuming the materialised source table, exactly
+// mirroring buildCrosstab. The SourceNode stays in the DAG as the
+// regression's single upstream input; the pure-Go OLS fit runs over the
+// materialised table via the in-memory backend. Returns
+// PRISM_PLAN_REGRESSION_REQUIRES_SOURCE when the immediate input is not a
+// SourceNode.
 func (c *buildCtx) buildRegression(input plan.NodeID, t *spec.RegressionTransform) (plan.NodeID, error) {
 	in, err := func() (plan.NodeID, error) {
 		if t.Data == "" {
@@ -742,22 +747,25 @@ func (c *buildCtx) buildRegression(input plan.NodeID, t *spec.RegressionTransfor
 			map[string]any{"InputKind": fmt.Sprintf("%T", inNode), "Input": string(in)},
 		)
 	}
-	inSchema, err := src.OutputSchema()
+	// Regression now fits the materialised source table in-memory via the
+	// compile backend, so it keeps the SourceNode as its single upstream
+	// input (the position rule still holds — the SourceNode remains the
+	// only legal input — but it is no longer removed from the DAG).
+	inSchema, err := src.Schema(nil)
 	if err != nil {
 		return "", err
 	}
 	id := nodes.DeriveRegressionID(src.Ref(), t)
-	node, err := nodes.NewRegression(id, src.Ref(), src.FS(), inSchema, t)
+	node, err := nodes.NewRegression(id, src.ID(), src.Ref(), src.FS(), inSchema, t)
 	if err != nil {
 		return "", err
 	}
-	if err := c.b.AddNode(node); err != nil {
+	if _, err := c.addAndReturn(node); err != nil {
 		return "", err
 	}
-	// Drop the now-unused SourceNode so the executor doesn't materialise
-	// the cohort a second time, then rewire any leaf bookkeeping that
-	// pointed at it.
-	c.b.RemoveNode(src.ID())
+	// The regression is the new tip of this chain; advance the leaf
+	// bookkeeping so any following transform consumes the regression
+	// output. The SourceNode stays in the DAG as the regression's input.
 	for name, leafID := range c.leafByName {
 		if leafID == src.ID() {
 			c.leafByName[name] = id

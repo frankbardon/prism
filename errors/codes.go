@@ -733,9 +733,9 @@ var Codes = map[string]CodeMetadata{
 	},
 	"PRISM_PLAN_REGRESSION_PROCESS": {
 		Code:    "PRISM_PLAN_REGRESSION_PROCESS",
-		Message: `Pulse rejected the regression request for {{.Ref}}: {{.Reason}}.`,
+		Message: `The regression fit failed for {{.Ref}}: {{.Reason}}.`,
 		Fixups: []string{
-			`The Pulse error envelope includes the precise rule — check that the target and every predictor exist in the cohort schema and are numeric columns.`,
+			`Check that the target and predictor exist in the input schema, are numeric columns, and that at least two complete (predictor, target) records remain after filtering.`,
 			`Run ` + "`prism inspect`" + ` to view the cohort schema without re-executing.`,
 		},
 	},

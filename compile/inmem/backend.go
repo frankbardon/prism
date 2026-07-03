@@ -62,6 +62,8 @@ func (b *Backend) Compile(ctx context.Context, node plan.Node, ins []*table.Tabl
 		return executeWindow(ctx, n, ins)
 	case *nodes.CrosstabNode:
 		return executeCrosstab(ctx, n, ins)
+	case *nodes.RegressionNode:
+		return executeRegression(ctx, n, ins)
 	}
 	return nil, notImplemented(node)
 }

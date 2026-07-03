@@ -347,9 +347,10 @@ Run `prism errors lookup <code>` for details + fixups.
 
 ## Regression transform
 
-The `regression` transform fits an OLS regression over the cohort
-(Pulse `REG_OLS`) and emits the two endpoints of the fitted trend line —
-`(min(x), ŷ)` and `(max(x), ŷ)`. Because every OLS fitted point is
+The `regression` transform fits an ordinary-least-squares regression over
+the materialised source table (pure-Go, in-memory) and emits the two
+endpoints of the fitted trend line — `(min(x), ŷ)` and `(max(x), ŷ)`.
+Because every OLS fitted point is
 collinear, two endpoints draw the full line; layer a `line` mark over
 `(predictor, fitted)` on top of a `point` scatter of `(predictor,
 target)` for the classic regression overlay.
