@@ -59,7 +59,7 @@ func (CalculateExpr) Check(s *spec.Spec, schemas validate.SchemaLookup) []*error
 // PRISM_SPEC_038 per problem found.
 func checkCalcExpr(
 	e *spec.CalcExpr,
-	schema *validate.PulseSchemaShim,
+	schema *validate.SchemaShim,
 	known bool,
 	outputs map[string]bool,
 	site string,

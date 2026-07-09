@@ -10,16 +10,16 @@ package validate
 type SchemaLookup interface {
 	// Schema returns the schema for the named dataset and reports whether
 	// it was found.
-	Schema(dataset string) (*PulseSchemaShim, bool)
+	Schema(dataset string) (*SchemaShim, bool)
 }
 
-// PulseSchemaShim is the minimal field-metadata shape used by P01
+// SchemaShim is the minimal field-metadata shape used by P01
 // semantic rules. It carries just enough to satisfy rules 001 (field
 // exists), 002 (agg/type compat), and 007 (scale/type compat).
 //
 // TODO(P02): replace with real Pulse schema type once the resolver
 // surfaces it. Keep the field shape stable so rule code does not change.
-type PulseSchemaShim struct {
+type SchemaShim struct {
 	// Name is the dataset's logical name.
 	Name string
 	// Fields lists the field name → measure type ("nominal" |
@@ -27,7 +27,7 @@ type PulseSchemaShim struct {
 	Fields []FieldShim
 }
 
-// FieldShim is one field in a PulseSchemaShim.
+// FieldShim is one field in a SchemaShim.
 type FieldShim struct {
 	// Name is the field name as referenced by encodings / transforms.
 	Name string
@@ -36,7 +36,7 @@ type FieldShim struct {
 }
 
 // Field returns the FieldShim for name and whether it was found.
-func (s *PulseSchemaShim) Field(name string) (FieldShim, bool) {
+func (s *SchemaShim) Field(name string) (FieldShim, bool) {
 	if s == nil {
 		return FieldShim{}, false
 	}
@@ -49,7 +49,7 @@ func (s *PulseSchemaShim) Field(name string) (FieldShim, bool) {
 }
 
 // FieldNames returns field names in declaration order.
-func (s *PulseSchemaShim) FieldNames() []string {
+func (s *SchemaShim) FieldNames() []string {
 	if s == nil {
 		return nil
 	}
@@ -66,4 +66,4 @@ func (s *PulseSchemaShim) FieldNames() []string {
 type EmptyLookup struct{}
 
 // Schema implements SchemaLookup.
-func (EmptyLookup) Schema(string) (*PulseSchemaShim, bool) { return nil, false }
+func (EmptyLookup) Schema(string) (*SchemaShim, bool) { return nil, false }

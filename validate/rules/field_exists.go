@@ -60,7 +60,7 @@ func (FieldExists) Check(s *spec.Spec, schemas validate.SchemaLookup) []*errors.
 // datasetForSpec resolves the dataset name for the leaf spec and looks it
 // up in schemas. Returns (name, schema, known) where known is false if
 // the spec is not bound to anything resolvable.
-func datasetForSpec(s *spec.Spec, schemas validate.SchemaLookup) (string, *validate.PulseSchemaShim, bool) {
+func datasetForSpec(s *spec.Spec, schemas validate.SchemaLookup) (string, *validate.SchemaShim, bool) {
 	if s == nil || s.Data == nil {
 		return "", nil, false
 	}

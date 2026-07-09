@@ -34,7 +34,7 @@ func fixtureLookup(s *spec.Spec) validate.SchemaLookup {
 		if ds == nil || name == "" || len(ds.Values) == 0 {
 			return
 		}
-		shim := &validate.PulseSchemaShim{Name: name}
+		shim := &validate.SchemaShim{Name: name}
 		seen := map[string]bool{}
 		for _, row := range ds.Values {
 			for k, v := range row {

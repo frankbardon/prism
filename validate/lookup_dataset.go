@@ -5,32 +5,32 @@ import (
 	"github.com/frankbardon/prism/resolve"
 )
 
-// PulseLookup enumerates the dataset names bound to a `data.source`
+// DatasetLookup enumerates the dataset names bound to a `data.source`
 // (or `cohort:<id>`) reference. It once resolved each ref's `.pulse`
 // header to a field schema, but the Pulse loader was removed in epic E4
 // and Prism never reads `.pulse` bytes. Field schema for inline data
 // (`data.values` / `data.fields`) is supplied by StaticLookup; a
-// source-bound dataset has no inline schema, so PulseLookup.Schema is
+// source-bound dataset has no inline schema, so DatasetLookup.Schema is
 // best-effort — it reports a miss and semantic rules skip field-existence
 // checks for that dataset rather than firing false positives (validate
 // reads the spec plus an *optional* schema).
 //
 // Register still records the names so the dataset-reference rule can
 // treat externally-bound datasets as declared.
-type PulseLookup struct {
+type DatasetLookup struct {
 	bindings map[string]string
 }
 
-// NewPulseLookup constructs a PulseLookup. The resolver and fs
+// NewDatasetLookup constructs a DatasetLookup. The resolver and fs
 // parameters are retained for call-site compatibility but are no longer
 // consulted (no `.pulse` is read); bindings start empty.
-func NewPulseLookup(_ resolve.Resolver, _ vfs.Fs) *PulseLookup {
-	return &PulseLookup{bindings: map[string]string{}}
+func NewDatasetLookup(_ resolve.Resolver, _ vfs.Fs) *DatasetLookup {
+	return &DatasetLookup{bindings: map[string]string{}}
 }
 
 // Register records a dataset name bound to a source ref. A no-op when
 // name or ref is empty.
-func (l *PulseLookup) Register(name, ref string) {
+func (l *DatasetLookup) Register(name, ref string) {
 	if name == "" || ref == "" {
 		return
 	}
@@ -40,7 +40,7 @@ func (l *PulseLookup) Register(name, ref string) {
 // Names returns every registered dataset name in arbitrary order.
 // Used by the dataset-ref semantic rule to enumerate externally
 // declared datasets.
-func (l *PulseLookup) Names() []string {
+func (l *DatasetLookup) Names() []string {
 	if l == nil {
 		return nil
 	}
@@ -56,13 +56,13 @@ func (l *PulseLookup) Names() []string {
 // Schema always reports a miss and rules skip field checks for the
 // dataset. Inline `data.values` / `data.fields` are served by
 // StaticLookup.
-func (l *PulseLookup) Schema(string) (*PulseSchemaShim, bool) {
+func (l *DatasetLookup) Schema(string) (*SchemaShim, bool) {
 	return nil, false
 }
 
 // CompositeLookup tries lookups in order and returns the first hit.
 // Used by the CLI when a spec mixes inline datasets (StaticLookup) with
-// real `.pulse` sources (PulseLookup) — both lookups share one
+// real `.pulse` sources (DatasetLookup) — both lookups share one
 // SchemaLookup surface so semantic rules need no awareness.
 type CompositeLookup struct {
 	lookups []SchemaLookup
@@ -81,7 +81,7 @@ func NewCompositeLookup(lookups ...SchemaLookup) *CompositeLookup {
 }
 
 // Schema implements SchemaLookup.
-func (c *CompositeLookup) Schema(name string) (*PulseSchemaShim, bool) {
+func (c *CompositeLookup) Schema(name string) (*SchemaShim, bool) {
 	if c == nil {
 		return nil, false
 	}

@@ -2,22 +2,22 @@ package validate
 
 // StaticLookup is a SchemaLookup backed by an in-memory map. Used for
 // inline datasets (`data.values`, `data.fields`) and as a test fixture
-// holder. The Pulse-backed sibling is PulseLookup (lookup_pulse.go);
+// holder. The Pulse-backed sibling is DatasetLookup (lookup_dataset.go);
 // CompositeLookup mixes both when a spec uses both inline and source
 // bindings.
 type StaticLookup struct {
-	Schemas map[string]*PulseSchemaShim
+	Schemas map[string]*SchemaShim
 }
 
 // NewStaticLookup constructs an empty StaticLookup.
 func NewStaticLookup() *StaticLookup {
-	return &StaticLookup{Schemas: map[string]*PulseSchemaShim{}}
+	return &StaticLookup{Schemas: map[string]*SchemaShim{}}
 }
 
 // Register adds or replaces the entry for the given dataset name.
-func (l *StaticLookup) Register(name string, schema *PulseSchemaShim) {
+func (l *StaticLookup) Register(name string, schema *SchemaShim) {
 	if l.Schemas == nil {
-		l.Schemas = map[string]*PulseSchemaShim{}
+		l.Schemas = map[string]*SchemaShim{}
 	}
 	if schema != nil {
 		schema.Name = name
@@ -26,7 +26,7 @@ func (l *StaticLookup) Register(name string, schema *PulseSchemaShim) {
 }
 
 // Schema implements SchemaLookup.
-func (l *StaticLookup) Schema(name string) (*PulseSchemaShim, bool) {
+func (l *StaticLookup) Schema(name string) (*SchemaShim, bool) {
 	if l == nil {
 		return nil, false
 	}
@@ -34,7 +34,7 @@ func (l *StaticLookup) Schema(name string) (*PulseSchemaShim, bool) {
 	return s, ok
 }
 
-// Names implements the Namer interface (see lookup_pulse.go) by
+// Names implements the Namer interface (see lookup_dataset.go) by
 // returning the registered dataset names in arbitrary order.
 func (l *StaticLookup) Names() []string {
 	if l == nil {

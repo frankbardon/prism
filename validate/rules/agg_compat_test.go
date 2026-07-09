@@ -18,7 +18,7 @@ func TestAggCompatHappyPath(t *testing.T) {
 		},
 	}
 	lookup := validate.NewStaticLookup()
-	lookup.Register("cohort", &validate.PulseSchemaShim{Fields: []validate.FieldShim{
+	lookup.Register("cohort", &validate.SchemaShim{Fields: []validate.FieldShim{
 		{Name: "brand_id", Type: "nominal"},
 		{Name: "score", Type: "quantitative"},
 	}})
@@ -38,7 +38,7 @@ func TestAggCompatFiresOnMeanOfNominal(t *testing.T) {
 		},
 	}
 	lookup := validate.NewStaticLookup()
-	lookup.Register("cohort", &validate.PulseSchemaShim{Fields: []validate.FieldShim{
+	lookup.Register("cohort", &validate.SchemaShim{Fields: []validate.FieldShim{
 		{Name: "brand_id", Type: "nominal"},
 	}})
 	errs := AggCompat{}.Check(s, lookup)
@@ -62,7 +62,7 @@ func TestAggCompatTransformOps(t *testing.T) {
 		},
 	}
 	lookup := validate.NewStaticLookup()
-	lookup.Register("cohort", &validate.PulseSchemaShim{Fields: []validate.FieldShim{
+	lookup.Register("cohort", &validate.SchemaShim{Fields: []validate.FieldShim{
 		{Name: "brand_id", Type: "nominal"},
 	}})
 	errs := AggCompat{}.Check(s, lookup)
