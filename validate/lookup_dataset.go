@@ -62,7 +62,7 @@ func (l *DatasetLookup) Schema(string) (*SchemaShim, bool) {
 
 // CompositeLookup tries lookups in order and returns the first hit.
 // Used by the CLI when a spec mixes inline datasets (StaticLookup) with
-// real `.pulse` sources (DatasetLookup) — both lookups share one
+// source-bound datasets (DatasetLookup) — both lookups share one
 // SchemaLookup surface so semantic rules need no awareness.
 type CompositeLookup struct {
 	lookups []SchemaLookup

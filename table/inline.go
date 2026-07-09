@@ -64,7 +64,7 @@ func inferInlineSchema(values []map[string]any, fields []spec.FieldSpec) (*Schem
 
 	if len(fields) > 0 {
 		for _, f := range fields {
-			ft := pulseTypeFromToken(f.Type)
+			ft := fieldTypeFromToken(f.Type)
 			fld := Field{Name: f.Name, Type: ft}
 			if ft.IsCategorical() {
 				fld.Dictionary = NewDictionary()
@@ -89,7 +89,7 @@ func inferInlineSchema(values []map[string]any, fields []spec.FieldSpec) (*Schem
 	sort.Strings(keys)
 
 	for _, k := range keys {
-		ft := pulseTypeFromJSONValue(first[k])
+		ft := fieldTypeFromJSONValue(first[k])
 		fld := Field{Name: k, Type: ft}
 		if ft.IsCategorical() {
 			fld.Dictionary = NewDictionary()
@@ -277,8 +277,9 @@ func inlineKindCompatible(want, got Kind) bool {
 	return false
 }
 
-// pulseTypeFromJSONValue picks a native FieldType for an inline first-row value.
-func pulseTypeFromJSONValue(v any) FieldType {
+// fieldTypeFromJSONValue picks a native table.FieldType for an inline
+// first-row value.
+func fieldTypeFromJSONValue(v any) FieldType {
 	switch v.(type) {
 	case string:
 		return FieldTypeCategoricalU8
@@ -291,9 +292,9 @@ func pulseTypeFromJSONValue(v any) FieldType {
 	}
 }
 
-// pulseTypeFromToken maps spec.FieldSpec.Type tokens (the same set used
-// by validate/buildLookup) to native FieldType variants.
-func pulseTypeFromToken(token string) FieldType {
+// fieldTypeFromToken maps spec.FieldSpec.Type tokens (the same set used
+// by validate/buildLookup) to native table.FieldType variants.
+func fieldTypeFromToken(token string) FieldType {
 	switch strings.ToLower(token) {
 	case "int", "int8", "int16", "int32", "int64", "u8", "u16", "u32", "u64":
 		return FieldTypeU64

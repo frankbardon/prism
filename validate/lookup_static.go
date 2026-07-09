@@ -2,9 +2,9 @@ package validate
 
 // StaticLookup is a SchemaLookup backed by an in-memory map. Used for
 // inline datasets (`data.values`, `data.fields`) and as a test fixture
-// holder. The Pulse-backed sibling is DatasetLookup (lookup_dataset.go);
-// CompositeLookup mixes both when a spec uses both inline and source
-// bindings.
+// holder. Its sibling DatasetLookup (lookup_dataset.go) tracks
+// source-bound dataset names; CompositeLookup mixes both when a spec uses
+// both inline and source bindings.
 type StaticLookup struct {
 	Schemas map[string]*SchemaShim
 }

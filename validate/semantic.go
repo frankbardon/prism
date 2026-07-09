@@ -13,8 +13,8 @@ type SemanticRule interface {
 	Code() string
 	// Check runs the rule against the typed spec. It receives a
 	// SchemaLookup so rules that need dataset field metadata can resolve
-	// against the registered sources (real Pulse-backed implementation
-	// arrives in P02; P01 ships a static stub).
+	// against the registered datasets (inline schema via StaticLookup;
+	// source-bound datasets carry no inline schema and report a miss).
 	Check(s *spec.Spec, schemas SchemaLookup) []*errors.AppError
 }
 

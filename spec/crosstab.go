@@ -30,7 +30,8 @@ type CrosstabBody struct {
 	// filter them out for the body-only heatmap path.
 	Margins *CrosstabMargins `json:"margins,omitempty"`
 	// Normalize is one of "none" (default), "row", "column", "total".
-	// Maps to pulse.CrosstabNormalize* directly.
+	// Selects the structured normalisation the in-memory crosstab engine
+	// applies to each cell after the margins are computed.
 	Normalize string `json:"normalize,omitempty"`
 	// Shape is "matrix" or "long". Defaults to "long" (the heatmap-
 	// friendly form). "matrix" returns the structured payload on
