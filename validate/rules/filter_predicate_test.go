@@ -9,7 +9,7 @@ import (
 
 func cohortLookup() validate.SchemaLookup {
 	l := validate.NewStaticLookup()
-	l.Register("cohort", &validate.PulseSchemaShim{Fields: []validate.FieldShim{
+	l.Register("cohort", &validate.SchemaShim{Fields: []validate.FieldShim{
 		{Name: "brand_id", Type: "nominal"},
 		{Name: "score", Type: "quantitative"},
 		{Name: "target", Type: "quantitative"},

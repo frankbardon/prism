@@ -21,8 +21,8 @@ import (
 // spec all the way through encode (build → execute → encode) and
 // emits the resulting SceneDoc as pretty-printed JSON to stdout
 // (or --out path). Consumed by the JS port (prism.mjs in
-// static/vendor/prism/) and by the cross-impl parity harness
-// (D076 / TestCrossImplSVGParity).
+// static/vendor/prism/) and by the TinyGo↔host parity harness
+// (D076 / TestTinyGoWasmSVGParity).
 //
 // Per D011, SceneDoc JSON is the cross-implementation contract:
 // Go produces it, JS consumes it (P12), Canvas consumes it

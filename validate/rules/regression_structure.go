@@ -8,24 +8,22 @@ import (
 	"github.com/frankbardon/prism/validate"
 )
 
-// RegressionPosition implements PRISM_SPEC_035:
+// RegressionStructure implements PRISM_SPEC_035 — the static shape check
+// for a regression transform: it must declare a target and at least one
+// predictor.
 //
-//   - A regression transform must declare target + at least one
-//     predictor.
-//   - It may only appear as the first transform on a chain — like
-//     crosstab, the OLS fit reads a materialised leaf table directly (a
-//     dataset ref or inline `data.values`), so it cannot consume a prior
-//     Prism transform's derived output. The plan builder enforces this
-//     at build time via PRISM_PLAN_REGRESSION_REQUIRES_SOURCE; this rule
-//     surfaces it statically before any I/O.
-type RegressionPosition struct{}
+// It no longer enforces a chain-position constraint: regression accepts
+// derived input (it may follow another transform), so the former
+// "must be the first transform" clause was retired when regression
+// gained derived-input support.
+type RegressionStructure struct{}
 
 // Code returns PRISM_SPEC_035.
-func (RegressionPosition) Code() string { return "PRISM_SPEC_035" }
+func (RegressionStructure) Code() string { return "PRISM_SPEC_035" }
 
 // Check walks every spec node and reports regression transforms that
-// fail position or shape rules.
-func (RegressionPosition) Check(s *spec.Spec, _ validate.SchemaLookup) []*errors.AppError {
+// fail the shape rules.
+func (RegressionStructure) Check(s *spec.Spec, _ validate.SchemaLookup) []*errors.AppError {
 	if s == nil {
 		return nil
 	}
@@ -43,18 +41,8 @@ func walkRegression(s *spec.Spec, prefix string, out *[]*errors.AppError) {
 			continue
 		}
 		path := fmt.Sprintf("%stransform[%d].regression", prefix, i)
-		// Position: must be the first transform on the chain (or
-		// reference a registered dataset via its `data` alias). The
-		// regression fits a materialised leaf table — a dataset ref
-		// (SourceNode) or inline `data.values` (InlineNode) — so it may
-		// not chain after a prior Prism transform's derived output.
-		if i > 0 && t.Regression.Data == "" {
-			*out = append(*out, errors.New(
-				"PRISM_SPEC_035",
-				fmt.Sprintf("regression at %s must be the first transform on the chain.", path),
-				map[string]any{"Path": path, "Index": i},
-			))
-		}
+		// Shape: target + at least one predictor required. Regression now
+		// accepts derived input, so there is no chain-position check.
 		if t.Regression.Regression.Target == "" {
 			*out = append(*out, errors.New(
 				"PRISM_SPEC_035",

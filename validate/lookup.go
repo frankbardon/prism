@@ -2,24 +2,27 @@ package validate
 
 // SchemaLookup resolves dataset name → minimal field metadata. Semantic
 // rules that need to know whether a field exists or what type it is go
-// through this interface so the validator stays decoupled from Pulse.
+// through this interface so the validator stays decoupled from any data
+// backend.
 //
-// P01 ships StaticLookup (lookup_static.go) backed by a hand-built field
-// table for tests. P02 will land a Pulse-backed implementation that walks
-// real .pulse sources via the resolver.
+// StaticLookup (lookup_static.go) serves field metadata for inline
+// datasets (`data.values` / `data.fields`) and test fixtures. A
+// source-bound dataset carries no inline schema, so its lookup reports a
+// miss and field-existence rules skip it — validate reads the spec plus
+// an optional schema and never opens a data source.
 type SchemaLookup interface {
 	// Schema returns the schema for the named dataset and reports whether
 	// it was found.
-	Schema(dataset string) (*PulseSchemaShim, bool)
+	Schema(dataset string) (*SchemaShim, bool)
 }
 
-// PulseSchemaShim is the minimal field-metadata shape used by P01
-// semantic rules. It carries just enough to satisfy rules 001 (field
-// exists), 002 (agg/type compat), and 007 (scale/type compat).
+// SchemaShim is the minimal field-metadata shape used by the semantic
+// rules. It carries just enough to satisfy rules 001 (field exists),
+// 002 (agg/type compat), and 007 (scale/type compat).
 //
-// TODO(P02): replace with real Pulse schema type once the resolver
-// surfaces it. Keep the field shape stable so rule code does not change.
-type PulseSchemaShim struct {
+// The shape is intentionally minimal and stable so rule code does not
+// change as the schema source evolves.
+type SchemaShim struct {
 	// Name is the dataset's logical name.
 	Name string
 	// Fields lists the field name → measure type ("nominal" |
@@ -27,7 +30,7 @@ type PulseSchemaShim struct {
 	Fields []FieldShim
 }
 
-// FieldShim is one field in a PulseSchemaShim.
+// FieldShim is one field in a SchemaShim.
 type FieldShim struct {
 	// Name is the field name as referenced by encodings / transforms.
 	Name string
@@ -36,7 +39,7 @@ type FieldShim struct {
 }
 
 // Field returns the FieldShim for name and whether it was found.
-func (s *PulseSchemaShim) Field(name string) (FieldShim, bool) {
+func (s *SchemaShim) Field(name string) (FieldShim, bool) {
 	if s == nil {
 		return FieldShim{}, false
 	}
@@ -49,7 +52,7 @@ func (s *PulseSchemaShim) Field(name string) (FieldShim, bool) {
 }
 
 // FieldNames returns field names in declaration order.
-func (s *PulseSchemaShim) FieldNames() []string {
+func (s *SchemaShim) FieldNames() []string {
 	if s == nil {
 		return nil
 	}
@@ -62,8 +65,8 @@ func (s *PulseSchemaShim) FieldNames() []string {
 
 // EmptyLookup is a SchemaLookup that finds nothing. Semantic rules that
 // gate on schema presence (e.g. PRISM_SPEC_001) silently no-op when given
-// an EmptyLookup, matching the P01 "no real Pulse source bound" mode.
+// an EmptyLookup — the mode used when no dataset schema is bound.
 type EmptyLookup struct{}
 
 // Schema implements SchemaLookup.
-func (EmptyLookup) Schema(string) (*PulseSchemaShim, bool) { return nil, false }
+func (EmptyLookup) Schema(string) (*SchemaShim, bool) { return nil, false }

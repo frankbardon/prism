@@ -180,19 +180,19 @@ func repoRoot(t *testing.T) string {
 }
 
 // lookupFor mirrors the CLI's buildLookup: inline datasets register
-// into a StaticLookup; specs that bind data.source add a PulseLookup
+// into a StaticLookup; specs that bind data.source add a DatasetLookup
 // over the on-disk file system. The two are combined into a
 // CompositeLookup so semantic rules see both surfaces.
 func lookupFor(s *spec.Spec) validate.SchemaLookup {
 	staticLookup := validate.NewStaticLookup()
-	pulseLookup := validate.NewPulseLookup(resolve.New(nil), afero.NewOsFs())
-	usedPulse := false
+	datasetLookup := validate.NewDatasetLookup(resolve.New(nil), afero.NewOsFs())
+	usedDataset := false
 
 	registerStatic := func(name string, ds *spec.Data) {
 		if ds == nil || name == "" {
 			return
 		}
-		shim := &validate.PulseSchemaShim{Name: name}
+		shim := &validate.SchemaShim{Name: name}
 		if len(ds.Values) > 0 {
 			seen := map[string]bool{}
 			for _, row := range ds.Values {
@@ -216,37 +216,37 @@ func lookupFor(s *spec.Spec) validate.SchemaLookup {
 		staticLookup.Register(name, shim)
 	}
 
-	registerPulse := func(name string, ds *spec.Data) {
+	registerDataset := func(name string, ds *spec.Data) {
 		if ds == nil || ds.Source == "" {
 			return
 		}
 		if name != "" {
-			pulseLookup.Register(name, ds.Source)
-			usedPulse = true
+			datasetLookup.Register(name, ds.Source)
+			usedDataset = true
 		}
 		base := strings.TrimSuffix(filepath.Base(ds.Source), filepath.Ext(ds.Source))
 		if base != "" && base != name {
-			pulseLookup.Register(base, ds.Source)
-			usedPulse = true
+			datasetLookup.Register(base, ds.Source)
+			usedDataset = true
 		}
-		pulseLookup.Register(ds.Source, ds.Source)
-		usedPulse = true
+		datasetLookup.Register(ds.Source, ds.Source)
+		usedDataset = true
 	}
 
 	if s != nil {
 		if s.Data != nil {
 			registerStatic(s.Data.Name, s.Data)
-			registerPulse(s.Data.Name, s.Data)
+			registerDataset(s.Data.Name, s.Data)
 		}
 		for name, ds := range s.Datasets {
 			registerStatic(name, ds)
-			registerPulse(name, ds)
+			registerDataset(name, ds)
 		}
 	}
-	if !usedPulse {
+	if !usedDataset {
 		return staticLookup
 	}
-	return validate.NewCompositeLookup(pulseLookup, staticLookup)
+	return validate.NewCompositeLookup(datasetLookup, staticLookup)
 }
 
 func inferType(v any) string {

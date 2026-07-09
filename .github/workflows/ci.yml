@@ -53,3 +53,39 @@ jobs:
 
       - name: Lint
         run: make lint
+
+  # TinyGo is the SOLE wasm build path, so it is a hard, non-skippable gate:
+  # this job installs a PINNED TinyGo, builds the module, and runs the size
+  # gate. With tinygo present, internal/gates/wasm_tinygo_size_test.go stops
+  # skipping and enforces PRISM_WASM_TINYGO_MAX_BYTES / _RAW_MAX_BYTES — a
+  # broken or oversize TinyGo module fails the build instead of shipping.
+  # Kept a separate job so it parallelizes with test+lint and its failure is
+  # legible.
+  wasm:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Set up Go
+        uses: actions/setup-go@v6
+        with:
+          go-version: "1.26"
+
+      # Pin the exact TinyGo release so the wasm size budget is reproducible.
+      # Never `latest` — a toolchain bump can move the emitted-byte count and
+      # silently blow (or slacken) the gate. Bump this in lockstep with the
+      # Makefile / CLAUDE.md TinyGo version note.
+      - name: Set up TinyGo
+        uses: acifani/setup-tinygo@v2
+        with:
+          tinygo-version: "0.41.1"
+
+      - name: Download dependencies
+        run: go mod download
+
+      - name: Build wasm (TinyGo)
+        run: make build-wasm-tinygo
+
+      # tinygo is on PATH here, so the gate RUNS (does not skip) and must pass.
+      - name: TinyGo wasm size gate
+        run: go test -count=1 -run TestPrismWasmTinygoBinaryUnderSizeBudget ./internal/gates/

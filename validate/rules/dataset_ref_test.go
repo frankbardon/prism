@@ -41,7 +41,7 @@ func TestDatasetRefAcceptsExternalLookup(t *testing.T) {
 		Mark:   &spec.Mark{Shorthand: "bar"},
 	}
 	lookup := validate.NewStaticLookup()
-	lookup.Register("registered", &validate.PulseSchemaShim{})
+	lookup.Register("registered", &validate.SchemaShim{})
 	errs := DatasetRef{}.Check(s, lookup)
 	if len(errs) != 0 {
 		t.Fatalf("expected no errors with external lookup, got: %+v", errs)

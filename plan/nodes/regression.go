@@ -32,18 +32,18 @@ type RegressionNode struct {
 	ref       string
 	fs        vfs.Fs
 	body      spec.RegressionBody
-	outSchema *table.Schema
 	predictor string
 	fittedAs  string
 	backend   plan.Backend
 }
 
-// NewRegression constructs a RegressionNode. inSchema is the upstream
-// input's schema; the output schema is {predictor, fitted}, two rows.
-func NewRegression(id, input plan.NodeID, ref string, fs vfs.Fs, inSchema *table.Schema, t *spec.RegressionTransform) (*RegressionNode, error) {
-	if inSchema == nil {
-		return nil, fmt.Errorf("regression: nil input schema")
-	}
+// NewRegression constructs a RegressionNode over the given upstream
+// input. The upstream may be ANY node (a materialised leaf or a derived
+// transform) — the pure-Go OLS fit reads whatever table the input
+// yields. The constructor performs only schema-independent structural
+// validation (target present, exactly one predictor); the {predictor,
+// fitted} output schema is derived at execute time (see Schema).
+func NewRegression(id, input plan.NodeID, ref string, fs vfs.Fs, t *spec.RegressionTransform) (*RegressionNode, error) {
 	body := t.Regression
 	if body.Target == "" {
 		return nil, prismerrors.New(
@@ -64,24 +64,21 @@ func NewRegression(id, input plan.NodeID, ref string, fs vfs.Fs, inSchema *table
 		fittedAs = "fitted"
 	}
 	predictor := body.Predictors[0]
-	out := &table.Schema{Fields: []table.Field{
-		{Name: predictor, Type: table.FieldTypeF64},
-		{Name: fittedAs, Type: table.FieldTypeF64},
-	}}
 	return &RegressionNode{
 		id:        id,
 		input:     input,
 		ref:       ref,
 		fs:        fs,
 		body:      body,
-		outSchema: out,
 		predictor: predictor,
 		fittedAs:  fittedAs,
 	}, nil
 }
 
-// DeriveRegressionID hashes the source ref together with the canonical
-// body shape so two equivalent regression nodes hash identically.
+// DeriveRegressionID hashes the upstream input ref together with the
+// canonical body shape so two equivalent regression nodes (same input,
+// same body) hash identically. The ref is the upstream node id — a
+// materialised leaf or any derived transform tip.
 func DeriveRegressionID(ref string, t *spec.RegressionTransform) plan.NodeID {
 	h := sha256.New()
 	h.Write([]byte(ref))
@@ -97,10 +94,17 @@ func (n *RegressionNode) ID() plan.NodeID { return n.id }
 // table it fits.
 func (n *RegressionNode) Inputs() []plan.NodeID { return []plan.NodeID{n.input} }
 
-// Schema implements plan.Node. Pre-computed at construction as the
-// native {predictor, fitted} two-row shape.
-func (n *RegressionNode) Schema(_ []*table.Schema) (*table.Schema, error) {
-	return n.outSchema, nil
+// Schema implements plan.Node. Derived at execute time — requires a
+// single upstream input (mirrors GroupAggregateNode) and returns the
+// native {predictor, fitted} two-row shape, both F64.
+func (n *RegressionNode) Schema(in []*table.Schema) (*table.Schema, error) {
+	if _, err := requireSingleInput("RegressionNode", in); err != nil {
+		return nil, err
+	}
+	return &table.Schema{Fields: []table.Field{
+		{Name: n.predictor, Type: table.FieldTypeF64},
+		{Name: n.fittedAs, Type: table.FieldTypeF64},
+	}}, nil
 }
 
 // Fingerprint implements plan.Node.
@@ -108,8 +112,9 @@ func (n *RegressionNode) Fingerprint() string {
 	return fingerprintFor("RegressionNode", string(n.input), n.ref, regressionBodyKey(n.body))
 }
 
-// Ref returns the source ref so plan-visualisation tooling can show the
-// underlying cohort. Mirrors SourceNode.Ref().
+// Ref returns the upstream input ref (a leaf ref or a derived transform
+// tip id) so plan-visualisation tooling can show what the regression
+// fits. Mirrors SourceNode.Ref().
 func (n *RegressionNode) Ref() string { return n.ref }
 
 // FS returns the afero filesystem this node was constructed with.
@@ -123,11 +128,6 @@ func (n *RegressionNode) Predictor() string { return n.predictor }
 
 // FittedAs returns the resolved fitted-value output column name.
 func (n *RegressionNode) FittedAs() string { return n.fittedAs }
-
-// OutSchema returns the pre-computed {predictor, fitted} output schema
-// so the in-memory backend materialises the endpoints with the right
-// column kinds.
-func (n *RegressionNode) OutSchema() *table.Schema { return n.outSchema }
 
 // Kind implements plan.Labeled.
 func (n *RegressionNode) Kind() string { return "RegressionNode" }

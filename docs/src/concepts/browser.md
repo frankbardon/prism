@@ -12,9 +12,9 @@ bundle:
 
 ```
 <out-dir>/
-├── prism.wasm           # cmd/prismwasm binary (GOOS=js GOARCH=wasm); ~14.5 MiB raw (Go) / ~6.9 MiB (TinyGo)
-├── prism.wasm.gz        # gzipped binary (~3.5 MiB Go / ~2.2 MiB TinyGo) — what the loader fetches
-├── wasm_exec.js         # toolchain-pinned WASM loader (matches the build toolchain)
+├── prism.wasm           # cmd/prismwasm binary (TinyGo, GOARCH=wasm); ~6.9 MiB raw
+├── prism.wasm.gz        # gzipped binary (~2.2 MiB) — what the loader fetches
+├── wasm_exec.js         # TinyGo's WASM loader (paired with the TinyGo binary)
 ├── prism.mjs            # thin bootstrapper + SceneHandle facade
 ├── prism-element.mjs    # <prism-chart> / <prism-dataset> / <prism-coordinator>
 ├── prism-resolver.mjs   # page-level dataset registry
@@ -22,27 +22,24 @@ bundle:
 └── index.html           # minimal loader example
 ```
 
-### Two build toolchains
+### The build toolchain
 
-Prism's WASM module builds two ways, and both write the same
-`bin/prism.wasm` + `bin/wasm_exec.js` (paired loader — never mix a
-binary from one toolchain with the loader from the other):
+Prism's WASM module is built by **TinyGo** — the single, canonical
+browser artifact:
 
 | Build | Command | Raw | Gzipped | Loader |
 |---|---|---|---|---|
-| Standard Go | `make build-wasm` | ~14.5 MiB | ~3.5 MiB | Go's `wasm_exec.js` |
-| **TinyGo** (recommended) | `make build-wasm-tinygo` | ~6.9 MiB (7,239,767 B) | **~2.2 MiB (2,232,605 B)** | TinyGo's `wasm_exec.js` |
+| **TinyGo** | `make build-wasm-tinygo` | ~6.9 MiB (7,239,767 B) | **~2.2 MiB (2,232,605 B)** | TinyGo's `wasm_exec.js` |
 
-The **TinyGo build is the recommended browser artifact.** It links a
-leaner runtime and GC, roughly halving both the raw and gzipped size
-while producing byte-identical SVG to the standard-Go build (E5-S2
-verified 16/16 parity). The standard-Go build stays fully supported
-as the fallback for environments where TinyGo is unavailable, and it
-remains the default `make build-wasm` target so `make build` needs no
-extra toolchain. TinyGo 0.41.1+ is required for the TinyGo target
-(`brew tap tinygo-org/tools && brew install tinygo`); it uses
-`-stack-size=8MB` so the JSON-Schema shape validator's recursion does
-not trap.
+TinyGo links a lean runtime and GC, producing a module roughly half
+the size the standard Go toolchain would emit. `make build-wasm-tinygo`
+writes `bin/prism.wasm` + `bin/wasm_exec.js`, which are paired — the
+loader comes from `$(tinygo env TINYGOROOT)/targets/wasm_exec.js` and
+is **not** interchangeable with the Go toolchain's loader. TinyGo
+0.41.1+ is required (`brew tap tinygo-org/tools && brew install tinygo`);
+the build uses `-stack-size=8MB` so the JSON-Schema shape validator's
+recursion does not trap. The former standard-Go `js/wasm` build path
+was retired, so `make build` requires no wasm toolchain.
 
 ### Wire size and the raw/gzip gap
 
@@ -63,22 +60,18 @@ actually pay depends entirely on compression:
   (nginx: add `application/wasm` to `gzip_types`; most CDNs negotiate
   automatically but some skip files over a size cap.)
 
-### CI size gates
+### CI size gate
 
-The standard-Go artifact is guarded by
-`internal/gates/wasm_size_test.go`, which checks **both** the gzipped
-size (`PRISM_WASM_MAX_BYTES`, 16 MiB) and the raw size
-(`PRISM_WASM_RAW_MAX_BYTES`, 80 MiB) so the uncompressed artifact
-cannot balloon unnoticed behind the gzipped check.
-
-The TinyGo artifact has its own, much tighter gate in
-`internal/gates/wasm_tinygo_size_test.go`
-(`PRISM_WASM_TINYGO_MAX_BYTES`, 4 MiB gzipped;
-`PRISM_WASM_TINYGO_RAW_MAX_BYTES`, 12 MiB raw). Because it needs the
-TinyGo toolchain, the gate **skips cleanly when `tinygo` is not on
-`PATH`** (default CI lanes stay green) and **runs when it is
-present** — building a fresh TinyGo module into a temp directory so
-the measurement is independent of whatever last populated `bin/`.
+The TinyGo artifact is guarded by
+`internal/gates/wasm_tinygo_size_test.go`, which checks **both** the
+gzipped size (`PRISM_WASM_TINYGO_MAX_BYTES`, 4 MiB) and the raw size
+(`PRISM_WASM_TINYGO_RAW_MAX_BYTES`, 12 MiB) so the uncompressed
+artifact cannot balloon unnoticed behind the gzipped check. CI pins
+TinyGo 0.41.1 and runs this gate as a hard requirement — it builds a
+fresh TinyGo module into a temp directory so the measurement is
+independent of whatever last populated `bin/`. Locally the gate
+**skips cleanly when `tinygo` is not on `PATH`**, so `make test`
+stays green without the toolchain installed.
 
 ## Load modes
 
@@ -295,27 +288,26 @@ binary size is unaffected — animation lives entirely in plain JS.
 
 The cross-impl harness (`internal/devtools/cross-impl-runner/`)
 asserts byte-equal SVG between the host-native Go renderer and
-the Go-compiled WASM module. Drift signals a non-deterministic
-stage or a Go toolchain regression — not a JS port mistake.
+the TinyGo-compiled WASM module. Drift signals a non-deterministic
+stage or a cross-toolchain float-formatting regression.
 
 Run locally:
 
 ```bash
-make build-wasm
+make build-wasm-tinygo
 PRISM_CROSS_IMPL=1 go test ./internal/devtools/
 ```
 
 The runner needs `node` on `PATH`; no `npm install` is required.
 
-### TinyGo ↔ standard-Go float parity
+### TinyGo ↔ host float parity
 
-Prism ships a second WASM build path (`make build-wasm-tinygo`)
-that produces a much smaller module. TinyGo links its own
-`strconv`, and **every** SVG coordinate funnels through the single
-`render.FormatFloat` helper (`render/precision.go`, pinned to 3
-decimals). If TinyGo rounded or stringified floats differently
-from standard Go, the coordinate goldens would drift — this was
-flagged as the highest risk of the TinyGo migration.
+TinyGo (the sole WASM build) links its own `strconv`, and **every**
+SVG coordinate funnels through the single `render.FormatFloat`
+helper (`render/precision.go`, pinned to 3 decimals). If TinyGo
+rounded or stringified floats differently from the host Go build,
+the coordinate goldens would drift — this was flagged as the highest
+risk of the TinyGo migration.
 
 It does not drift. A dedicated parity harness proves it:
 
@@ -323,23 +315,22 @@ It does not drift. A dedicated parity harness proves it:
 PRISM_CROSS_IMPL_TINYGO=1 go test ./internal/devtools/ -run TinyGo
 ```
 
-- `TestTinyGoWasmSVGParity` builds a TinyGo `js/wasm` module from
+- `TestTinyGoWasmSVGParity` builds a TinyGo `wasm` module from
   `cmd/prismwasm`, renders a float-diverse fixture corpus (bars,
   curves, trigonometric arcs, bezier ribbons, dense rect/box/violin
   layouts) under Node with TinyGo's paired `wasm_exec.js`, and
-  diffs each SVG byte-for-byte against the committed standard-Go
+  diffs each SVG byte-for-byte against the committed host-Go
   `go.svg`. All fixtures are byte-identical.
 - `TestTinyGoFloatFormatParity` drives `render.FormatFloat` over an
   edge-case corpus (half-way rounding, trailing-zero trimming,
-  negative zero, magnitude extremes, `NaN`/`±Inf`) in three builds —
-  host-native, standard-Go wasm, and TinyGo wasm — and asserts all
-  three agree. The host-side pin lives in
-  `render/precision_test.go`.
+  negative zero, magnitude extremes, `NaN`/`±Inf`) in two builds —
+  host-native and TinyGo wasm — and asserts they agree. The
+  host-side pin lives in `render/precision_test.go`.
 
 Because parity holds unmodified, **no float-emission change was
-needed**: standard-Go and TinyGo already produce identical bytes.
-The harness is opt-in (mirroring `PRISM_CROSS_IMPL`) because it
-needs both `node` and `tinygo` on `PATH`.
+needed**: the host Go build and TinyGo already produce identical
+bytes. The harness is opt-in (mirroring `PRISM_CROSS_IMPL`) because
+it needs both `node` and `tinygo` on `PATH`.
 
 ## Standalone HTML demo
 
@@ -359,4 +350,4 @@ when unavailable), then renders any `<prism-chart>` it finds.
 Replace the bundled `index.html` with your own page to embed Prism
 in mdBook, Astro, Hugo, or any other static-site generator — keep
 the `.gz` + `DecompressionStream` pattern (or serve the raw `.wasm`
-with `Content-Encoding`) so you ship ~12 MiB, not ~69 MiB.
+with `Content-Encoding`) so you ship ~2.2 MiB, not ~6.9 MiB.

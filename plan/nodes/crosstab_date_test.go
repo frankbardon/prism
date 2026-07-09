@@ -30,11 +30,14 @@ func TestNewCrosstabDateGrouperSchema(t *testing.T) {
 		Columns: []spec.CrosstabGroup{{Field: "order_date", Type: "date", Period: "quarter"}},
 		Cell:    spec.CrosstabCell{Aggregate: "sum", Field: "revenue", As: "rev"},
 	}
-	n, err := NewCrosstab("ct", "src", "sales.pulse", afero.NewMemMapFs(), crosstabTestSchema(), body)
+	n, err := NewCrosstab("ct", "src", "sales.pulse", afero.NewMemMapFs(), body)
 	if err != nil {
 		t.Fatalf("NewCrosstab: %v", err)
 	}
-	out := n.OutSchema()
+	out, err := n.Schema([]*table.Schema{crosstabTestSchema()})
+	if err != nil {
+		t.Fatalf("Schema: %v", err)
+	}
 	byName := map[string]table.FieldType{}
 	for _, f := range out.Fields {
 		byName[f.Name] = f.Type
@@ -58,7 +61,7 @@ func TestNewCrosstabDateDefaultPeriod(t *testing.T) {
 		Columns: []spec.CrosstabGroup{{Field: "region"}},
 		Cell:    spec.CrosstabCell{Aggregate: "count"},
 	}
-	if _, err := NewCrosstab("ct", "src", "c.pulse", afero.NewMemMapFs(), crosstabTestSchema(), body); err != nil {
+	if _, err := NewCrosstab("ct", "src", "c.pulse", afero.NewMemMapFs(), body); err != nil {
 		t.Fatalf("NewCrosstab default period: %v", err)
 	}
 }
@@ -71,7 +74,7 @@ func TestNewCrosstabBadPeriod(t *testing.T) {
 		Columns: []spec.CrosstabGroup{{Field: "region"}},
 		Cell:    spec.CrosstabCell{Aggregate: "count"},
 	}
-	if _, err := NewCrosstab("ct", "src", "c.pulse", afero.NewMemMapFs(), crosstabTestSchema(), body); err == nil {
+	if _, err := NewCrosstab("ct", "src", "c.pulse", afero.NewMemMapFs(), body); err == nil {
 		t.Fatal("expected error for invalid date period, got nil")
 	}
 }
@@ -84,7 +87,7 @@ func TestNewCrosstabUnknownAggregate(t *testing.T) {
 		Columns: []spec.CrosstabGroup{{Field: "order_date", Type: "date"}},
 		Cell:    spec.CrosstabCell{Aggregate: "bogus", Field: "revenue"},
 	}
-	if _, err := NewCrosstab("ct", "src", "s.pulse", afero.NewMemMapFs(), crosstabTestSchema(), body); err == nil {
+	if _, err := NewCrosstab("ct", "src", "s.pulse", afero.NewMemMapFs(), body); err == nil {
 		t.Fatal("expected error for unknown cell aggregate, got nil")
 	}
 }
@@ -98,7 +101,7 @@ func TestNewCrosstabCellFieldRequirement(t *testing.T) {
 		Columns: []spec.CrosstabGroup{{Field: "d", Type: "date"}},
 		Cell:    spec.CrosstabCell{Aggregate: "count"},
 	}
-	if _, err := NewCrosstab("ct", "src", "s.pulse", afero.NewMemMapFs(), crosstabTestSchema(), ok); err != nil {
+	if _, err := NewCrosstab("ct", "src", "s.pulse", afero.NewMemMapFs(), ok); err != nil {
 		t.Fatalf("count(*) should be allowed: %v", err)
 	}
 	bad := spec.CrosstabBody{
@@ -106,7 +109,7 @@ func TestNewCrosstabCellFieldRequirement(t *testing.T) {
 		Columns: []spec.CrosstabGroup{{Field: "d", Type: "date"}},
 		Cell:    spec.CrosstabCell{Aggregate: "sum"},
 	}
-	if _, err := NewCrosstab("ct", "src", "s.pulse", afero.NewMemMapFs(), crosstabTestSchema(), bad); err == nil {
+	if _, err := NewCrosstab("ct", "src", "s.pulse", afero.NewMemMapFs(), bad); err == nil {
 		t.Fatal("expected error for sum aggregate without a field, got nil")
 	}
 }

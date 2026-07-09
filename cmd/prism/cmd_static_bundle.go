@@ -48,7 +48,7 @@ func staticBundleCommand() *cli.Command {
 			},
 			&cli.StringFlag{
 				Name:  "wasm-binary",
-				Usage: "Path to a pre-built prism.wasm (default: bin/prism.wasm in cwd, else builds via `go build ./cmd/prismwasm`)",
+				Usage: "Path to a pre-built prism.wasm (default: bin/prism.wasm in cwd, else builds via `tinygo build -target=wasm ./cmd/prismwasm`)",
 				Value: "",
 			},
 			geodataDirFlag(),
@@ -188,10 +188,12 @@ func mapGeodataLoadError(tier geodata.Tier, err error) error {
 // the `--wasm` standalone mode requires:
 //
 //  1. prism.wasm — copied from --wasm-binary, bin/prism.wasm, or
-//     built on the fly via `go build ./cmd/prismwasm`.
-//  2. wasm_exec.js — copied verbatim from
-//     $(go env GOROOT)/lib/wasm/wasm_exec.js (1.24+) or
-//     $(go env GOROOT)/misc/wasm/wasm_exec.js (pre-1.24).
+//     built on the fly via `tinygo build -target=wasm ./cmd/prismwasm`.
+//  2. wasm_exec.js — copied verbatim from TinyGo's paired loader at
+//     $(tinygo env TINYGOROOT)/targets/wasm_exec.js. TinyGo is Prism's
+//     sole wasm build; its loader is NOT byte-compatible with the Go
+//     toolchain's, so the binary and loader must always be sourced from
+//     the same TinyGo toolchain or the module will not instantiate.
 //  3. index.html — minimal loader that mounts a <prism-chart> after
 //     the WASM module has resolved `globalThis.prism`.
 func emitWasmBundle(cmd *cli.Command, outDir string) error {
@@ -204,7 +206,7 @@ func emitWasmBundle(cmd *cli.Command, outDir string) error {
 		// prism source tree where `./cmd/prismwasm` resolves.
 		built, buildErr := buildWasmInline(outDir)
 		if buildErr != nil {
-			return cli.Exit(fmt.Sprintf("static-bundle --wasm: %s not found and `go build ./cmd/prismwasm` failed (%v); run `make build-wasm` first or pass --wasm-binary", srcWasm, buildErr), 1)
+			return cli.Exit(fmt.Sprintf("static-bundle --wasm: %s not found and `tinygo build ./cmd/prismwasm` failed (%v); run `make build-wasm-tinygo` first or pass --wasm-binary", srcWasm, buildErr), 1)
 		}
 		srcWasm = built
 	}
@@ -217,11 +219,12 @@ func emitWasmBundle(cmd *cli.Command, outDir string) error {
 		return cli.Exit(fmt.Sprintf("copy prism.wasm: %v", err), 1)
 	}
 
-	// Emit a gzip companion next to the raw binary. The Go WASM target
-	// is ~69 MiB raw but ~12 MiB gzipped; the standalone loader fetches
-	// the .gz and decompresses via DecompressionStream so the wire size
-	// stays small even on static hosts that do not negotiate
-	// Content-Encoding. The raw .wasm remains as a fallback.
+	// Emit a gzip companion next to the raw binary. The TinyGo WASM
+	// target is far leaner than the retired standard-Go one (~7 MiB raw
+	// but ~2.2 MiB gzipped); the standalone loader fetches the .gz and
+	// decompresses via DecompressionStream so the wire size stays small
+	// even on static hosts that do not negotiate Content-Encoding. The
+	// raw .wasm remains as a fallback.
 	dstWasmGz := filepath.Join(outDir, "prism.wasm.gz")
 	gzBytes, err := gzipBytes(wasmBytes)
 	if err != nil {
@@ -267,16 +270,22 @@ func gzipBytes(src []byte) ([]byte, error) {
 	return buf.Bytes(), nil
 }
 
-// buildWasmInline runs `go build -o <outDir>/prism.wasm
-// ./cmd/prismwasm` with GOOS=js GOARCH=wasm. Returns the path to
-// the produced binary on success. Failure passes the go tool's
-// stderr through verbatim.
+// buildWasmInline runs `tinygo build -target=wasm -stack-size=8MB -o
+// <outDir>/prism.wasm ./cmd/prismwasm`. TinyGo is Prism's sole wasm
+// build; the flags mirror the Makefile's `build-wasm-tinygo` target
+// (the 8 MB stack clears the JSON-Schema shape validator's deep
+// recursion). Returns the path to the produced binary on success.
+// Failure passes the tinygo tool's stderr through verbatim.
 func buildWasmInline(outDir string) (string, error) {
+	tinygo, err := exec.LookPath("tinygo")
+	if err != nil {
+		return "", fmt.Errorf("tinygo not found on PATH (brew tap tinygo-org/tools && brew install tinygo): %w", err)
+	}
 	dst := filepath.Join(outDir, "prism.wasm")
-	build := exec.Command("go", "build",
-		"-trimpath", "-buildvcs=false", "-ldflags=-s -w",
+	build := exec.Command(tinygo, "build",
+		"-target=wasm", "-stack-size=8MB",
 		"-o", dst, "./cmd/prismwasm")
-	build.Env = append(os.Environ(), "GOOS=js", "GOARCH=wasm", "CGO_ENABLED=0")
+	build.Env = append(os.Environ(), "CGO_ENABLED=0")
 	out, err := build.CombinedOutput()
 	if err != nil {
 		return "", fmt.Errorf("%v: %s", err, strings.TrimSpace(string(out)))
@@ -284,26 +293,26 @@ func buildWasmInline(outDir string) (string, error) {
 	return dst, nil
 }
 
-// locateWasmExec resolves the canonical wasm_exec.js shipped with
-// the Go toolchain. Go 1.24 moved the file from misc/wasm/ to
-// lib/wasm/; we prefer the new location and fall back to the old
-// one. Returns an error if neither exists.
+// locateWasmExec resolves the wasm_exec.js that pairs with the TinyGo
+// wasm build, shipped under $(tinygo env TINYGOROOT)/targets/. TinyGo's
+// loader is NOT byte-compatible with the Go toolchain's, so it must be
+// sourced from the same TinyGo toolchain that produced the binary.
+// Returns an error if tinygo is absent or the loader is missing.
 func locateWasmExec() (string, error) {
-	goroot, err := exec.Command("go", "env", "GOROOT").Output()
+	tinygo, err := exec.LookPath("tinygo")
 	if err != nil {
-		return "", fmt.Errorf("go env GOROOT: %w", err)
+		return "", fmt.Errorf("tinygo not found on PATH (brew tap tinygo-org/tools && brew install tinygo): %w", err)
 	}
-	root := strings.TrimSpace(string(goroot))
-	for _, rel := range []string{
-		filepath.Join("lib", "wasm", "wasm_exec.js"),
-		filepath.Join("misc", "wasm", "wasm_exec.js"),
-	} {
-		candidate := filepath.Join(root, rel)
-		if _, err := os.Stat(candidate); err == nil {
-			return candidate, nil
-		}
+	rootBytes, err := exec.Command(tinygo, "env", "TINYGOROOT").Output()
+	if err != nil {
+		return "", fmt.Errorf("tinygo env TINYGOROOT: %w", err)
 	}
-	return "", fmt.Errorf("wasm_exec.js not found under %s (looked in lib/wasm/ and misc/wasm/)", root)
+	root := strings.TrimSpace(string(rootBytes))
+	candidate := filepath.Join(root, "targets", "wasm_exec.js")
+	if _, err := os.Stat(candidate); err == nil {
+		return candidate, nil
+	}
+	return "", fmt.Errorf("wasm_exec.js not found at %s (TinyGo loader missing under TINYGOROOT/targets)", candidate)
 }
 
 func copyFile(src, dst string) error {
@@ -328,7 +337,7 @@ const standaloneLoaderHTML = `<!doctype html>
   <script src="wasm_exec.js"></script>
   <script type="module">
     const go = new Go();
-    // Prefer the pre-compressed binary (~12 MiB vs ~69 MiB raw) so the
+    // Prefer the pre-compressed binary (~2.2 MiB vs ~7 MiB raw) so the
     // bundle stays small on static hosts that do not negotiate
     // Content-Encoding. DecompressionStream("gzip") ships in current
     // Chrome/Firefox/Safari; fall back to the raw .wasm via

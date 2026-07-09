@@ -1,7 +1,7 @@
 // Package errors defines Prism's typed application errors and the code
 // catalog with fixup metadata.
 //
-// AppError serializes to the Pulse-style JSON envelope (design/09-errors.md):
+// AppError serializes to Prism's JSON error envelope:
 //
 //	{
 //	  "code":    "PRISM_SPEC_001",
@@ -14,9 +14,6 @@
 // The plain Error() method renders a single-line text form suitable for
 // stderr; the CLI prints the multi-line "ERROR / Fixups:" block by
 // formatting AppError fields directly.
-//
-// Pulse's *errors.CodedError values pass through verbatim — interceptors
-// route them based on prefix.
 package errors
 
 import (

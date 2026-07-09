@@ -7,7 +7,8 @@ no backend.
 
 ## Prerequisites
 
-- Go 1.24+ to produce `prism.wasm` and host CLI.
+- Go 1.24+ for the host CLI, and TinyGo 0.41.1+ to produce
+  `prism.wasm` (`brew tap tinygo-org/tools && brew install tinygo`).
 - A static file server (anything that serves
   `Content-Type: application/wasm` correctly — GitHub Pages,
   Netlify, Vercel, S3, nginx, `python -m http.server`, all work).
@@ -20,7 +21,7 @@ from local file URLs. Run a local server during development.
 From a Prism checkout:
 
 ```bash
-make build-wasm
+make build-wasm-tinygo
 ./bin/prism static-bundle --wasm ./public/prism
 ```
 
@@ -29,8 +30,9 @@ That writes:
 ```
 public/prism/
 ├── index.html           # minimal loader example
-├── prism.wasm           # ~12 MiB gzipped
-├── wasm_exec.js         # Go toolchain runtime
+├── prism.wasm           # TinyGo build; ~6.9 MiB raw / ~2.2 MiB gzipped
+├── prism.wasm.gz        # gzipped binary — what the loader fetches
+├── wasm_exec.js         # TinyGo runtime loader
 ├── prism.mjs            # bootstrapper
 ├── prism-element.mjs    # web components
 ├── prism-resolver.mjs   # dataset registry
@@ -144,7 +146,7 @@ components register globally; any page that uses
 
 ## Limits
 
-- Initial WASM download is ~12 MiB gzipped. Cache aggressively
+- Initial WASM download is ~2.2 MiB gzipped. Cache aggressively
   (immutable hashed filename + 1-year Cache-Control).
 - Large inline datasets (>50 MB of rows) parse and aggregate slowly
   in the browser on mid-range hardware. Pre-aggregate upstream when

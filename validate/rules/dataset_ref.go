@@ -164,7 +164,7 @@ func collectDeclaredDatasets(s *spec.Spec, schemas validate.SchemaLookup) map[st
 	})
 	// Any dataset registered externally via SchemaLookup also counts.
 	// SchemaLookup impls that satisfy validate.Namer expose their
-	// registered names — covers StaticLookup, PulseLookup, and
+	// registered names — covers StaticLookup, DatasetLookup, and
 	// CompositeLookup. EmptyLookup contributes nothing.
 	if namer, ok := schemas.(validate.Namer); ok && namer != nil {
 		for _, name := range namer.Names() {

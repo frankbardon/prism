@@ -16,9 +16,9 @@ import (
 // and a field name resolvable through inline data.values, it inspects
 // the values and flags any non-positive entry.
 //
-// When the dataset is external (Pulse-backed, GCS, etc.) the rule
-// no-ops — the encoder's per-row guard surfaces the same code at
-// render time via scale.LogScale.Apply / encode.resolveLog.
+// When the field's values are not available inline (a source-bound
+// dataset), the rule no-ops — the encoder's per-row guard surfaces the
+// same code at render time via scale.LogScale.Apply / encode.resolveLog.
 type LogScalePositiveDomain struct{}
 
 // Code returns PRISM_SPEC_010.

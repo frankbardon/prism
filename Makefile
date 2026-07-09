@@ -1,4 +1,4 @@
-.PHONY: build build-wasm build-wasm-tinygo clean test test-race cover fmt fmt-check vet lint proto docs docs-scenes docs-wasm-stage docs-serve docs-clean docs-deploy-latest
+.PHONY: build build-wasm-tinygo clean test test-race cover fmt fmt-check vet lint proto docs docs-scenes docs-wasm-stage docs-serve docs-clean docs-deploy-latest
 
 BINARY_NAME=prism
 WASM_BINARY=prism.wasm
@@ -7,7 +7,6 @@ GO=go
 TINYGO=tinygo
 LDFLAGS=-s -w
 BUILD_FLAGS=-trimpath -ldflags="$(LDFLAGS)"
-WASM_BUILD_FLAGS=-trimpath -buildvcs=false -ldflags="$(LDFLAGS)"
 # TinyGo goroutine stack size. The default (~16 KB) overflows on the
 # JSON-Schema shape validator's deep recursion (santhosh-tekuri/jsonschema
 # v6 meta-validation); 8 MB clears it with headroom for composite specs.
@@ -30,30 +29,12 @@ endif
 build:
 	$(GO) build $(BUILD_FLAGS) -o $(BUILD_DIR)/$(BINARY_NAME) ./cmd/prism
 
-# build-wasm cross-compiles cmd/prismwasm to GOOS=js GOARCH=wasm and
-# copies the toolchain's wasm_exec.js into bin/ alongside the binary
-# so `make build-wasm` produces both halves of a runnable bundle.
-# The companion wasm_exec.js path varies across Go releases (1.24+
-# lives under $GOROOT/lib/wasm/, earlier under $GOROOT/misc/wasm/);
-# we resolve it dynamically and fall back to the legacy location if
-# the new one is absent.
-build-wasm:
-	@mkdir -p $(BUILD_DIR)
-	GOOS=js GOARCH=wasm CGO_ENABLED=0 $(GO) build $(WASM_BUILD_FLAGS) -o $(BUILD_DIR)/$(WASM_BINARY) ./cmd/prismwasm
-	@WASM_EXEC="$$($(GO) env GOROOT)/lib/wasm/wasm_exec.js"; \
-	if [ ! -f "$$WASM_EXEC" ]; then WASM_EXEC="$$($(GO) env GOROOT)/misc/wasm/wasm_exec.js"; fi; \
-	if [ -f "$$WASM_EXEC" ]; then cp "$$WASM_EXEC" $(BUILD_DIR)/wasm_exec.js; \
-	else echo "build-wasm: warning — wasm_exec.js not found under GOROOT (looked at lib/wasm and misc/wasm)"; fi
-	@ls -lh $(BUILD_DIR)/$(WASM_BINARY)
-
-# build-wasm-tinygo cross-compiles cmd/prismwasm with TinyGo instead of
-# the Go toolchain, producing a much smaller js/wasm module. It is a
-# parallel path to `build-wasm` (which stays on the Go toolchain) — do
-# NOT cross the two: TinyGo ships its OWN wasm_exec.js under
-# $(tinygo env TINYGOROOT)/targets/, which is NOT byte-compatible with
-# Go's $GOROOT/lib/wasm/wasm_exec.js. Each build pairs its binary with
-# the matching loader; the copy here is the loader's provenance (sourced
-# straight from the active TinyGo toolchain).
+# build-wasm-tinygo cross-compiles cmd/prismwasm with TinyGo, producing
+# the js/wasm module that is Prism's sole browser artifact. TinyGo ships
+# its OWN wasm_exec.js under $(tinygo env TINYGOROOT)/targets/; each
+# build pairs its binary with the matching loader, and the copy here is
+# the loader's provenance (sourced straight from the active TinyGo
+# toolchain).
 #
 # -stack-size raises the per-goroutine stack (see TINYGO_STACK_SIZE) so
 # the JSON-Schema shape validator's recursion does not trap. Requires
@@ -146,7 +127,7 @@ $(GALLERY_DIR)/%.scene.json: $(GALLERY_DIR)/%.prism.json $(BUILD_DIR)/$(BINARY_N
 # (docs/src/gallery/index.html). docs/docs-serve depend on this
 # so a fresh checkout + `make docs-serve` works without manual
 # staging steps.
-docs-wasm-stage: build-wasm
+docs-wasm-stage: build-wasm-tinygo
 	@cp $(BUILD_DIR)/$(WASM_BINARY) static/vendor/prism/$(WASM_BINARY)
 	@cp $(BUILD_DIR)/wasm_exec.js   static/vendor/prism/wasm_exec.js
 	@mkdir -p docs/src/static/prism/geodata

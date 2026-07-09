@@ -52,7 +52,7 @@ func (FilterPredicate) Check(s *spec.Spec, schemas validate.SchemaLookup) []*err
 // predicate-semantics source of truth.
 func checkPredicate(
 	p *spec.Predicate,
-	schema *validate.PulseSchemaShim,
+	schema *validate.SchemaShim,
 	known bool,
 	outputs map[string]bool,
 	site string,
@@ -133,7 +133,7 @@ func checkPredicate(
 
 // fieldOrOutput reports whether name exists in the schema or is produced
 // by a transform.
-func fieldOrOutput(name string, schema *validate.PulseSchemaShim, outputs map[string]bool) (validate.FieldShim, bool) {
+func fieldOrOutput(name string, schema *validate.SchemaShim, outputs map[string]bool) (validate.FieldShim, bool) {
 	if f, ok := schema.Field(name); ok {
 		return f, true
 	}
@@ -146,7 +146,7 @@ func fieldOrOutput(name string, schema *validate.PulseSchemaShim, outputs map[st
 // fieldMeasureType resolves a field's measure type. It reports
 // resolved=false when the schema is unknown or the field is a transform
 // output (type unknowable statically) — callers then skip type checks.
-func fieldMeasureType(name string, schema *validate.PulseSchemaShim, known bool, outputs map[string]bool) (string, bool) {
+func fieldMeasureType(name string, schema *validate.SchemaShim, known bool, outputs map[string]bool) (string, bool) {
 	if !known {
 		return "", false
 	}

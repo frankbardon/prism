@@ -9,15 +9,15 @@ import (
 	"github.com/frankbardon/prism/validate"
 )
 
-// TestPulseLookupSourceBoundIsBestEffortMiss pins the post-E4 behavior:
-// PulseLookup no longer reads a `.pulse` header (the loader was removed),
+// TestDatasetLookupSourceBoundIsBestEffortMiss pins the post-E4 behavior:
+// DatasetLookup no longer reads a `.pulse` header (the loader was removed),
 // so a source-bound dataset carries no inline schema. Schema is a
 // best-effort miss — semantic rules skip field-existence checks for that
 // dataset rather than firing false positives against a schema Prism can
 // no longer read. Register still records the name so the dataset-ref
 // rule treats the externally-bound dataset as declared.
-func TestPulseLookupSourceBoundIsBestEffortMiss(t *testing.T) {
-	pl := validate.NewPulseLookup(resolve.New(nil), afero.NewMemMapFs())
+func TestDatasetLookupSourceBoundIsBestEffortMiss(t *testing.T) {
+	pl := validate.NewDatasetLookup(resolve.New(nil), afero.NewMemMapFs())
 	pl.Register("tiny", "tiny")
 
 	if _, ok := pl.Schema("tiny"); ok {
@@ -35,15 +35,15 @@ func TestPulseLookupSourceBoundIsBestEffortMiss(t *testing.T) {
 	}
 }
 
-func TestPulseLookupUnregisteredMisses(t *testing.T) {
-	pl := validate.NewPulseLookup(resolve.New(nil), afero.NewOsFs())
+func TestDatasetLookupUnregisteredMisses(t *testing.T) {
+	pl := validate.NewDatasetLookup(resolve.New(nil), afero.NewOsFs())
 	if _, ok := pl.Schema("nothing"); ok {
 		t.Fatal("Schema(nothing) hit; want miss")
 	}
 }
 
-func TestPulseLookupCachesMisses(t *testing.T) {
-	pl := validate.NewPulseLookup(resolve.New(nil), afero.NewOsFs())
+func TestDatasetLookupCachesMisses(t *testing.T) {
+	pl := validate.NewDatasetLookup(resolve.New(nil), afero.NewOsFs())
 	pl.Register("ghost", "definitely_not_a_real_path.pulse")
 	if _, ok := pl.Schema("ghost"); ok {
 		t.Fatal("first Schema(ghost) unexpectedly hit")
@@ -56,12 +56,12 @@ func TestPulseLookupCachesMisses(t *testing.T) {
 
 func TestCompositeLookupOrder(t *testing.T) {
 	a := validate.NewStaticLookup()
-	a.Register("only_in_a", &validate.PulseSchemaShim{
+	a.Register("only_in_a", &validate.SchemaShim{
 		Name:   "only_in_a",
 		Fields: []validate.FieldShim{{Name: "x", Type: "nominal"}},
 	})
 	b := validate.NewStaticLookup()
-	b.Register("only_in_b", &validate.PulseSchemaShim{
+	b.Register("only_in_b", &validate.SchemaShim{
 		Name:   "only_in_b",
 		Fields: []validate.FieldShim{{Name: "y", Type: "quantitative"}},
 	})

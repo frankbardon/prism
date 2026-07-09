@@ -2,17 +2,19 @@
 // values plus the deterministic render.FormatFloat rendering of them.
 //
 // It exists so the exact same inputs and the exact same formatting code
-// path run in three places during the E5-S2 float-parity check:
+// path run in two places during the TinyGo float-parity check:
 //
-//  1. the host Go test (native amd64/arm64 build),
-//  2. the standard-Go js/wasm probe, and
-//  3. the TinyGo js/wasm probe.
+//  1. the host Go test (native amd64/arm64 build), and
+//  2. the TinyGo js/wasm probe.
+//
+// (TinyGo is now the only wasm build; the standard-Go js/wasm probe that
+// once formed a third comparison point was retired with that target.)
 //
 // render/precision.go's FormatFloat is the one funnel every SVG
 // coordinate flows through, and TinyGo ships its own strconv. If TinyGo
-// rounded or stringified floats differently from standard Go, the SVG
-// coordinate goldens would drift. Pinning the corpus here and comparing
-// Format() across all three builds proves they agree byte-for-byte.
+// rounded or stringified floats differently from the host Go build, the
+// SVG coordinate goldens would drift. Pinning the corpus here and
+// comparing Format() across both builds proves they agree byte-for-byte.
 package floatcorpus
 
 import (
@@ -74,7 +76,7 @@ func Values() []float64 {
 
 // Format renders each corpus value through render.FormatFloat and joins
 // the results with newlines. This is the exact string compared across
-// the host, standard-Go wasm, and TinyGo wasm builds.
+// the host and TinyGo wasm builds.
 func Format() string {
 	vs := Values()
 	parts := make([]string, len(vs))

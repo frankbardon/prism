@@ -168,8 +168,8 @@ var Codes = map[string]CodeMetadata{
 		Message: `Aggregate alias {{.Alias}} is not yet supported by backend {{.Backend}}.`,
 		Fixups: []string{
 			`Use a supported alias: count, sum, mean, median, min, max, stdev, variance, mode, distinct, q1, q3, ci0, ci1, wmean, ratio, lift, share.`,
-			`If your spec relied on an upstream alias the planner forwarded, check ` + "`compile/aggregates.go`" + ` for the canonical alias-to-Pulse mapping.`,
-			`File an issue with the alias name so it can be added to the next Pulse release.`,
+			`If your spec relied on an upstream alias the planner forwarded, check ` + "`compile/aggregates.go`" + ` for the canonical alias catalogue.`,
+			`File an issue with the alias name so it can be added to the in-memory aggregate set.`,
 		},
 		SeeAlso: []string{"PRISM_SPEC_002"},
 	},
@@ -378,7 +378,7 @@ var Codes = map[string]CodeMetadata{
 		Code:    "PRISM_JOIN_001",
 		Message: `Join key {{.Key}} has incompatible kinds on the two sides (left={{.LeftKind}}, right={{.RightKind}}).`,
 		Fixups: []string{
-			`Cast the column on one side via a calculate transform so both sides share a Pulse Kind.`,
+			`Cast the column on one side via a calculate transform so both sides share a table.FieldType.`,
 			`If one side is categorical and the other numeric, decide which storage shape the join semantically requires.`,
 			`Inspect the schemas with ` + "`prism execute <spec>`" + ` to see each side's columns + kinds.`,
 		},
@@ -400,7 +400,7 @@ var Codes = map[string]CodeMetadata{
 		Fixups: []string{
 			`Pre-aggregate one or both sides upstream of the join so the cartesian product fits under the cap.`,
 			`Raise the ceiling by setting ` + "`PRISM_JOIN_MAX_ROWS`" + ` in the environment (warning: 5M ≈ 500MB at 20 columns).`,
-			`Push the join down to Pulse once Pulse exposes a relational join (deferred to a future Prism phase).`,
+			`Perform the join upstream in the host that materialises the rows, then hand Prism the pre-joined ` + "`values`" + ` inline.`,
 		},
 		SeeAlso: []string{"PRISM_RESOLVE_007"},
 	},
@@ -408,7 +408,7 @@ var Codes = map[string]CodeMetadata{
 		Code:    "PRISM_PLAN_004",
 		Message: `Union input schemas disagree: {{.Diff}}.`,
 		Fixups: []string{
-			`Make every union input expose the same column names and Pulse types in the same order.`,
+			`Make every union input expose the same column names and table.FieldTypes in the same order.`,
 			`If you need a relational union of differing shapes, project each side first to the shared columns.`,
 			`Inspect each input's schema via ` + "`prism plan <spec> --format json`" + ` and reconcile differences.`,
 		},
@@ -419,7 +419,7 @@ var Codes = map[string]CodeMetadata{
 		Message: `Channel {{.Channel}} cannot be resolved as shared: layers disagree on type ({{.Types}}).`,
 		Fixups: []string{
 			`Convert one layer's channel to the matching type via a "calculate" cast upstream of the encoder.`,
-			`Switch the channel to a Pulse-compatible measure type so every layer publishes the same scale family.`,
+			`Switch the channel to a compatible measure type so every layer publishes the same scale family.`,
 			"Set `resolve.scale.{{.Channel}}` to `independent` to keep per-layer scales + per-layer axes.",
 		},
 		SeeAlso: []string{"PRISM_PLAN_002", "PRISM_SPEC_007", "PRISM_RESOLVE_DUPLICATE_DATASET"},
@@ -563,13 +563,22 @@ var Codes = map[string]CodeMetadata{
 		},
 		SeeAlso: []string{"PRISM_WASM_001"},
 	},
+	// PRISM_WASM_BUDGET_EXCEEDED is RETIRED but retained so `prism errors
+	// lookup` still resolves it. It guarded the standard-Go js/wasm size gate
+	// (`PRISM_WASM_MAX_BYTES` / `PRISM_WASM_RAW_MAX_BYTES` over the
+	// `make build-wasm` artifact). The standard-Go wasm build was dropped —
+	// TinyGo is now the sole browser artifact — so this AppError is no longer
+	// emitted. The TinyGo module carries its own, tighter size budget in
+	// `internal/gates/wasm_tinygo_size_test.go` (`PRISM_WASM_TINYGO_MAX_BYTES`
+	// / `PRISM_WASM_TINYGO_RAW_MAX_BYTES`); an overrun there surfaces as a
+	// plain Go test failure (labelled with this identifier for lookup), not a
+	// PRISM_* envelope.
 	"PRISM_WASM_BUDGET_EXCEEDED": {
 		Code:    "PRISM_WASM_BUDGET_EXCEEDED",
-		Message: `Compiled prism.wasm exceeds PRISM_WASM_MAX_BYTES={{.Limit}} (gzipped size: {{.Actual}}).`,
+		Message: `Retired code: the standard-Go wasm size gate was removed when TinyGo became the sole browser build.`,
 		Fixups: []string{
-			`Raise the ceiling by setting ` + "`PRISM_WASM_MAX_BYTES`" + ` in the environment before running ` + "`make build-wasm`" + `.`,
-			`Drop newly-imported dependencies from the WASM entry — confirm cmd/prismwasm/main.go imports only library packages buildable under js,wasm.`,
-			`Check ` + "`go list -deps ./cmd/prismwasm | sort | uniq`" + ` for transitive imports that bloat the binary (apache/arrow-go and gonum dominate).`,
+			`This code is no longer emitted. The TinyGo module is guarded by ` + "`internal/gates/wasm_tinygo_size_test.go`" + ` via ` + "`PRISM_WASM_TINYGO_MAX_BYTES`" + ` / ` + "`PRISM_WASM_TINYGO_RAW_MAX_BYTES`" + `; an overrun is a plain test failure, not a PRISM_* envelope.`,
+			`To shrink the TinyGo artifact, drop newly-imported dependencies from ` + "`cmd/prismwasm/main.go`" + ` and check ` + "`go list -deps ./cmd/prismwasm`" + ` (built under ` + "`GOOS=js GOARCH=wasm`" + `) for transitive imports that bloat the binary.`,
 		},
 	},
 	"PRISM_WARN_WASM_COLD_START": {
@@ -701,18 +710,23 @@ var Codes = map[string]CodeMetadata{
 		Fixups: []string{
 			`Required: ` + "`crosstab.rows`" + ` (>=1 grouper), ` + "`crosstab.columns`" + ` (>=1 grouper), ` + "`crosstab.cell.aggregate`" + ` (e.g. sum, mean, count), ` + "`crosstab.cell.field`" + ` (omit only for count). Example: ` + "`{crosstab: {rows: [{field: \"region\"}], columns: [{field: \"quarter\"}], cell: {aggregate: \"sum\", field: \"revenue\", as: \"revenue\"}}}`" + `.`,
 			`Grouper type defaults to "category" (GROUP_CATEGORY). Date / range / quantile groupers land in a follow-up.`,
-			`Cell aggregate must be a Pulse-backed alias (count, sum, mean, median, min, max, stdev, variance, q1, q3, ci0, ci1, wmean, ratio). lift + share are client-side only and not yet wired into crosstab.`,
+			`Cell aggregate must be a supported client-side alias (count, sum, mean, median, min, max, stdev, variance, q1, q3, ci0, ci1, wmean, ratio). lift + share are not yet wired into crosstab.`,
 		},
-		SeeAlso: []string{"PRISM_SPEC_033", "PRISM_SPEC_034"},
+		SeeAlso: []string{"PRISM_SPEC_034"},
 	},
+	// PRISM_SPEC_033 is RETIRED but retained so `prism errors lookup` and
+	// existing SeeAlso cross-references still resolve. It reported a
+	// crosstab that was not the first transform on the chain. Crosstab now
+	// accepts derived input (it may follow another Prism transform — see
+	// epic E3), so the chain-position constraint no longer exists and this
+	// code is never emitted. Shape violations surface as PRISM_SPEC_032.
 	"PRISM_SPEC_033": {
 		Code:    "PRISM_SPEC_033",
-		Message: `crosstab transform must consume a source ref; it cannot follow a Prism transform.`,
+		Message: `Retired code: crosstab now accepts derived input, so the "must be the first transform" constraint was removed.`,
 		Fixups: []string{
-			`Place ` + "`crosstab`" + ` as the FIRST transform on the chain, immediately downstream of ` + "`data`" + `. It reads the materialised source rows directly and cannot follow another transform.`,
-			`If you need to filter rows before the crosstab, push the filter into the spec via ` + "`crosstab.cell`" + `'s aggregate options, or shrink the rows upstream in the host that produces the inline ` + "`values`" + ` / DataResolver dataset.`,
+			`This code is no longer emitted. A ` + "`crosstab`" + ` transform may follow another transform (e.g. ` + "`filter`" + `→` + "`crosstab`" + `); it consumes the upstream materialised rows. Shape problems (missing rows/columns/cell.aggregate) surface as PRISM_SPEC_032.`,
 		},
-		SeeAlso: []string{"PRISM_SPEC_032", "PRISM_PLAN_CROSSTAB_REQUIRES_SOURCE"},
+		SeeAlso: []string{"PRISM_SPEC_032"},
 	},
 	"PRISM_SPEC_034": {
 		Code:    "PRISM_SPEC_034",
@@ -723,14 +737,20 @@ var Codes = map[string]CodeMetadata{
 		},
 		SeeAlso: []string{"PRISM_SPEC_032"},
 	},
+	// PRISM_PLAN_CROSSTAB_REQUIRES_SOURCE is RETIRED but retained so
+	// `prism errors lookup` and existing SeeAlso cross-references still
+	// resolve. It reported a crosstab plan node whose immediate input was
+	// not a SourceNode. Crosstab gained derived-input support (epic E3):
+	// the build now accepts any upstream node's materialised table, so
+	// there is no source-linkage precondition and this code is never
+	// emitted.
 	"PRISM_PLAN_CROSSTAB_REQUIRES_SOURCE": {
 		Code:    "PRISM_PLAN_CROSSTAB_REQUIRES_SOURCE",
-		Message: `crosstab plan node could not link to a SourceNode upstream.`,
+		Message: `Retired code: crosstab now accepts derived input, so it no longer requires a SourceNode as its immediate build input.`,
 		Fixups: []string{
-			`Crosstab reads the materialised source rows directly — there is no in-memory transform handoff. The build must see a SourceNode as the immediate input.`,
-			`Check that the spec places ` + "`crosstab`" + ` as the first transform on a top-level dataset, not on a derived alias.`,
+			`This code is no longer emitted. The crosstab plan node consumes the upstream node's materialised table.Table whether it is a source, an inline dataset, or a derived transform output. Compute failures surface as PRISM_PLAN_CROSSTAB_PROCESS.`,
 		},
-		SeeAlso: []string{"PRISM_SPEC_033"},
+		SeeAlso: []string{"PRISM_PLAN_CROSSTAB_PROCESS"},
 	},
 	"PRISM_PLAN_CROSSTAB_PROCESS": {
 		Code:    "PRISM_PLAN_CROSSTAB_PROCESS",
@@ -742,21 +762,27 @@ var Codes = map[string]CodeMetadata{
 	},
 	"PRISM_SPEC_035": {
 		Code:    "PRISM_SPEC_035",
-		Message: `regression transform must be first and declare target + predictors (at {{.Path}}).`,
+		Message: `regression transform must declare target + at least one predictor (at {{.Path}}).`,
 		Fixups: []string{
-			`A ` + "`regression`" + ` transform fits the materialised source rows directly, so it must be the first transform on the chain — not chained after a Prism filter / aggregate / join.`,
 			`Declare both ` + "`target`" + ` (the dependent variable) and a non-empty ` + "`predictors`" + ` list, e.g. ` + "`{regression: {target: \"sales\", predictors: [\"spend\"], as: \"fitted\"}}`" + `.`,
+			`A ` + "`regression`" + ` transform may follow another transform (e.g. ` + "`filter`" + `→` + "`regression`" + `); it fits the upstream materialised rows and no longer needs to be the first transform.`,
 		},
-		SeeAlso: []string{"PRISM_PLAN_REGRESSION_REQUIRES_SOURCE"},
+		SeeAlso: []string{"PRISM_PLAN_REGRESSION_PROCESS"},
 	},
+	// PRISM_PLAN_REGRESSION_REQUIRES_SOURCE is RETIRED but retained so
+	// `prism errors lookup` and existing SeeAlso cross-references still
+	// resolve. It reported a regression plan node whose immediate input
+	// was not a SourceNode. Regression gained derived-input support (epic
+	// E3): the build now accepts any upstream node's materialised table,
+	// so there is no source-linkage precondition and this code is never
+	// emitted.
 	"PRISM_PLAN_REGRESSION_REQUIRES_SOURCE": {
 		Code:    "PRISM_PLAN_REGRESSION_REQUIRES_SOURCE",
-		Message: `regression plan node could not link to a SourceNode upstream.`,
+		Message: `Retired code: regression now accepts derived input, so it no longer requires a SourceNode as its immediate build input.`,
 		Fixups: []string{
-			`Regression fits the materialised source rows directly — there is no in-memory transform handoff. The build must see a SourceNode as the immediate input.`,
-			`Check that the spec places ` + "`regression`" + ` as the first transform on a top-level dataset, not on a derived alias.`,
+			`This code is no longer emitted. The regression plan node fits the upstream node's materialised table.Table whether it is a source, an inline dataset, or a derived transform output. Fit failures surface as PRISM_PLAN_REGRESSION_PROCESS.`,
 		},
-		SeeAlso: []string{"PRISM_SPEC_035"},
+		SeeAlso: []string{"PRISM_PLAN_REGRESSION_PROCESS"},
 	},
 	"PRISM_PLAN_REGRESSION_PROCESS": {
 		Code:    "PRISM_PLAN_REGRESSION_PROCESS",

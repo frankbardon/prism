@@ -13,8 +13,9 @@ committed is what the browser loads.
 | `prism-resolver.mjs`  | Page-level dataset registry (`register` / `unregister` / `fetch` with dedupe). |
 | `prism-selection.mjs` | Pointer-event hit testing against `data-prism-*` attrs; `broadcast` / `listen` helpers for cross-chart coordination. |
 
-`prism.wasm` and `wasm_exec.js` are produced by `make build-wasm`
-and shipped alongside this tree by `prism static-bundle --wasm`.
+`prism.wasm` and `wasm_exec.js` are produced by `make build-wasm-tinygo`
+(TinyGo is the sole wasm build) and shipped alongside this tree by
+`prism static-bundle --wasm`.
 
 ## Public API surface
 
@@ -62,14 +63,14 @@ stage now exists, written in Go.
 
 ## Parity guarantee
 
-Drift between Go-native SVG and Go-via-WASM SVG is a build break.
+Drift between host-Go SVG and TinyGo-WASM SVG is a build break.
 The cross-impl test (`internal/devtools/cross_impl_test.go`)
 gates byte-equality on five curated fixtures (`bar_basic`,
 `line_basic`, `layer_actual_vs_benchmark`, `pie`,
 `sankey_user_flow`). Run with:
 
 ```
-make build-wasm
+make build-wasm-tinygo
 PRISM_CROSS_IMPL=1 go test ./internal/devtools/...
 ```
 
@@ -82,8 +83,8 @@ PATH or without `bin/prism.wasm`.
 prism static-bundle --wasm /path/to/out
 ```
 
-`static-bundle` extracts this tree, builds `prism.wasm` (or
-copies an existing `bin/prism.wasm`), copies `wasm_exec.js` from
-the Go toolchain, and writes a working `index.html` loader. The
+`static-bundle` extracts this tree, builds `prism.wasm` with TinyGo
+(or copies an existing `bin/prism.wasm`), copies TinyGo's paired
+`wasm_exec.js`, and writes a working `index.html` loader. The
 output directory is self-contained — drop it anywhere a static
 server can reach it.

@@ -6,7 +6,7 @@
   "$defs": {
     "expression": {
       "type": "string",
-      "description": "Pulse expression source string evaluated by the Pulse expression parser.",
+      "description": "A non-empty string primitive. Prism has no expression language; filter/calculate/condition logic is expressed through structured JSON built-ins (predicate / calc_expr), not a source string.",
       "minLength": 1
     },
     "field_ref": {

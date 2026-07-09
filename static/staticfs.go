@@ -13,7 +13,7 @@ import "embed"
 
 // Tree carries the vendored ESM browser surface (the four .mjs
 // files plus README). `prism.wasm` and `wasm_exec.js` are NOT
-// embedded — they are produced by `make build-wasm`, can be
+// embedded — they are produced by `make build-wasm-tinygo`, can be
 // dropped into static/vendor/prism/ at docs-build time for mdBook
 // to pick up, and shipped by `prism static-bundle --wasm` from
 // their build artefact locations. Keeping them out of the embed

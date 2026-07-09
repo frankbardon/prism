@@ -328,9 +328,12 @@ land in a follow-up.
 
 Constraints:
 
-- Crosstab must be the **first** transform on the chain. v1 crosstab
-  consumes the source table directly, so chaining it after another Prism
-  transform is not supported (`PRISM_SPEC_033`).
+- Crosstab accepts **any upstream table** — a source-bound dataset, an
+  inline `data.values` cohort, or the output of an earlier transform. It
+  runs entirely in Prism's in-memory engine, so you can `filter` (or
+  otherwise reshape) the rows first and then cross-tabulate the result
+  (see the derived-input example below). It is no longer restricted to
+  the first position on the chain.
 - Grouper `type` is `category` (default) or `date`. A date grouper
   buckets a temporal field by `period` — one of `year`, `quarter`,
   `month` (default), `week`, `day`, `day_of_week` — emitting string
@@ -341,16 +344,40 @@ Constraints:
   composition or by avoiding the `margins` flag for the visual
   rendering use case.
 
-Cells are evenly numbered through `PRISM_SPEC_032` (shape rule),
-`PRISM_SPEC_033` (position rule), `PRISM_SPEC_034` (normalize enum).
+Cells are validated through `PRISM_SPEC_032` (shape rule) and
+`PRISM_SPEC_034` (normalize enum) — both structural checks only.
 Run `prism errors lookup <code>` for details + fixups.
 
-> Crosstab (and regression) must consume a **source-bound** dataset —
-> the transform re-materialises the whole cohort, so it must be the
-> first transform on the chain (`PRISM_PLAN_CROSSTAB_REQUIRES_SOURCE`).
-> The `data.source` wire variant was removed in v0.x; bind the cohort by
-> `name` (a `datasets` entry / server-registered dataset) so it resolves
-> to the source leaf these transforms require.
+### Derived-input example
+
+Because crosstab consumes whatever table its upstream stage produces, you
+can chain it after any other transform. Here a `filter` narrows the rows
+to one region before the cross-tabulation runs:
+
+```json
+{
+  "$schema": "urn:prism:schema:v1:spec",
+  "data": {"values": [
+    {"region": "West", "quarter": "Q1", "channel": "online",  "revenue": 120},
+    {"region": "West", "quarter": "Q2", "channel": "retail",  "revenue": 80},
+    {"region": "East", "quarter": "Q1", "channel": "online",  "revenue": 60}
+  ]},
+  "transform": [
+    {"filter": {"op": "eq", "field": "region", "value": "West"}},
+    {"crosstab": {
+      "rows":    [{"field": "quarter"}],
+      "columns": [{"field": "channel"}],
+      "cell":    {"aggregate": "sum", "field": "revenue", "as": "revenue"}
+    }}
+  ],
+  "mark": "heatmap",
+  "encoding": {
+    "x":     {"field": "channel", "type": "nominal"},
+    "y":     {"field": "quarter", "type": "nominal"},
+    "color": {"field": "revenue", "type": "quantitative"}
+  }
+}
+```
 
 ## Regression transform
 
@@ -393,9 +420,11 @@ Body:
 
 Constraints:
 
-- Regression must be the **first** transform on the chain — the OLS
-  prepass fits the source cohort directly, like crosstab
-  (`PRISM_SPEC_035`, `PRISM_PLAN_REGRESSION_REQUIRES_SOURCE`).
+- Regression accepts **any upstream table** — like crosstab, the OLS fit
+  runs in-memory over whatever rows its input stage yields, so you can
+  `filter` or otherwise derive the cohort first and then fit the trend.
+  `PRISM_SPEC_035` is a structural check only (target present + at least
+  one predictor); there is no first-position requirement.
 - v1 fits unpenalized OLS with a single predictor. Multiple predictors,
   GLM/Bayesian families, and the per-row residual / leverage attributes
   land in a follow-up.
@@ -406,8 +435,8 @@ The `timeunit` transform truncates a temporal field to a calendar
 period and appends the truncated date as a new column — the Vega-Lite
 `timeUnit` analogue. The output is a date (the period start), so the
 derived column stays temporal for axis / scale resolution and sorts
-chronologically. It runs client-side (pure epoch arithmetic), so —
-unlike `crosstab` / `regression` — it composes anywhere in a chain.
+chronologically. It runs client-side (pure epoch arithmetic) and, like
+every Prism transform, composes anywhere in a chain.
 
 ```json
 {

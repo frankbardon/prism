@@ -36,7 +36,7 @@ func regFixture(t *testing.T) *table.Table {
 // in-memory OLS fit, returning the two-endpoint output table.
 func runReg(t *testing.T, in *table.Table, body spec.RegressionBody) *table.Table {
 	t.Helper()
-	n, err := nodes.NewRegression("reg", "src", "ref", afero.NewMemMapFs(), in.Schema(),
+	n, err := nodes.NewRegression("reg", "src", "ref", afero.NewMemMapFs(),
 		&spec.RegressionTransform{Regression: body})
 	if err != nil {
 		t.Fatalf("NewRegression: %v", err)
@@ -120,7 +120,7 @@ func TestRegressionZeroVarianceFails(t *testing.T) {
 	if err != nil {
 		t.Fatalf("NewTable: %v", err)
 	}
-	n, err := nodes.NewRegression("reg", "src", "ref", afero.NewMemMapFs(), in.Schema(),
+	n, err := nodes.NewRegression("reg", "src", "ref", afero.NewMemMapFs(),
 		&spec.RegressionTransform{Regression: spec.RegressionBody{Target: "score", Predictors: []string{"age"}}})
 	if err != nil {
 		t.Fatalf("NewRegression: %v", err)

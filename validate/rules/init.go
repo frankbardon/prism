@@ -36,8 +36,8 @@ func init() {
 	validate.RegisterDefault(func() validate.SemanticRule { return TreeChannels{} })
 	validate.RegisterDefault(func() validate.SemanticRule { return ThemeSchemeKnown{} })
 	validate.RegisterDefault(func() validate.SemanticRule { return ThemeMarkTypeKnown{} })
-	validate.RegisterDefault(func() validate.SemanticRule { return CrosstabPosition{} })
-	validate.RegisterDefault(func() validate.SemanticRule { return RegressionPosition{} })
+	validate.RegisterDefault(func() validate.SemanticRule { return CrosstabStructure{} })
+	validate.RegisterDefault(func() validate.SemanticRule { return RegressionStructure{} })
 	validate.RegisterDefault(func() validate.SemanticRule { return BulletBands{} })
 	validate.RegisterDefault(func() validate.SemanticRule { return FilterPredicate{} })
 }

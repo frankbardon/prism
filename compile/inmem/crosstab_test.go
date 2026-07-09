@@ -48,7 +48,7 @@ func xtabFixture(t *testing.T) *table.Table {
 // in-memory crosstab, returning the long-form output table.
 func runXtab(t *testing.T, in *table.Table, body spec.CrosstabBody) *table.Table {
 	t.Helper()
-	n, err := nodes.NewCrosstab("ct", "src", "ref", afero.NewMemMapFs(), in.Schema(), body)
+	n, err := nodes.NewCrosstab("ct", "src", "ref", afero.NewMemMapFs(), body)
 	if err != nil {
 		t.Fatalf("NewCrosstab: %v", err)
 	}

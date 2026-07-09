@@ -19,7 +19,7 @@ func TestFieldExistsHappyPath(t *testing.T) {
 		},
 	}
 	lookup := validate.NewStaticLookup()
-	lookup.Register("cohort", &validate.PulseSchemaShim{Fields: []validate.FieldShim{
+	lookup.Register("cohort", &validate.SchemaShim{Fields: []validate.FieldShim{
 		{Name: "brand_id", Type: "nominal"},
 		{Name: "score", Type: "quantitative"},
 	}})
@@ -39,7 +39,7 @@ func TestFieldExistsFiresOnUnknownField(t *testing.T) {
 		},
 	}
 	lookup := validate.NewStaticLookup()
-	lookup.Register("cohort", &validate.PulseSchemaShim{Fields: []validate.FieldShim{
+	lookup.Register("cohort", &validate.SchemaShim{Fields: []validate.FieldShim{
 		{Name: "brand_id", Type: "nominal"},
 	}})
 	errs := FieldExists{}.Check(s, lookup)
@@ -71,7 +71,7 @@ func TestFieldExistsAcceptsTransformOutputs(t *testing.T) {
 		},
 	}
 	lookup := validate.NewStaticLookup()
-	lookup.Register("cohort", &validate.PulseSchemaShim{Fields: []validate.FieldShim{
+	lookup.Register("cohort", &validate.SchemaShim{Fields: []validate.FieldShim{
 		{Name: "brand_id", Type: "nominal"},
 		{Name: "score", Type: "quantitative"},
 	}})

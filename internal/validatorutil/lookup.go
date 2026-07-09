@@ -7,7 +7,7 @@
 //
 // BuildLookup walks the spec's data + datasets bindings and registers
 // each under both an in-memory StaticLookup (so inline values feed
-// semantic rules) and a PulseLookup (so on-disk .pulse files feed
+// semantic rules) and a DatasetLookup (so on-disk .pulse files feed
 // field-existence + scale-compat rules). When any Pulse-backed
 // dataset is present the result is a CompositeLookup (Pulse first,
 // Static fallback); pure-inline specs get the StaticLookup alone.
@@ -32,14 +32,14 @@ func BuildLookup(s *spec.Spec, fs vfs.Fs) validate.SchemaLookup {
 		fs = vfs.OsFs()
 	}
 	staticLookup := validate.NewStaticLookup()
-	pulseLookup := validate.NewPulseLookup(resolve.New(nil), fs)
-	usedPulse := false
+	datasetLookup := validate.NewDatasetLookup(resolve.New(nil), fs)
+	usedDataset := false
 
 	registerStatic := func(name string, ds *spec.Data) {
 		if ds == nil {
 			return
 		}
-		shim := &validate.PulseSchemaShim{Name: name}
+		shim := &validate.SchemaShim{Name: name}
 		if len(ds.Values) > 0 {
 			seen := map[string]bool{}
 			for _, row := range ds.Values {
@@ -56,7 +56,7 @@ func BuildLookup(s *spec.Spec, fs vfs.Fs) validate.SchemaLookup {
 		}
 		for _, f := range ds.Fields {
 			shim.Fields = append(shim.Fields, validate.FieldShim{
-				Name: f.Name, Type: pulseStorageToMeasure(f.Type),
+				Name: f.Name, Type: storageToMeasure(f.Type),
 			})
 		}
 		if len(shim.Fields) == 0 {
@@ -65,26 +65,26 @@ func BuildLookup(s *spec.Spec, fs vfs.Fs) validate.SchemaLookup {
 		staticLookup.Register(name, shim)
 	}
 
-	registerPulse := func(name string, ds *spec.Data) {
+	registerDataset := func(name string, ds *spec.Data) {
 		if ds == nil || ds.Source == "" {
 			return
 		}
 		if name != "" {
-			pulseLookup.Register(name, ds.Source)
-			usedPulse = true
+			datasetLookup.Register(name, ds.Source)
+			usedDataset = true
 		}
 		base := strings.TrimSuffix(filepath.Base(ds.Source), filepath.Ext(ds.Source))
 		if base != "" && base != name {
-			pulseLookup.Register(base, ds.Source)
-			usedPulse = true
+			datasetLookup.Register(base, ds.Source)
+			usedDataset = true
 		}
-		pulseLookup.Register(ds.Source, ds.Source)
-		usedPulse = true
+		datasetLookup.Register(ds.Source, ds.Source)
+		usedDataset = true
 	}
 
 	walk := func(name string, ds *spec.Data) {
 		registerStatic(name, ds)
-		registerPulse(name, ds)
+		registerDataset(name, ds)
 	}
 
 	if s != nil {
@@ -96,10 +96,10 @@ func BuildLookup(s *spec.Spec, fs vfs.Fs) validate.SchemaLookup {
 		}
 	}
 
-	if !usedPulse {
+	if !usedDataset {
 		return staticLookup
 	}
-	return validate.NewCompositeLookup(pulseLookup, staticLookup)
+	return validate.NewCompositeLookup(datasetLookup, staticLookup)
 }
 
 // inferMeasureType maps a Go scalar value to a Prism measure-type
@@ -118,10 +118,10 @@ func inferMeasureType(v any) string {
 	}
 }
 
-// pulseStorageToMeasure folds Pulse FieldSpec.Type tokens
+// storageToMeasure folds storage-type tokens
 // (int/float/string/...) into a measure-type bucket. Matches the
 // CLI-side helper byte-for-byte (unknowns fall through to nominal).
-func pulseStorageToMeasure(storage string) string {
+func storageToMeasure(storage string) string {
 	switch strings.ToLower(storage) {
 	case "int", "int8", "int16", "int32", "int64", "float", "float32", "float64":
 		return "quantitative"

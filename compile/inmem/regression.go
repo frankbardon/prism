@@ -122,7 +122,11 @@ func executeRegression(_ context.Context, n *nodes.RegressionNode, ins []*table.
 	}
 
 	hash := hashChain(in.Hash(), n.Fingerprint())
-	return materializeRegression(endpoints, n.OutSchema(), hash)
+	outSchema, err := n.Schema([]*table.Schema{in.Schema()})
+	if err != nil {
+		return nil, err
+	}
+	return materializeRegression(endpoints, outSchema, hash)
 }
 
 // materializeRegression drains the fitted endpoints into a *table.Table
