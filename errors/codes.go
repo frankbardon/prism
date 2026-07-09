@@ -712,16 +712,21 @@ var Codes = map[string]CodeMetadata{
 			`Grouper type defaults to "category" (GROUP_CATEGORY). Date / range / quantile groupers land in a follow-up.`,
 			`Cell aggregate must be a supported client-side alias (count, sum, mean, median, min, max, stdev, variance, q1, q3, ci0, ci1, wmean, ratio). lift + share are not yet wired into crosstab.`,
 		},
-		SeeAlso: []string{"PRISM_SPEC_033", "PRISM_SPEC_034"},
+		SeeAlso: []string{"PRISM_SPEC_034"},
 	},
+	// PRISM_SPEC_033 is RETIRED but retained so `prism errors lookup` and
+	// existing SeeAlso cross-references still resolve. It reported a
+	// crosstab that was not the first transform on the chain. Crosstab now
+	// accepts derived input (it may follow another Prism transform — see
+	// epic E3), so the chain-position constraint no longer exists and this
+	// code is never emitted. Shape violations surface as PRISM_SPEC_032.
 	"PRISM_SPEC_033": {
 		Code:    "PRISM_SPEC_033",
-		Message: `crosstab transform must consume a source ref; it cannot follow a Prism transform.`,
+		Message: `Retired code: crosstab now accepts derived input, so the "must be the first transform" constraint was removed.`,
 		Fixups: []string{
-			`Place ` + "`crosstab`" + ` as the FIRST transform on the chain, immediately downstream of ` + "`data`" + `. It reads the materialised source rows directly and cannot follow another transform.`,
-			`If you need to filter rows before the crosstab, push the filter into the spec via ` + "`crosstab.cell`" + `'s aggregate options, or shrink the rows upstream in the host that produces the inline ` + "`values`" + ` / DataResolver dataset.`,
+			`This code is no longer emitted. A ` + "`crosstab`" + ` transform may follow another transform (e.g. ` + "`filter`" + `→` + "`crosstab`" + `); it consumes the upstream materialised rows. Shape problems (missing rows/columns/cell.aggregate) surface as PRISM_SPEC_032.`,
 		},
-		SeeAlso: []string{"PRISM_SPEC_032", "PRISM_PLAN_CROSSTAB_REQUIRES_SOURCE"},
+		SeeAlso: []string{"PRISM_SPEC_032"},
 	},
 	"PRISM_SPEC_034": {
 		Code:    "PRISM_SPEC_034",
@@ -732,14 +737,20 @@ var Codes = map[string]CodeMetadata{
 		},
 		SeeAlso: []string{"PRISM_SPEC_032"},
 	},
+	// PRISM_PLAN_CROSSTAB_REQUIRES_SOURCE is RETIRED but retained so
+	// `prism errors lookup` and existing SeeAlso cross-references still
+	// resolve. It reported a crosstab plan node whose immediate input was
+	// not a SourceNode. Crosstab gained derived-input support (epic E3):
+	// the build now accepts any upstream node's materialised table, so
+	// there is no source-linkage precondition and this code is never
+	// emitted.
 	"PRISM_PLAN_CROSSTAB_REQUIRES_SOURCE": {
 		Code:    "PRISM_PLAN_CROSSTAB_REQUIRES_SOURCE",
-		Message: `crosstab plan node could not link to a SourceNode upstream.`,
+		Message: `Retired code: crosstab now accepts derived input, so it no longer requires a SourceNode as its immediate build input.`,
 		Fixups: []string{
-			`Crosstab reads the materialised source rows directly — there is no in-memory transform handoff. The build must see a SourceNode as the immediate input.`,
-			`Check that the spec places ` + "`crosstab`" + ` as the first transform on a top-level dataset, not on a derived alias.`,
+			`This code is no longer emitted. The crosstab plan node consumes the upstream node's materialised table.Table whether it is a source, an inline dataset, or a derived transform output. Compute failures surface as PRISM_PLAN_CROSSTAB_PROCESS.`,
 		},
-		SeeAlso: []string{"PRISM_SPEC_033"},
+		SeeAlso: []string{"PRISM_PLAN_CROSSTAB_PROCESS"},
 	},
 	"PRISM_PLAN_CROSSTAB_PROCESS": {
 		Code:    "PRISM_PLAN_CROSSTAB_PROCESS",
@@ -751,21 +762,27 @@ var Codes = map[string]CodeMetadata{
 	},
 	"PRISM_SPEC_035": {
 		Code:    "PRISM_SPEC_035",
-		Message: `regression transform must be first and declare target + predictors (at {{.Path}}).`,
+		Message: `regression transform must declare target + at least one predictor (at {{.Path}}).`,
 		Fixups: []string{
-			`A ` + "`regression`" + ` transform fits the materialised source rows directly, so it must be the first transform on the chain — not chained after a Prism filter / aggregate / join.`,
 			`Declare both ` + "`target`" + ` (the dependent variable) and a non-empty ` + "`predictors`" + ` list, e.g. ` + "`{regression: {target: \"sales\", predictors: [\"spend\"], as: \"fitted\"}}`" + `.`,
+			`A ` + "`regression`" + ` transform may follow another transform (e.g. ` + "`filter`" + `→` + "`regression`" + `); it fits the upstream materialised rows and no longer needs to be the first transform.`,
 		},
-		SeeAlso: []string{"PRISM_PLAN_REGRESSION_REQUIRES_SOURCE"},
+		SeeAlso: []string{"PRISM_PLAN_REGRESSION_PROCESS"},
 	},
+	// PRISM_PLAN_REGRESSION_REQUIRES_SOURCE is RETIRED but retained so
+	// `prism errors lookup` and existing SeeAlso cross-references still
+	// resolve. It reported a regression plan node whose immediate input
+	// was not a SourceNode. Regression gained derived-input support (epic
+	// E3): the build now accepts any upstream node's materialised table,
+	// so there is no source-linkage precondition and this code is never
+	// emitted.
 	"PRISM_PLAN_REGRESSION_REQUIRES_SOURCE": {
 		Code:    "PRISM_PLAN_REGRESSION_REQUIRES_SOURCE",
-		Message: `regression plan node could not link to a SourceNode upstream.`,
+		Message: `Retired code: regression now accepts derived input, so it no longer requires a SourceNode as its immediate build input.`,
 		Fixups: []string{
-			`Regression fits the materialised source rows directly — there is no in-memory transform handoff. The build must see a SourceNode as the immediate input.`,
-			`Check that the spec places ` + "`regression`" + ` as the first transform on a top-level dataset, not on a derived alias.`,
+			`This code is no longer emitted. The regression plan node fits the upstream node's materialised table.Table whether it is a source, an inline dataset, or a derived transform output. Fit failures surface as PRISM_PLAN_REGRESSION_PROCESS.`,
 		},
-		SeeAlso: []string{"PRISM_SPEC_035"},
+		SeeAlso: []string{"PRISM_PLAN_REGRESSION_PROCESS"},
 	},
 	"PRISM_PLAN_REGRESSION_PROCESS": {
 		Code:    "PRISM_PLAN_REGRESSION_PROCESS",

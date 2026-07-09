@@ -5,11 +5,11 @@ package spec
 // recomputes the margin axes, applies the configured normalisation, and
 // returns long-form rows ready for a heatmap.
 //
-// Constraint: must be the first transform in the chain (or the only
-// transform). Crosstab consumes the source table directly — it is not
-// composable after a prior transform in v1. The plan builder enforces
-// this via PRISM_PLAN_CROSSTAB_REQUIRES_SOURCE; the validate rule
-// signals it statically via PRISM_SPEC_032.
+// Crosstab accepts derived input: it may be the first transform on the
+// chain or follow another transform (e.g. filter → crosstab), consuming
+// the upstream node's materialised rows. The validate rule PRISM_SPEC_032
+// checks its shape (rows / columns / cell.aggregate) statically before
+// any I/O.
 type CrosstabTransform struct {
 	Crosstab CrosstabBody `json:"crosstab"`
 	Data     string       `json:"data,omitempty"`

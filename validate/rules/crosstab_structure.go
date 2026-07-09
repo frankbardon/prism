@@ -8,26 +8,30 @@ import (
 	"github.com/frankbardon/prism/validate"
 )
 
-// CrosstabPosition implements PRISM_SPEC_032 / PRISM_SPEC_033:
+// CrosstabStructure implements PRISM_SPEC_032 / PRISM_SPEC_034 — the
+// static shape checks for a crosstab transform:
 //
 //   - PRISM_SPEC_032: a crosstab transform must declare rows[],
 //     columns[], cell.aggregate (and cell.field unless aggregate is
-//     "count"). The plan node enforces the same at build time; the
-//     validate rule surfaces the problem statically before any I/O.
-//   - PRISM_SPEC_033: a crosstab transform may only appear as the
-//     first transform on a chain — v1 crosstab pivots a materialised
-//     leaf table directly (a dataset ref or inline `data.values`), so
-//     chaining it after a Prism filter / aggregate / join is not
-//     supported.
-type CrosstabPosition struct{}
+//     "count"), plus valid grouper kinds/periods and overlay kinds/axes.
+//     The plan node enforces the same at build time; the validate rule
+//     surfaces the problem statically before any I/O.
+//   - PRISM_SPEC_034: crosstab.normalize must be one of
+//     none/row/column/total.
+//
+// It no longer enforces a chain-position constraint: crosstab accepts
+// derived input (it may follow another transform), so the former
+// "must be the first transform" rule (PRISM_SPEC_033) was retired when
+// crosstab gained derived-input support.
+type CrosstabStructure struct{}
 
-// Code returns PRISM_SPEC_032 (the broader of the two; PRISM_SPEC_033
-// fires only when the position rule trips).
-func (CrosstabPosition) Code() string { return "PRISM_SPEC_032" }
+// Code returns PRISM_SPEC_032 (the broader of the two shape codes;
+// PRISM_SPEC_034 fires only for a bad normalize value).
+func (CrosstabStructure) Code() string { return "PRISM_SPEC_032" }
 
-// Check walks every spec node and reports crosstab transforms that
-// fail position or shape rules.
-func (CrosstabPosition) Check(s *spec.Spec, _ validate.SchemaLookup) []*errors.AppError {
+// Check walks every spec node and reports crosstab transforms that fail
+// the shape rules.
+func (CrosstabStructure) Check(s *spec.Spec, _ validate.SchemaLookup) []*errors.AppError {
 	if s == nil {
 		return nil
 	}
@@ -36,8 +40,8 @@ func (CrosstabPosition) Check(s *spec.Spec, _ validate.SchemaLookup) []*errors.A
 	return out
 }
 
-// crosstabDatePeriods mirrors Pulse's GROUP_DATE component set
-// (processing/grouper.go). Empty period defaults to month.
+// crosstabDatePeriods mirrors the GROUP_DATE component set. Empty period
+// defaults to month.
 var crosstabDatePeriods = map[string]bool{
 	"year": true, "quarter": true, "month": true,
 	"week": true, "day": true, "day_of_week": true,
@@ -113,19 +117,8 @@ func walkCrosstab(s *spec.Spec, prefix string, out *[]*errors.AppError) {
 			continue
 		}
 		path := fmt.Sprintf("%stransform[%d].crosstab", prefix, i)
-		// Position: must be the first transform on the chain (or
-		// reference a registered dataset via its `data` alias). The
-		// crosstab consumes a materialised leaf table — a dataset ref
-		// (SourceNode) or inline `data.values` (InlineNode) — so it may
-		// not chain after a prior Prism transform's derived output.
-		if i > 0 && t.Crosstab.Data == "" {
-			*out = append(*out, errors.New(
-				"PRISM_SPEC_033",
-				fmt.Sprintf("crosstab at %s must be the first transform on the chain.", path),
-				map[string]any{"Path": path, "Index": i},
-			))
-		}
-		// Shape: rows + columns + cell.aggregate required.
+		// Shape: rows + columns + cell.aggregate required. Crosstab now
+		// accepts derived input, so there is no chain-position check.
 		if len(t.Crosstab.Crosstab.Rows) == 0 {
 			*out = append(*out, errors.New(
 				"PRISM_SPEC_032",

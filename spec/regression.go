@@ -7,12 +7,11 @@ package spec
 // slope + intercept and the endpoints ŷ = β₀ + β·x at the predictor
 // min/max.
 //
-// Constraint: must be the first transform in the chain (or the only
-// transform). Like crosstab, the fit runs against the source table
-// directly, so it cannot consume the output of a prior Prism transform.
-// The plan builder enforces this via
-// PRISM_PLAN_REGRESSION_REQUIRES_SOURCE; the validate rule signals it
-// statically via PRISM_SPEC_035.
+// Regression accepts derived input: like crosstab, it may be the first
+// transform on the chain or follow another transform (e.g. filter →
+// regression), fitting the upstream node's materialised rows. The
+// validate rule PRISM_SPEC_035 checks its shape (target + at least one
+// predictor) statically before any I/O.
 //
 // The output table is two rows — (min(x), ŷ) and (max(x), ŷ) — over the
 // {predictor, fitted} schema. Because every OLS fitted point is
