@@ -1,9 +1,9 @@
-// probe-runner.mjs — parametric wasm driver for the E5-S2 TinyGo↔Go
-// float-parity harness. Unlike main.mjs (which is hardwired to
-// bin/prism.wasm), this takes the wasm binary + its MATCHING
-// wasm_exec.js as arguments so the caller can point it at either a
-// standard-Go build or a TinyGo build. TinyGo ships its own
-// wasm_exec.js that is NOT byte-compatible with Go's, so the loader
+// probe-runner.mjs — parametric wasm driver for the TinyGo↔host
+// float/SVG parity harness. It takes the wasm binary + its MATCHING
+// wasm_exec.js as arguments rather than hardwiring a path, so the caller
+// points it at a freshly built TinyGo module (TinyGo is the only wasm
+// build; the standard-Go js/wasm target was retired). TinyGo ships its
+// own wasm_exec.js that is NOT byte-compatible with Go's, so the loader
 // must always be paired with the binary that produced it.
 //
 // Two modes:

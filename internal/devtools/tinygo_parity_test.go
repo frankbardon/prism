@@ -2,6 +2,7 @@ package devtools
 
 import (
 	"bytes"
+	"fmt"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -40,14 +41,16 @@ var tinyGoParityFixtures = []string{
 }
 
 // TestTinyGoWasmSVGParity proves the TinyGo-built wasm renderer emits
-// byte-identical SVG to the standard-Go renderer for the fixture
-// corpus. This guards the E5-S2 top risk: TinyGo ships its own strconv,
-// and every SVG coordinate funnels through render.FormatFloat
-// (render/precision.go). If TinyGo rounded or stringified floats
-// differently, the coordinate goldens would drift. The check builds a
-// TinyGo js/wasm module from ./cmd/prismwasm, renders each fixture's
-// scene.json under Node with TinyGo's matching wasm_exec.js, and diffs
-// the SVG against the committed standard-Go go.svg.
+// byte-identical SVG to the host Go renderer for the fixture corpus.
+// TinyGo is now the sole wasm build (the standard-Go js/wasm target was
+// retired), so this is the only cross-toolchain SVG parity check. It
+// guards the top TinyGo risk: TinyGo ships its own strconv, and every
+// SVG coordinate funnels through render.FormatFloat (render/precision.go).
+// If TinyGo rounded or stringified floats differently, the coordinate
+// goldens would drift. The check builds a TinyGo js/wasm module from
+// ./cmd/prismwasm, renders each fixture's scene.json under Node with
+// TinyGo's matching wasm_exec.js, and diffs the SVG against the committed
+// go.svg (the host-Go reference produced by `prism plot`).
 //
 // Opt-in (mirrors PRISM_CROSS_IMPL) because it needs node + tinygo:
 //   - PRISM_CROSS_IMPL_TINYGO must be "1"
@@ -101,12 +104,14 @@ func TestTinyGoWasmSVGParity(t *testing.T) {
 
 // TestTinyGoFloatFormatParity confirms render.FormatFloat
 // (render/precision.go's 3-decimal quantization) produces identical
-// output on the host, in a standard-Go wasm module, and in a TinyGo
-// wasm module for a corpus that stresses half-way rounding, trailing-
-// zero trimming, negative zero, magnitude extremes, and the non-finite
-// guards. This is the targeted companion to the whole-SVG render diff:
-// it pins the exact funnel every coordinate flows through, over edge
-// values a fixture render may never hit.
+// output on the host and in a TinyGo wasm module for a corpus that
+// stresses half-way rounding, trailing-zero trimming, negative zero,
+// magnitude extremes, and the non-finite guards. TinyGo is now the only
+// wasm build, so host↔TinyGo is the sole float-format parity axis (the
+// retired standard-Go wasm probe is gone). This is the targeted
+// companion to the whole-SVG render diff: it pins the exact funnel every
+// coordinate flows through, over edge values a fixture render may never
+// hit.
 //
 // Same opt-in gate as TestTinyGoWasmSVGParity.
 func TestTinyGoFloatFormatParity(t *testing.T) {
@@ -116,21 +121,11 @@ func TestTinyGoFloatFormatParity(t *testing.T) {
 	// Host reference: the same code path, compiled natively.
 	want := floatcorpus.Format()
 
-	goWasm, goExec := buildGoWasm(t, root, "./internal/devtools/floatprobe")
 	tinyWasm, tinyExec := buildTinyGoWasm(t, root, "./internal/devtools/floatprobe")
-
-	goOut := string(runNodeProbe(t, root, runner, "global", goWasm, goExec, "prismFloatProbe"))
-	if goOut != want {
-		t.Errorf("standard-Go wasm float format diverged from host\nhost:\n%s\nwasm:\n%s", want, goOut)
-	}
 
 	tinyOut := string(runNodeProbe(t, root, runner, "global", tinyWasm, tinyExec, "prismFloatProbe"))
 	if tinyOut != want {
 		t.Errorf("TinyGo wasm float format diverged from host\nhost:\n%s\ntinygo:\n%s", want, tinyOut)
-	}
-
-	if goOut != tinyOut {
-		t.Errorf("standard-Go wasm and TinyGo wasm float format disagree\ngo:\n%s\ntinygo:\n%s", goOut, tinyOut)
 	}
 }
 
@@ -192,30 +187,6 @@ func buildTinyGoWasm(t *testing.T, root, pkg string) (wasmPath, execPath string)
 	return wasmPath, execPath
 }
 
-// buildGoWasm compiles pkg to a standard-Go js/wasm module in a fresh
-// temp dir and copies the Go toolchain's paired wasm_exec.js.
-func buildGoWasm(t *testing.T, root, pkg string) (wasmPath, execPath string) {
-	t.Helper()
-	dir := t.TempDir()
-	wasmPath = filepath.Join(dir, "probe.wasm")
-
-	build := exec.Command("go", "build", "-trimpath", "-buildvcs=false", "-ldflags=-s -w", "-o", wasmPath, pkg)
-	build.Dir = root
-	build.Env = append(os.Environ(), "GOOS=js", "GOARCH=wasm", "CGO_ENABLED=0")
-	if out, err := build.CombinedOutput(); err != nil {
-		t.Fatalf("go build (js/wasm) %s: %v\n%s", pkg, err, out)
-	}
-
-	goRoot := strings.TrimSpace(runOut(t, root, "go", "env", "GOROOT"))
-	src := filepath.Join(goRoot, "lib", "wasm", "wasm_exec.js")
-	if _, err := os.Stat(src); err != nil {
-		src = filepath.Join(goRoot, "misc", "wasm", "wasm_exec.js")
-	}
-	execPath = filepath.Join(dir, "wasm_exec.js")
-	copyFile(t, src, execPath)
-	return wasmPath, execPath
-}
-
 // runNodeProbe invokes probe-runner.mjs and returns its stdout bytes.
 func runNodeProbe(t *testing.T, root, runner, mode, wasmPath, execPath, arg string) []byte {
 	t.Helper()
@@ -250,6 +221,60 @@ func copyFile(t *testing.T, src, dst string) {
 	if err := os.WriteFile(dst, data, 0o644); err != nil {
 		t.Fatalf("write %s: %v", dst, err)
 	}
+}
+
+// regenerateGoInputs shells out to `prism scene` + `prism plot` to
+// refresh the host-side cross-impl inputs (scene.json + go.svg). Called
+// on auto-bootstrap when a fixture's inputs are missing. The go.svg it
+// writes is the host-Go reference the TinyGo wasm SVG is diffed against.
+//
+// (Relocated from the retired cross_impl_test.go, whose host-vs-standard-
+// Go-wasm harness was removed when the standard-Go wasm build was
+// dropped; the TinyGo parity test is now the sole consumer.)
+func regenerateGoInputs(root, prismBin, specPath, scenePath, goSVGPath string) error {
+	if _, err := os.Stat(specPath); err != nil {
+		return fmt.Errorf("missing spec %s: %w", specPath, err)
+	}
+	// scene.json
+	sceneCmd := exec.Command(prismBin, "scene", "--out", scenePath, specPath)
+	sceneCmd.Dir = root
+	if out, err := sceneCmd.CombinedOutput(); err != nil {
+		return fmt.Errorf("prism scene: %w\n%s", err, out)
+	}
+	// go.svg
+	plotCmd := exec.Command(prismBin, "plot", "--out", goSVGPath, specPath)
+	plotCmd.Dir = root
+	if out, err := plotCmd.CombinedOutput(); err != nil {
+		return fmt.Errorf("prism plot: %w\n%s", err, out)
+	}
+	return nil
+}
+
+// diffContext returns the bytes surrounding the first position where a
+// and b differ, so a parity failure message locates the drift without
+// dumping the entire SVG. (Relocated from the retired cross_impl_test.go.)
+func diffContext(a, b []byte, n int) string {
+	for i := 0; i < len(a) && i < len(b); i++ {
+		if a[i] != b[i] {
+			start := i - n
+			if start < 0 {
+				start = 0
+			}
+			endA := i + n
+			if endA > len(a) {
+				endA = len(a)
+			}
+			endB := i + n
+			if endB > len(b) {
+				endB = len(b)
+			}
+			return fmt.Sprintf("first diff at byte %d:\n  go: %q\n  tinygo: %q", i, a[start:endA], b[start:endB])
+		}
+	}
+	if len(a) != len(b) {
+		return fmt.Sprintf("equal prefix; lengths differ: go=%d tinygo=%d", len(a), len(b))
+	}
+	return "(no diff?)"
 }
 
 // itoa avoids pulling strconv into the test's top-level imports just for

@@ -8,9 +8,9 @@ import (
 	"testing"
 )
 
-// crossImplPreflight enforces the same skip conditions as
-// TestCrossImplSVGParity. Returns the absolute path to `node` on
-// success.
+// crossImplPreflight enforces the PRISM_CROSS_IMPL opt-in gate + node/
+// happy-dom presence shared by the selection + web-component harnesses.
+// Returns the absolute path to `node` on success.
 func crossImplPreflight(t *testing.T) (root, nodePath string) {
 	t.Helper()
 	if os.Getenv("PRISM_CROSS_IMPL") != "1" {
