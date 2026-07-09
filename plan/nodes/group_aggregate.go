@@ -5,8 +5,6 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/frankbardon/pulse/encoding"
-
 	"github.com/frankbardon/prism/plan"
 	"github.com/frankbardon/prism/table"
 )
@@ -53,12 +51,12 @@ func (n *GroupAggregateNode) Inputs() []plan.NodeID { return []plan.NodeID{n.inp
 // input down to groupby fields plus one F64 field per AggOp named by
 // op.As. Result types come from aggregateOutputType (every shipped op
 // is scalar F64 today).
-func (n *GroupAggregateNode) Schema(in []*encoding.Schema) (*encoding.Schema, error) {
+func (n *GroupAggregateNode) Schema(in []*table.Schema) (*table.Schema, error) {
 	s, err := requireSingleInput("GroupAggregateNode", in)
 	if err != nil {
 		return nil, err
 	}
-	out := &encoding.Schema{Fields: make([]encoding.Field, 0, len(n.groupby)+len(n.aggs))}
+	out := &table.Schema{Fields: make([]table.Field, 0, len(n.groupby)+len(n.aggs))}
 	if len(n.groupby) > 0 {
 		gb, err := projectFields(s, n.groupby)
 		if err != nil {
@@ -70,7 +68,7 @@ func (n *GroupAggregateNode) Schema(in []*encoding.Schema) (*encoding.Schema, er
 		if a.As == "" {
 			return nil, fmt.Errorf("GroupAggregateNode: aggregate %s missing 'as' name", a.Op)
 		}
-		out.Fields = append(out.Fields, encoding.Field{Name: a.As, Type: aggregateOutputType(a.Op)})
+		out.Fields = append(out.Fields, table.Field{Name: a.As, Type: aggregateOutputType(a.Op)})
 	}
 	return out, nil
 }

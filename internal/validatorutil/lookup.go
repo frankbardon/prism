@@ -17,8 +17,7 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/spf13/afero"
-
+	"github.com/frankbardon/prism/internal/vfs"
 	"github.com/frankbardon/prism/resolve"
 	"github.com/frankbardon/prism/spec"
 	"github.com/frankbardon/prism/validate"
@@ -28,9 +27,9 @@ import (
 // default is afero.NewOsFs(). The function never returns nil — a spec
 // with no data still gets an empty StaticLookup so callers do not
 // nil-check.
-func BuildLookup(s *spec.Spec, fs afero.Fs) validate.SchemaLookup {
+func BuildLookup(s *spec.Spec, fs vfs.Fs) validate.SchemaLookup {
 	if fs == nil {
-		fs = afero.NewOsFs()
+		fs = vfs.OsFs()
 	}
 	staticLookup := validate.NewStaticLookup()
 	pulseLookup := validate.NewPulseLookup(resolve.New(nil), fs)

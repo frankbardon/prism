@@ -1,19 +1,210 @@
 {
   "$schema": "urn:prism:schema:v1:spec",
   "title": "Revenue share-of-row by region x quarter (crosstab overlay)",
-  "data": {"source": "testdata/cohorts/sales.pulse"},
-  "transform": [{
-    "crosstab": {
-      "rows":    [{"field": "region"}],
-      "columns": [{"field": "quarter"}],
-      "cell":    {"aggregate": "sum", "field": "revenue", "as": "revenue"},
-      "overlays": [{"kind": "share_of_row", "as": "row_share"}]
+  "data": {
+    "values": [
+      {
+        "region": "north",
+        "quarter": "Q1",
+        "revenue": 14000
+      },
+      {
+        "region": "north",
+        "quarter": "Q1",
+        "revenue": 14450
+      },
+      {
+        "region": "north",
+        "quarter": "Q2",
+        "revenue": 14800
+      },
+      {
+        "region": "north",
+        "quarter": "Q2",
+        "revenue": 15250
+      },
+      {
+        "region": "north",
+        "quarter": "Q3",
+        "revenue": 15600
+      },
+      {
+        "region": "north",
+        "quarter": "Q3",
+        "revenue": 16050
+      },
+      {
+        "region": "north",
+        "quarter": "Q4",
+        "revenue": 16400
+      },
+      {
+        "region": "north",
+        "quarter": "Q4",
+        "revenue": 16850
+      },
+      {
+        "region": "south",
+        "quarter": "Q1",
+        "revenue": 10880
+      },
+      {
+        "region": "south",
+        "quarter": "Q1",
+        "revenue": 11330
+      },
+      {
+        "region": "south",
+        "quarter": "Q2",
+        "revenue": 11680
+      },
+      {
+        "region": "south",
+        "quarter": "Q2",
+        "revenue": 12130
+      },
+      {
+        "region": "south",
+        "quarter": "Q3",
+        "revenue": 12480
+      },
+      {
+        "region": "south",
+        "quarter": "Q3",
+        "revenue": 12930
+      },
+      {
+        "region": "south",
+        "quarter": "Q4",
+        "revenue": 13280
+      },
+      {
+        "region": "south",
+        "quarter": "Q4",
+        "revenue": 13730
+      },
+      {
+        "region": "east",
+        "quarter": "Q1",
+        "revenue": 12260
+      },
+      {
+        "region": "east",
+        "quarter": "Q1",
+        "revenue": 12710
+      },
+      {
+        "region": "east",
+        "quarter": "Q2",
+        "revenue": 13060
+      },
+      {
+        "region": "east",
+        "quarter": "Q2",
+        "revenue": 13510
+      },
+      {
+        "region": "east",
+        "quarter": "Q3",
+        "revenue": 13860
+      },
+      {
+        "region": "east",
+        "quarter": "Q3",
+        "revenue": 14310
+      },
+      {
+        "region": "east",
+        "quarter": "Q4",
+        "revenue": 14660
+      },
+      {
+        "region": "east",
+        "quarter": "Q4",
+        "revenue": 15110
+      },
+      {
+        "region": "west",
+        "quarter": "Q1",
+        "revenue": 8640
+      },
+      {
+        "region": "west",
+        "quarter": "Q1",
+        "revenue": 9090
+      },
+      {
+        "region": "west",
+        "quarter": "Q2",
+        "revenue": 9440
+      },
+      {
+        "region": "west",
+        "quarter": "Q2",
+        "revenue": 9890
+      },
+      {
+        "region": "west",
+        "quarter": "Q3",
+        "revenue": 10240
+      },
+      {
+        "region": "west",
+        "quarter": "Q3",
+        "revenue": 10690
+      },
+      {
+        "region": "west",
+        "quarter": "Q4",
+        "revenue": 11040
+      },
+      {
+        "region": "west",
+        "quarter": "Q4",
+        "revenue": 11490
+      }
+    ]
+  },
+  "transform": [
+    {
+      "crosstab": {
+        "rows": [
+          {
+            "field": "region"
+          }
+        ],
+        "columns": [
+          {
+            "field": "quarter"
+          }
+        ],
+        "cell": {
+          "aggregate": "sum",
+          "field": "revenue",
+          "as": "revenue"
+        },
+        "overlays": [
+          {
+            "kind": "share_of_row",
+            "as": "row_share"
+          }
+        ]
+      }
     }
-  }],
+  ],
   "mark": "heatmap",
   "encoding": {
-    "x":     {"field": "quarter", "type": "nominal"},
-    "y":     {"field": "region",  "type": "nominal"},
-    "color": {"field": "row_share", "type": "quantitative"}
+    "x": {
+      "field": "quarter",
+      "type": "nominal"
+    },
+    "y": {
+      "field": "region",
+      "type": "nominal"
+    },
+    "color": {
+      "field": "row_share",
+      "type": "quantitative"
+    }
   }
 }

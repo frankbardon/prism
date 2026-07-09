@@ -70,8 +70,27 @@ func main() {
 
 	// main returning unloads the WASM module; block forever so the
 	// exported funcs remain callable for the page lifetime.
-	select {}
+	//
+	// The block is a receive on keepAlive, not `select {}` nor a receive
+	// on an inline channel: TinyGo's compiler folds a *provably*-
+	// senderless block into runtime.deadlock(), which panics under the
+	// js/wasm asyncify scheduler. The close below — reachable but taken
+	// only when the host sets globalThis.__prismHalt (it never does in
+	// normal operation) — gives keepAlive a reachable sender, so TinyGo
+	// keeps the receive as a real channel park. The parked main goroutine
+	// leaves the run queue, the asyncify scheduler returns to the JS event
+	// loop, and the js.Func callbacks stay invocable. Standard Go blocks
+	// here identically (the branch is simply not taken).
+	if js.Global().Get("__prismHalt").Truthy() {
+		close(keepAlive)
+	}
+	<-keepAlive
 }
+
+// keepAlive parks main for the module lifetime. Package-level with the
+// reachable close() in main so TinyGo does not fold the `<-keepAlive`
+// receive into a deadlock panic (see the note in main).
+var keepAlive = make(chan struct{})
 
 // versionFunc returns the Prism version string verbatim.
 func versionFunc(_ js.Value, _ []js.Value) any { return versionString }
@@ -199,10 +218,10 @@ func doPlan(specJSON, datasetsJSON string) (string, error) {
 }
 
 // executeFunc shape: prism.execute(specJSON, datasetsJSON?, optsJSON?)
-// → SceneDoc JSON. The browser passes a dataset alias map (alias →
-// URL) so the fetch-backed Fs knows where to load each `.pulse`
-// reference. optsJSON carries the optional encode knobs
-// {width, height, theme}.
+// → SceneDoc JSON. Data enters via inline `data.values` in the spec or
+// the JS-side resolver registered through prism.setDataResolver; the
+// optional datasetsJSON maps a `data.name` alias to a backing ref.
+// optsJSON carries the optional encode knobs {width, height, theme}.
 func executeFunc(_ js.Value, args []js.Value) any {
 	if len(args) < 1 || args[0].IsUndefined() {
 		return errEnvelope("PRISM_WASM_001", "execute(specJSON, datasetsJSON?, optsJSON?): missing specJSON argument")
@@ -572,12 +591,13 @@ func newBuildOptions(datasetsJSON string) (build.Options, error) {
 			reg[k] = v
 		}
 	}
+	dr := wasmDataResolver{}
 	return build.Options{
 		FS:              resolve.NewFetchFs(),
-		Resolver:        resolve.New(nil),
+		Resolver:        resolve.NewWithData(nil, dr),
 		Backend:         inmem.New(),
 		DatasetRegistry: reg,
-		DataResolver:    wasmDataResolver{},
+		DataResolver:    dr,
 	}, nil
 }
 

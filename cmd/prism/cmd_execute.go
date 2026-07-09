@@ -14,7 +14,6 @@ import (
 	prismerrors "github.com/frankbardon/prism/errors"
 	"github.com/frankbardon/prism/plan"
 	"github.com/frankbardon/prism/plan/build"
-	"github.com/frankbardon/prism/resolve"
 	"github.com/frankbardon/prism/spec"
 	"github.com/frankbardon/prism/table"
 )
@@ -46,6 +45,7 @@ func executeCommand() *cli.Command {
 				Usage: "Stop on the first node error instead of skipping dependents",
 			},
 			datasetsConfigFlag(),
+			dataFlag(),
 		},
 		Action: runExecute,
 	}
@@ -74,11 +74,16 @@ func runExecute(ctx context.Context, cmd *cli.Command) error {
 	if err != nil {
 		return cli.Exit(fmt.Sprintf("load --datasets-config: %v", err), 2)
 	}
+	dataResolver, err := loadDataResolver(cmd)
+	if err != nil {
+		return cli.Exit(fmt.Sprintf("load --data: %v", err), 2)
+	}
 	buildOpts := build.Options{
 		FS:              afero.NewOsFs(),
-		Resolver:        resolve.New(nil),
+		Resolver:        hostResolver(dataResolver),
 		Backend:         inmem.New(),
 		DatasetRegistry: registry,
+		DataResolver:    dataResolver,
 	}
 	execOpts := plan.ExecOpts{
 		Workers:      cmd.Int("workers"),

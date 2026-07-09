@@ -11,7 +11,7 @@
     ]
   },
   "transform": [
-    {"calculate": "revenue / users", "as": "arpu"}
+    {"calculate": {"op": "div", "operands": [{"field": "revenue"}, {"field": "users"}]}, "as": "arpu"}
   ],
   "mark": {"type": "bar", "corner_radius": 4},
   "encoding": {

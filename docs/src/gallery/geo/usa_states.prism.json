@@ -3,7 +3,7 @@
   "title": "US states (admin-1)",
   "data": {"feature_collection": {"tier": "admin1-50m"}},
   "transform": [
-    {"filter": "parent == \"USA\""}
+    {"filter": {"op": "eq", "field": "parent", "value": "USA"}}
   ],
   "mark": "geoshape",
   "projection": {"type": "albers_usa", "tier": "admin1-50m"},

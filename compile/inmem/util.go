@@ -4,53 +4,14 @@ import (
 	"fmt"
 
 	"github.com/cespare/xxhash/v2"
-	"github.com/frankbardon/pulse/encoding"
 
 	"github.com/frankbardon/prism/table"
 )
 
-// rowValueAt fetches column[i] as a normalized any. Used by Filter /
-// Calculate to populate per-row expression environments. Returns nil
-// when the column is absent.
-func rowValueAt(tbl *table.Table, name string, i int) any {
-	col, ok := tbl.Column(name)
-	if !ok {
-		return nil
-	}
-	return col.ValueAt(i)
-}
-
-// buildEnv returns the per-row environment map every expression
-// evaluation uses. Field values come from the input table; an
-// `__row__` sentinel carries the row index for error context.
-func buildEnv(tbl *table.Table, i int) map[string]any {
-	out := make(map[string]any, len(tbl.FieldNames())+1)
-	for _, name := range tbl.FieldNames() {
-		out[name] = rowValueAt(tbl, name, i)
-	}
-	out["__row__"] = i
-	return out
-}
-
-// envHasNull reports whether any field in env (excluding the
-// __row__ sentinel) is nil. Used by executeFilter / executeCalculate
-// to short-circuit rows with null inputs (PRISM_WARN_NULL_DROPPED).
-func envHasNull(env map[string]any) bool {
-	for k, v := range env {
-		if k == "__row__" {
-			continue
-		}
-		if v == nil {
-			return true
-		}
-	}
-	return false
-}
-
 // cloneSchemaShallow returns a shallow copy of s so callers can
 // extend Fields without mutating the input schema.
-func cloneSchemaShallow(s *encoding.Schema) *encoding.Schema {
-	out := &encoding.Schema{Fields: make([]encoding.Field, len(s.Fields))}
+func cloneSchemaShallow(s *table.Schema) *table.Schema {
+	out := &table.Schema{Fields: make([]table.Field, len(s.Fields))}
 	copy(out.Fields, s.Fields)
 	return out
 }
@@ -116,6 +77,23 @@ func pickRowsByMask(col table.Column, mask []bool) table.Column {
 			}
 		}
 		return out
+	case table.NullableColumn:
+		inner := pickRowsByMask(c.Inner, mask)
+		if c.Nulls == nil {
+			return table.NullableColumn{Inner: inner}
+		}
+		nb := table.NewNullBitmap(keep)
+		j := 0
+		for i, m := range mask {
+			if !m {
+				continue
+			}
+			if c.Nulls.IsNull(i) {
+				nb.Set(j)
+			}
+			j++
+		}
+		return table.NullableColumn{Inner: inner, Nulls: nb}
 	}
 	return col
 }
@@ -155,6 +133,18 @@ func pickRowsByIndex(col table.Column, idx []int) table.Column {
 			out[i] = c[k]
 		}
 		return out
+	case table.NullableColumn:
+		inner := pickRowsByIndex(c.Inner, idx)
+		if c.Nulls == nil {
+			return table.NullableColumn{Inner: inner}
+		}
+		nb := table.NewNullBitmap(len(idx))
+		for j, k := range idx {
+			if c.Nulls.IsNull(k) {
+				nb.Set(j)
+			}
+		}
+		return table.NullableColumn{Inner: inner, Nulls: nb}
 	}
 	return col
 }

@@ -12,9 +12,9 @@ bundle:
 
 ```
 <out-dir>/
-├── prism.wasm           # cmd/prismwasm binary (GOOS=js GOARCH=wasm), ~69 MiB raw
-├── prism.wasm.gz        # gzipped binary (~12 MiB) — what the loader fetches
-├── wasm_exec.js         # toolchain-pinned WASM loader (Go runtime)
+├── prism.wasm           # cmd/prismwasm binary (GOOS=js GOARCH=wasm); ~14.5 MiB raw (Go) / ~6.9 MiB (TinyGo)
+├── prism.wasm.gz        # gzipped binary (~3.5 MiB Go / ~2.2 MiB TinyGo) — what the loader fetches
+├── wasm_exec.js         # toolchain-pinned WASM loader (matches the build toolchain)
 ├── prism.mjs            # thin bootstrapper + SceneHandle facade
 ├── prism-element.mjs    # <prism-chart> / <prism-dataset> / <prism-coordinator>
 ├── prism-resolver.mjs   # page-level dataset registry
@@ -22,33 +22,63 @@ bundle:
 └── index.html           # minimal loader example
 ```
 
+### Two build toolchains
+
+Prism's WASM module builds two ways, and both write the same
+`bin/prism.wasm` + `bin/wasm_exec.js` (paired loader — never mix a
+binary from one toolchain with the loader from the other):
+
+| Build | Command | Raw | Gzipped | Loader |
+|---|---|---|---|---|
+| Standard Go | `make build-wasm` | ~14.5 MiB | ~3.5 MiB | Go's `wasm_exec.js` |
+| **TinyGo** (recommended) | `make build-wasm-tinygo` | ~6.9 MiB (7,239,767 B) | **~2.2 MiB (2,232,605 B)** | TinyGo's `wasm_exec.js` |
+
+The **TinyGo build is the recommended browser artifact.** It links a
+leaner runtime and GC, roughly halving both the raw and gzipped size
+while producing byte-identical SVG to the standard-Go build (E5-S2
+verified 16/16 parity). The standard-Go build stays fully supported
+as the fallback for environments where TinyGo is unavailable, and it
+remains the default `make build-wasm` target so `make build` needs no
+extra toolchain. TinyGo 0.41.1+ is required for the TinyGo target
+(`brew tap tinygo-org/tools && brew install tinygo`); it uses
+`-stack-size=8MB` so the JSON-Schema shape validator's recursion does
+not trap.
+
 ### Wire size and the raw/gzip gap
 
-The Go WASM target is large uncompressed — **~69 MiB raw** — but
-compresses to **~12 MiB gzipped** (the runtime, reflection, and GC
-are all linked in; `-s -w -trimpath` are already applied and TinyGo
-is not used). The wire size you actually pay depends entirely on
-compression:
+The WASM module is larger uncompressed than on the wire; the size you
+actually pay depends entirely on compression:
 
-- **The bundle ships both `prism.wasm` and `prism.wasm.gz`.** The
-  standalone loader fetches the `.gz` and decompresses it in-page via
-  `DecompressionStream("gzip")`, so the **~12 MiB** payload is what
-  crosses the wire even on a dumb static host that does no
-  content-negotiation. The raw `prism.wasm` stays as a fallback
-  (`WebAssembly.instantiateStreaming`) for environments without
-  `DecompressionStream` or where the `.gz` is absent.
+- **The `prism static-bundle --wasm` bundle ships both `prism.wasm`
+  and `prism.wasm.gz`.** The standalone loader fetches the `.gz` and
+  decompresses it in-page via `DecompressionStream("gzip")`, so the
+  gzipped payload is what crosses the wire even on a dumb static host
+  that does no content-negotiation. The raw `prism.wasm` stays as a
+  fallback (`WebAssembly.instantiateStreaming`) for environments
+  without `DecompressionStream` or where the `.gz` is absent.
 - **If you wire up your own loader**, either fetch `prism.wasm.gz`
   and decompress as above, or serve `prism.wasm` with
   `Content-Encoding: gzip`/`br` so the browser decompresses
-  transparently. Do **not** serve the raw `prism.wasm` uncompressed —
-  users download the full ~69 MiB. (nginx: add `application/wasm` to
-  `gzip_types`; most CDNs negotiate automatically but some skip files
-  over a size cap.)
+  transparently. Do **not** serve the raw `prism.wasm` uncompressed.
+  (nginx: add `application/wasm` to `gzip_types`; most CDNs negotiate
+  automatically but some skip files over a size cap.)
 
-The CI size gate (`internal/gates/wasm_size_test.go`) now guards
-**both** the gzipped size (`PRISM_WASM_MAX_BYTES`, 16 MiB) and the
-raw size (`PRISM_WASM_RAW_MAX_BYTES`, 80 MiB) so the uncompressed
-artifact cannot balloon unnoticed behind the gzipped check.
+### CI size gates
+
+The standard-Go artifact is guarded by
+`internal/gates/wasm_size_test.go`, which checks **both** the gzipped
+size (`PRISM_WASM_MAX_BYTES`, 16 MiB) and the raw size
+(`PRISM_WASM_RAW_MAX_BYTES`, 80 MiB) so the uncompressed artifact
+cannot balloon unnoticed behind the gzipped check.
+
+The TinyGo artifact has its own, much tighter gate in
+`internal/gates/wasm_tinygo_size_test.go`
+(`PRISM_WASM_TINYGO_MAX_BYTES`, 4 MiB gzipped;
+`PRISM_WASM_TINYGO_RAW_MAX_BYTES`, 12 MiB raw). Because it needs the
+TinyGo toolchain, the gate **skips cleanly when `tinygo` is not on
+`PATH`** (default CI lanes stay green) and **runs when it is
+present** — building a fresh TinyGo module into a temp directory so
+the measurement is independent of whatever last populated `bin/`.
 
 ## Load modes
 
@@ -77,14 +107,17 @@ attribute:
 <prism-chart spec="/specs/brand_score.prism.json"></prism-chart>
 ```
 
-The browser fetches any referenced `.pulse` files via the
-[fetch-backed afero.Fs](#fetch-backed-fs), runs the full pipeline
-in WASM, and mounts the resulting SVG. Inline data
-(`data: {values: [...]}`) skips the fetch path entirely.
+The spec carries its own rows: inline `data: {values: [...]}` /
+`datasets.*.values`, or a `datasets` attribute on the element. For
+lazy or large data, register a JS `DataResolver` via
+`prism.setDataResolver(...)` and reference it with `data: {ref}`. Prism
+never fetches or decodes a `.pulse` file in the browser — the host
+materializes the rows and hands them to Prism. WASM then runs the full
+pipeline and mounts the resulting SVG.
 
 ### Server compile (opt-in)
 
-Hosts that prefer to keep Pulse loading behind a trusted backend
+Hosts that prefer to offload the compile stage to a trusted backend
 add a `compile-server` attribute:
 
 ```html
@@ -117,8 +150,8 @@ const plan = JSON.parse(planJSON);
 // plan.scene         — full Scene IR (same as `prism.execute` output)
 ```
 
-Cost is dominated by data I/O + aggregation (the executor); the
-flattened plan view itself is light. For specs whose data fits
+Cost is dominated by aggregation over the materialized rows (the
+executor); the flattened plan view itself is light. For specs whose data fits
 in memory, compile-only typically runs 10–50× faster than a
 full `prism.execute` + `prism.render` pair, since the encode +
 SVG-emit stages are skipped.
@@ -138,28 +171,21 @@ Use cases:
 - **Pre-render previews** — show the user "3 marks across
   2 facets" before committing to a render.
 
-## Fetch-backed Fs
+## Fetch-backed assets
 
-Dataset references resolve through an `afero.Fs` adapter backed
-by browser `fetch`. The first access to a `.pulse` URL issues a
-`GET` and buffers the body in memory; subsequent opens reuse the
-cached bytes for the page lifetime.
+Prism never fetches or decodes data rows in the browser — the host
+supplies them inline (`data.values` / `datasets.*.values`) or through a
+JS `DataResolver` registered with `prism.setDataResolver(...)`. The only
+assets Prism itself fetches are **geodata tiers** (`geoshape` / `geopoint`
+marks), pulled from `${origin}/static/prism/geodata/` (override via
+`prism.geo.setBundleURL(url)`), and any URL-referenced Scene JSON the
+page loads directly. Those `GET`s go through a fetch adapter that
+dedupes by URL and buffers the body for the page lifetime.
 
-Inline data and short single-shard cohorts work out of the box.
-Archive shard references (`archive.pulse#shard.pulse`) work when
-the origin serves the archive in one response — random-access
-range reads are a v2 enhancement (see
-[BACKLOG.md](https://github.com/frankbardon/prism/blob/main/.planning/BACKLOG.md)).
-
-Two error codes surface fetch problems:
-
-- `PRISM_WASM_001` — fetch failure (CORS, network, non-2xx).
-- `PRISM_WASM_002` — origin server rejects `Range:` requests
-  (only matters once range support lands).
-
-Both arrive in the JS bridge as standard `{ok:false, error}`
-envelopes; `prism.mjs` rethrows them as `Error` instances with
-`prismCode` + `prismFixups` attached.
+A failed asset fetch surfaces as `PRISM_WASM_001` (CORS, network, or
+non-2xx). It arrives in the JS bridge as a standard `{ok:false, error}`
+envelope; `prism.mjs` rethrows it as an `Error` with `prismCode` +
+`prismFixups` attached.
 
 ## What's still in JS
 
@@ -280,6 +306,40 @@ PRISM_CROSS_IMPL=1 go test ./internal/devtools/
 ```
 
 The runner needs `node` on `PATH`; no `npm install` is required.
+
+### TinyGo ↔ standard-Go float parity
+
+Prism ships a second WASM build path (`make build-wasm-tinygo`)
+that produces a much smaller module. TinyGo links its own
+`strconv`, and **every** SVG coordinate funnels through the single
+`render.FormatFloat` helper (`render/precision.go`, pinned to 3
+decimals). If TinyGo rounded or stringified floats differently
+from standard Go, the coordinate goldens would drift — this was
+flagged as the highest risk of the TinyGo migration.
+
+It does not drift. A dedicated parity harness proves it:
+
+```bash
+PRISM_CROSS_IMPL_TINYGO=1 go test ./internal/devtools/ -run TinyGo
+```
+
+- `TestTinyGoWasmSVGParity` builds a TinyGo `js/wasm` module from
+  `cmd/prismwasm`, renders a float-diverse fixture corpus (bars,
+  curves, trigonometric arcs, bezier ribbons, dense rect/box/violin
+  layouts) under Node with TinyGo's paired `wasm_exec.js`, and
+  diffs each SVG byte-for-byte against the committed standard-Go
+  `go.svg`. All fixtures are byte-identical.
+- `TestTinyGoFloatFormatParity` drives `render.FormatFloat` over an
+  edge-case corpus (half-way rounding, trailing-zero trimming,
+  negative zero, magnitude extremes, `NaN`/`±Inf`) in three builds —
+  host-native, standard-Go wasm, and TinyGo wasm — and asserts all
+  three agree. The host-side pin lives in
+  `render/precision_test.go`.
+
+Because parity holds unmodified, **no float-emission change was
+needed**: standard-Go and TinyGo already produce identical bytes.
+The harness is opt-in (mirroring `PRISM_CROSS_IMPL`) because it
+needs both `node` and `tinygo` on `PATH`.
 
 ## Standalone HTML demo
 

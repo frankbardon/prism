@@ -10,23 +10,22 @@ import (
 	"github.com/frankbardon/prism/compile/inmem"
 	"github.com/frankbardon/prism/plan"
 	"github.com/frankbardon/prism/plan/build"
-	"github.com/frankbardon/prism/resolve"
 	"github.com/frankbardon/prism/spec"
 )
 
 // TestCrosstabShareOfRowOverlay runs a brand_id × age crosstab with a
-// share_of_row overlay against tiny.pulse end-to-end and asserts the
-// overlay column is present and the shares sum to 1.0 within each row
-// group (the defining property of share-of-row). This exercises the
+// share_of_row overlay over the tiny cohort's inline rows and asserts
+// the overlay column is present and the shares sum to 1.0 within each
+// row group (the defining property of share-of-row). This exercises the
 // matrix-shape overlay path: the base + overlay matrices are
 // coordinate-joined into long rows, so a correct join is required for
-// the per-row shares to reconstruct.
+// the per-row shares to reconstruct. The assertion is structural, so no
+// frozen Pulse oracle is needed — only the inline data.
 func TestCrosstabShareOfRowOverlay(t *testing.T) {
-	cohortPath := fixturePath(t)
-	fs := afero.NewOsFs()
+	fs := afero.NewMemMapFs()
 
 	s := &spec.Spec{
-		Data: &spec.Data{Source: cohortPath},
+		Data: &spec.Data{Source: tinyRef},
 		Transform: []spec.Transform{
 			{Crosstab: &spec.CrosstabTransform{Crosstab: spec.CrosstabBody{
 				Rows:    []spec.CrosstabGroup{{Field: "brand_id"}},
@@ -41,7 +40,7 @@ func TestCrosstabShareOfRowOverlay(t *testing.T) {
 
 	dag, _, err := build.Build(s, build.Options{
 		FS:       fs,
-		Resolver: resolve.New(nil),
+		Resolver: tinyResolver(t),
 		Backend:  inmem.New(),
 	})
 	if err != nil {

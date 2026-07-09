@@ -15,9 +15,10 @@ import (
 //     "count"). The plan node enforces the same at build time; the
 //     validate rule surfaces the problem statically before any I/O.
 //   - PRISM_SPEC_033: a crosstab transform may only appear as the
-//     first transform on a chain — Pulse has no in-memory cohort
-//     constructor, so chaining it after a Prism filter / aggregate
-//     / join is impossible.
+//     first transform on a chain — v1 crosstab pivots a materialised
+//     leaf table directly (a dataset ref or inline `data.values`), so
+//     chaining it after a Prism filter / aggregate / join is not
+//     supported.
 type CrosstabPosition struct{}
 
 // Code returns PRISM_SPEC_032 (the broader of the two; PRISM_SPEC_033
@@ -113,8 +114,10 @@ func walkCrosstab(s *spec.Spec, prefix string, out *[]*errors.AppError) {
 		}
 		path := fmt.Sprintf("%stransform[%d].crosstab", prefix, i)
 		// Position: must be the first transform on the chain (or
-		// reference a registered dataset via its `data` alias —
-		// dataset-level crosstab is also leaf-bound).
+		// reference a registered dataset via its `data` alias). The
+		// crosstab consumes a materialised leaf table — a dataset ref
+		// (SourceNode) or inline `data.values` (InlineNode) — so it may
+		// not chain after a prior Prism transform's derived output.
 		if i > 0 && t.Crosstab.Data == "" {
 			*out = append(*out, errors.New(
 				"PRISM_SPEC_033",

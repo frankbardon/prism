@@ -32,6 +32,43 @@ prism plot my-chart.prism.json > chart.svg
 open chart.svg
 ```
 
+## Providing data
+
+Prism never reads data files itself — a spec carries its rows inline, or
+the host CLI supplies them at run time. The two ways to bind data:
+
+- **Inline** — put the rows directly in the spec under `data.values`
+  (optionally typed with `data.fields`). This needs no flag and is how
+  every starter example works:
+
+  ```json
+  {
+    "data": {"values": [{"brand": "alpha", "score": 0.42}]},
+    "mark": "bar",
+    "encoding": {
+      "x": {"field": "brand", "type": "nominal"},
+      "y": {"field": "score", "type": "quantitative"}
+    }
+  }
+  ```
+
+- **`--data rows.json`** — when a spec's `data` block names an external
+  source (`data.source` / `data.ref`), pass a JSON rows file and the CLI
+  feeds those rows to the resolver:
+
+  ```
+  prism plot chart.json --data rows.json > chart.svg
+  ```
+
+  where `rows.json` is a flat array of row objects:
+
+  ```json
+  [{"brand": "alpha", "score": 0.42}, {"brand": "beta", "score": 0.71}]
+  ```
+
+  The `--data` flag is accepted by `plot`, `plan`, `execute`, and
+  `scene`.
+
 ## Editor setup
 
 Each entry in `.prism/editor/` has a header comment with install
@@ -121,7 +158,7 @@ Astro / Hugo integration recipes.
 - Read [Spec concepts](concepts/spec.md) to learn the data → transform
   → mark → encoding pipeline.
 - See [Multi-source](concepts/multi-source.md) to join multiple
-  `.pulse` files in one chart.
+  datasets in one chart.
 - See [Browser / WASM](concepts/browser.md) for the standalone
   client-side rendering path.
 - Read [Migration from Vega-Lite](migration-from-vega-lite.md) if you

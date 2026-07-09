@@ -1,12 +1,19 @@
-.PHONY: build build-wasm clean test test-race cover fmt fmt-check vet lint proto docs docs-scenes docs-wasm-stage docs-serve docs-clean docs-deploy-latest
+.PHONY: build build-wasm build-wasm-tinygo clean test test-race cover fmt fmt-check vet lint proto docs docs-scenes docs-wasm-stage docs-serve docs-clean docs-deploy-latest
 
 BINARY_NAME=prism
 WASM_BINARY=prism.wasm
 BUILD_DIR=bin
 GO=go
+TINYGO=tinygo
 LDFLAGS=-s -w
 BUILD_FLAGS=-trimpath -ldflags="$(LDFLAGS)"
 WASM_BUILD_FLAGS=-trimpath -buildvcs=false -ldflags="$(LDFLAGS)"
+# TinyGo goroutine stack size. The default (~16 KB) overflows on the
+# JSON-Schema shape validator's deep recursion (santhosh-tekuri/jsonschema
+# v6 meta-validation); 8 MB clears it with headroom for composite specs.
+# Stack size sets a memory reservation, not binary size — the .wasm bytes
+# are ~identical regardless.
+TINYGO_STACK_SIZE=8MB
 
 # Prism is pure Go — no CGO dependency in the build graph. Disabling CGO
 # globally makes that a contract: any future import that pulls in a C
@@ -37,6 +44,27 @@ build-wasm:
 	if [ ! -f "$$WASM_EXEC" ]; then WASM_EXEC="$$($(GO) env GOROOT)/misc/wasm/wasm_exec.js"; fi; \
 	if [ -f "$$WASM_EXEC" ]; then cp "$$WASM_EXEC" $(BUILD_DIR)/wasm_exec.js; \
 	else echo "build-wasm: warning — wasm_exec.js not found under GOROOT (looked at lib/wasm and misc/wasm)"; fi
+	@ls -lh $(BUILD_DIR)/$(WASM_BINARY)
+
+# build-wasm-tinygo cross-compiles cmd/prismwasm with TinyGo instead of
+# the Go toolchain, producing a much smaller js/wasm module. It is a
+# parallel path to `build-wasm` (which stays on the Go toolchain) — do
+# NOT cross the two: TinyGo ships its OWN wasm_exec.js under
+# $(tinygo env TINYGOROOT)/targets/, which is NOT byte-compatible with
+# Go's $GOROOT/lib/wasm/wasm_exec.js. Each build pairs its binary with
+# the matching loader; the copy here is the loader's provenance (sourced
+# straight from the active TinyGo toolchain).
+#
+# -stack-size raises the per-goroutine stack (see TINYGO_STACK_SIZE) so
+# the JSON-Schema shape validator's recursion does not trap. Requires
+# TinyGo 0.41.1+ on PATH.
+build-wasm-tinygo:
+	@mkdir -p $(BUILD_DIR)
+	@command -v $(TINYGO) >/dev/null 2>&1 || { echo "build-wasm-tinygo: tinygo not found on PATH (brew tap tinygo-org/tools && brew install tinygo)"; exit 1; }
+	$(TINYGO) build -target=wasm -stack-size=$(TINYGO_STACK_SIZE) -o $(BUILD_DIR)/$(WASM_BINARY) ./cmd/prismwasm
+	@WASM_EXEC="$$($(TINYGO) env TINYGOROOT)/targets/wasm_exec.js"; \
+	if [ -f "$$WASM_EXEC" ]; then cp "$$WASM_EXEC" $(BUILD_DIR)/wasm_exec.js; \
+	else echo "build-wasm-tinygo: warning — wasm_exec.js not found under TINYGOROOT/targets"; fi
 	@ls -lh $(BUILD_DIR)/$(WASM_BINARY)
 
 clean:

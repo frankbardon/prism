@@ -1,137 +1,112 @@
 package nodes
 
 import (
-	"encoding/json"
 	"testing"
 
-	pulsetypes "github.com/frankbardon/pulse/types"
+	"github.com/spf13/afero"
 
 	"github.com/frankbardon/prism/spec"
+	"github.com/frankbardon/prism/table"
 )
 
-// TestBuildCrosstabRequestDateGrouper verifies that a date grouper is
-// translated to GROUP_DATE with the period folded into Params, that an
-// empty period defaults to month, and that an invalid period is
-// rejected. Category groupers stay GROUP_CATEGORY with no Params.
-func TestBuildCrosstabRequestDateGrouper(t *testing.T) {
+// crosstabTestSchema is the native input schema the crosstab node
+// derives its output shape from.
+func crosstabTestSchema() *table.Schema {
+	return &table.Schema{Fields: []table.Field{
+		{Name: "region", Type: table.FieldTypeCategoricalU8},
+		{Name: "order_date", Type: table.FieldTypeDate},
+		{Name: "d", Type: table.FieldTypeDate},
+		{Name: "revenue", Type: table.FieldTypeF64},
+	}}
+}
+
+// TestNewCrosstabDateGrouperSchema verifies a date grouper produces a
+// string (categorical) bucket-key column in the output schema while a
+// category grouper preserves its source field type, and the cell column
+// carries the aggregate output type.
+func TestNewCrosstabDateGrouperSchema(t *testing.T) {
 	body := spec.CrosstabBody{
 		Rows:    []spec.CrosstabGroup{{Field: "region"}},
 		Columns: []spec.CrosstabGroup{{Field: "order_date", Type: "date", Period: "quarter"}},
 		Cell:    spec.CrosstabCell{Aggregate: "sum", Field: "revenue", As: "rev"},
 	}
-	req, err := buildCrosstabRequest("sales.pulse", body, "rev")
+	n, err := NewCrosstab("ct", "src", "sales.pulse", afero.NewMemMapFs(), crosstabTestSchema(), body)
 	if err != nil {
-		t.Fatalf("buildCrosstabRequest: %v", err)
+		t.Fatalf("NewCrosstab: %v", err)
 	}
-
-	if len(req.Crosstab.Rows) != 1 || req.Crosstab.Rows[0].Type != pulsetypes.GROUP_CATEGORY {
-		t.Fatalf("row grouper = %+v, want GROUP_CATEGORY", req.Crosstab.Rows)
+	out := n.OutSchema()
+	byName := map[string]table.FieldType{}
+	for _, f := range out.Fields {
+		byName[f.Name] = f.Type
 	}
-	if req.Crosstab.Rows[0].Params != nil {
-		t.Errorf("category grouper should carry no Params, got %s", req.Crosstab.Rows[0].Params)
+	if got := byName["region"]; got != table.FieldTypeCategoricalU8 {
+		t.Errorf("region output type = %v, want CategoricalU8 (source type preserved)", got)
 	}
-
-	col := req.Crosstab.Columns[0]
-	if col.Type != pulsetypes.GROUP_DATE {
-		t.Fatalf("column grouper type = %q, want GROUP_DATE", col.Type)
+	if got := byName["order_date"]; got != table.FieldTypeCategoricalU32 {
+		t.Errorf("date grouper output type = %v, want CategoricalU32 (string bucket key)", got)
 	}
-	var got map[string]string
-	if err := json.Unmarshal(col.Params, &got); err != nil {
-		t.Fatalf("date grouper Params not valid JSON: %v", err)
-	}
-	if got["component"] != "quarter" {
-		t.Errorf("date grouper component = %q, want quarter", got["component"])
+	if got := byName["rev"]; got != table.FieldTypeF64 {
+		t.Errorf("cell output type = %v, want F64", got)
 	}
 }
 
-func TestBuildCrosstabRequestDateDefaultPeriod(t *testing.T) {
+// TestNewCrosstabDateDefaultPeriod verifies an empty date period is
+// accepted (defaults to month at execute time).
+func TestNewCrosstabDateDefaultPeriod(t *testing.T) {
 	body := spec.CrosstabBody{
 		Rows:    []spec.CrosstabGroup{{Field: "d", Type: "date"}},
 		Columns: []spec.CrosstabGroup{{Field: "region"}},
 		Cell:    spec.CrosstabCell{Aggregate: "count"},
 	}
-	req, err := buildCrosstabRequest("c.pulse", body, "n")
-	if err != nil {
-		t.Fatalf("buildCrosstabRequest: %v", err)
-	}
-	var got map[string]string
-	if err := json.Unmarshal(req.Crosstab.Rows[0].Params, &got); err != nil {
-		t.Fatalf("Params: %v", err)
-	}
-	if got["component"] != "month" {
-		t.Errorf("default period component = %q, want month", got["component"])
+	if _, err := NewCrosstab("ct", "src", "c.pulse", afero.NewMemMapFs(), crosstabTestSchema(), body); err != nil {
+		t.Fatalf("NewCrosstab default period: %v", err)
 	}
 }
 
-func TestBuildCrosstabRequestBadPeriod(t *testing.T) {
+// TestNewCrosstabBadPeriod verifies an invalid date period is rejected
+// at construction with PRISM_SPEC_032.
+func TestNewCrosstabBadPeriod(t *testing.T) {
 	body := spec.CrosstabBody{
 		Rows:    []spec.CrosstabGroup{{Field: "d", Type: "date", Period: "fortnight"}},
 		Columns: []spec.CrosstabGroup{{Field: "region"}},
 		Cell:    spec.CrosstabCell{Aggregate: "count"},
 	}
-	if _, err := buildCrosstabRequest("c.pulse", body, "n"); err == nil {
+	if _, err := NewCrosstab("ct", "src", "c.pulse", afero.NewMemMapFs(), crosstabTestSchema(), body); err == nil {
 		t.Fatal("expected error for invalid date period, got nil")
 	}
 }
 
-// TestBuildCrosstabRequestOverlays verifies overlay translation: the
-// request switches to matrix shape, forces the margin each overlay
-// needs as a denominator, and sets Ref.Margin.Axis correctly (fixed by
-// kind for share_of_*, user-supplied for index_vs_margin).
-func TestBuildCrosstabRequestOverlays(t *testing.T) {
+// TestNewCrosstabUnknownAggregate verifies an unsupported cell aggregate
+// alias is rejected at construction.
+func TestNewCrosstabUnknownAggregate(t *testing.T) {
 	body := spec.CrosstabBody{
 		Rows:    []spec.CrosstabGroup{{Field: "region"}},
-		Columns: []spec.CrosstabGroup{{Field: "quarter"}},
-		Cell:    spec.CrosstabCell{Aggregate: "sum", Field: "rev", As: "rev"},
-		Overlays: []spec.CrosstabOverlay{
-			{Kind: "share_of_row", As: "rs"},
-			{Kind: "index_vs_margin", Axis: "column", As: "idx"},
-		},
+		Columns: []spec.CrosstabGroup{{Field: "order_date", Type: "date"}},
+		Cell:    spec.CrosstabCell{Aggregate: "bogus", Field: "revenue"},
 	}
-	req, err := buildCrosstabRequest("s.pulse", body, "rev")
-	if err != nil {
-		t.Fatalf("buildCrosstabRequest: %v", err)
-	}
-	if req.Crosstab.Shape != pulsetypes.CrosstabShapeMatrix {
-		t.Errorf("shape = %q, want matrix (overlays force matrix)", req.Crosstab.Shape)
-	}
-	if !req.Crosstab.Margins.Rows || !req.Crosstab.Margins.Columns {
-		t.Errorf("margins = %+v, want both row+column forced", req.Crosstab.Margins)
-	}
-	if len(req.Overlays) != 2 {
-		t.Fatalf("overlays = %d, want 2", len(req.Overlays))
-	}
-	if req.Overlays[0].Kind != pulsetypes.OverlayKindShareOfRow ||
-		req.Overlays[0].Ref.Margin == nil ||
-		req.Overlays[0].Ref.Margin.Axis != pulsetypes.MarginAxisRow {
-		t.Errorf("overlay[0] = %+v, want SHARE_OF_ROW with row margin ref", req.Overlays[0])
-	}
-	if req.Overlays[1].Kind != pulsetypes.OverlayKindIndexVsMargin ||
-		req.Overlays[1].Ref.Margin == nil ||
-		req.Overlays[1].Ref.Margin.Axis != pulsetypes.MarginAxisColumn {
-		t.Errorf("overlay[1] = %+v, want INDEX_VS_MARGIN with column margin ref", req.Overlays[1])
+	if _, err := NewCrosstab("ct", "src", "s.pulse", afero.NewMemMapFs(), crosstabTestSchema(), body); err == nil {
+		t.Fatal("expected error for unknown cell aggregate, got nil")
 	}
 }
 
-func TestBuildCrosstabRequestBadOverlay(t *testing.T) {
-	// Unknown kind.
+// TestNewCrosstabCountNeedsNoField verifies count without a field is
+// accepted (count(*)), while a non-count aggregate without a field is
+// rejected.
+func TestNewCrosstabCellFieldRequirement(t *testing.T) {
+	ok := spec.CrosstabBody{
+		Rows:    []spec.CrosstabGroup{{Field: "region"}},
+		Columns: []spec.CrosstabGroup{{Field: "d", Type: "date"}},
+		Cell:    spec.CrosstabCell{Aggregate: "count"},
+	}
+	if _, err := NewCrosstab("ct", "src", "s.pulse", afero.NewMemMapFs(), crosstabTestSchema(), ok); err != nil {
+		t.Fatalf("count(*) should be allowed: %v", err)
+	}
 	bad := spec.CrosstabBody{
-		Rows:     []spec.CrosstabGroup{{Field: "r"}},
-		Columns:  []spec.CrosstabGroup{{Field: "c"}},
-		Cell:     spec.CrosstabCell{Aggregate: "count", Field: "x"},
-		Overlays: []spec.CrosstabOverlay{{Kind: "bogus"}},
+		Rows:    []spec.CrosstabGroup{{Field: "region"}},
+		Columns: []spec.CrosstabGroup{{Field: "d", Type: "date"}},
+		Cell:    spec.CrosstabCell{Aggregate: "sum"},
 	}
-	if _, err := buildCrosstabRequest("s.pulse", bad, "x"); err == nil {
-		t.Fatal("expected error for unknown overlay kind")
-	}
-	// index_vs_margin without axis.
-	noAxis := spec.CrosstabBody{
-		Rows:     []spec.CrosstabGroup{{Field: "r"}},
-		Columns:  []spec.CrosstabGroup{{Field: "c"}},
-		Cell:     spec.CrosstabCell{Aggregate: "count", Field: "x"},
-		Overlays: []spec.CrosstabOverlay{{Kind: "index_vs_margin"}},
-	}
-	if _, err := buildCrosstabRequest("s.pulse", noAxis, "x"); err == nil {
-		t.Fatal("expected error for index_vs_margin without axis")
+	if _, err := NewCrosstab("ct", "src", "s.pulse", afero.NewMemMapFs(), crosstabTestSchema(), bad); err == nil {
+		t.Fatal("expected error for sum aggregate without a field, got nil")
 	}
 }

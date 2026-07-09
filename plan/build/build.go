@@ -39,9 +39,8 @@ import (
 	"fmt"
 	"strconv"
 
-	"github.com/spf13/afero"
-
 	prismerrors "github.com/frankbardon/prism/errors"
+	"github.com/frankbardon/prism/internal/vfs"
 	"github.com/frankbardon/prism/plan"
 	"github.com/frankbardon/prism/plan/nodes"
 	"github.com/frankbardon/prism/resolve"
@@ -62,7 +61,7 @@ import (
 // registry; the builder behaviour reverts to P03–P06 (name-only ref
 // raises PRISM_PLAN_003 when the alias is undeclared inline).
 type Options struct {
-	FS              afero.Fs
+	FS              vfs.Fs
 	Resolver        resolve.Resolver
 	Backend         plan.Backend
 	DatasetRegistry resolve.DatasetRegistry
@@ -87,7 +86,7 @@ func Build(s *spec.Spec, opts Options) (*plan.DAG, plan.NodeID, error) {
 		return nil, "", err
 	}
 	if opts.FS == nil {
-		opts.FS = afero.NewOsFs()
+		opts.FS = vfs.OsFs()
 	}
 	if opts.Resolver == nil {
 		opts.Resolver = resolve.New(nil)
@@ -704,15 +703,40 @@ func (c *buildCtx) applyOneTransform(input plan.NodeID, t spec.Transform) (plan.
 	return "", outOfScopeErr("transform:unknown", "P04")
 }
 
-// buildCrosstab walks back to the upstream SourceNode (the only legal
-// input for a crosstab transform — Pulse has no in-memory cohort
-// constructor) and emits a CrosstabNode as a fresh leaf. The
-// SourceNode is removed from the DAG, mirroring the PulseChainFusion
-// pattern. Returns PRISM_PLAN_CROSSTAB_REQUIRES_SOURCE when the
-// immediate input is not a SourceNode.
-// buildRegression walks back to the upstream SourceNode (the only legal
-// input — regression fits the cohort directly via pulse.Process) and
-// replaces it with a leaf RegressionNode, mirroring buildCrosstab.
+// materializedLeaf reports whether inNode is a legal crosstab/regression
+// root — a materialised leaf that yields an input table directly.
+// Post-Pulse the pure-Go pivot / OLS fit reads that table via the
+// in-memory backend, so both a SourceNode (from a dataset ref) and an
+// InlineNode (from `data.values`) qualify; there is no longer a .pulse
+// cohort-reader requirement. The transform must still be the first on
+// the chain (enforced by the position rule) — it consumes a leaf, not a
+// derived table. Returns the leaf's ref (for id derivation +
+// diagnostics) and its vfs.Fs (nil for inline data, which reads no
+// filesystem).
+func materializedLeaf(inNode plan.Node) (ref string, fs vfs.Fs, ok bool) {
+	switch src := inNode.(type) {
+	case *nodes.SourceNode:
+		return src.Ref(), src.FS(), true
+	case *nodes.InlineNode:
+		return src.Fingerprint(), nil, true
+	}
+	return "", nil, false
+}
+
+// buildCrosstab resolves the crosstab's upstream leaf (a SourceNode or an
+// InlineNode — see materializedLeaf) and emits a CrosstabNode consuming
+// the materialised input table. The leaf stays in the DAG as the
+// crosstab's single upstream input; the pure-Go pivot runs over that
+// table via the in-memory backend. Returns
+// PRISM_PLAN_CROSSTAB_REQUIRES_SOURCE when the immediate input is not a
+// materialised leaf.
+//
+// buildRegression mirrors buildCrosstab: it resolves the regression's
+// upstream leaf and emits a RegressionNode that fits the materialised
+// input table in-memory (OLS). The leaf stays in the DAG as the
+// regression's single upstream input. Returns
+// PRISM_PLAN_REGRESSION_REQUIRES_SOURCE when the immediate input is not a
+// materialised leaf.
 func (c *buildCtx) buildRegression(input plan.NodeID, t *spec.RegressionTransform) (plan.NodeID, error) {
 	in, err := func() (plan.NodeID, error) {
 		if t.Data == "" {
@@ -734,40 +758,40 @@ func (c *buildCtx) buildRegression(input plan.NodeID, t *spec.RegressionTransfor
 			map[string]any{"Input": string(in)},
 		)
 	}
-	src, ok := inNode.(*nodes.SourceNode)
+	ref, fs, ok := materializedLeaf(inNode)
 	if !ok {
 		return "", prismerrors.New(
 			"PRISM_PLAN_REGRESSION_REQUIRES_SOURCE",
-			fmt.Sprintf("regression transform must consume a source ref; got %T upstream (input id %s).", inNode, in),
+			fmt.Sprintf("regression transform must consume a materialised leaf (dataset ref or inline values); got %T upstream (input id %s).", inNode, in),
 			map[string]any{"InputKind": fmt.Sprintf("%T", inNode), "Input": string(in)},
 		)
 	}
-	inSchema, err := src.OutputSchema()
+	inSchema, err := inNode.Schema(nil)
 	if err != nil {
 		return "", err
 	}
-	id := nodes.DeriveRegressionID(src.Ref(), t)
-	node, err := nodes.NewRegression(id, src.Ref(), src.FS(), inSchema, t)
+	srcID := inNode.ID()
+	id := nodes.DeriveRegressionID(ref, t)
+	node, err := nodes.NewRegression(id, srcID, ref, fs, inSchema, t)
 	if err != nil {
 		return "", err
 	}
-	if err := c.b.AddNode(node); err != nil {
+	if _, err := c.addAndReturn(node); err != nil {
 		return "", err
 	}
-	// Drop the now-unused SourceNode so the executor doesn't materialise
-	// the cohort a second time, then rewire any leaf bookkeeping that
-	// pointed at it.
-	c.b.RemoveNode(src.ID())
+	// The regression is the new tip of this chain; advance the leaf
+	// bookkeeping so any following transform consumes the regression
+	// output. The leaf stays in the DAG as the regression's input.
 	for name, leafID := range c.leafByName {
-		if leafID == src.ID() {
+		if leafID == srcID {
 			c.leafByName[name] = id
 		}
 	}
-	if c.topLeaf == src.ID() {
+	if c.topLeaf == srcID {
 		c.topLeaf = id
 	}
 	for ref, leafID := range c.leafBySource {
-		if leafID == src.ID() {
+		if leafID == srcID {
 			c.leafBySource[ref] = id
 		}
 	}
@@ -795,40 +819,40 @@ func (c *buildCtx) buildCrosstab(input plan.NodeID, t *spec.CrosstabTransform) (
 			map[string]any{"Input": string(in)},
 		)
 	}
-	src, ok := inNode.(*nodes.SourceNode)
+	ref, fs, ok := materializedLeaf(inNode)
 	if !ok {
 		return "", prismerrors.New(
 			"PRISM_PLAN_CROSSTAB_REQUIRES_SOURCE",
-			fmt.Sprintf("crosstab transform must consume a source ref; got %T upstream (input id %s).", inNode, in),
+			fmt.Sprintf("crosstab transform must consume a materialised leaf (dataset ref or inline values); got %T upstream (input id %s).", inNode, in),
 			map[string]any{"InputKind": fmt.Sprintf("%T", inNode), "Input": string(in)},
 		)
 	}
-	inSchema, err := src.OutputSchema()
+	inSchema, err := inNode.Schema(nil)
 	if err != nil {
 		return "", err
 	}
-	id := nodes.DeriveCrosstabID(src.Ref(), t.Crosstab)
-	node, err := nodes.NewCrosstab(id, src.Ref(), src.FS(), inSchema, t.Crosstab)
+	srcID := inNode.ID()
+	id := nodes.DeriveCrosstabID(ref, t.Crosstab)
+	node, err := nodes.NewCrosstab(id, srcID, ref, fs, inSchema, t.Crosstab)
 	if err != nil {
 		return "", err
 	}
-	if err := c.b.AddNode(node); err != nil {
+	if _, err := c.addAndReturn(node); err != nil {
 		return "", err
 	}
-	// Drop the now-unused SourceNode so the DAG executor doesn't
-	// materialise the cohort a second time.
-	c.b.RemoveNode(src.ID())
-	// Rewire any leafByName entries that pointed at the source.
+	// The crosstab is the new tip of this chain; advance the leaf
+	// bookkeeping so any following transform consumes the crosstab
+	// output. The leaf stays in the DAG as the crosstab's input.
 	for name, leafID := range c.leafByName {
-		if leafID == src.ID() {
+		if leafID == srcID {
 			c.leafByName[name] = id
 		}
 	}
-	if c.topLeaf == src.ID() {
+	if c.topLeaf == srcID {
 		c.topLeaf = id
 	}
 	for ref, leafID := range c.leafBySource {
-		if leafID == src.ID() {
+		if leafID == srcID {
 			c.leafBySource[ref] = id
 		}
 	}

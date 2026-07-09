@@ -13,7 +13,7 @@
     ]
   },
   "transform": [
-    {"filter": "score > 0.5"}
+    {"filter": {"op": "gt", "field": "score", "value": 0.5}}
   ],
   "mark": {"type": "bar", "corner_radius": 4},
   "encoding": {

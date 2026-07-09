@@ -2,35 +2,378 @@
   "$schema": "urn:prism:schema:v1:spec",
   "title": "Actual vs Benchmark (two-layer composition)",
   "datasets": {
-    "actual": {"source": "testdata/cohorts/actual.pulse"},
-    "bench":  {"source": "testdata/cohorts/benchmark.pulse"}
+    "actual": {
+      "values": [
+        {
+          "brand_id": "beta",
+          "score": 0.537877
+        },
+        {
+          "brand_id": "alpha",
+          "score": 0.455486
+        },
+        {
+          "brand_id": "beta",
+          "score": 0.627988
+        },
+        {
+          "brand_id": "delta",
+          "score": 0.502241
+        },
+        {
+          "brand_id": "alpha",
+          "score": 0.51585
+        },
+        {
+          "brand_id": "beta",
+          "score": 0.399623
+        },
+        {
+          "brand_id": "alpha",
+          "score": 0.559731
+        },
+        {
+          "brand_id": "beta",
+          "score": 0.411332
+        },
+        {
+          "brand_id": "delta",
+          "score": 0.582333
+        },
+        {
+          "brand_id": "alpha",
+          "score": 0.642097
+        },
+        {
+          "brand_id": "delta",
+          "score": 0.699818
+        },
+        {
+          "brand_id": "delta",
+          "score": 0.6908
+        },
+        {
+          "brand_id": "beta",
+          "score": 0.468412
+        },
+        {
+          "brand_id": "alpha",
+          "score": 0.699643
+        },
+        {
+          "brand_id": "delta",
+          "score": 0.468145
+        },
+        {
+          "brand_id": "beta",
+          "score": 0.668243
+        },
+        {
+          "brand_id": "beta",
+          "score": 0.723978
+        },
+        {
+          "brand_id": "gamma",
+          "score": 0.781772
+        },
+        {
+          "brand_id": "delta",
+          "score": 0.431198
+        },
+        {
+          "brand_id": "alpha",
+          "score": 0.536959
+        },
+        {
+          "brand_id": "beta",
+          "score": 0.492674
+        },
+        {
+          "brand_id": "gamma",
+          "score": 0.551623
+        },
+        {
+          "brand_id": "beta",
+          "score": 0.734909
+        },
+        {
+          "brand_id": "delta",
+          "score": 0.623449
+        },
+        {
+          "brand_id": "alpha",
+          "score": 0.541827
+        },
+        {
+          "brand_id": "beta",
+          "score": 0.392117
+        },
+        {
+          "brand_id": "delta",
+          "score": 0.401857
+        },
+        {
+          "brand_id": "delta",
+          "score": 0.458427
+        },
+        {
+          "brand_id": "delta",
+          "score": 0.628121
+        },
+        {
+          "brand_id": "alpha",
+          "score": 0.531309
+        },
+        {
+          "brand_id": "beta",
+          "score": 0.478496
+        },
+        {
+          "brand_id": "alpha",
+          "score": 0.49332
+        },
+        {
+          "brand_id": "alpha",
+          "score": 0.455852
+        },
+        {
+          "brand_id": "beta",
+          "score": 0.448656
+        },
+        {
+          "brand_id": "delta",
+          "score": 0.56906
+        },
+        {
+          "brand_id": "beta",
+          "score": 0.568441
+        },
+        {
+          "brand_id": "alpha",
+          "score": 0.533059
+        },
+        {
+          "brand_id": "delta",
+          "score": 0.57726
+        },
+        {
+          "brand_id": "gamma",
+          "score": 0.518526
+        },
+        {
+          "brand_id": "delta",
+          "score": 0.597939
+        }
+      ]
+    },
+    "bench": {
+      "values": [
+        {
+          "brand_id": "beta",
+          "median_score": 0.494949
+        },
+        {
+          "brand_id": "alpha",
+          "median_score": 0.460619
+        },
+        {
+          "brand_id": "beta",
+          "median_score": 0.532495
+        },
+        {
+          "brand_id": "delta",
+          "median_score": 0.4801
+        },
+        {
+          "brand_id": "alpha",
+          "median_score": 0.485771
+        },
+        {
+          "brand_id": "gamma",
+          "median_score": 0.437343
+        },
+        {
+          "brand_id": "alpha",
+          "median_score": 0.504054
+        },
+        {
+          "brand_id": "gamma",
+          "median_score": 0.442222
+        },
+        {
+          "brand_id": "delta",
+          "median_score": 0.513472
+        },
+        {
+          "brand_id": "alpha",
+          "median_score": 0.538374
+        },
+        {
+          "brand_id": "delta",
+          "median_score": 0.562424
+        },
+        {
+          "brand_id": "delta",
+          "median_score": 0.558667
+        },
+        {
+          "brand_id": "beta",
+          "median_score": 0.466005
+        },
+        {
+          "brand_id": "alpha",
+          "median_score": 0.562351
+        },
+        {
+          "brand_id": "delta",
+          "median_score": 0.465894
+        },
+        {
+          "brand_id": "gamma",
+          "median_score": 0.549268
+        },
+        {
+          "brand_id": "beta",
+          "median_score": 0.572491
+        },
+        {
+          "brand_id": "gamma",
+          "median_score": 0.596572
+        },
+        {
+          "brand_id": "delta",
+          "median_score": 0.450499
+        },
+        {
+          "brand_id": "alpha",
+          "median_score": 0.494566
+        },
+        {
+          "brand_id": "gamma",
+          "median_score": 0.476114
+        },
+        {
+          "brand_id": "gamma",
+          "median_score": 0.500676
+        },
+        {
+          "brand_id": "beta",
+          "median_score": 0.577045
+        },
+        {
+          "brand_id": "delta",
+          "median_score": 0.530604
+        },
+        {
+          "brand_id": "alpha",
+          "median_score": 0.496595
+        },
+        {
+          "brand_id": "beta",
+          "median_score": 0.434215
+        },
+        {
+          "brand_id": "delta",
+          "median_score": 0.438274
+        },
+        {
+          "brand_id": "delta",
+          "median_score": 0.461845
+        },
+        {
+          "brand_id": "delta",
+          "median_score": 0.532551
+        },
+        {
+          "brand_id": "beta",
+          "median_score": 0.492212
+        },
+        {
+          "brand_id": "beta",
+          "median_score": 0.470207
+        },
+        {
+          "brand_id": "alpha",
+          "median_score": 0.476383
+        }
+      ]
+    }
   },
-  "resolve": {"scale": {"y": "shared"}},
+  "resolve": {
+    "scale": {
+      "y": "shared"
+    }
+  },
   "layer": [
     {
       "$schema": "urn:prism:schema:v1:spec",
-      "data": {"name": "actual"},
+      "data": {
+        "name": "actual"
+      },
       "transform": [
-        {"data": "actual", "groupby": ["brand_id"],
-         "aggregate": [{"op": "mean", "field": "score", "as": "actual_mean"}]}
+        {
+          "data": "actual",
+          "groupby": [
+            "brand_id"
+          ],
+          "aggregate": [
+            {
+              "op": "mean",
+              "field": "score",
+              "as": "actual_mean"
+            }
+          ]
+        }
       ],
       "mark": "bar",
       "encoding": {
-        "x": {"field": "brand_id",    "type": "nominal"},
-        "y": {"field": "actual_mean", "type": "quantitative"}
+        "x": {
+          "field": "brand_id",
+          "type": "nominal"
+        },
+        "y": {
+          "field": "actual_mean",
+          "type": "quantitative"
+        }
       }
     },
     {
       "$schema": "urn:prism:schema:v1:spec",
-      "data": {"name": "bench"},
+      "data": {
+        "name": "bench"
+      },
       "transform": [
-        {"data": "bench", "groupby": ["brand_id"],
-         "aggregate": [{"op": "mean", "field": "median_score", "as": "bench_mean"}]}
+        {
+          "data": "bench",
+          "groupby": [
+            "brand_id"
+          ],
+          "aggregate": [
+            {
+              "op": "mean",
+              "field": "median_score",
+              "as": "bench_mean"
+            }
+          ]
+        }
       ],
-      "mark": {"type": "rule", "stroke": "#999999", "stroke_dash": [4, 2]},
+      "mark": {
+        "type": "rule",
+        "stroke": "#999999",
+        "stroke_dash": [
+          4,
+          2
+        ]
+      },
       "encoding": {
-        "x": {"field": "brand_id",   "type": "nominal"},
-        "y": {"field": "bench_mean", "type": "quantitative"}
+        "x": {
+          "field": "brand_id",
+          "type": "nominal"
+        },
+        "y": {
+          "field": "bench_mean",
+          "type": "quantitative"
+        }
       }
     }
   ]

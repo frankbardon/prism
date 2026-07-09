@@ -7,8 +7,6 @@ import (
 	"sort"
 	"strings"
 
-	"github.com/frankbardon/pulse/encoding"
-
 	prismerrors "github.com/frankbardon/prism/errors"
 	"github.com/frankbardon/prism/plan/nodes"
 	"github.com/frankbardon/prism/table"
@@ -59,7 +57,7 @@ func executeWindow(_ context.Context, n *nodes.WindowNode, ins []*table.Table) (
 
 	schema := cloneSchemaShallow(in.Schema())
 	for _, op := range n.Ops() {
-		schema.Fields = append(schema.Fields, encoding.Field{Name: op.As, Type: encoding.FieldTypeF64})
+		schema.Fields = append(schema.Fields, table.Field{Name: op.As, Type: table.FieldTypeF64})
 	}
 	return table.NewTable(schema, cols, rows, hashChain(in.Hash(), n.Fingerprint()))
 }

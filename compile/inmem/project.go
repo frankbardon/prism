@@ -5,8 +5,6 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/frankbardon/pulse/encoding"
-
 	prismerrors "github.com/frankbardon/prism/errors"
 	"github.com/frankbardon/prism/plan/nodes"
 	"github.com/frankbardon/prism/table"
@@ -22,7 +20,7 @@ func executeProject(_ context.Context, n *nodes.ProjectNode, ins []*table.Table)
 		return nil, err
 	}
 
-	schema := &encoding.Schema{Fields: make([]encoding.Field, 0, len(n.Fields()))}
+	schema := &table.Schema{Fields: make([]table.Field, 0, len(n.Fields()))}
 	cols := make(map[string]table.Column, len(n.Fields()))
 
 	available := make([]string, 0, len(in.FieldNames()))

@@ -1,0 +1,26 @@
+{
+  "$schema": "urn:prism:schema:v1:spec",
+  "title": "Structured calculate (derived arpu + case tiers)",
+  "data": {
+    "name": "metrics",
+    "values": [
+      {"region": "NA",    "revenue": 12400, "users": 320},
+      {"region": "EU",    "revenue":  8600, "users": 240},
+      {"region": "APAC",  "revenue":  9200, "users": 410},
+      {"region": "LATAM", "revenue":  3100, "users": 110}
+    ]
+  },
+  "transform": [
+    {"calculate": {"op": "div", "operands": [{"field": "revenue"}, {"field": "users"}]}, "as": "arpu"},
+    {"calculate": {"case": [
+      {"when": {"op": "gte", "field": "arpu", "value": 35}, "then": {"literal": "high"}},
+      {"when": {"op": "gte", "field": "arpu", "value": 25}, "then": {"literal": "mid"}}
+    ], "else": {"literal": "low"}}, "as": "tier"}
+  ],
+  "mark": {"type": "bar", "corner_radius": 4},
+  "encoding": {
+    "x":     {"field": "region", "type": "nominal"},
+    "y":     {"field": "arpu",   "type": "quantitative"},
+    "color": {"field": "tier",   "type": "nominal"}
+  }
+}

@@ -16,8 +16,6 @@ package plan
 import (
 	"context"
 
-	"github.com/frankbardon/pulse/encoding"
-
 	"github.com/frankbardon/prism/table"
 )
 
@@ -52,7 +50,7 @@ type Node interface {
 	// schemas. Nodes that cannot compute their schema without
 	// execution data (rare; Pivot is the only P03 example) return
 	// the first input schema and document the gap.
-	Schema(in []*encoding.Schema) (*encoding.Schema, error)
+	Schema(in []*table.Schema) (*table.Schema, error)
 	// Execute runs the node and returns the materialised Table. The
 	// `in` slice carries upstream Tables in declaration order; for a
 	// SourceNode it is always nil. Stubbed P03 nodes return

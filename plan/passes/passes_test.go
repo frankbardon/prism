@@ -1,63 +1,48 @@
 package passes_test
 
 import (
-	"path/filepath"
-	"runtime"
 	"testing"
 
-	"github.com/frankbardon/pulse/encoding"
 	"github.com/spf13/afero"
 
 	"github.com/frankbardon/prism/plan"
 	"github.com/frankbardon/prism/plan/nodes"
 	"github.com/frankbardon/prism/plan/passes"
 	"github.com/frankbardon/prism/resolve"
+	"github.com/frankbardon/prism/spec"
 )
 
-// repoRootForPasses returns the absolute repo root, derived from this
-// test file's location so the tiny.pulse fixture resolves regardless
-// of `go test ./...` cwd.
-func repoRootForPasses(t *testing.T) string {
-	t.Helper()
-	_, here, _, ok := runtime.Caller(0)
-	if !ok {
-		t.Fatal("runtime.Caller failed")
-	}
-	return filepath.Join(filepath.Dir(here), "..", "..")
+// fieldSpec is a small helper for declaring inline schema fields.
+type fieldSpec struct {
+	name, typ string
 }
 
-// memFS produces a memory-backed afero with a stub .pulse file at
-// /a.pulse. For unit tests we only need SourceNode.OutputSchema() to
-// succeed; the bytes themselves are never read.
-func memFSWithSchema(t *testing.T, name string, schema *encoding.Schema) afero.Fs {
+// srcWithFields builds a SourceNode whose OutputSchema derives from a
+// single synthetic inline row carrying the named fields. The optimizer
+// passes consult only the schema's field names (not row values), so one
+// representative row per field suffices. The Pulse-free ingestion path
+// (E4) materialises the schema through the resolver's inline seam — no
+// `.pulse` bytes are read.
+func srcWithFields(t *testing.T, ref string, fields []fieldSpec) (*nodes.SourceNode, afero.Fs) {
 	t.Helper()
-	// Build a minimal Pulse cohort: header + schema + 0 records.
+	row := map[string]any{}
+	specFields := make([]spec.FieldSpec, 0, len(fields))
+	for _, f := range fields {
+		specFields = append(specFields, spec.FieldSpec{Name: f.name, Type: f.typ})
+		switch f.typ {
+		case "f64", "u8":
+			row[f.name] = 0.0
+		default:
+			row[f.name] = "x"
+		}
+	}
+	data := resolve.MapDataResolver{ref: {Values: []map[string]any{row}, Fields: specFields}}
 	fs := afero.NewMemMapFs()
-	f, err := fs.Create(name)
-	if err != nil {
-		t.Fatalf("create: %v", err)
-	}
-	defer f.Close()
-	if err := encoding.WriteHeader(f); err != nil {
-		t.Fatalf("write header: %v", err)
-	}
-	if err := encoding.WriteSchema(f, schema); err != nil {
-		t.Fatalf("write schema: %v", err)
-	}
-	return fs
-}
-
-func srcWithSchema(t *testing.T, ref string, schema *encoding.Schema) (*nodes.SourceNode, afero.Fs) {
-	t.Helper()
-	fs := memFSWithSchema(t, ref, schema)
-	return nodes.New(ref, fs, resolve.New(nil)), fs
+	return nodes.New(ref, fs, resolve.NewWithData(nil, data)), fs
 }
 
 func TestPrismDedupSourcesNoop(t *testing.T) {
-	schema := &encoding.Schema{Fields: []encoding.Field{
-		{Name: "v", Type: encoding.FieldTypeF64},
-	}}
-	src, _ := srcWithSchema(t, "/a.pulse", schema)
+	src, _ := srcWithFields(t, "a", []fieldSpec{{"v", "f64"}})
 	b := plan.NewBuilder()
 	_ = b.AddNode(src)
 	_ = b.MarkRoot(src.ID())
@@ -88,16 +73,10 @@ func TestPrismDedupSourcesNoop(t *testing.T) {
 // over a Join(L on brand_id) and asserts the pass moves the filter
 // under the left input.
 func TestPrismFilterPushdownLeftSide(t *testing.T) {
-	leftSchema := &encoding.Schema{Fields: []encoding.Field{
-		{Name: "brand_id", Type: encoding.FieldTypeCategoricalU8},
-		{Name: "score", Type: encoding.FieldTypeF64},
-	}}
-	rightSchema := &encoding.Schema{Fields: []encoding.Field{
-		{Name: "brand_id", Type: encoding.FieldTypeCategoricalU8},
-		{Name: "label", Type: encoding.FieldTypeCategoricalU8},
-	}}
-	left, _ := srcWithSchema(t, "/left.pulse", leftSchema)
-	right, _ := srcWithSchema(t, "/right.pulse", rightSchema)
+	leftFields := []fieldSpec{{"brand_id", "categorical_u8"}, {"score", "f64"}}
+	rightFields := []fieldSpec{{"brand_id", "categorical_u8"}, {"label", "categorical_u8"}}
+	left, _ := srcWithFields(t, "left", leftFields)
+	right, _ := srcWithFields(t, "right", rightFields)
 
 	b := plan.NewBuilder()
 	_ = b.AddNode(left)
@@ -107,7 +86,7 @@ func TestPrismFilterPushdownLeftSide(t *testing.T) {
 	join := nodes.NewJoin("j1", left.ID(), right.ID(), []string{"brand_id"}, nodes.JoinInner, 0)
 	_ = b.AddNode(join)
 	// Filter references `score` — exclusively in the left schema.
-	filt := nodes.NewFilter("f1", join.ID(), "score > 0.5")
+	filt := nodes.NewFilter("f1", join.ID(), spec.Predicate{Op: spec.PredGt, Field: "score", Value: 0.5})
 	_ = b.AddNode(filt)
 	_ = b.MarkSink(filt.ID())
 	d, err := b.Build()
@@ -139,16 +118,10 @@ func TestPrismFilterPushdownLeftSide(t *testing.T) {
 
 // TestPrismFilterPushdownRightSide is the symmetric case.
 func TestPrismFilterPushdownRightSide(t *testing.T) {
-	leftSchema := &encoding.Schema{Fields: []encoding.Field{
-		{Name: "brand_id", Type: encoding.FieldTypeCategoricalU8},
-		{Name: "score", Type: encoding.FieldTypeF64},
-	}}
-	rightSchema := &encoding.Schema{Fields: []encoding.Field{
-		{Name: "brand_id", Type: encoding.FieldTypeCategoricalU8},
-		{Name: "label", Type: encoding.FieldTypeCategoricalU8},
-	}}
-	left, _ := srcWithSchema(t, "/leftR.pulse", leftSchema)
-	right, _ := srcWithSchema(t, "/rightR.pulse", rightSchema)
+	leftFields := []fieldSpec{{"brand_id", "categorical_u8"}, {"score", "f64"}}
+	rightFields := []fieldSpec{{"brand_id", "categorical_u8"}, {"label", "categorical_u8"}}
+	left, _ := srcWithFields(t, "leftR", leftFields)
+	right, _ := srcWithFields(t, "rightR", rightFields)
 	b := plan.NewBuilder()
 	_ = b.AddNode(left)
 	_ = b.AddNode(right)
@@ -156,7 +129,7 @@ func TestPrismFilterPushdownRightSide(t *testing.T) {
 	_ = b.MarkRoot(right.ID())
 	join := nodes.NewJoin("j2", left.ID(), right.ID(), []string{"brand_id"}, nodes.JoinInner, 0)
 	_ = b.AddNode(join)
-	filt := nodes.NewFilter("f2", join.ID(), "label == 'alpha'")
+	filt := nodes.NewFilter("f2", join.ID(), spec.Predicate{Op: spec.PredEq, Field: "label", Value: "alpha"})
 	_ = b.AddNode(filt)
 	_ = b.MarkSink(filt.ID())
 	d, _ := b.Build()
@@ -181,16 +154,10 @@ func TestPrismFilterPushdownRightSide(t *testing.T) {
 // TestPrismFilterPushdownMixedColumnsNoOp asserts a filter referencing
 // both sides stays where it is.
 func TestPrismFilterPushdownMixedColumnsNoOp(t *testing.T) {
-	leftSchema := &encoding.Schema{Fields: []encoding.Field{
-		{Name: "brand_id", Type: encoding.FieldTypeCategoricalU8},
-		{Name: "score", Type: encoding.FieldTypeF64},
-	}}
-	rightSchema := &encoding.Schema{Fields: []encoding.Field{
-		{Name: "brand_id", Type: encoding.FieldTypeCategoricalU8},
-		{Name: "label", Type: encoding.FieldTypeCategoricalU8},
-	}}
-	left, _ := srcWithSchema(t, "/leftM.pulse", leftSchema)
-	right, _ := srcWithSchema(t, "/rightM.pulse", rightSchema)
+	leftFields := []fieldSpec{{"brand_id", "categorical_u8"}, {"score", "f64"}}
+	rightFields := []fieldSpec{{"brand_id", "categorical_u8"}, {"label", "categorical_u8"}}
+	left, _ := srcWithFields(t, "leftM", leftFields)
+	right, _ := srcWithFields(t, "rightM", rightFields)
 	b := plan.NewBuilder()
 	_ = b.AddNode(left)
 	_ = b.AddNode(right)
@@ -199,7 +166,10 @@ func TestPrismFilterPushdownMixedColumnsNoOp(t *testing.T) {
 	join := nodes.NewJoin("j3", left.ID(), right.ID(), []string{"brand_id"}, nodes.JoinInner, 0)
 	_ = b.AddNode(join)
 	// Filter references columns from both sides.
-	filt := nodes.NewFilter("f3", join.ID(), "score > 0.5 and label != ''")
+	filt := nodes.NewFilter("f3", join.ID(), spec.Predicate{And: []spec.Predicate{
+		{Op: spec.PredGt, Field: "score", Value: 0.5},
+		{Op: spec.PredNe, Field: "label", Value: ""},
+	}})
 	_ = b.AddNode(filt)
 	_ = b.MarkSink(filt.ID())
 	d, _ := b.Build()
@@ -216,13 +186,12 @@ func TestPrismFilterPushdownMixedColumnsNoOp(t *testing.T) {
 // TestPrismProjectionPruning injects a Project below the Source when
 // the GroupAggregate downstream uses only 2 of the source's 4 columns.
 func TestPrismProjectionPruning(t *testing.T) {
-	schema := &encoding.Schema{Fields: []encoding.Field{
-		{Name: "brand_id", Type: encoding.FieldTypeCategoricalU8},
-		{Name: "score", Type: encoding.FieldTypeF64},
-		{Name: "age", Type: encoding.FieldTypeU8},
-		{Name: "region", Type: encoding.FieldTypeCategoricalU8},
-	}}
-	src, _ := srcWithSchema(t, "/proj.pulse", schema)
+	src, _ := srcWithFields(t, "proj", []fieldSpec{
+		{"brand_id", "categorical_u8"},
+		{"score", "f64"},
+		{"age", "u8"},
+		{"region", "categorical_u8"},
+	})
 	b := plan.NewBuilder()
 	_ = b.AddNode(src)
 	_ = b.MarkRoot(src.ID())
@@ -270,11 +239,10 @@ func TestPrismProjectionPruning(t *testing.T) {
 // TestPrismAggregateFusion merges two sibling GroupAggregates sharing
 // an input + groupby into a single node with the union of aggs.
 func TestPrismAggregateFusion(t *testing.T) {
-	schema := &encoding.Schema{Fields: []encoding.Field{
-		{Name: "brand_id", Type: encoding.FieldTypeCategoricalU8},
-		{Name: "score", Type: encoding.FieldTypeF64},
-	}}
-	src, _ := srcWithSchema(t, "/agg-fuse.pulse", schema)
+	src, _ := srcWithFields(t, "agg-fuse", []fieldSpec{
+		{"brand_id", "categorical_u8"},
+		{"score", "f64"},
+	})
 	b := plan.NewBuilder()
 	_ = b.AddNode(src)
 	_ = b.MarkRoot(src.ID())
@@ -328,12 +296,11 @@ func TestPrismAggregateFusion(t *testing.T) {
 // TestPrismAggregateFusionDifferentGroupbyNoop confirms two GAs with
 // different groupby keys are not merged.
 func TestPrismAggregateFusionDifferentGroupbyNoop(t *testing.T) {
-	schema := &encoding.Schema{Fields: []encoding.Field{
-		{Name: "brand_id", Type: encoding.FieldTypeCategoricalU8},
-		{Name: "region", Type: encoding.FieldTypeCategoricalU8},
-		{Name: "score", Type: encoding.FieldTypeF64},
-	}}
-	src, _ := srcWithSchema(t, "/agg-noop.pulse", schema)
+	src, _ := srcWithFields(t, "agg-noop", []fieldSpec{
+		{"brand_id", "categorical_u8"},
+		{"region", "categorical_u8"},
+		{"score", "f64"},
+	})
 	b := plan.NewBuilder()
 	_ = b.AddNode(src)
 	_ = b.MarkRoot(src.ID())
@@ -365,10 +332,7 @@ func TestPrismAggregateFusionDifferentGroupbyNoop(t *testing.T) {
 // PRISM_RENDER_MAX_MARKS. The in-memory cohort has 0 records, so the
 // pass must report no change regardless of the marks ceiling.
 func TestPrismSampleInjectionSkipsSmallSource(t *testing.T) {
-	schema := &encoding.Schema{Fields: []encoding.Field{
-		{Name: "v", Type: encoding.FieldTypeF64},
-	}}
-	src, _ := srcWithSchema(t, "/sample.pulse", schema)
+	src, _ := srcWithFields(t, "sample", []fieldSpec{{"v", "f64"}})
 	b := plan.NewBuilder()
 	_ = b.AddNode(src)
 	_ = b.MarkRoot(src.ID())
@@ -388,14 +352,20 @@ func TestPrismSampleInjectionSkipsSmallSource(t *testing.T) {
 
 // TestPrismSampleInjectionFiresAboveLimit asserts SampleInjection
 // injects a SampleNode below a Source whose row count exceeds the
-// runtime PRISM_RENDER_MAX_MARKS ceiling. Uses the committed 1000-row
-// tiny.pulse fixture with the env var lowered to 100 so the Source
-// crosses the threshold deterministically.
+// runtime PRISM_RENDER_MAX_MARKS ceiling. Backs the Source with an
+// inline DataResolver serving 250 rows and lowers the ceiling to 100 so
+// the Source crosses the threshold deterministically (Pulse-free, E4).
 func TestPrismSampleInjectionFiresAboveLimit(t *testing.T) {
 	t.Setenv("PRISM_RENDER_MAX_MARKS", "100")
-	root := repoRootForPasses(t)
-	cohort := filepath.Join(root, "testdata", "cohorts", "tiny.pulse")
-	src := nodes.New(cohort, afero.NewOsFs(), resolve.New(nil))
+	rows := make([]map[string]any, 250)
+	for i := range rows {
+		rows[i] = map[string]any{"v": float64(i)}
+	}
+	data := resolve.MapDataResolver{"big": {
+		Values: rows,
+		Fields: []spec.FieldSpec{{Name: "v", Type: "f64"}},
+	}}
+	src := nodes.New("big", afero.NewMemMapFs(), resolve.NewWithData(nil, data))
 
 	b := plan.NewBuilder()
 	_ = b.AddNode(src)
@@ -432,12 +402,11 @@ func TestPrismSampleInjectionFiresAboveLimit(t *testing.T) {
 // stress DAG (one source, many GAs sharing groupby) and asserts the
 // fixed-point loop terminates within the optimizer's iteration cap.
 func TestPrismOptimizerPassesTerminate(t *testing.T) {
-	schema := &encoding.Schema{Fields: []encoding.Field{
-		{Name: "brand_id", Type: encoding.FieldTypeCategoricalU8},
-		{Name: "score", Type: encoding.FieldTypeF64},
-		{Name: "extra", Type: encoding.FieldTypeF64},
-	}}
-	src, _ := srcWithSchema(t, "/stress.pulse", schema)
+	src, _ := srcWithFields(t, "stress", []fieldSpec{
+		{"brand_id", "categorical_u8"},
+		{"score", "f64"},
+		{"extra", "f64"},
+	})
 	b := plan.NewBuilder()
 	_ = b.AddNode(src)
 	_ = b.MarkRoot(src.ID())
@@ -484,11 +453,10 @@ func intToStrPasses(n int) string {
 // TestPrismProjectionPruningNoop confirms that when every Source column
 // is used downstream, no Project is injected.
 func TestPrismProjectionPruningNoop(t *testing.T) {
-	schema := &encoding.Schema{Fields: []encoding.Field{
-		{Name: "brand_id", Type: encoding.FieldTypeCategoricalU8},
-		{Name: "score", Type: encoding.FieldTypeF64},
-	}}
-	src, _ := srcWithSchema(t, "/proj-noop.pulse", schema)
+	src, _ := srcWithFields(t, "proj-noop", []fieldSpec{
+		{"brand_id", "categorical_u8"},
+		{"score", "f64"},
+	})
 	b := plan.NewBuilder()
 	_ = b.AddNode(src)
 	_ = b.MarkRoot(src.ID())

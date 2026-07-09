@@ -1,12 +1,13 @@
 # Prism
 
-Prism is a visualization library for [`.pulse`][pulse] files. It
-compiles declarative JSON specs into charts — server-side SVG / PNG /
-PDF via Go, and live in-browser via web components — using
-Vega-Lite-inspired vocabulary with snake_case naming and Pulse
-expression syntax.
-
-[pulse]: https://github.com/frankbardon/pulse
+Prism is a visualization library for materialized tabular data. It
+compiles declarative JSON specs into charts — server-side SVG / PNG via
+Go, and live in-browser via web components — using Vega-Lite-inspired
+vocabulary with snake_case naming and structured, expression-free
+transforms. Data enters as inline rows (`data.values` /
+`datasets.*.values`) or via a caller-supplied `DataResolver`; Prism
+never reads `.pulse` files — the downstream library owns Pulse and
+hands Prism already-materialized rows.
 
 ## Install
 

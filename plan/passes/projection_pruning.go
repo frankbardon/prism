@@ -1,11 +1,13 @@
 package passes
 
 import (
+	"sort"
 	"strconv"
 	"strings"
 
 	"github.com/frankbardon/prism/plan"
 	"github.com/frankbardon/prism/plan/nodes"
+	"github.com/frankbardon/prism/table"
 )
 
 // ProjectionPruningPass injects a ProjectNode immediately downstream of
@@ -141,7 +143,7 @@ func neededColumnsForSource(
 func collectColsFromNode(n plan.Node, out map[string]struct{}) bool {
 	switch v := n.(type) {
 	case *nodes.FilterNode:
-		for _, c := range extractIdentifiers(v.Expr()) {
+		for _, c := range v.ReferencedFields() {
 			out[c] = struct{}{}
 		}
 		return true
@@ -186,7 +188,7 @@ func rewireSingleInput(n plan.Node, oldIn, newIn plan.NodeID) plan.Node {
 		if v.Inputs()[0] != oldIn {
 			return nil
 		}
-		return nodes.NewFilter(v.ID(), newIn, v.Expr())
+		return nodes.NewFilter(v.ID(), newIn, v.Predicate())
 	case *nodes.ProjectNode:
 		if v.Inputs()[0] != oldIn {
 			return nil
@@ -211,16 +213,16 @@ func rewireSingleInput(n plan.Node, oldIn, newIn plan.NodeID) plan.Node {
 	return nil
 }
 
-// orderedFields returns the names of s's fields that appear in
+// orderedFields returns the names of the schema's fields that appear in
 // `needed`, preserving the schema's original field order.
-func orderedFields(s any, needed map[string]struct{}) []string {
+func orderedFields(sch *table.Schema, needed map[string]struct{}) []string {
 	out := []string{}
-	sch := schemaFromAny(s)
 	if sch == nil {
 		// Fallback: alphabetical (deterministic for goldens).
 		for k := range needed {
 			out = append(out, k)
 		}
+		sort.Strings(out)
 		return out
 	}
 	for i := range sch.Fields {

@@ -42,7 +42,7 @@ func helperInlineTable(t *testing.T) *table.Table {
 func TestPrismInMemBackendDispatchFilter(t *testing.T) {
 	in := helperInlineTable(t)
 	b := New()
-	n := nodes.NewFilter("filter:1", "src", "score > 0.5")
+	n := nodes.NewFilter("filter:1", "src", spec.Predicate{Op: spec.PredGt, Field: "score", Value: 0.5})
 	out, err := b.Compile(context.Background(), n, []*table.Table{in})
 	if err != nil {
 		t.Fatalf("Compile: %v", err)
@@ -121,7 +121,10 @@ func TestPrismInMemBackendDispatchSample(t *testing.T) {
 func TestPrismInMemBackendDispatchCalculate(t *testing.T) {
 	in := helperInlineTable(t)
 	b := New()
-	n := nodes.NewCalculate("c:1", "src", "score * 2", "doubled")
+	n := nodes.NewCalculate("c:1", "src",
+		spec.CalcExpr{Op: spec.CalcMul, Operands: []spec.CalcExpr{
+			{Field: "score"}, {Literal: float64(2)},
+		}}, "doubled")
 	out, err := b.Compile(context.Background(), n, []*table.Table{in})
 	if err != nil {
 		t.Fatalf("Compile: %v", err)
@@ -267,7 +270,9 @@ func TestPrismInMemBackendStubFallthrough(t *testing.T) {
 func TestPrismFilterCompile002OnBadExpr(t *testing.T) {
 	in := helperInlineTable(t)
 	b := New()
-	n := nodes.NewFilter("filter:bad", "src", "score >")
+	// A predicate referencing a column absent from the input surfaces
+	// PRISM_COMPILE_002 from the structured evaluator.
+	n := nodes.NewFilter("filter:bad", "src", spec.Predicate{Op: spec.PredGt, Field: "nonexistent", Value: 0})
 	_, err := b.Compile(context.Background(), n, []*table.Table{in})
 	if err == nil {
 		t.Fatal("expected PRISM_COMPILE_002, got nil")

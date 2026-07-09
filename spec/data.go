@@ -5,19 +5,30 @@ import (
 	"fmt"
 )
 
-// Data is the data binding: source path, named ref, runtime resolver
-// ref, inline values, or a synthesized feature_collection (geoshape
-// basemap mode). The discriminator is which key is present.
+// Data is the data binding: named ref, runtime resolver ref, inline
+// values, a named dataset, or a synthesized feature_collection
+// (geoshape basemap mode). The discriminator is which key is present.
+//
+// The wire-level `source` variant (`{"data": {"source": "cohort.pulse"}}`)
+// was removed in E4-S3: Prism no longer opens `.pulse` files, so a spec
+// can no longer name an external Pulse source. Decoding a spec that
+// still carries a `source` key fails with a PRISM_SPEC_039 decode error
+// pointing at inline `values` / the runtime `ref` seam.
 type Data struct {
-	Source string `json:"source,omitempty"`
+	// Source is NOT a wire field (json:"-"): it is an internal binding
+	// target populated by the server-side DatasetRegistry (a
+	// `{"data": {"name": "…"}}` reference resolving through
+	// `PRISM_DATASETS` / `--datasets-config`) and by test harnesses that
+	// construct a SourceNode directly. The user-facing `data.source`
+	// variant was removed in E4-S3 — see the type doc.
+	Source string `json:"-"`
 	// Ref is an opaque identifier resolved at compile time by the
 	// caller-supplied DataResolver (see resolve.DataResolver / the
 	// WASM `prism.setDataResolver` hook). Lets a spec stay portable
 	// across rendering environments: the spec describes *what to
 	// draw*; the resolver supplies *the data to draw it with*.
-	Ref    string `json:"ref,omitempty"`
-	Format string `json:"format,omitempty"`
-	Name   string `json:"name,omitempty"`
+	Ref  string `json:"ref,omitempty"`
+	Name string `json:"name,omitempty"`
 
 	// Inline-only fields.
 	Values []map[string]any `json:"values,omitempty"`
@@ -50,7 +61,15 @@ func (d *Data) UnmarshalJSON(data []byte) error {
 	if err := json.Unmarshal(data, &probe); err != nil {
 		return fmt.Errorf("data: %w", err)
 	}
-	hasSource := keyPresent(probe, "source")
+	// The `source` variant was removed in E4-S3: Prism can no longer
+	// open `.pulse` files, so a spec may not name an external source.
+	// Reject it at decode with a pointer to the surviving inline / ref
+	// paths (the message names PRISM_SPEC_039 so `prism errors lookup
+	// PRISM_SPEC_039` resolves the fixup).
+	if keyPresent(probe, "source") {
+		return fmt.Errorf("data: the `source` variant was removed (Prism no longer reads .pulse); " +
+			"supply inline `values`, a `datasets` entry, or a runtime `ref` resolved by a DataResolver (PRISM_SPEC_039)")
+	}
 	hasName := keyPresent(probe, "name")
 	hasRef := keyPresent(probe, "ref")
 	hasValues := keyPresent(probe, "values")
@@ -62,10 +81,10 @@ func (d *Data) UnmarshalJSON(data []byte) error {
 		return fmt.Errorf("data: %w", err)
 	}
 	switch {
-	case hasSource, hasValues, hasName, hasRef, hasFeatures:
+	case hasValues, hasName, hasRef, hasFeatures:
 		*d = Data(r)
 	default:
-		return fmt.Errorf("data: must declare one of source, name, ref, values, or feature_collection")
+		return fmt.Errorf("data: must declare one of name, ref, values, or feature_collection")
 	}
 	return nil
 }

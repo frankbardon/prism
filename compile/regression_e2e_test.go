@@ -5,28 +5,33 @@ import (
 	"math"
 	"testing"
 
-	"github.com/frankbardon/pulse"
-	"github.com/frankbardon/pulse/types"
 	"github.com/spf13/afero"
 
 	"github.com/frankbardon/prism/compile/inmem"
 	"github.com/frankbardon/prism/plan"
 	"github.com/frankbardon/prism/plan/build"
-	"github.com/frankbardon/prism/resolve"
 	"github.com/frankbardon/prism/spec"
 )
 
+// Frozen REG_OLS coefficients for score ~ age over the tiny cohort,
+// captured via pulse.Process (REG_OLS) at the point Pulse left the
+// ingestion path. See inline_fixture_test.go.
+const (
+	frozenRegIntercept = 0.5069977372795017
+	frozenRegSlope     = -0.00017968737184751842
+)
+
 // TestRegressionTrendEndpoints runs a regression transform (score ~ age)
-// against tiny.pulse end-to-end and asserts it emits exactly two
-// trend-line endpoints whose fitted values match a direct Pulse REG_OLS
-// fit (intercept + slope*x at the predictor min/max). This pins the
-// leaf node's coefficient + x-domain wiring to Pulse's own OLS output.
+// over the tiny cohort's inline rows and asserts it emits exactly two
+// trend-line endpoints whose fitted values match the frozen Pulse OLS
+// fit (intercept + slope*x at each emitted predictor value). This pins
+// the leaf node's coefficient + x-domain wiring to the value Pulse's OLS
+// produced, without a live Pulse dependency.
 func TestRegressionTrendEndpoints(t *testing.T) {
-	cohortPath := fixturePath(t)
-	fs := afero.NewOsFs()
+	fs := afero.NewMemMapFs()
 
 	s := &spec.Spec{
-		Data: &spec.Data{Source: cohortPath},
+		Data: &spec.Data{Source: tinyRef},
 		Transform: []spec.Transform{
 			{Regression: &spec.RegressionTransform{Regression: spec.RegressionBody{
 				Target:     "score",
@@ -38,7 +43,7 @@ func TestRegressionTrendEndpoints(t *testing.T) {
 
 	dag, _, err := build.Build(s, build.Options{
 		FS:       fs,
-		Resolver: resolve.New(nil),
+		Resolver: tinyResolver(t),
 		Backend:  inmem.New(),
 	})
 	if err != nil {
@@ -67,31 +72,7 @@ func TestRegressionTrendEndpoints(t *testing.T) {
 		t.Fatal("missing fitted column")
 	}
 
-	// Direct Pulse REG_OLS fit + predictor range for the expected line.
-	pulseInst, err := pulse.New(pulse.Options{FS: fs})
-	if err != nil {
-		t.Fatalf("pulse.New: %v", err)
-	}
-	resp, err := pulseInst.Process(context.Background(), &pulse.Request{
-		Cohort: &types.Cohort{Filename: cohortPath},
-		Aggregations: []*types.Aggregation{
-			{Type: types.AGG_MIN, Field: "age", Label: "lo"},
-			{Type: types.AGG_MAX, Field: "age", Label: "hi"},
-		},
-		Regressions: []*types.RegressionSpec{{
-			Type:       types.REG_OLS,
-			Target:     "score",
-			Predictors: []string{"age"},
-		}},
-	})
-	if err != nil {
-		t.Fatalf("pulse.Process: %v", err)
-	}
-	coef := resp.Regressions[0].Coefficients
-	intercept := coef["(intercept)"]
-	slope := coef["age"]
-	want := func(x float64) float64 { return intercept + slope*x }
-
+	want := func(x float64) float64 { return frozenRegIntercept + frozenRegSlope*x }
 	for i := 0; i < final.NumRows(); i++ {
 		x, _ := ageCol.ValueAt(i).(float64)
 		got, _ := fitCol.ValueAt(i).(float64)

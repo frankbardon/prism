@@ -23,13 +23,18 @@ type Condition struct {
 // PRISM_SPEC_025/026). Exactly one of {Value, Field} must be set —
 // PRISM_SPEC_027 — except that a selection-form entry with no Value
 // inherits the channel's own field binding implicitly.
+//
+// Test is a structured predicate (spec.Predicate, E2-S3) evaluated
+// row-by-row at encode time — the same grammar filter uses. The legacy
+// free-form expression string is rejected at decode time by
+// Predicate.UnmarshalJSON.
 type ConditionTest struct {
-	Selection string `json:"selection,omitempty"`
-	Test      string `json:"test,omitempty"`
-	Field     string `json:"field,omitempty"`
-	Type      string `json:"type,omitempty"`
-	Value     any    `json:"value,omitempty"`
-	Scale     *Scale `json:"scale,omitempty"`
+	Selection string     `json:"selection,omitempty"`
+	Test      *Predicate `json:"test,omitempty"`
+	Field     string     `json:"field,omitempty"`
+	Type      string     `json:"type,omitempty"`
+	Value     any        `json:"value,omitempty"`
+	Scale     *Scale     `json:"scale,omitempty"`
 }
 
 // MarshalJSON emits a single object or an array depending on which

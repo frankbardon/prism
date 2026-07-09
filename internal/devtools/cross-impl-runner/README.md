@@ -58,12 +58,62 @@ add the fixture name to the `curatedFixtures` slice in
 populate `scene.json` + `go.svg`, then re-run without REGEN to
 confirm JS parity.
 
+## TinyGo ↔ standard-Go float parity
+
+`make build-wasm-tinygo` produces a smaller WASM module built by TinyGo
+(its own `strconv`). Because every SVG coordinate funnels through the
+single `render.FormatFloat` helper (`render/precision.go`, pinned to 3
+decimals), TinyGo's float stringification must match standard Go's
+byte-for-byte or the coordinate goldens drift — the top risk of the
+TinyGo migration. `tinygo_parity_test.go` proves it does not:
+
+```
+PRISM_CROSS_IMPL_TINYGO=1 go test ./internal/devtools/ -run TinyGo -v
+```
+
+- `TestTinyGoWasmSVGParity` — builds `cmd/prismwasm` with TinyGo,
+  renders a float-diverse fixture corpus under Node via `probe-runner.mjs`
+  (with TinyGo's paired `wasm_exec.js`), and diffs each SVG against the
+  committed standard-Go `go.svg`.
+- `TestTinyGoFloatFormatParity` — drives `render.FormatFloat` over an
+  edge-case corpus (`floatcorpus/`) in host / Go-wasm / TinyGo-wasm and
+  asserts all three agree.
+
+Skips cleanly unless `PRISM_CROSS_IMPL_TINYGO=1` and both `node` and
+`tinygo` are on PATH.
+
+## TinyGo end-to-end render smoke
+
+Float parity proves TinyGo stringifies coordinates identically; it does
+not prove the TinyGo binary renders a chart *from a spec*. That is the
+job of `tinygo_render_test.go` (`TestTinyGoWasmRenderPipeline`), which
+drives the full exported pipeline — `validate` → `plan` → `execute`
+(in-memory transforms over inline `data.values` or a JS-supplied
+`DataResolver`) → `render` — through the TinyGo `globalThis.prism`
+surface via `probe-runner.mjs pipeline`, and asserts each fixture yields
+a non-empty, well-formed `<svg>` with the expected mark geometry.
+
+```
+PRISM_CROSS_IMPL_TINYGO=1 go test ./internal/devtools/ -run TinyGoWasmRenderPipeline -v
+```
+
+Fixtures live under `testdata/tinygo_render/`. They span the transform
+families this closes end-to-end: structured `filter` + `calculate` (E2),
+the previously-Pulse `crosstab` and `regression` (E3, now pure-Go), and a
+`data: {ref}` spec whose rows arrive through `prism.setDataResolver`. A
+`<name>.sidecar.json` supplies the optional `{"datasets": …,
+"resolver": …}` pair (a `crosstab`/`regression` chain needs a
+source-rooted input, reached here by a `datasets`-registered `data:
+{name}`). Assertions are structural, not byte goldens — byte parity is
+already covered above. Same opt-in gate as the parity tests.
+
 ## Files
 
 | File                              | Purpose                                          |
 | --------------------------------- | ------------------------------------------------ |
 | `package.json`                    | One npm dep declaration (happy-dom).             |
-| `main.mjs`                        | Runs `prism.mjs` against scene.json → js.svg.    |
+| `main.mjs`                        | Runs `bin/prism.wasm` against scene.json → wasm.svg. |
+| `probe-runner.mjs`                | Parametric wasm driver (any wasm + paired exec); `render`, `global`, or `pipeline` (full validate→plan→execute→render) mode. Used by the TinyGo parity + render smoke. |
 | `web-component-lifecycle.mjs`     | Asserts connect/disconnect/re-render cycle.      |
 | `dataset-registry-dedupe.mjs`     | Asserts fetch memoisation by URL.                |
 | `README.md`                       | This file.                                       |

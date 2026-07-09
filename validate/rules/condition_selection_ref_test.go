@@ -58,7 +58,7 @@ func TestConditionSelectionRefIgnoresTestEntries(t *testing.T) {
 		Encoding: &spec.Encoding{
 			Color: &spec.MarkChannel{
 				ChannelCommon: spec.ChannelCommon{
-					Condition: &spec.Condition{Single: &spec.ConditionTest{Test: "score > 0", Value: "red"}},
+					Condition: &spec.Condition{Single: &spec.ConditionTest{Test: &spec.Predicate{Op: spec.PredGt, Field: "score", Value: 0.0}, Value: "red"}},
 				},
 			},
 		},

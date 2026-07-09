@@ -4,8 +4,6 @@ import (
 	"context"
 	"strings"
 
-	"github.com/frankbardon/pulse/encoding"
-
 	"github.com/frankbardon/prism/plan"
 	"github.com/frankbardon/prism/table"
 )
@@ -34,7 +32,7 @@ func (n *ProjectNode) Inputs() []plan.NodeID { return []plan.NodeID{n.input} }
 // Schema implements plan.Node. Output schema is the projection of the
 // input schema down to fields named in n.fields, in the requested
 // order. Missing field names raise PRISM_PLAN_003.
-func (n *ProjectNode) Schema(in []*encoding.Schema) (*encoding.Schema, error) {
+func (n *ProjectNode) Schema(in []*table.Schema) (*table.Schema, error) {
 	s, err := requireSingleInput("ProjectNode", in)
 	if err != nil {
 		return nil, err

@@ -2,7 +2,7 @@
   "$schema": "urn:prism:schema:v1:spec",
   "data": {"values": [{"v": 1}]},
   "transform": [
-    {"filter": "v > "}
+    {"calculate": {"op": "div", "operands": [{"field": "v"}, {"literal": 0}]}, "as": "ratio"}
   ],
   "mark": "bar",
   "encoding": {

@@ -17,7 +17,7 @@ handler works against any binding.
     { "mark_index": 0, "instance_key": "layer-0:42" }
   ],
   "data_rows": [
-    { "dataset_name": "cohort.pulse", "row_index": 42 }
+    { "dataset_name": "cohort", "row_index": 42 }
   ],
   "data_extent":  { "x": { "min": 10, "max": 50 } },
   "pixel_extent": { "x": { "min": 120, "max": 480 } },

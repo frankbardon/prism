@@ -1,9 +1,10 @@
 package errors
 
 import (
-	"bytes"
+	"fmt"
+	"reflect"
 	"sort"
-	"text/template"
+	"strings"
 )
 
 // CodeMetadata describes one Prism error code: its message template,
@@ -70,14 +71,22 @@ var Codes = map[string]CodeMetadata{
 		},
 		SeeAlso: []string{"PRISM_RESOLVE_001"},
 	},
+	// PRISM_SPEC_006 is RETAINED but no longer emitted. Prism dropped its
+	// expression language: `filter`, `calculate`, and condition `test`
+	// are structured JSON built-ins whose shape errors surface as
+	// PRISM_SPEC_037 (filter) / PRISM_SPEC_038 (calculate) at validate
+	// time and are rejected at decode when a raw string is supplied. The
+	// entry stays so existing SeeAlso cross-references (PRISM_COMPILE_002,
+	// PRISM_SPEC_037) and `prism errors lookup PRISM_SPEC_006` still
+	// resolve.
 	"PRISM_SPEC_006": {
 		Code:    "PRISM_SPEC_006",
-		Message: `Expression failed to parse: {{.Reason}}.`,
+		Message: `Retired code: expression parsing was replaced by structured filter / calculate built-ins.`,
 		Fixups: []string{
-			`Check Pulse expression syntax. Expression: {{.Expression}}`,
-			`Quote string literals with single quotes ('value'), not double quotes.`,
-			`Use Pulse expression operators (and, or, not, ==, !=, <, <=, >, >=, +, -, *, /, %).`,
+			`Prism has no expression language. Write a structured predicate for filter (see PRISM_SPEC_037) and a structured expression tree for calculate (see PRISM_SPEC_038).`,
+			`A raw string where a predicate or expression is expected is rejected at decode time — replace it with {op, field, value} leaves / {op, operands} nodes.`,
 		},
+		SeeAlso: []string{"PRISM_SPEC_037", "PRISM_SPEC_038"},
 	},
 	"PRISM_SPEC_007": {
 		Code:    "PRISM_SPEC_007",
@@ -146,13 +155,13 @@ var Codes = map[string]CodeMetadata{
 	},
 	"PRISM_COMPILE_002": {
 		Code:    "PRISM_COMPILE_002",
-		Message: `Expression failed at runtime: {{.Reason}}.`,
+		Message: `Transform evaluation failed at runtime: {{.Reason}}.`,
 		Fixups: []string{
-			`Expression: {{.Expression}} (site: {{.Site}}).`,
-			`Run ` + "`prism validate`" + ` first — most parse errors surface as PRISM_SPEC_006 before they reach the compiler.`,
-			`Check field references match the upstream schema and that arithmetic does not divide by a possibly-zero value.`,
+			`Site: {{.Site}} — a structured filter / calculate built-in referenced an unknown column or an unsupported operator.`,
+			`Run ` + "`prism validate`" + ` first — well-formedness problems surface as PRISM_SPEC_037 (filter) / PRISM_SPEC_038 (calculate) before they reach the compiler.`,
+			`Check that every field / to_field operand matches the upstream schema. (A runtime zero divisor yields null silently; a literal-zero divisor is rejected by PRISM_SPEC_038.)`,
 		},
-		SeeAlso: []string{"PRISM_SPEC_006"},
+		SeeAlso: []string{"PRISM_SPEC_037", "PRISM_SPEC_038"},
 	},
 	"PRISM_COMPILE_003": {
 		Code:    "PRISM_COMPILE_003",
@@ -164,82 +173,98 @@ var Codes = map[string]CodeMetadata{
 		},
 		SeeAlso: []string{"PRISM_SPEC_002"},
 	},
+	// PRISM_COMPILE_004 is RETIRED but retained so `prism errors lookup`
+	// still resolves it. It signalled the old Pulse backend's inability to
+	// accept an in-memory cohort. Prism dropped the Pulse loader in epic
+	// E4: every node now runs over the in-memory backend against a
+	// materialised table.Table, so inline data is always supported and
+	// this code can no longer be emitted.
 	"PRISM_COMPILE_004": {
 		Code:    "PRISM_COMPILE_004",
-		Message: `Inline data is not supported by the Pulse backend for node {{.NodeType}}: {{.Reason}}.`,
+		Message: `Retired code: the Pulse backend was removed; inline data always runs over the in-memory backend.`,
 		Fixups: []string{
-			`The Pulse v0.8.4 facade does not expose an in-memory cohort constructor; inline data flows through the in-memory backend.`,
-			`Materialise the inline values to a ` + "`.pulse`" + ` file via ` + "`prism import`" + ` (post-P02) and reference it as a source.`,
-			`Track the upstream phase: in-memory Pulse cohorts land when Pulse exposes pulse.FromTable / pulse.NewMemory (no ETA).`,
+			`This code is no longer emitted. Inline ` + "`data.values`" + ` / ` + "`datasets.*.values`" + ` materialise into a table.Table that every plan node consumes directly — there is no external backend that can reject them.`,
 		},
 	},
 	"PRISM_RESOLVE_001": {
 		Code:    "PRISM_RESOLVE_001",
 		Message: `Dataset {{.Dataset}} not found in any registered source.`,
 		Fixups: []string{
-			`Verify the source path or cohort id.`,
-			`Add the dataset to "datasets" or to the prism serve config.`,
+			`Verify the dataset name or ` + "`cohort:<id>`" + ` ref.`,
+			`Add the dataset to the spec's ` + "`datasets`" + ` block (with inline ` + "`values`" + `) or register it with the prism serve / DataResolver config.`,
 		},
 	},
+	// PRISM_RESOLVE_002 is RETIRED but retained so `prism errors lookup`
+	// and existing SeeAlso cross-references still resolve. It reported a
+	// missing local `.pulse` file. Prism removed the Pulse file loader in
+	// epic E4 — it never opens `.pulse` files, so there is no filesystem
+	// lookup that can miss. Data arrives inline (`values`) or through a
+	// DataResolver ref (PRISM_RESOLVE_REF_UNRESOLVED covers a ref no
+	// resolver can satisfy).
 	"PRISM_RESOLVE_002": {
 		Code:    "PRISM_RESOLVE_002",
-		Message: `Local .pulse file {{.Path}} not found on the configured filesystem.`,
+		Message: `Retired code: Prism no longer opens files from disk; supply rows inline or via a DataResolver.`,
 		Fixups: []string{
-			`Check the path spelling and that the file exists (` + "`ls -lh {{.Path}}`" + `).`,
-			`Confirm the working directory matches what the spec assumes — relative paths are resolved against the process cwd unless an afero.Fs jail is in effect.`,
-			`If the data lives in an archive, use the anchor form: ` + "`archive.pulse#shard.pulse`" + `.`,
+			`This code is no longer emitted. Provide data as inline ` + "`data.values`" + ` / ` + "`datasets.*.values`" + `, or as a ` + "`data.ref`" + ` backed by a DataResolver. An unbacked ref surfaces as PRISM_RESOLVE_REF_UNRESOLVED.`,
 		},
-		SeeAlso: []string{"PRISM_RESOLVE_003", "PRISM_RESOLVE_005"},
+		SeeAlso: []string{"PRISM_RESOLVE_REF_UNRESOLVED"},
 	},
+	// PRISM_RESOLVE_003 is RETIRED but retained so `prism errors lookup`
+	// and existing SeeAlso cross-references still resolve. It reported a
+	// missing archive shard. Prism removed the Pulse loader (and its
+	// archive/shard addressing) in epic E4, so there are no shards to
+	// miss.
 	"PRISM_RESOLVE_003": {
 		Code:    "PRISM_RESOLVE_003",
-		Message: `Shard {{.Shard}} not present in archive {{.Archive}}.`,
+		Message: `Retired code: archive-shard addressing was removed with the Pulse loader.`,
 		Fixups: []string{
-			`Run ` + "`prism inspect {{.Archive}}`" + ` to list shard names (basenames only; no path).`,
-			`Anchors are case-sensitive; copy the basename verbatim from the archive listing.`,
+			`This code is no longer emitted. Prism has no archive/shard concept — register each dataset by name with inline ` + "`values`" + ` or a DataResolver ref instead.`,
 		},
-		SeeAlso: []string{"PRISM_RESOLVE_002"},
+		SeeAlso: []string{"PRISM_RESOLVE_REF_UNRESOLVED"},
 	},
 	"PRISM_RESOLVE_004": {
 		Code:    "PRISM_RESOLVE_004",
 		Message: `Cohort id {{.Id}} is not registered in the active resolver registry.`,
 		Fixups: []string{
-			`Register the id with the resolver's Registry before resolving (` + "`registry.Lookup(\"{{.Id}}\")`" + `).`,
-			`If you intended to load a file directly, drop the ` + "`cohort:`" + ` prefix and use the path form.`,
+			`Register the id with the resolver's Registry before resolving (` + "`registry.Lookup(\"{{.Id}}\")`" + `) so the ` + "`cohort:<id>`" + ` indirection points at a backing ref.`,
+			`Or skip the indirection entirely: reference the dataset by name and supply its rows inline (` + "`datasets.*.values`" + `) or via a DataResolver.`,
 		},
 	},
 	"PRISM_RESOLVE_005": {
 		Code:    "PRISM_RESOLVE_005",
-		Message: `Reference {{.Ref}} does not match any known form (path, archive#shard, gs://, or cohort:id).`,
+		Message: `Reference {{.Ref}} does not match any known form (dataset name or cohort:id).`,
 		Fixups: []string{
-			`Use one of: ` + "`cohort.pulse`" + `, ` + "`archive.pulse#shard.pulse`" + `, ` + "`gs://bucket/path.pulse`" + `, ` + "`cohort:<id>`" + `.`,
-			`Drop trailing whitespace and double-check for leading slashes that imply absolute paths.`,
+			`Use one of: a plain dataset name (registered in ` + "`datasets`" + ` or with the DataResolver), or ` + "`cohort:<id>`" + ` indirection through the resolver Registry.`,
+			`Drop trailing whitespace and any leading slashes — Prism no longer opens files, so a filesystem-looking path is not a valid ref.`,
 		},
 	},
+	// PRISM_RESOLVE_006 is RETIRED but retained so `prism errors lookup`
+	// still resolves it. It wrapped a Pulse open/decode failure. Prism
+	// removed the Pulse loader in epic E4 and never parses `.pulse` bytes,
+	// so there is no open step that can fail here.
 	"PRISM_RESOLVE_006": {
 		Code:    "PRISM_RESOLVE_006",
-		Message: `Pulse failed to open {{.Ref}}: {{.Reason}}.`,
+		Message: `Retired code: Prism no longer opens or decodes .pulse bytes.`,
 		Fixups: []string{
-			`Run ` + "`prism inspect {{.Ref}}`" + ` for header diagnostics.`,
-			`Verify the file is a real .pulse (the first 8 bytes spell ` + "`PULSE\\x00\\x00\\x00`" + `).`,
+			`This code is no longer emitted. Rows enter as inline ` + "`values`" + ` or through a DataResolver; a malformed inline row surfaces as PRISM_RESOLVE_INLINE_TYPE_MISMATCH, and an unbacked ref as PRISM_RESOLVE_REF_UNRESOLVED.`,
 		},
-		SeeAlso: []string{"PRISM_RESOLVE_002", "PRISM_RESOLVE_003"},
+		SeeAlso: []string{"PRISM_RESOLVE_INLINE_TYPE_MISMATCH", "PRISM_RESOLVE_REF_UNRESOLVED"},
 	},
 	"PRISM_RESOLVE_007": {
 		Code:    "PRISM_RESOLVE_007",
 		Message: `Materialisation refused: {{.Actual}} rows would exceed PRISM_TABLE_MAX_ROWS={{.Limit}}.`,
 		Fixups: []string{
 			`Raise the ceiling by setting ` + "`PRISM_TABLE_MAX_ROWS`" + ` in the environment before running prism.`,
-			`Pre-aggregate, sample, or filter at the Pulse layer to bring the result under the cap.`,
-			`Switch to a streaming consumer once P03 lands streaming; for v1 every node materialises a Table.`,
+			`Pre-aggregate, sample, or filter the rows upstream (in the host that produces the inline ` + "`values`" + ` / DataResolver rows) to bring the result under the cap.`,
+			`Add a ` + "`sample`" + ` or ` + "`aggregate`" + ` transform to the spec so the plan shrinks the table before it is fully materialised.`,
 		},
 	},
 	"PRISM_RESOLVE_GCS_UNAVAILABLE": {
 		Code:    "PRISM_RESOLVE_GCS_UNAVAILABLE",
-		Message: `gs:// references are not implemented in v1 (ref: {{.Ref}}).`,
+		Message: `gs:// references are not a supported ref form (ref: {{.Ref}}).`,
 		Fixups: []string{
-			`Stage the .pulse locally (` + "`gsutil cp gs://bucket/path.pulse ./`" + `) and reference the local path.`,
-			`Track the upstream phase: gs:// support lands once Pulse ships a generic GCS afero.Fs (planned P-NN-gcs-fs).`,
+			`Prism does not fetch remote objects. Fetch the data in the host, then pass the rows to Prism as inline ` + "`data.values`" + ` / ` + "`datasets.*.values`" + `.`,
+			`Or serve the rows through a ` + "`resolve.DataResolver`" + ` and reference them with ` + "`data.ref`" + ` so the host owns the transport.`,
 		},
 	},
 	"PRISM_RESOLVE_INLINE_TYPE_MISMATCH": {
@@ -399,13 +424,18 @@ var Codes = map[string]CodeMetadata{
 		},
 		SeeAlso: []string{"PRISM_PLAN_002", "PRISM_SPEC_007", "PRISM_RESOLVE_DUPLICATE_DATASET"},
 	},
+	// PRISM_PLAN_CHAIN_NOT_MERGEABLE is RETIRED but retained so
+	// `prism errors lookup` still resolves it. It was emitted by the
+	// chain-fusion optimizer pass, which pushed a source-rooted linear
+	// chain down to an external columnar reader. Prism now materialises
+	// every source into a table.Table and computes all filters and
+	// aggregates client-side over the in-memory backend, so there is no
+	// chain gate that can reject a fused stage.
 	"PRISM_PLAN_CHAIN_NOT_MERGEABLE": {
 		Code:    "PRISM_PLAN_CHAIN_NOT_MERGEABLE",
-		Message: `Pulse rejected a fused chain stage as non-mergeable for {{.Ref}}: {{.Reason}}.`,
+		Message: `Retired code: chain-fusion was removed; all transforms run over the in-memory backend.`,
 		Fixups: []string{
-			`Disable the Pulse-chain fusion pass and re-run; the chain falls back to per-node execution against the inmem backend.`,
-			`Check that every aggregate in the failing stage emits a scalar (mode/frequency are excluded by the v1 chain gate).`,
-			`Inspect the offending request via ` + "`prism plan <spec> --format json`" + ` to confirm which stage Pulse rejected.`,
+			`This code is no longer emitted. Filters, group-aggregates, and sorts all execute client-side against the materialised table — there is no fused chain that can fail.`,
 		},
 		SeeAlso: []string{"PRISM_PLAN_003"},
 	},
@@ -513,20 +543,25 @@ var Codes = map[string]CodeMetadata{
 		Message: `Fetch-backed filesystem failed to load {{.URL}} (HTTP {{.Status}}: {{.Reason}}).`,
 		Fixups: []string{
 			`Confirm the URL is reachable from the page origin and the server allows CORS for cross-origin requests.`,
-			`If the dataset lives behind an authentication wall, expose it through a proxy that adds the credentials before the browser hits it.`,
-			`For local development serve the .pulse files via a static file server (e.g. ` + "`python -m http.server`" + `) rather than file:// URLs — fetch refuses file:// in most browsers.`,
+			`The browser runtime only fetches geodata tier bundles (` + "`<tier>.geo.json`" + `) — set the base via ` + "`prism.geo.setBundleURL(url)`" + ` or ` + "`data-prism-geodata-url`" + ` and serve them from a static host (` + "`prism static-bundle`" + ` emits them alongside the wasm).`,
+			`Chart data does not travel over fetch: supply it inline as ` + "`data.values`" + ` / ` + "`datasets.*.values`" + `, or wire ` + "`prism.setDataResolver`" + ` to return the rows for a ` + "`data.ref`" + `.`,
 		},
-		SeeAlso: []string{"PRISM_RESOLVE_002", "PRISM_WASM_002"},
+		SeeAlso: []string{"PRISM_RESOLVE_REF_UNRESOLVED", "PRISM_GEODATA_TIER_MISSING"},
 	},
+	// PRISM_WASM_002 is RETIRED but retained so `prism errors lookup`
+	// still resolves it. It reported a static host that refused Range
+	// requests, blocking archive-shard random access in the browser. The
+	// Pulse loader and its archive/shard fetch path were removed in epic
+	// E4: the browser runtime fetches only whole geodata tiles and reads
+	// chart rows from inline `values` / a DataResolver, so there is no
+	// Range-based shard access to fail.
 	"PRISM_WASM_002": {
 		Code:    "PRISM_WASM_002",
-		Message: `Origin server for {{.URL}} does not honour Range: requests (status {{.Status}}); archive-shard random access is unavailable.`,
+		Message: `Retired code: browser archive-shard fetch was removed with the Pulse loader.`,
 		Fixups: []string{
-			`Serve archive shards from a static host that returns 206 Partial Content for Range requests (GitHub Pages, S3, Cloudflare R2, nginx with default config all do).`,
-			`If random access is impossible, materialise individual shards as standalone .pulse files at build time and reference them directly.`,
-			`Disable archive forms in the spec — load each shard via its own ` + "`<prism-dataset>`" + ` registration.`,
+			`This code is no longer emitted. The wasm runtime fetches only whole geodata tiles; chart rows arrive inline (` + "`values`" + `) or through ` + "`prism.setDataResolver`" + `, so no HTTP Range support is required.`,
 		},
-		SeeAlso: []string{"PRISM_WASM_001", "PRISM_RESOLVE_003"},
+		SeeAlso: []string{"PRISM_WASM_001"},
 	},
 	"PRISM_WASM_BUDGET_EXCEEDED": {
 		Code:    "PRISM_WASM_BUDGET_EXCEEDED",
@@ -628,19 +663,19 @@ var Codes = map[string]CodeMetadata{
 		Fixups: []string{
 			`Declare the selection in the spec's "selection" block before referencing it in a condition.`,
 			`Available selections: {{.Available}}.`,
-			`Use ` + "`{test: \"...\"}`" + ` for a Pulse-expression condition instead of a named selection.`,
+			`Use a ` + "`{test: {op, field, value}}`" + ` structured-predicate condition instead of a named selection.`,
 		},
 		SeeAlso: []string{"PRISM_SPEC_004", "PRISM_SPEC_026"},
 	},
 	"PRISM_SPEC_026": {
 		Code:    "PRISM_SPEC_026",
-		Message: `Condition on channel {{.Channel}}: test expression failed to parse: {{.Reason}}.`,
+		Message: `Condition test predicate is not well-formed ({{.Reason}}) at {{.Site}}.`,
 		Fixups: []string{
-			`Check Pulse expression syntax. Expression: {{.Expression}}`,
-			`Quote string literals with single quotes ('value'), not double quotes.`,
-			`Use Pulse operators (and, or, not, ==, !=, <, <=, >, >=, +, -, *, /, %).`,
+			`A condition ` + "`test`" + ` is a structured predicate, not an expression string: use {op, field, value} leaves and and/or/not combinators.`,
+			`Confirm every referenced field exists in the dataset and comparison operands share a type (numbers vs numbers, strings vs strings).`,
+			`See PRISM_SPEC_037 for the same predicate grammar used by the filter transform.`,
 		},
-		SeeAlso: []string{"PRISM_SPEC_006"},
+		SeeAlso: []string{"PRISM_SPEC_037"},
 	},
 	"PRISM_SPEC_028": {
 		Code:    "PRISM_SPEC_028",
@@ -674,8 +709,8 @@ var Codes = map[string]CodeMetadata{
 		Code:    "PRISM_SPEC_033",
 		Message: `crosstab transform must consume a source ref; it cannot follow a Prism transform.`,
 		Fixups: []string{
-			`Place ` + "`crosstab`" + ` as the FIRST transform on the chain, immediately downstream of ` + "`data`" + `. Prior filter / aggregate / join transforms materialise an in-memory table that Pulse cannot re-cohort.`,
-			`If you need to filter rows before the crosstab, push the filter into the spec via ` + "`crosstab.cell`" + `'s aggregate options or pre-aggregate the cohort upstream (e.g. emit a derived .pulse file).`,
+			`Place ` + "`crosstab`" + ` as the FIRST transform on the chain, immediately downstream of ` + "`data`" + `. It reads the materialised source rows directly and cannot follow another transform.`,
+			`If you need to filter rows before the crosstab, push the filter into the spec via ` + "`crosstab.cell`" + `'s aggregate options, or shrink the rows upstream in the host that produces the inline ` + "`values`" + ` / DataResolver dataset.`,
 		},
 		SeeAlso: []string{"PRISM_SPEC_032", "PRISM_PLAN_CROSSTAB_REQUIRES_SOURCE"},
 	},
@@ -692,24 +727,24 @@ var Codes = map[string]CodeMetadata{
 		Code:    "PRISM_PLAN_CROSSTAB_REQUIRES_SOURCE",
 		Message: `crosstab plan node could not link to a SourceNode upstream.`,
 		Fixups: []string{
-			`Crosstab opens the .pulse cohort directly via pulse.Process — there is no in-memory cohort handoff. The build must see a SourceNode as the immediate input.`,
+			`Crosstab reads the materialised source rows directly — there is no in-memory transform handoff. The build must see a SourceNode as the immediate input.`,
 			`Check that the spec places ` + "`crosstab`" + ` as the first transform on a top-level dataset, not on a derived alias.`,
 		},
 		SeeAlso: []string{"PRISM_SPEC_033"},
 	},
 	"PRISM_PLAN_CROSSTAB_PROCESS": {
 		Code:    "PRISM_PLAN_CROSSTAB_PROCESS",
-		Message: `Pulse rejected the crosstab request for {{.Ref}}: {{.Reason}}.`,
+		Message: `The crosstab computation failed for {{.Ref}}: {{.Reason}}.`,
 		Fixups: []string{
-			`The Pulse error envelope includes the precise rule — check that every grouper field exists in the cohort schema, that the cell field's column type is numeric for sum / mean / etc., and that no aggregator alias was promoted from client-side (lift, share).`,
-			`Run ` + "`prism inspect`" + ` to view the cohort schema without re-executing.`,
+			`The reason names the precise rule — check that every grouper field exists in the input schema, that the cell field's column type is numeric for sum / mean / etc., and that no aggregator alias was promoted from client-side (lift, share).`,
+			`Run ` + "`prism inspect`" + ` to view the input schema without re-executing.`,
 		},
 	},
 	"PRISM_SPEC_035": {
 		Code:    "PRISM_SPEC_035",
 		Message: `regression transform must be first and declare target + predictors (at {{.Path}}).`,
 		Fixups: []string{
-			`A ` + "`regression`" + ` transform fits the source cohort directly (Pulse ATTR_REG_FITTED), so it must be the first transform on the chain — not chained after a Prism filter / aggregate / join.`,
+			`A ` + "`regression`" + ` transform fits the materialised source rows directly, so it must be the first transform on the chain — not chained after a Prism filter / aggregate / join.`,
 			`Declare both ` + "`target`" + ` (the dependent variable) and a non-empty ` + "`predictors`" + ` list, e.g. ` + "`{regression: {target: \"sales\", predictors: [\"spend\"], as: \"fitted\"}}`" + `.`,
 		},
 		SeeAlso: []string{"PRISM_PLAN_REGRESSION_REQUIRES_SOURCE"},
@@ -718,17 +753,17 @@ var Codes = map[string]CodeMetadata{
 		Code:    "PRISM_PLAN_REGRESSION_REQUIRES_SOURCE",
 		Message: `regression plan node could not link to a SourceNode upstream.`,
 		Fixups: []string{
-			`Regression fits the .pulse cohort directly via pulse.Process — there is no in-memory cohort handoff. The build must see a SourceNode as the immediate input.`,
+			`Regression fits the materialised source rows directly — there is no in-memory transform handoff. The build must see a SourceNode as the immediate input.`,
 			`Check that the spec places ` + "`regression`" + ` as the first transform on a top-level dataset, not on a derived alias.`,
 		},
 		SeeAlso: []string{"PRISM_SPEC_035"},
 	},
 	"PRISM_PLAN_REGRESSION_PROCESS": {
 		Code:    "PRISM_PLAN_REGRESSION_PROCESS",
-		Message: `Pulse rejected the regression request for {{.Ref}}: {{.Reason}}.`,
+		Message: `The regression fit failed for {{.Ref}}: {{.Reason}}.`,
 		Fixups: []string{
-			`The Pulse error envelope includes the precise rule — check that the target and every predictor exist in the cohort schema and are numeric columns.`,
-			`Run ` + "`prism inspect`" + ` to view the cohort schema without re-executing.`,
+			`Check that the target and predictor exist in the input schema, are numeric columns, and that at least two complete (predictor, target) records remain after filtering.`,
+			`Run ` + "`prism inspect`" + ` to view the input schema without re-executing.`,
 		},
 	},
 	"PRISM_SPEC_030": {
@@ -756,6 +791,33 @@ var Codes = map[string]CodeMetadata{
 			`Flat (equal) or descending bounds would render an inverted or zero-width background range. Sort the bounds ascending and drop duplicates.`,
 		},
 		SeeAlso: []string{"PRISM_SPEC_003"},
+	},
+	"PRISM_SPEC_037": {
+		Code:    "PRISM_SPEC_037",
+		Message: `Filter predicate is not well-formed ({{.Reason}}) at {{.Site}}.`,
+		Fixups: []string{
+			`A filter predicate is a structured node, not an expression string. Use a leaf like ` + "`{op: \"gt\", field: \"Horsepower\", value: 100}`" + ` (or ` + "`to_field`" + ` for a field-vs-field compare) and nest with ` + "`{and: [...]}`" + `, ` + "`{or: [...]}`" + `, ` + "`{not: {...}}`" + `.`,
+			`Every ` + "`field`" + ` / ` + "`to_field`" + ` must exist in the source schema, comparisons must be type-compatible (numeric vs numeric, string vs string), a ` + "`between`" + ` must have ` + "`lo`" + ` <= ` + "`hi`" + `, and ` + "`one_of`" + ` / ` + "`not_one_of`" + ` need a non-empty ` + "`values`" + ` set.`,
+		},
+		SeeAlso: []string{"PRISM_SPEC_001", "PRISM_SPEC_006"},
+	},
+	"PRISM_SPEC_038": {
+		Code:    "PRISM_SPEC_038",
+		Message: `Calculate expression is not well-formed ({{.Reason}}) at {{.Site}}.`,
+		Fixups: []string{
+			`A calculate expression is a structured node, not an expression string. Use ` + "`{op: \"div\", operands: [{field: \"Horsepower\"}, {field: \"Weight\"}]}`" + ` for arithmetic, ` + "`{fn: \"coalesce\", args: [...]}`" + ` for functions, ` + "`{concat: [...]}`" + ` to build strings, or ` + "`{case: [{when: <predicate>, then: <expr>}], else: <expr>}`" + ` for conditionals.`,
+			`Every ` + "`field`" + ` operand must exist in the source schema, a ` + "`div`" + ` / ` + "`mod`" + ` by a literal zero is rejected (a runtime zero divisor yields null), and ` + "`as`" + ` must be a non-empty name that does not shadow an existing source column.`,
+		},
+		SeeAlso: []string{"PRISM_SPEC_001", "PRISM_SPEC_037"},
+	},
+	"PRISM_SPEC_039": {
+		Code:    "PRISM_SPEC_039",
+		Message: `The data ` + "`source`" + ` variant was removed: Prism no longer opens .pulse files, so a spec cannot name an external source.`,
+		Fixups: []string{
+			`Inline the rows: replace ` + "`{\"data\": {\"source\": \"cohort.pulse\"}}`" + ` with ` + "`{\"data\": {\"values\": [{\"col\": 1}, …]}}`" + ` (or a named ` + "`datasets`" + ` entry whose value carries inline ` + "`values`" + `).`,
+			`Or keep the spec portable and defer the data to the host: use ` + "`{\"data\": {\"ref\": \"<id>\"}}`" + ` and supply a ` + "`resolve.DataResolver`" + ` (server / ` + "`prism.setDataResolver`" + ` in the browser) that returns the rows for that ref.`,
+		},
+		SeeAlso: []string{"PRISM_SPEC_009", "PRISM_RESOLVE_REF_UNRESOLVED"},
 	},
 	"PRISM_WARN_NETWORK_CYCLE": {
 		Code:    "PRISM_WARN_NETWORK_CYCLE",
@@ -854,16 +916,143 @@ func RenderMessage(code string, ctx map[string]any) string {
 	return renderTemplate("msg_"+code, meta.Message, ctx)
 }
 
+// renderTemplate expands a fixup / message body against ctx using a
+// small, non-reflective interpolator instead of text/template. TinyGo
+// does not implement reflect.Value.MethodByName, which text/template's
+// Execute reaches even for the trivial `{{.Field}}` actions used here —
+// so under TinyGo every error path that rendered a fixup crashed the
+// wasm with "RuntimeError: unreachable" and no envelope ever reached JS.
+//
+// The interpolator recognises exactly the action forms the catalog
+// uses and reproduces text/template's `missingkey=zero` behaviour over
+// a map[string]any byte-for-byte:
+//
+//   - {{.Ident}} / {{ .Ident }} — substitute ctx["Ident"]; a missing or
+//     nil value renders as the literal "<no value>" (the string
+//     text/template + missingkey=zero emits for a nil interface).
+//   - {{if .Ident}} … {{end}} / spaced forms — emit the body only when
+//     ctx["Ident"] is "true" by text/template's isTrue rules (non-empty
+//     string / non-zero number / true / non-empty collection); missing
+//     or nil is false. Frames nest via a stack.
+//
+// name is retained for signature stability with the previous
+// text/template-backed helper; it is not otherwise consulted.
 func renderTemplate(name, body string, ctx map[string]any) string {
-	tpl, err := template.New(name).Option("missingkey=zero").Parse(body)
-	if err != nil {
+	if !strings.Contains(body, "{{") {
 		return body
 	}
-	var buf bytes.Buffer
-	if err := tpl.Execute(&buf, ctx); err != nil {
-		return body
+
+	var sb strings.Builder
+	// frames holds one bool per open {{if}}: whether that frame (given
+	// all its parents) is currently emitting. active() is the effective
+	// emit state.
+	var frames []bool
+	active := func() bool {
+		if len(frames) == 0 {
+			return true
+		}
+		return frames[len(frames)-1]
 	}
-	return buf.String()
+
+	i := 0
+	for i < len(body) {
+		open := strings.Index(body[i:], "{{")
+		if open < 0 {
+			if active() {
+				sb.WriteString(body[i:])
+			}
+			break
+		}
+		open += i
+		if active() {
+			sb.WriteString(body[i:open])
+		}
+
+		rel := strings.Index(body[open+2:], "}}")
+		if rel < 0 {
+			// Unterminated action: emit the remainder verbatim.
+			if active() {
+				sb.WriteString(body[open:])
+			}
+			break
+		}
+		closeIdx := open + 2 + rel
+		action := strings.TrimSpace(body[open+2 : closeIdx])
+		i = closeIdx + 2
+
+		switch {
+		case action == "end":
+			if len(frames) > 0 {
+				frames = frames[:len(frames)-1]
+			}
+		case action == "if" || strings.HasPrefix(action, "if "):
+			parent := active()
+			arg := strings.TrimSpace(strings.TrimPrefix(action, "if"))
+			v, _ := lookupField(ctx, arg)
+			frames = append(frames, parent && truthy(v))
+		case strings.HasPrefix(action, "."):
+			if active() {
+				v, ok := lookupField(ctx, action)
+				sb.WriteString(formatValue(v, ok))
+			}
+		default:
+			// Unrecognised action: reproduce it verbatim so nothing is
+			// silently dropped (matches the old fall-back-to-body intent).
+			if active() {
+				sb.WriteString(body[open : closeIdx+2])
+			}
+		}
+	}
+	return sb.String()
+}
+
+// lookupField resolves a `.Ident` reference against ctx, returning the
+// value and whether the key was present.
+func lookupField(ctx map[string]any, ref string) (any, bool) {
+	key := strings.TrimPrefix(ref, ".")
+	v, ok := ctx[key]
+	return v, ok
+}
+
+// formatValue renders a substituted value the way text/template +
+// missingkey=zero does: a missing key or a nil value becomes the
+// literal "<no value>"; anything else is printed with %v (which matches
+// text/template's default fmt-backed formatting for the scalar and
+// slice values the catalog carries).
+func formatValue(v any, ok bool) string {
+	if !ok || v == nil {
+		return "<no value>"
+	}
+	return fmt.Sprintf("%v", v)
+}
+
+// truthy mirrors text/template's isTrue for the {{if}} guard: the zero
+// value of a type is false, everything else true. Reflection here is
+// limited to Kind/Len/Bool/Int/Uint/Float/IsNil (all TinyGo-supported);
+// it never reaches MethodByName.
+func truthy(v any) bool {
+	rv := reflect.ValueOf(v)
+	if !rv.IsValid() {
+		return false
+	}
+	switch rv.Kind() {
+	case reflect.Array, reflect.Map, reflect.Slice, reflect.String:
+		return rv.Len() > 0
+	case reflect.Bool:
+		return rv.Bool()
+	case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64:
+		return rv.Int() != 0
+	case reflect.Uint, reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64, reflect.Uintptr:
+		return rv.Uint() != 0
+	case reflect.Float32, reflect.Float64:
+		return rv.Float() != 0
+	case reflect.Complex64, reflect.Complex128:
+		return rv.Complex() != 0
+	case reflect.Chan, reflect.Func, reflect.Ptr, reflect.Interface:
+		return !rv.IsNil()
+	default:
+		return true
+	}
 }
 
 // itoa is a tiny inline integer formatter; avoids importing strconv.

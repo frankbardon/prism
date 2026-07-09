@@ -5,8 +5,6 @@ import (
 	"fmt"
 	"math"
 
-	"github.com/frankbardon/pulse/encoding"
-
 	"github.com/frankbardon/prism/plan/nodes"
 	"github.com/frankbardon/prism/table"
 )
@@ -34,7 +32,7 @@ func executeBin(_ context.Context, n *nodes.BinNode, ins []*table.Table) (*table
 	if len(values) == 0 {
 		// Empty input — append an empty F64 column to preserve schema.
 		schema := cloneSchemaShallow(in.Schema())
-		schema.Fields = append(schema.Fields, encoding.Field{Name: n.As(), Type: encoding.FieldTypeF64})
+		schema.Fields = append(schema.Fields, table.Field{Name: n.As(), Type: table.FieldTypeF64})
 		cols := make(map[string]table.Column, len(in.FieldNames())+1)
 		for _, name := range in.FieldNames() {
 			c, _ := in.Column(name)
@@ -67,7 +65,7 @@ func executeBin(_ context.Context, n *nodes.BinNode, ins []*table.Table) (*table
 	}
 
 	schema := cloneSchemaShallow(in.Schema())
-	schema.Fields = append(schema.Fields, encoding.Field{Name: n.As(), Type: encoding.FieldTypeF64})
+	schema.Fields = append(schema.Fields, table.Field{Name: n.As(), Type: table.FieldTypeF64})
 
 	cols := make(map[string]table.Column, len(in.FieldNames())+1)
 	for _, name := range in.FieldNames() {

@@ -1,23 +1,295 @@
 {
   "$schema": "urn:prism:schema:v1:spec",
   "title": "Affinity score vs age with OLS trend line (regression)",
-  "data": {"source": "testdata/cohorts/tiny.pulse"},
+  "data": {
+    "values": [
+      {
+        "age": 35,
+        "score": 0.484846
+      },
+      {
+        "age": 42,
+        "score": 0.497514
+      },
+      {
+        "age": 46,
+        "score": 0.440301
+      },
+      {
+        "age": 21,
+        "score": 0.443855
+      },
+      {
+        "age": 59,
+        "score": 0.512163
+      },
+      {
+        "age": 30,
+        "score": 0.512366
+      },
+      {
+        "age": 43,
+        "score": 0.454923
+      },
+      {
+        "age": 36,
+        "score": 0.687273
+      },
+      {
+        "age": 28,
+        "score": 0.445353
+      },
+      {
+        "age": 39,
+        "score": 0.687054
+      },
+      {
+        "age": 51,
+        "score": 0
+      },
+      {
+        "age": 30,
+        "score": 0.789715
+      },
+      {
+        "age": 34,
+        "score": 0.479052
+      },
+      {
+        "age": 50,
+        "score": 0.428342
+      },
+      {
+        "age": 33,
+        "score": 0.561831
+      },
+      {
+        "age": 34,
+        "score": 0.53225
+      },
+      {
+        "age": 18,
+        "score": 0.302646
+      },
+      {
+        "age": 27,
+        "score": 0.517428
+      },
+      {
+        "age": 18,
+        "score": 0.597652
+      },
+      {
+        "age": 28,
+        "score": 0.47841
+      },
+      {
+        "age": 33,
+        "score": 0.42915
+      },
+      {
+        "age": 26,
+        "score": 0.53695
+      },
+      {
+        "age": 18,
+        "score": 0.523825
+      },
+      {
+        "age": 33,
+        "score": 0.610346
+      },
+      {
+        "age": 27,
+        "score": 0.534075
+      },
+      {
+        "age": 39,
+        "score": 0.800537
+      },
+      {
+        "age": 30,
+        "score": 0.538653
+      },
+      {
+        "age": 30,
+        "score": 0.532038
+      },
+      {
+        "age": 34,
+        "score": 0.533294
+      },
+      {
+        "age": 45,
+        "score": 0.17985
+      },
+      {
+        "age": 26,
+        "score": 0.144314
+      },
+      {
+        "age": 32,
+        "score": 0.604932
+      },
+      {
+        "age": 22,
+        "score": 0.61405
+      },
+      {
+        "age": 49,
+        "score": 0.606193
+      },
+      {
+        "age": 33,
+        "score": 0.667407
+      },
+      {
+        "age": 42,
+        "score": 0.463293
+      },
+      {
+        "age": 52,
+        "score": 0.462342
+      },
+      {
+        "age": 38,
+        "score": 0.606477
+      },
+      {
+        "age": 21,
+        "score": 0.352912
+      },
+      {
+        "age": 22,
+        "score": 0.637469
+      },
+      {
+        "age": 41,
+        "score": 0.46214
+      },
+      {
+        "age": 35,
+        "score": 0.4968
+      },
+      {
+        "age": 41,
+        "score": 0.496669
+      },
+      {
+        "age": 41,
+        "score": 0.284371
+      },
+      {
+        "age": 57,
+        "score": 0.593572
+      },
+      {
+        "age": 40,
+        "score": 0.650364
+      },
+      {
+        "age": 23,
+        "score": 0.582372
+      },
+      {
+        "age": 51,
+        "score": 0.507822
+      },
+      {
+        "age": 48,
+        "score": 0.919149
+      },
+      {
+        "age": 39,
+        "score": 0.440649
+      },
+      {
+        "age": 30,
+        "score": 0.513226
+      },
+      {
+        "age": 33,
+        "score": 0.663025
+      },
+      {
+        "age": 30,
+        "score": 0.615747
+      },
+      {
+        "age": 36,
+        "score": 0.399798
+      },
+      {
+        "age": 35,
+        "score": 0.43967
+      },
+      {
+        "age": 43,
+        "score": 0.569457
+      },
+      {
+        "age": 20,
+        "score": 0.528367
+      },
+      {
+        "age": 23,
+        "score": 0.441793
+      },
+      {
+        "age": 34,
+        "score": 0.577914
+      },
+      {
+        "age": 37,
+        "score": 0.536604
+      }
+    ]
+  },
   "layer": [
     {
       "$schema": "urn:prism:schema:v1:spec",
-      "mark": {"type": "point", "opacity": 0.3},
+      "mark": {
+        "type": "point",
+        "opacity": 0.3
+      },
       "encoding": {
-        "x": {"field": "age", "type": "quantitative"},
-        "y": {"field": "score", "type": "quantitative"}
+        "x": {
+          "field": "age",
+          "type": "quantitative"
+        },
+        "y": {
+          "field": "score",
+          "type": "quantitative"
+        }
       }
     },
     {
       "$schema": "urn:prism:schema:v1:spec",
-      "transform": [{"regression": {"target": "score", "predictors": ["age"], "as": "fit"}}],
-      "mark": {"type": "line", "stroke": "#d62728", "stroke_width": 2},
+      "transform": [
+        {
+          "regression": {
+            "target": "score",
+            "predictors": [
+              "age"
+            ],
+            "as": "fit"
+          }
+        }
+      ],
+      "mark": {
+        "type": "line",
+        "stroke": "#d62728",
+        "stroke_width": 2
+      },
       "encoding": {
-        "x": {"field": "age", "type": "quantitative"},
-        "y": {"field": "fit", "type": "quantitative"}
+        "x": {
+          "field": "age",
+          "type": "quantitative"
+        },
+        "y": {
+          "field": "fit",
+          "type": "quantitative"
+        }
       }
     }
   ]

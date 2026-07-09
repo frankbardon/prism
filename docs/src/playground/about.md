@@ -33,11 +33,12 @@ your browser via WASM. No server, no install.
 
 ## What it doesn't do (yet)
 
-- **Pulse-backed datasets.** All examples use inline `values`
-  arrays. Pointing the playground at a `.pulse` URL needs CORS
-  setup that the docs site doesn't ship, so the curated examples
-  stay inline. Use `prism plot` or `prism serve` locally to feed
-  Pulse archives.
+- **External data sources.** Every example inlines its rows via
+  `data.values` / `datasets.*.values`. Prism only ever consumes
+  already-materialized rows — the playground has no data-fetch path,
+  so the curated examples stay self-contained. To render data from a
+  live source, materialize it upstream and inline the rows (`prism
+  plot` / `prism serve` accept the same inline specs locally).
 - **Selection events.** Pointer hit-testing is part of the
   `<prism-chart>` web component (see the [Gallery](../gallery/index.html)).
   The playground mounts the raw SVG so it stays a focused

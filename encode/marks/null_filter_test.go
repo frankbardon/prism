@@ -4,15 +4,13 @@ import (
 	"sort"
 	"testing"
 
-	"github.com/frankbardon/pulse/encoding"
-
 	"github.com/frankbardon/prism/table"
 )
 
 func TestSkipNullRowsNoNulls(t *testing.T) {
-	schema := &encoding.Schema{Fields: []encoding.Field{
-		{Name: "region", Type: encoding.FieldTypeCategoricalU8},
-		{Name: "score", Type: encoding.FieldTypeF64},
+	schema := &table.Schema{Fields: []table.Field{
+		{Name: "region", Type: table.FieldTypeCategoricalU8},
+		{Name: "score", Type: table.FieldTypeF64},
 	}}
 	cols := map[string]table.Column{
 		"region": table.StringColumn{"west", "east", "north"},
@@ -32,9 +30,9 @@ func TestSkipNullRowsNoNulls(t *testing.T) {
 }
 
 func TestSkipNullRowsDropsAndReports(t *testing.T) {
-	schema := &encoding.Schema{Fields: []encoding.Field{
-		{Name: "region", Type: encoding.FieldTypeCategoricalU8, Nullable: true},
-		{Name: "score", Type: encoding.FieldTypeF64, Nullable: true},
+	schema := &table.Schema{Fields: []table.Field{
+		{Name: "region", Type: table.FieldTypeCategoricalU8, Nullable: true},
+		{Name: "score", Type: table.FieldTypeF64, Nullable: true},
 	}}
 	regionNulls := table.NewNullBitmap(3)
 	regionNulls.Set(1)

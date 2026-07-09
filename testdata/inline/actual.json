@@ -1,0 +1,802 @@
+[
+  {
+    "brand_id": "beta",
+    "score": 0.5378765890872842
+  },
+  {
+    "brand_id": "alpha",
+    "score": 0.45548551889142036
+  },
+  {
+    "brand_id": "beta",
+    "score": 0.6279879083857245
+  },
+  {
+    "brand_id": "delta",
+    "score": 0.502241033504447
+  },
+  {
+    "brand_id": "alpha",
+    "score": 0.515850107501379
+  },
+  {
+    "brand_id": "beta",
+    "score": 0.3996233771360689
+  },
+  {
+    "brand_id": "alpha",
+    "score": 0.5597307664191313
+  },
+  {
+    "brand_id": "beta",
+    "score": 0.4113318704082026
+  },
+  {
+    "brand_id": "delta",
+    "score": 0.5823332830779977
+  },
+  {
+    "brand_id": "alpha",
+    "score": 0.6420968614042475
+  },
+  {
+    "brand_id": "delta",
+    "score": 0.6998183189913992
+  },
+  {
+    "brand_id": "delta",
+    "score": 0.6907999363612761
+  },
+  {
+    "brand_id": "beta",
+    "score": 0.4684120714052138
+  },
+  {
+    "brand_id": "alpha",
+    "score": 0.6996428144471897
+  },
+  {
+    "brand_id": "delta",
+    "score": 0.4681449869172785
+  },
+  {
+    "brand_id": "beta",
+    "score": 0.6682433668302727
+  },
+  {
+    "brand_id": "beta",
+    "score": 0.7239779615255374
+  },
+  {
+    "brand_id": "gamma",
+    "score": 0.7817721195614173
+  },
+  {
+    "brand_id": "delta",
+    "score": 0.4311983671547396
+  },
+  {
+    "brand_id": "alpha",
+    "score": 0.5369592633851648
+  },
+  {
+    "brand_id": "beta",
+    "score": 0.4926738975945936
+  },
+  {
+    "brand_id": "gamma",
+    "score": 0.5516226460954864
+  },
+  {
+    "brand_id": "beta",
+    "score": 0.7349088308974939
+  },
+  {
+    "brand_id": "delta",
+    "score": 0.6234489389118468
+  },
+  {
+    "brand_id": "alpha",
+    "score": 0.5418270761122039
+  },
+  {
+    "brand_id": "beta",
+    "score": 0.39211716568621363
+  },
+  {
+    "brand_id": "delta",
+    "score": 0.4018573719642664
+  },
+  {
+    "brand_id": "delta",
+    "score": 0.45842718786825465
+  },
+  {
+    "brand_id": "delta",
+    "score": 0.6281212303019301
+  },
+  {
+    "brand_id": "alpha",
+    "score": 0.5313087613997773
+  },
+  {
+    "brand_id": "beta",
+    "score": 0.4784959620009359
+  },
+  {
+    "brand_id": "alpha",
+    "score": 0.4933200914908634
+  },
+  {
+    "brand_id": "alpha",
+    "score": 0.45585247530846923
+  },
+  {
+    "brand_id": "beta",
+    "score": 0.44865621387894083
+  },
+  {
+    "brand_id": "delta",
+    "score": 0.5690596936775715
+  },
+  {
+    "brand_id": "beta",
+    "score": 0.5684413250659442
+  },
+  {
+    "brand_id": "alpha",
+    "score": 0.5330593019559503
+  },
+  {
+    "brand_id": "delta",
+    "score": 0.577259789121992
+  },
+  {
+    "brand_id": "gamma",
+    "score": 0.5185263775705842
+  },
+  {
+    "brand_id": "delta",
+    "score": 0.5979394947050932
+  },
+  {
+    "brand_id": "beta",
+    "score": 0.5809221405640624
+  },
+  {
+    "brand_id": "delta",
+    "score": 0.5579439496094108
+  },
+  {
+    "brand_id": "alpha",
+    "score": 0.49485976038290497
+  },
+  {
+    "brand_id": "beta",
+    "score": 0.5766354474206387
+  },
+  {
+    "brand_id": "delta",
+    "score": 0.6135161230342849
+  },
+  {
+    "brand_id": "delta",
+    "score": 0.6599456203450401
+  },
+  {
+    "brand_id": "gamma",
+    "score": 0.26545082152348887
+  },
+  {
+    "brand_id": "delta",
+    "score": 0.6813633523451973
+  },
+  {
+    "brand_id": "gamma",
+    "score": 0.5129494028220426
+  },
+  {
+    "brand_id": "delta",
+    "score": 0.6412403325887102
+  },
+  {
+    "brand_id": "delta",
+    "score": 0.5740518099848739
+  },
+  {
+    "brand_id": "gamma",
+    "score": 0.7014076475519609
+  },
+  {
+    "brand_id": "alpha",
+    "score": 0.6839256334524528
+  },
+  {
+    "brand_id": "gamma",
+    "score": 0.5301461214271656
+  },
+  {
+    "brand_id": "delta",
+    "score": 0.6235273365751679
+  },
+  {
+    "brand_id": "gamma",
+    "score": 0.5198736163255209
+  },
+  {
+    "brand_id": "beta",
+    "score": 0.5222896000762818
+  },
+  {
+    "brand_id": "alpha",
+    "score": 0.5860897352168123
+  },
+  {
+    "brand_id": "gamma",
+    "score": 0.43232986189251005
+  },
+  {
+    "brand_id": "delta",
+    "score": 0.6555737988666885
+  },
+  {
+    "brand_id": "beta",
+    "score": 0.6217189110620714
+  },
+  {
+    "brand_id": "beta",
+    "score": 0.5189636979169916
+  },
+  {
+    "brand_id": "delta",
+    "score": 0.6179694203668786
+  },
+  {
+    "brand_id": "beta",
+    "score": 0.5474400491847358
+  },
+  {
+    "brand_id": "alpha",
+    "score": 0.34529517731581366
+  },
+  {
+    "brand_id": "gamma",
+    "score": 0.6131513177236316
+  },
+  {
+    "brand_id": "alpha",
+    "score": 0.37749706701254765
+  },
+  {
+    "brand_id": "beta",
+    "score": 0.43546433646851
+  },
+  {
+    "brand_id": "delta",
+    "score": 0.7847639565361589
+  },
+  {
+    "brand_id": "beta",
+    "score": 0.6702914779526812
+  },
+  {
+    "brand_id": "beta",
+    "score": 0.5465591636130605
+  },
+  {
+    "brand_id": "delta",
+    "score": 0.423787895442884
+  },
+  {
+    "brand_id": "beta",
+    "score": 0.5562573037746869
+  },
+  {
+    "brand_id": "beta",
+    "score": 0.5082197152596751
+  },
+  {
+    "brand_id": "alpha",
+    "score": 0.6944744100988862
+  },
+  {
+    "brand_id": "beta",
+    "score": 0.5025193438961514
+  },
+  {
+    "brand_id": "gamma",
+    "score": 0.7431538510326795
+  },
+  {
+    "brand_id": "beta",
+    "score": 0.4972382487118812
+  },
+  {
+    "brand_id": "alpha",
+    "score": 0.680420129113689
+  },
+  {
+    "brand_id": "beta",
+    "score": 0.4069040229102259
+  },
+  {
+    "brand_id": "gamma",
+    "score": 0.4953707253590386
+  },
+  {
+    "brand_id": "beta",
+    "score": 0.46983876866397073
+  },
+  {
+    "brand_id": "gamma",
+    "score": 0.5009170696795561
+  },
+  {
+    "brand_id": "alpha",
+    "score": 0.5550859203302287
+  },
+  {
+    "brand_id": "delta",
+    "score": 0.6055656161050713
+  },
+  {
+    "brand_id": "delta",
+    "score": 0.38586433086818905
+  },
+  {
+    "brand_id": "alpha",
+    "score": 0.5034343823466276
+  },
+  {
+    "brand_id": "alpha",
+    "score": 0.5174710295185715
+  },
+  {
+    "brand_id": "beta",
+    "score": 0.5437136152065523
+  },
+  {
+    "brand_id": "alpha",
+    "score": 0.5792831133961898
+  },
+  {
+    "brand_id": "alpha",
+    "score": 0.5725643041096842
+  },
+  {
+    "brand_id": "beta",
+    "score": 0.5625115374240272
+  },
+  {
+    "brand_id": "alpha",
+    "score": 0.5172023892010974
+  },
+  {
+    "brand_id": "beta",
+    "score": 0.6949431455483375
+  },
+  {
+    "brand_id": "beta",
+    "score": 0.7872337381142789
+  },
+  {
+    "brand_id": "alpha",
+    "score": 0.4278813643307657
+  },
+  {
+    "brand_id": "alpha",
+    "score": 0.47902245588171666
+  },
+  {
+    "brand_id": "beta",
+    "score": 0.44710093621026814
+  },
+  {
+    "brand_id": "alpha",
+    "score": 0.5902857458585381
+  },
+  {
+    "brand_id": "alpha",
+    "score": 0.7617798147876718
+  },
+  {
+    "brand_id": "gamma",
+    "score": 0.7264342614976589
+  },
+  {
+    "brand_id": "beta",
+    "score": 0.578495207120731
+  },
+  {
+    "brand_id": "beta",
+    "score": 0.3690925869005889
+  },
+  {
+    "brand_id": "gamma",
+    "score": 0.5816382388956964
+  },
+  {
+    "brand_id": "delta",
+    "score": 0.5363581974738911
+  },
+  {
+    "brand_id": "delta",
+    "score": 0.5840041511851186
+  },
+  {
+    "brand_id": "gamma",
+    "score": 0.5589731923464036
+  },
+  {
+    "brand_id": "alpha",
+    "score": 0.6077336605942354
+  },
+  {
+    "brand_id": "delta",
+    "score": 0.3688352102559238
+  },
+  {
+    "brand_id": "beta",
+    "score": 0.7502172193347586
+  },
+  {
+    "brand_id": "gamma",
+    "score": 0.5577314243801835
+  },
+  {
+    "brand_id": "alpha",
+    "score": 0.27219089286886183
+  },
+  {
+    "brand_id": "gamma",
+    "score": 0.4180433905691755
+  },
+  {
+    "brand_id": "beta",
+    "score": 0.7218371899137862
+  },
+  {
+    "brand_id": "alpha",
+    "score": 0.644394518372599
+  },
+  {
+    "brand_id": "beta",
+    "score": 0.49745773409741323
+  },
+  {
+    "brand_id": "alpha",
+    "score": 0.6370559938903588
+  },
+  {
+    "brand_id": "gamma",
+    "score": 0.5305897096796756
+  },
+  {
+    "brand_id": "alpha",
+    "score": 0.6306803879447678
+  },
+  {
+    "brand_id": "gamma",
+    "score": 0.7464608438952858
+  },
+  {
+    "brand_id": "alpha",
+    "score": 0.4722308478099684
+  },
+  {
+    "brand_id": "beta",
+    "score": 0.5805843695543512
+  },
+  {
+    "brand_id": "beta",
+    "score": 0.45445281977985136
+  },
+  {
+    "brand_id": "alpha",
+    "score": 0.22615815383765467
+  },
+  {
+    "brand_id": "alpha",
+    "score": 0.599042890623851
+  },
+  {
+    "brand_id": "delta",
+    "score": 0.6391231586916335
+  },
+  {
+    "brand_id": "delta",
+    "score": 0.44295480917137825
+  },
+  {
+    "brand_id": "delta",
+    "score": 0.509588982576946
+  },
+  {
+    "brand_id": "beta",
+    "score": 0.5733114164346725
+  },
+  {
+    "brand_id": "alpha",
+    "score": 0.39810537199190466
+  },
+  {
+    "brand_id": "beta",
+    "score": 0.556972840650556
+  },
+  {
+    "brand_id": "alpha",
+    "score": 0.5957219863461991
+  },
+  {
+    "brand_id": "alpha",
+    "score": 0.5396416956049178
+  },
+  {
+    "brand_id": "gamma",
+    "score": 0.7625461533586616
+  },
+  {
+    "brand_id": "beta",
+    "score": 0.64533738063806
+  },
+  {
+    "brand_id": "gamma",
+    "score": 0.5958469047114128
+  },
+  {
+    "brand_id": "gamma",
+    "score": 0.7264452159683032
+  },
+  {
+    "brand_id": "delta",
+    "score": 0.5870556061490502
+  },
+  {
+    "brand_id": "alpha",
+    "score": 0.38655086513826126
+  },
+  {
+    "brand_id": "delta",
+    "score": 0.7529601326945428
+  },
+  {
+    "brand_id": "alpha",
+    "score": 0.4782377548722326
+  },
+  {
+    "brand_id": "delta",
+    "score": 0.4219437750266344
+  },
+  {
+    "brand_id": "delta",
+    "score": 0.6137469737529507
+  },
+  {
+    "brand_id": "gamma",
+    "score": 0.5240596411683502
+  },
+  {
+    "brand_id": "alpha",
+    "score": 0.7182947744715336
+  },
+  {
+    "brand_id": "alpha",
+    "score": 0.5536201475438309
+  },
+  {
+    "brand_id": "beta",
+    "score": 0.7489300636118655
+  },
+  {
+    "brand_id": "delta",
+    "score": 0.5184760593844832
+  },
+  {
+    "brand_id": "delta",
+    "score": 0.37674129733514705
+  },
+  {
+    "brand_id": "beta",
+    "score": 0.6333833214991546
+  },
+  {
+    "brand_id": "alpha",
+    "score": 0.5762605925054514
+  },
+  {
+    "brand_id": "gamma",
+    "score": 0.4857902985813823
+  },
+  {
+    "brand_id": "gamma",
+    "score": 0.5238515691029392
+  },
+  {
+    "brand_id": "delta",
+    "score": 0.44028043258229294
+  },
+  {
+    "brand_id": "gamma",
+    "score": 0.4931853635364281
+  },
+  {
+    "brand_id": "beta",
+    "score": 0.8515419334302513
+  },
+  {
+    "brand_id": "gamma",
+    "score": 0.3476537684459017
+  },
+  {
+    "brand_id": "alpha",
+    "score": 0.7085478407725425
+  },
+  {
+    "brand_id": "alpha",
+    "score": 0.22173029657172663
+  },
+  {
+    "brand_id": "beta",
+    "score": 0.44974336208432564
+  },
+  {
+    "brand_id": "beta",
+    "score": 0.46263763771291905
+  },
+  {
+    "brand_id": "alpha",
+    "score": 0.5309024247346215
+  },
+  {
+    "brand_id": "alpha",
+    "score": 0.35615278696940694
+  },
+  {
+    "brand_id": "delta",
+    "score": 0.4493053581672297
+  },
+  {
+    "brand_id": "gamma",
+    "score": 0.458249504510326
+  },
+  {
+    "brand_id": "beta",
+    "score": 0.5949337262738835
+  },
+  {
+    "brand_id": "gamma",
+    "score": 0.48766962319031115
+  },
+  {
+    "brand_id": "gamma",
+    "score": 0.6677566921858302
+  },
+  {
+    "brand_id": "alpha",
+    "score": 0.6662390061029175
+  },
+  {
+    "brand_id": "gamma",
+    "score": 0.4943188303386504
+  },
+  {
+    "brand_id": "alpha",
+    "score": 0.43376058970795234
+  },
+  {
+    "brand_id": "alpha",
+    "score": 0.5561723759771121
+  },
+  {
+    "brand_id": "alpha",
+    "score": 0.634536769737532
+  },
+  {
+    "brand_id": "beta",
+    "score": 0.5019589179469659
+  },
+  {
+    "brand_id": "alpha",
+    "score": 0.6844771296508685
+  },
+  {
+    "brand_id": "alpha",
+    "score": 0.6240462824059874
+  },
+  {
+    "brand_id": "beta",
+    "score": 0.5743889197252665
+  },
+  {
+    "brand_id": "beta",
+    "score": 0.7364266580055784
+  },
+  {
+    "brand_id": "beta",
+    "score": 0.6654690121510904
+  },
+  {
+    "brand_id": "alpha",
+    "score": 0.6421364529188588
+  },
+  {
+    "brand_id": "alpha",
+    "score": 0.34753021786660504
+  },
+  {
+    "brand_id": "beta",
+    "score": 0.4541441886292157
+  },
+  {
+    "brand_id": "alpha",
+    "score": 0.6519763556430134
+  },
+  {
+    "brand_id": "alpha",
+    "score": 0.6311456940369802
+  },
+  {
+    "brand_id": "alpha",
+    "score": 0.48638789391367065
+  },
+  {
+    "brand_id": "alpha",
+    "score": 0.593358501236201
+  },
+  {
+    "brand_id": "beta",
+    "score": 0.5080692652820153
+  },
+  {
+    "brand_id": "beta",
+    "score": 0.6342611937047644
+  },
+  {
+    "brand_id": "beta",
+    "score": 0.6114223219718895
+  },
+  {
+    "brand_id": "beta",
+    "score": 0.6696496976608846
+  },
+  {
+    "brand_id": "beta",
+    "score": 0.6551536679532095
+  },
+  {
+    "brand_id": "gamma",
+    "score": 0.6051575180894329
+  },
+  {
+    "brand_id": "alpha",
+    "score": 0.6635693130696001
+  },
+  {
+    "brand_id": "alpha",
+    "score": 0.5969773066165918
+  },
+  {
+    "brand_id": "delta",
+    "score": 0.38614354170641624
+  },
+  {
+    "brand_id": "delta",
+    "score": 0.7861582604100916
+  },
+  {
+    "brand_id": "alpha",
+    "score": 0.6960377352347735
+  },
+  {
+    "brand_id": "gamma",
+    "score": 0.51940352807474
+  },
+  {
+    "brand_id": "delta",
+    "score": 0.5422627358845686
+  },
+  {
+    "brand_id": "alpha",
+    "score": 0.6651877195652146
+  }
+]

@@ -5,33 +5,38 @@ import (
 	"math"
 	"testing"
 
-	"github.com/frankbardon/pulse"
-	"github.com/frankbardon/pulse/types"
 	"github.com/spf13/afero"
 
 	"github.com/frankbardon/prism/compile/inmem"
 	"github.com/frankbardon/prism/plan"
 	"github.com/frankbardon/prism/plan/build"
-	"github.com/frankbardon/prism/resolve"
 	"github.com/frankbardon/prism/spec"
 )
 
-// TestPrismSingleSourceLinearPipeline is the PHASE.md demoable
-// artifact, run as a test. Builds a Source → Filter → GroupAggregate
-// → Sink DAG against testdata/cohorts/tiny.pulse and asserts:
-//   - The DAG has 4 nodes including one Source root and one Sink.
-//   - The Sink output table carries one row per surviving brand.
-//   - Every avg is in [0.5, 1.0] (filter > 0.5; synth bound 1.0).
-//   - The avg values equal what pulse.Process reports for the same
-//     filter+groupby+mean request to within 1e-6.
+// frozenFilteredBrandMean is the per-brand mean(score) Pulse produced
+// for the tiny cohort after filtering score > 0.5, captured via
+// pulse.Process. See inline_fixture_test.go.
+var frozenFilteredBrandMean = map[string]float64{
+	"alpha": 0.6202836947132125,
+	"beta":  0.6102438646357161,
+	"delta": 0.6154473106030667,
+	"gamma": 0.6094092974140735,
+}
+
+// TestPrismSingleSourceLinearPipeline builds a Source → Filter →
+// GroupAggregate DAG over the tiny cohort's inline rows and asserts:
+//   - The DAG has 3 nodes including one root and one sink.
+//   - The tip output carries one row per surviving brand.
+//   - Every avg is in (0.5, 1.0] (filter > 0.5; synth bound 1.0).
+//   - The avg values equal what Pulse reported for the same
+//     filter+groupby+mean request (frozen, parity preserved).
 func TestPrismSingleSourceLinearPipeline(t *testing.T) {
-	cohortPath := fixturePath(t)
-	fs := afero.NewOsFs()
+	fs := afero.NewMemMapFs()
 
 	s := &spec.Spec{
-		Data: &spec.Data{Source: cohortPath},
+		Data: &spec.Data{Source: tinyRef},
 		Transform: []spec.Transform{
-			{Filter: &spec.FilterTransform{Filter: "score > 0.5"}},
+			{Filter: &spec.FilterTransform{Filter: spec.Predicate{Op: spec.PredGt, Field: "score", Value: 0.5}}},
 			{Aggregate: &spec.AggregateTransform{
 				Groupby:   []string{"brand_id"},
 				Aggregate: []spec.AggregateOp{{Op: "mean", Field: "score", As: "avg"}},
@@ -41,15 +46,14 @@ func TestPrismSingleSourceLinearPipeline(t *testing.T) {
 
 	dag, tipID, err := build.Build(s, build.Options{
 		FS:       fs,
-		Resolver: resolve.New(nil),
+		Resolver: tinyResolver(t),
 		Backend:  inmem.New(),
 	})
 	if err != nil {
 		t.Fatalf("build: %v", err)
 	}
 
-	// Node-count sanity: Source + Filter + GroupAggregate = 3 (SinkNode
-	// retired in P05 per D040; the tip is now the GroupAggregate itself).
+	// Node-count sanity: Source + Filter + GroupAggregate = 3.
 	if got := len(dag.Nodes()); got != 3 {
 		t.Errorf("DAG node count = %d, want 3 (Source+Filter+GroupAggregate)", got)
 	}
@@ -86,45 +90,24 @@ func TestPrismSingleSourceLinearPipeline(t *testing.T) {
 			t.Errorf("avg[%d] = %v, expected > 0.5 (filter)", i, v)
 		}
 		if v > 1.0 {
-			t.Errorf("avg[%d] = %v, expected ≤ 1.0 (synth bound)", i, v)
+			t.Errorf("avg[%d] = %v, expected <= 1.0 (synth bound)", i, v)
 		}
 	}
 
-	// Cross-check against pulse.Process direct.
-	prism := tableToBrandValueMap(t, final, "avg")
-
-	pulseInst, err := pulse.New(pulse.Options{FS: fs})
-	if err != nil {
-		t.Fatalf("pulse.New: %v", err)
+	// Cross-check against the frozen Pulse output.
+	got := tableToBrandValueMap(t, final, "avg")
+	if len(got) != len(frozenFilteredBrandMean) {
+		t.Errorf("brand count = %d, want %d", len(got), len(frozenFilteredBrandMean))
 	}
-	resp, err := pulseInst.Process(context.Background(), &pulse.Request{
-		Cohort: &types.Cohort{Filename: cohortPath},
-		Filterers: []*types.Filterer{{
-			Type:       types.FILTER_EXPRESSION,
-			Expression: "score > 0.5",
-		}},
-		Groups: []*types.Group{{Type: types.GROUP_CATEGORY, Field: "brand_id"}},
-		Aggregations: []*types.Aggregation{{
-			Type:  types.AGG_AVERAGE,
-			Field: "score",
-			Label: "avg",
-		}},
-	})
-	if err != nil {
-		t.Fatalf("pulse.Process: %v", err)
-	}
-
-	for _, row := range resp.Data {
-		brand, _ := row["brand_id"].(string)
-		pulseVal, _ := row["avg"].(float64)
-		prismVal, ok := prism[brand]
+	for brand, want := range frozenFilteredBrandMean {
+		gotVal, ok := got[brand]
 		if !ok {
-			t.Errorf("brand %q present in Pulse output but missing from Prism", brand)
+			t.Errorf("brand %q missing from Prism output", brand)
 			continue
 		}
-		if math.Abs(prismVal-pulseVal) > 1e-6 {
-			t.Errorf("brand %q: Prism=%v Pulse=%v (delta=%g)",
-				brand, prismVal, pulseVal, math.Abs(prismVal-pulseVal))
+		if math.Abs(gotVal-want) > 1e-6 {
+			t.Errorf("brand %q: Prism=%v frozen(Pulse)=%v (delta=%g)",
+				brand, gotVal, want, math.Abs(gotVal-want))
 		}
 	}
 }

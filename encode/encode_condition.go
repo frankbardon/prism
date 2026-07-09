@@ -3,9 +3,6 @@ package encode
 import (
 	"fmt"
 
-	"github.com/expr-lang/expr"
-	"github.com/expr-lang/expr/vm"
-
 	"github.com/frankbardon/prism/encode/scene"
 	prismerrors "github.com/frankbardon/prism/errors"
 	"github.com/frankbardon/prism/spec"
@@ -28,25 +25,9 @@ func applyConditions(enc *spec.Encoding, tbl *table.Table, markList []scene.Mark
 		return nil
 	}
 	for _, ch := range channelConditionsAt(enc) {
-		// Compile test expressions once; reuse across rows.
-		programs := make([]*vm.Program, len(ch.Cond.Entries()))
-		for i, entry := range ch.Cond.Entries() {
-			if entry.Test == "" {
-				continue
-			}
-			prog, err := expr.Compile(entry.Test, expr.AllowUndefinedVariables())
-			if err != nil {
-				return prismerrors.New(
-					"PRISM_ENCODE_001",
-					fmt.Sprintf("Condition test on channel %s entry[%d] failed to compile: %v.", ch.Name, i, err),
-					map[string]any{"Channel": ch.Name, "Entry": i, "Expression": entry.Test, "Reason": err.Error()},
-				)
-			}
-			programs[i] = prog
-		}
 		attr := conditionAttrFor(ch.Name)
 		for mi := range markList {
-			if err := applyConditionsToMark(&markList[mi], tbl, ch, programs, attr); err != nil {
+			if err := applyConditionsToMark(&markList[mi], tbl, ch, attr); err != nil {
 				return err
 			}
 		}
@@ -56,8 +37,9 @@ func applyConditions(enc *spec.Encoding, tbl *table.Table, markList []scene.Mark
 
 // applyConditionsToMark evaluates each condition entry against the
 // mark's datum row. The first entry that matches wins:
-//   - test-form: evaluate expression; truthy → bake the entry's value
-//     into the mark's Style; later entries skipped.
+//   - test-form: evaluate the structured predicate against the row; a
+//     true result → bake the entry's value into the mark's Style; later
+//     entries skipped.
 //   - selection-form: append a ConditionalAttr with the channel's
 //     pre-resolved fallback as Otherwise; later entries skipped.
 //
@@ -65,7 +47,7 @@ func applyConditions(enc *spec.Encoding, tbl *table.Table, markList []scene.Mark
 // preceded them only when the static entry did not match — they live
 // in the Conditions slice in declaration order. The first matching
 // static entry short-circuits the whole list.
-func applyConditionsToMark(m *scene.Mark, tbl *table.Table, ch conditionChannel, programs []*vm.Program, attr string) error {
+func applyConditionsToMark(m *scene.Mark, tbl *table.Table, ch conditionChannel, attr string) error {
 	if m == nil {
 		return nil
 	}
@@ -73,20 +55,8 @@ func applyConditionsToMark(m *scene.Mark, tbl *table.Table, ch conditionChannel,
 	otherwise := currentStyleValue(m, attr)
 	for i, entry := range ch.Cond.Entries() {
 		switch {
-		case entry.Test != "":
-			prog := programs[i]
-			if prog == nil {
-				continue
-			}
-			out, err := expr.Run(prog, env)
-			if err != nil {
-				return prismerrors.New(
-					"PRISM_ENCODE_001",
-					fmt.Sprintf("Condition test on channel %s entry[%d] failed at runtime: %v.", ch.Name, i, err),
-					map[string]any{"Channel": ch.Name, "Entry": i, "Expression": entry.Test, "Reason": err.Error()},
-				)
-			}
-			if truthy(out) {
+		case entry.Test != nil:
+			if entry.Test.EvalRow(env) {
 				if entry.Value != nil {
 					if err := applyStyleAttr(m, attr, entry.Value); err != nil {
 						return prismerrors.New(
@@ -196,10 +166,10 @@ func conditionAttrFor(channel string) string {
 	}
 }
 
-// datumEnv builds the per-row env map the expression evaluator sees.
+// datumEnv builds the per-row value map the predicate evaluator sees.
 // Datum.Fields is typically nil (D077 keeps the JSON payload small);
 // we pull every column value at the row's index from the upstream
-// table so test expressions can reference any field the spec used.
+// table so test predicates can reference any field the spec used.
 func datumEnv(m *scene.Mark, tbl *table.Table) map[string]any {
 	env := map[string]any{}
 	if m.Datum == nil {
@@ -310,22 +280,4 @@ func coerceFloat(v any) (float64, error) {
 		return float64(x), nil
 	}
 	return 0, fmt.Errorf("expected number, got %T", v)
-}
-
-func truthy(v any) bool {
-	switch x := v.(type) {
-	case bool:
-		return x
-	case nil:
-		return false
-	case int:
-		return x != 0
-	case int64:
-		return x != 0
-	case float64:
-		return x != 0
-	case string:
-		return x != ""
-	}
-	return true
 }

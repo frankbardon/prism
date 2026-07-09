@@ -4,8 +4,6 @@ import (
 	"context"
 	"strconv"
 
-	"github.com/frankbardon/pulse/encoding"
-
 	"github.com/frankbardon/prism/plan"
 	"github.com/frankbardon/prism/table"
 )
@@ -31,7 +29,7 @@ func (n *LimitNode) ID() plan.NodeID { return n.id }
 func (n *LimitNode) Inputs() []plan.NodeID { return []plan.NodeID{n.input} }
 
 // Schema implements plan.Node. Limit never changes the schema.
-func (n *LimitNode) Schema(in []*encoding.Schema) (*encoding.Schema, error) {
+func (n *LimitNode) Schema(in []*table.Schema) (*table.Schema, error) {
 	return requireSingleInput("LimitNode", in)
 }
 

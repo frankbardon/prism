@@ -4,8 +4,6 @@ import (
 	"crypto/sha256"
 	"encoding/hex"
 	"fmt"
-
-	"github.com/frankbardon/pulse/encoding"
 )
 
 // Filter returns a new Table holding only the rows for which keep[i]
@@ -120,7 +118,7 @@ func childHash(parent, tag string, keepCount int) string {
 // want to walk fields without reaching through Schema().Fields. Kept
 // as a tiny accessor to centralise the dereference and ease future
 // schema refactors.
-func SchemaFields(s *encoding.Schema) []encoding.Field {
+func SchemaFields(s *Schema) []Field {
 	if s == nil {
 		return nil
 	}

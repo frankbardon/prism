@@ -6,20 +6,20 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/frankbardon/pulse/encoding"
-
 	prismerrors "github.com/frankbardon/prism/errors"
 	"github.com/frankbardon/prism/plan"
 	"github.com/frankbardon/prism/plan/nodes"
+	"github.com/frankbardon/prism/spec"
+	"github.com/frankbardon/prism/table"
 )
 
 // stubInputSchema returns a small schema all stubs reuse. Keeps the
 // assertions focused on the node behaviour rather than schema plumbing.
-func stubInputSchema() *encoding.Schema {
-	return &encoding.Schema{Fields: []encoding.Field{
-		{Name: "brand_id", Type: encoding.FieldTypeCategoricalU8},
-		{Name: "score", Type: encoding.FieldTypeF64},
-		{Name: "age", Type: encoding.FieldTypeU8},
+func stubInputSchema() *table.Schema {
+	return &table.Schema{Fields: []table.Field{
+		{Name: "brand_id", Type: table.FieldTypeCategoricalU8},
+		{Name: "score", Type: table.FieldTypeF64},
+		{Name: "age", Type: table.FieldTypeU8},
 	}}
 }
 
@@ -43,14 +43,14 @@ func assertNotImplemented(t *testing.T, kind string, err error) {
 }
 
 func TestPrismFilterNodeStub(t *testing.T) {
-	n := nodes.NewFilter("filter:1", "src:1", "score > 0.5")
+	n := nodes.NewFilter("filter:1", "src:1", spec.Predicate{Op: spec.PredGt, Field: "score", Value: 0.5})
 	if n.ID() != "filter:1" {
 		t.Fatalf("ID=%q", n.ID())
 	}
 	if got := n.Inputs(); len(got) != 1 || got[0] != "src:1" {
 		t.Fatalf("Inputs=%v", got)
 	}
-	out, err := n.Schema([]*encoding.Schema{stubInputSchema()})
+	out, err := n.Schema([]*table.Schema{stubInputSchema()})
 	if err != nil {
 		t.Fatalf("Schema: %v", err)
 	}
@@ -60,19 +60,19 @@ func TestPrismFilterNodeStub(t *testing.T) {
 	_, err = n.Execute(context.Background(), nil)
 	assertNotImplemented(t, "FilterNode", err)
 	// Fingerprint determinism + sensitivity.
-	m := nodes.NewFilter("filter:1", "src:1", "score > 0.5")
+	m := nodes.NewFilter("filter:1", "src:1", spec.Predicate{Op: spec.PredGt, Field: "score", Value: 0.5})
 	if n.Fingerprint() != m.Fingerprint() {
 		t.Errorf("fingerprint mismatch for identical filters")
 	}
-	d := nodes.NewFilter("filter:1", "src:1", "score < 0.5")
+	d := nodes.NewFilter("filter:1", "src:1", spec.Predicate{Op: spec.PredLt, Field: "score", Value: 0.5})
 	if n.Fingerprint() == d.Fingerprint() {
-		t.Errorf("fingerprint collision for different exprs")
+		t.Errorf("fingerprint collision for different predicates")
 	}
 }
 
 func TestPrismProjectNodeStub(t *testing.T) {
 	n := nodes.NewProject("p:1", "src:1", []string{"brand_id", "score"})
-	out, err := n.Schema([]*encoding.Schema{stubInputSchema()})
+	out, err := n.Schema([]*table.Schema{stubInputSchema()})
 	if err != nil {
 		t.Fatalf("Schema: %v", err)
 	}
@@ -86,7 +86,7 @@ func TestPrismProjectNodeStub(t *testing.T) {
 	assertNotImplemented(t, "ProjectNode", err)
 
 	bad := nodes.NewProject("p:2", "src:1", []string{"nonexistent"})
-	_, err = bad.Schema([]*encoding.Schema{stubInputSchema()})
+	_, err = bad.Schema([]*table.Schema{stubInputSchema()})
 	if err == nil {
 		t.Fatal("expected PRISM_PLAN_003 for missing field, got nil")
 	}
@@ -101,7 +101,7 @@ func TestPrismGroupAggregateNodeStub(t *testing.T) {
 		[]string{"brand_id"},
 		[]nodes.AggOp{{Op: "mean", Field: "score", As: "mean_score"}},
 	)
-	out, err := n.Schema([]*encoding.Schema{stubInputSchema()})
+	out, err := n.Schema([]*table.Schema{stubInputSchema()})
 	if err != nil {
 		t.Fatalf("Schema: %v", err)
 	}
@@ -111,7 +111,7 @@ func TestPrismGroupAggregateNodeStub(t *testing.T) {
 	if out.Fields[0].Name != "brand_id" || out.Fields[1].Name != "mean_score" {
 		t.Errorf("Schema field order wrong: %+v", out.Fields)
 	}
-	if out.Fields[1].Type != encoding.FieldTypeF64 {
+	if out.Fields[1].Type != table.FieldTypeF64 {
 		t.Errorf("aggregate result type = %v, want F64", out.Fields[1].Type)
 	}
 	_, err = n.Execute(context.Background(), nil)
@@ -119,8 +119,11 @@ func TestPrismGroupAggregateNodeStub(t *testing.T) {
 }
 
 func TestPrismCalculateNodeStub(t *testing.T) {
-	n := nodes.NewCalculate("c:1", "src:1", "score * 2", "doubled")
-	out, err := n.Schema([]*encoding.Schema{stubInputSchema()})
+	n := nodes.NewCalculate("c:1", "src:1",
+		spec.CalcExpr{Op: spec.CalcMul, Operands: []spec.CalcExpr{
+			{Field: "score"}, {Literal: float64(2)},
+		}}, "doubled")
+	out, err := n.Schema([]*table.Schema{stubInputSchema()})
 	if err != nil {
 		t.Fatalf("Schema: %v", err)
 	}
@@ -138,7 +141,7 @@ func TestPrismWindowNodeStub(t *testing.T) {
 		[]nodes.SortKey{{Field: "score", Order: "desc"}},
 		nil,
 	)
-	out, err := n.Schema([]*encoding.Schema{stubInputSchema()})
+	out, err := n.Schema([]*table.Schema{stubInputSchema()})
 	if err != nil {
 		t.Fatalf("Schema: %v", err)
 	}
@@ -151,7 +154,7 @@ func TestPrismWindowNodeStub(t *testing.T) {
 
 func TestPrismSortNodeStub(t *testing.T) {
 	n := nodes.NewSort("s:1", "src:1", []nodes.SortKey{{Field: "score", Order: "desc"}})
-	out, err := n.Schema([]*encoding.Schema{stubInputSchema()})
+	out, err := n.Schema([]*table.Schema{stubInputSchema()})
 	if err != nil {
 		t.Fatalf("Schema: %v", err)
 	}
@@ -167,7 +170,7 @@ func TestPrismSortNodeStub(t *testing.T) {
 
 func TestPrismLimitNodeStub(t *testing.T) {
 	n := nodes.NewLimit("l:1", "src:1", 10, 5)
-	out, err := n.Schema([]*encoding.Schema{stubInputSchema()})
+	out, err := n.Schema([]*table.Schema{stubInputSchema()})
 	if err != nil {
 		t.Fatalf("Schema: %v", err)
 	}
@@ -183,7 +186,7 @@ func TestPrismLimitNodeStub(t *testing.T) {
 
 func TestPrismBinNodeStub(t *testing.T) {
 	n := nodes.NewBin("b:1", "src:1", "score", "score_bin", nodes.BinParams{Auto: true})
-	out, err := n.Schema([]*encoding.Schema{stubInputSchema()})
+	out, err := n.Schema([]*table.Schema{stubInputSchema()})
 	if err != nil {
 		t.Fatalf("Schema: %v", err)
 	}
@@ -196,15 +199,15 @@ func TestPrismBinNodeStub(t *testing.T) {
 
 func TestPrismJoinNodeStub(t *testing.T) {
 	left := stubInputSchema()
-	right := &encoding.Schema{Fields: []encoding.Field{
-		{Name: "brand_id", Type: encoding.FieldTypeCategoricalU8},
-		{Name: "label", Type: encoding.FieldTypeCategoricalU8},
+	right := &table.Schema{Fields: []table.Field{
+		{Name: "brand_id", Type: table.FieldTypeCategoricalU8},
+		{Name: "label", Type: table.FieldTypeCategoricalU8},
 	}}
 	n := nodes.NewJoin("j:1", "left", "right", []string{"brand_id"}, nodes.JoinInner, 1000)
 	if got := n.Inputs(); len(got) != 2 || got[0] != "left" || got[1] != "right" {
 		t.Fatalf("Inputs=%v", got)
 	}
-	out, err := n.Schema([]*encoding.Schema{left, right})
+	out, err := n.Schema([]*table.Schema{left, right})
 	if err != nil {
 		t.Fatalf("Schema: %v", err)
 	}
@@ -226,7 +229,7 @@ func TestPrismJoinNodeStub(t *testing.T) {
 
 func TestPrismUnionNodeStub(t *testing.T) {
 	n := nodes.NewUnion("u:1", []plan.NodeID{"a", "b"})
-	out, err := n.Schema([]*encoding.Schema{stubInputSchema(), stubInputSchema()})
+	out, err := n.Schema([]*table.Schema{stubInputSchema(), stubInputSchema()})
 	if err != nil {
 		t.Fatalf("Schema: %v", err)
 	}
@@ -243,7 +246,7 @@ func TestPrismUnionNodeStub(t *testing.T) {
 
 func TestPrismPivotNodeStub(t *testing.T) {
 	n := nodes.NewPivot("pv:1", "src:1", "brand_id", "score", []string{"age"}, "sum")
-	out, err := n.Schema([]*encoding.Schema{stubInputSchema()})
+	out, err := n.Schema([]*table.Schema{stubInputSchema()})
 	if err != nil {
 		t.Fatalf("Schema: %v", err)
 	}
@@ -257,7 +260,7 @@ func TestPrismPivotNodeStub(t *testing.T) {
 
 func TestPrismUnpivotNodeStub(t *testing.T) {
 	n := nodes.NewUnpivot("up:1", "src:1", []string{"score", "age"}, []string{"metric", "value"})
-	out, err := n.Schema([]*encoding.Schema{stubInputSchema()})
+	out, err := n.Schema([]*table.Schema{stubInputSchema()})
 	if err != nil {
 		t.Fatalf("Schema: %v", err)
 	}
@@ -276,7 +279,7 @@ func TestPrismUnpivotNodeStub(t *testing.T) {
 func TestPrismSampleNodeStub(t *testing.T) {
 	seed := int64(42)
 	n := nodes.NewSample("sm:1", "src:1", 100, &seed)
-	out, err := n.Schema([]*encoding.Schema{stubInputSchema()})
+	out, err := n.Schema([]*table.Schema{stubInputSchema()})
 	if err != nil {
 		t.Fatalf("Schema: %v", err)
 	}

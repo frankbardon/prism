@@ -73,9 +73,8 @@ func TestPrismDAGBuildAllFixtures(t *testing.T) {
 	// P08 unskipped layer + concat / hconcat / vconcat; P09 unskipped
 	// facet / repeat. P13 unskipped selection (the builder pipes the
 	// selection block to the encoder; no DAG nodes are required per
-	// D004). No deferrals remain.
-	skip := map[string]bool{}
-
+	// D004).
+	//
 	root := repoRoot(t)
 	dir := filepath.Join(root, "examples", "specs")
 	entries, err := os.ReadDir(dir)
@@ -96,9 +95,6 @@ func TestPrismDAGBuildAllFixtures(t *testing.T) {
 	for _, name := range names {
 		name := name
 		t.Run(name, func(t *testing.T) {
-			if skip[name] {
-				t.Skipf("composition/selection: deferred to P09/P13")
-			}
 			s := loadSpec(t, filepath.Join(dir, name))
 			// Composite specs (layer/concat/hconcat/vconcat) build via
 			// BuildComposite per D049/D050; each child must produce a

@@ -1,0 +1,10 @@
+{
+  "$schema": "urn:prism:schema:v1:spec",
+  "title": "Score by label (JS-supplied DataResolver ref)",
+  "data": {"ref": "cohort"},
+  "mark": "bar",
+  "encoding": {
+    "x": {"field": "label", "type": "nominal"},
+    "y": {"field": "score", "type": "quantitative"}
+  }
+}

@@ -5,8 +5,6 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/frankbardon/pulse/encoding"
-
 	"github.com/frankbardon/prism/plan"
 	"github.com/frankbardon/prism/table"
 )
@@ -49,7 +47,7 @@ func (n *JoinNode) Inputs() []plan.NodeID { return []plan.NodeID{n.left, n.right
 
 // Schema implements plan.Node. Output schema is the union of left and
 // right schemas, dropping right-side duplicates of the join keys.
-func (n *JoinNode) Schema(in []*encoding.Schema) (*encoding.Schema, error) {
+func (n *JoinNode) Schema(in []*table.Schema) (*table.Schema, error) {
 	if len(in) != 2 || in[0] == nil || in[1] == nil {
 		return nil, requireTwoInputsErr("JoinNode", in)
 	}

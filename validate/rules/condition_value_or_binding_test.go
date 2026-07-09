@@ -19,7 +19,7 @@ func TestConditionValueOrBindingHappyPath(t *testing.T) {
 				ChannelCommon: spec.ChannelCommon{
 					Condition: &spec.Condition{Multi: []spec.ConditionTest{
 						{Selection: "brush", Value: "red"},
-						{Test: "score < 0", Field: "score_bucket", Type: "ordinal"},
+						{Test: &spec.Predicate{Op: spec.PredLt, Field: "score", Value: 0.0}, Field: "score_bucket", Type: "ordinal"},
 						{Selection: "brush"}, // inherit channel field — allowed
 					}},
 				},
@@ -40,7 +40,7 @@ func TestConditionValueOrBindingRejectsBoth(t *testing.T) {
 			Color: &spec.MarkChannel{
 				ChannelCommon: spec.ChannelCommon{
 					Condition: &spec.Condition{Single: &spec.ConditionTest{
-						Test: "x > 0", Value: "red", Field: "score",
+						Test: &spec.Predicate{Op: spec.PredGt, Field: "x", Value: 0.0}, Value: "red", Field: "score",
 					}},
 				},
 			},
@@ -59,7 +59,7 @@ func TestConditionValueOrBindingRejectsNeitherOnTest(t *testing.T) {
 		Encoding: &spec.Encoding{
 			Color: &spec.MarkChannel{
 				ChannelCommon: spec.ChannelCommon{
-					Condition: &spec.Condition{Single: &spec.ConditionTest{Test: "x > 0"}},
+					Condition: &spec.Condition{Single: &spec.ConditionTest{Test: &spec.Predicate{Op: spec.PredGt, Field: "x", Value: 0.0}}},
 				},
 			},
 		},

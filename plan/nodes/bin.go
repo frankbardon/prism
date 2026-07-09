@@ -4,8 +4,6 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/frankbardon/pulse/encoding"
-
 	"github.com/frankbardon/prism/plan"
 	"github.com/frankbardon/prism/table"
 )
@@ -56,7 +54,7 @@ func (n *BinNode) Inputs() []plan.NodeID { return []plan.NodeID{n.input} }
 
 // Schema implements plan.Node. Output schema is input + one F64 field
 // named n.as (the bin edge for each row).
-func (n *BinNode) Schema(in []*encoding.Schema) (*encoding.Schema, error) {
+func (n *BinNode) Schema(in []*table.Schema) (*table.Schema, error) {
 	s, err := requireSingleInput("BinNode", in)
 	if err != nil {
 		return nil, err
@@ -64,7 +62,7 @@ func (n *BinNode) Schema(in []*encoding.Schema) (*encoding.Schema, error) {
 	if n.as == "" {
 		return nil, fmt.Errorf("BinNode: missing 'as' name")
 	}
-	return appendField(s, n.as, encoding.FieldTypeF64), nil
+	return appendField(s, n.as, table.FieldTypeF64), nil
 }
 
 // Execute implements plan.Node via the injected backend.

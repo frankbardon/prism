@@ -95,7 +95,14 @@ For live interactive rendering in a browser, see [`index.html`](index.html).
 |---|---|
 | [actual_vs_benchmark](multi-source/actual_vs_benchmark.prism.json) | <img src="multi-source/actual_vs_benchmark.svg" width="240"> |
 | [multi_source_join](multi-source/multi_source_join.prism.json) | <img src="multi-source/multi_source_join.svg" width="240"> |
-| [bar_pulse_backed](multi-source/bar_pulse_backed.prism.json) | <img src="multi-source/bar_pulse_backed.svg" width="240"> |
+| [bar_inline](multi-source/bar_inline.prism.json) | <img src="multi-source/bar_inline.svg" width="240"> |
+
+## Transforms
+
+| Spec | Preview |
+|---|---|
+| [filter_structured](transforms/filter_structured.prism.json) | <img src="transforms/filter_structured.svg" width="240"> |
+| [calculate_structured](transforms/calculate_structured.prism.json) | <img src="transforms/calculate_structured.svg" width="240"> |
 
 ## Scales
 
@@ -125,7 +132,7 @@ For live interactive rendering in a browser, see [`index.html`](index.html).
 ## Conditions
 
 Per-channel `condition` clauses switch a channel's value based on a
-selection or Pulse expression. See
+selection or a structured predicate `test`. See
 [Encoding › Conditions](../concepts/encoding.md#conditions).
 
 | Spec | Preview |

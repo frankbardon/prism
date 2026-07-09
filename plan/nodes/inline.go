@@ -8,8 +8,6 @@ import (
 	"fmt"
 	"sort"
 
-	"github.com/frankbardon/pulse/encoding"
-
 	"github.com/frankbardon/prism/plan"
 	"github.com/frankbardon/prism/spec"
 	"github.com/frankbardon/prism/table"
@@ -31,7 +29,7 @@ type InlineNode struct {
 
 	// cachedSchema is computed once and reused so Schema() does not
 	// re-walk the values on every call.
-	cachedSchema *encoding.Schema
+	cachedSchema *table.Schema
 }
 
 // NewInline constructs an InlineNode from raw spec inputs.
@@ -57,7 +55,7 @@ func (n *InlineNode) Inputs() []plan.NodeID { return nil }
 
 // Schema implements plan.Node. Computes via table.FromInline the first
 // time it is called, then caches the result. Errors propagate.
-func (n *InlineNode) Schema(_ []*encoding.Schema) (*encoding.Schema, error) {
+func (n *InlineNode) Schema(_ []*table.Schema) (*table.Schema, error) {
 	if n.cachedSchema != nil {
 		return n.cachedSchema, nil
 	}

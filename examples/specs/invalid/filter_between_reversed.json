@@ -1,0 +1,11 @@
+{
+  "$schema": "urn:prism:schema:v1:spec",
+  "data": {"values": [{"v": 1}]},
+  "transform": [
+    {"filter": {"op": "between", "field": "v", "lo": 10, "hi": 1}}
+  ],
+  "mark": "bar",
+  "encoding": {
+    "x": {"field": "v", "type": "quantitative"}
+  }
+}

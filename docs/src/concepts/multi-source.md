@@ -1,15 +1,20 @@
 # Multi-source
 
-Composing N Pulse queries into one chart is a first-class workflow.
+Composing N materialized datasets into one chart is a first-class workflow.
 
 ## Datasets block
+
+Each named dataset carries its rows inline via `values` (or defers them
+to a runtime `ref` resolved by a `DataResolver` — see below). Prism does
+not open `.pulse` files; the host materialises the rows and hands Prism a
+Pulse-free spec.
 
 ```json
 {
   "datasets": {
-    "current": {"source": "cohorts/q1.pulse"},
-    "prior":   {"source": "cohorts/q4_2025.pulse"},
-    "bench":   {"source": "benchmarks/industry.pulse"}
+    "current": {"values": [{"brand_id": "a", "score": 0.62}, {"brand_id": "b", "score": 0.55}]},
+    "prior":   {"values": [{"brand_id": "a", "score": 0.58}, {"brand_id": "b", "score": 0.57}]},
+    "bench":   {"ref": "industry_benchmark"}
   },
   "transform": [
     {"data": "current", "groupby": ["brand_id"],
@@ -76,8 +81,8 @@ Wire shared aliases via a JSON config file:
 ```json
 {
   "datasets": {
-    "current": "cohorts/brand_q1.pulse",
-    "prior":   "cohorts/brand_q4.pulse"
+    "current": "brand_q1",
+    "prior":   "brand_q4"
   }
 }
 ```
@@ -88,13 +93,15 @@ prism serve --datasets-config datasets.json --addr :8080
 ```
 
 Specs that reference `{"data": {"name": "current"}}` resolve through
-the registry. Server-side cache deduplicates fetches across requests.
+the registry to an opaque ref, which a caller-supplied `DataResolver`
+turns into materialized rows (Prism reads no file itself). Server-side
+cache deduplicates resolution across requests.
 
 ## Browser-side dataset registry
 
 ```html
-<prism-dataset name="current" src="cohorts/brand_q1.pulse"></prism-dataset>
-<prism-dataset name="prior"   src="cohorts/brand_q4.pulse"></prism-dataset>
+<prism-dataset name="current" src="cohorts/brand_q1.rows.json"></prism-dataset>
+<prism-dataset name="prior"   src="cohorts/brand_q4.rows.json"></prism-dataset>
 
 <prism-chart spec="overview.prism.json"></prism-chart>
 <prism-chart spec="detail.prism.json"></prism-chart>
@@ -164,11 +171,15 @@ via `resolve.ChainDataResolvers`. An unresolved ref surfaces as
 
 | Variant | Discriminator key | Use when |
 |---|---|---|
-| `data: {source: "…"}` | `source` | Static Pulse path / archive shard |
-| `data: {name: "…"}` | `name` | Datasets-block alias |
-| `data: {ref: "…"}` | `ref` | Caller-resolved opaque identifier |
 | `data: {values: […]}` | `values` | Inline literal rows |
+| `data: {ref: "…"}` | `ref` | Caller-resolved opaque identifier (`DataResolver`) |
+| `data: {name: "…"}` | `name` | Datasets-block alias |
 | `data: {feature_collection: {…}}` | `feature_collection` | Geodata basemap |
+
+> The `data: {source: "…"}` variant (an external Pulse path) was removed
+> in v0.x: Prism no longer reads `.pulse`. A spec that still carries a
+> `source` key is rejected at decode with `PRISM_SPEC_039` — inline the
+> rows via `values` or defer them to a `DataResolver` via `ref`.
 
 ## Partial failure
 
@@ -179,28 +190,16 @@ fail-fast via `ExecOpts.AbortOnError` (CI image diffs).
 
 ## Optimizer passes
 
-Six passes run to fixpoint after build:
+Five passes run to fixpoint after build:
 
-1. `DedupSources` — two reads of the same `.pulse` collapse to one.
+1. `DedupSources` — two reads of the same source collapse to one.
 2. `FilterPushdown` — filters on joined output push to the side that
    owns the referenced columns.
 3. `ProjectionPruning` — only request columns layered/encoded
    downstream.
 4. `AggregateFusion` — sibling group-aggregates on the same input
    merge into one call.
-5. `PulseChainFusion` — a source-rooted linear chain
-   (`Filter` / `Calculate` / `GroupAggregate` / `Sort`, in that order)
-   collapses into a single `pulse.ProcessChain` call. Pulse pushes
-   filters down at the source reader and returns only the final
-   aggregated rows, so Prism never materialises the full cohort into
-   a `table.Table`. The pass requires a `GroupAggregate` (the win
-   condition) and skips chains rooted at `cohort:<id>` or `gs://`
-   refs in v1. Aggregate aliases that are not Pulse-backed (`lift`,
-   `share`), not scalar-emitting (`mode`), or sibling-dependent
-   (`wmean`, `ratio`, `ci0`, `ci1`) keep the in-memory backend path.
-   If Pulse rejects a stage at execute time the chain node surfaces
-   `PRISM_PLAN_CHAIN_NOT_MERGEABLE`.
-6. `SampleInjection` — input rows > `PRISM_RENDER_MAX_MARKS` (100k
+5. `SampleInjection` — input rows > `PRISM_RENDER_MAX_MARKS` (100k
    default) → auto-sample with `PRISM_WARN_DOWNSAMPLE`.
 
 ## Worked examples

@@ -8,7 +8,6 @@ import (
 	"strings"
 	"testing"
 
-	pulseerrors "github.com/frankbardon/pulse/errors"
 	"github.com/twitchtv/twirp"
 
 	prismerrors "github.com/frankbardon/prism/errors"
@@ -16,8 +15,8 @@ import (
 
 // TestPrismErrorInterceptorStatusCodes is one of the four
 // PHASE.md-mandated P14 test gates. Table-driven across one error
-// per PRISM_* family + the Pulse domains. For each entry, run the
-// error through ErrorInterceptor and assert the returned
+// per PRISM_* family plus unknown / non-PRISM errors. For each entry,
+// run the error through ErrorInterceptor and assert the returned
 // twirp.Error.Code() matches.
 func TestPrismErrorInterceptorStatusCodes(t *testing.T) {
 	cases := []struct {
@@ -45,12 +44,6 @@ func TestPrismErrorInterceptorStatusCodes(t *testing.T) {
 		{"serve_execute", prismerrors.New("PRISM_SERVE_EXECUTE", "exec err", nil), twirp.Internal, ""},
 		{"serve_encode", prismerrors.New("PRISM_SERVE_ENCODE", "encode err", nil), twirp.Internal, ""},
 		{"warn", prismerrors.New("PRISM_WARN_DOWNSAMPLE", "warn", nil), twirp.Internal, ""},
-		// PULSE domain (domain-word prefixes per the Pulse catalog)
-		{"pulse_data_file", pulseerrors.NewCodedError(pulseerrors.DATA_FILE, "file not found"), twirp.Unavailable, "file"},
-		{"pulse_data_parse", pulseerrors.NewCodedError(pulseerrors.DATA_PARSE, "parse err"), twirp.InvalidArgument, ""},
-		{"pulse_processing", pulseerrors.NewCodedError(pulseerrors.PROCESSING_RUNTIME, "runtime err"), twirp.Internal, ""},
-		{"pulse_encoding_invalid", pulseerrors.NewCodedError(pulseerrors.ENCODING_INVALID, "bad bytes"), twirp.InvalidArgument, ""},
-		{"pulse_service_validation", pulseerrors.NewCodedError(pulseerrors.SERVICE_VALIDATION, "bad cfg"), twirp.InvalidArgument, ""},
 		// Unknown error
 		{"unknown", errors.New("something went wrong"), twirp.Internal, "wrong"},
 		// Unknown PRISM code → defaults to Internal
@@ -82,8 +75,8 @@ func TestPrismErrorInterceptorStatusCodes(t *testing.T) {
 }
 
 // TestPrismErrorInterceptorPreservesMetadata ensures the interceptor
-// attaches the original PRISM_/PULSE_ code as a meta entry so
-// clients keep structured access.
+// attaches the original PRISM_ code as a meta entry so clients keep
+// structured access.
 func TestPrismErrorInterceptorPreservesMetadata(t *testing.T) {
 	ae := prismerrors.New("PRISM_SPEC_001", "field missing", map[string]any{"Field": "x"})
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {

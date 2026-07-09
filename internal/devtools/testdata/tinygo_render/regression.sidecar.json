@@ -1,0 +1,29 @@
+{
+  "datasets": {"cohort": "cohort_src"},
+  "resolver": {
+    "cohort_src": {
+      "values": [
+        {"age": 35, "score": 0.484846},
+        {"age": 42, "score": 0.497514},
+        {"age": 46, "score": 0.440301},
+        {"age": 21, "score": 0.443855},
+        {"age": 59, "score": 0.512163},
+        {"age": 30, "score": 0.512366},
+        {"age": 43, "score": 0.454923},
+        {"age": 36, "score": 0.687273},
+        {"age": 28, "score": 0.445353},
+        {"age": 39, "score": 0.687054},
+        {"age": 51, "score": 0.507822},
+        {"age": 30, "score": 0.789715},
+        {"age": 34, "score": 0.479052},
+        {"age": 50, "score": 0.428342},
+        {"age": 33, "score": 0.561831},
+        {"age": 34, "score": 0.53225},
+        {"age": 18, "score": 0.302646},
+        {"age": 27, "score": 0.517428},
+        {"age": 18, "score": 0.597652},
+        {"age": 28, "score": 0.47841}
+      ]
+    }
+  }
+}

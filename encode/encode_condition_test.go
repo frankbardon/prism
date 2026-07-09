@@ -46,7 +46,7 @@ func TestEncodeConditionStaticTestBakesStyle(t *testing.T) {
 			"y": {"field": "score",  "type": "quantitative"},
 			"color": {
 				"condition": [
-					{"test": "score >= 0.7", "value": "#22c55e"}
+					{"test": {"op": "gte", "field": "score", "value": 0.7}, "value": "#22c55e"}
 				],
 				"value": "#cbd5e1"
 			}

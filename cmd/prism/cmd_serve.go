@@ -10,7 +10,6 @@ import (
 	"net"
 	"net/http"
 	"strconv"
-	"strings"
 
 	"github.com/spf13/afero"
 	"github.com/twitchtv/twirp"
@@ -278,32 +277,32 @@ func synthesiseSelectionFilters(s *spec.Spec, state map[string]selectionStateInp
 		if !ok {
 			continue
 		}
-		if decl.Point != nil && len(st.Points) > 0 {
-			rowIDs := make([]string, 0, len(st.Points))
-			for _, p := range st.Points {
-				rowIDs = append(rowIDs, strconv.FormatInt(p.RowID, 10))
+		if decl.Point != nil && len(st.Points) > 0 && len(decl.Point.Fields) > 0 {
+			// Point selection → `field one_of [values]`. A field-less
+			// point selection has no structured-predicate equivalent
+			// (row-index filtering left the grammar with E2-S1); it is
+			// skipped rather than synthesised.
+			field := decl.Point.Fields[0]
+			values := lookupInlineFieldValues(s, field, st.Points)
+			if len(values) > 0 {
+				out = append(out, spec.Transform{Filter: &spec.FilterTransform{
+					Filter: spec.Predicate{Op: spec.PredOneOf, Field: field, Values: values},
+				}})
 			}
-			if len(decl.Point.Fields) > 0 {
-				field := decl.Point.Fields[0]
-				values := lookupInlineFieldValues(s, field, st.Points)
-				if len(values) > 0 {
-					expr := field + " in [" + strings.Join(quotedList(values), ", ") + "]"
-					out = append(out, spec.Transform{Filter: &spec.FilterTransform{Filter: expr}})
-					continue
-				}
-			}
-			expr := "__row__ in [" + strings.Join(rowIDs, ", ") + "]"
-			out = append(out, spec.Transform{Filter: &spec.FilterTransform{Filter: expr}})
 		}
 		if decl.Interval != nil && st.Range != nil {
 			field := fieldForChannel(s, st.Range.Channel)
 			if field == "" {
 				continue
 			}
-			min := strconv.FormatFloat(st.Range.Min, 'f', -1, 64)
-			max := strconv.FormatFloat(st.Range.Max, 'f', -1, 64)
-			expr := field + " >= " + min + " and " + field + " <= " + max
-			out = append(out, spec.Transform{Filter: &spec.FilterTransform{Filter: expr}})
+			out = append(out, spec.Transform{Filter: &spec.FilterTransform{
+				Filter: spec.Predicate{
+					Op:    spec.PredBetween,
+					Field: field,
+					Lo:    st.Range.Min,
+					Hi:    st.Range.Max,
+				},
+			}})
 		}
 	}
 	return out, nil
@@ -336,14 +335,15 @@ func fieldForChannel(s *spec.Spec, channel string) string {
 	return ""
 }
 
-// lookupInlineFieldValues returns the values at the named field for
-// each DatumRef row id, sourced from spec.Data.Values. Returns nil
-// when the spec uses a non-inline data source.
-func lookupInlineFieldValues(s *spec.Spec, field string, refs []datumRefInput) []string {
+// lookupInlineFieldValues returns the raw values at the named field for
+// each DatumRef row id, sourced from spec.Data.Values. Returns nil when
+// the spec uses a non-inline data source. The values feed a structured
+// one_of predicate, so their native JSON types are preserved.
+func lookupInlineFieldValues(s *spec.Spec, field string, refs []datumRefInput) []any {
 	if s == nil || s.Data == nil || len(s.Data.Values) == 0 {
 		return nil
 	}
-	values := make([]string, 0, len(refs))
+	values := make([]any, 0, len(refs))
 	for _, r := range refs {
 		if int(r.RowID) < 0 || int(r.RowID) >= len(s.Data.Values) {
 			continue
@@ -353,23 +353,9 @@ func lookupInlineFieldValues(s *spec.Spec, field string, refs []datumRefInput) [
 		if !present {
 			continue
 		}
-		values = append(values, fmt.Sprintf("%v", v))
+		values = append(values, v)
 	}
 	return values
-}
-
-// quotedList wraps non-numeric entries in single quotes for embedding
-// in an expr-lang expression.
-func quotedList(values []string) []string {
-	out := make([]string, len(values))
-	for i, v := range values {
-		if _, err := strconv.ParseFloat(v, 64); err == nil {
-			out[i] = v
-		} else {
-			out[i] = "'" + strings.ReplaceAll(v, "'", "\\'") + "'"
-		}
-	}
-	return out
 }
 
 func writeJSONErr(w http.ResponseWriter, status int, code, msg string) {

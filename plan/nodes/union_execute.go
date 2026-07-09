@@ -5,7 +5,6 @@ import (
 	"fmt"
 
 	"github.com/cespare/xxhash/v2"
-	"github.com/frankbardon/pulse/encoding"
 
 	prismerrors "github.com/frankbardon/prism/errors"
 	"github.com/frankbardon/prism/internal/limits"
@@ -65,7 +64,7 @@ func (n *UnionNode) executeUnion(_ context.Context, in []*table.Table) (*table.T
 // schemasMatch reports the first per-field discrepancy between left and
 // right as a PRISM_PLAN_004. ix is the input index (right-side); the
 // diff string names that index plus the offending field.
-func schemasMatch(left, right *encoding.Schema, ix int) error {
+func schemasMatch(left, right *table.Schema, ix int) error {
 	if len(left.Fields) != len(right.Fields) {
 		return prismerrors.New(
 			"PRISM_PLAN_004",

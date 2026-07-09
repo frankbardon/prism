@@ -7,48 +7,40 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/frankbardon/pulse"
-	"github.com/frankbardon/pulse/encoding"
-	pulsetypes "github.com/frankbardon/pulse/types"
-	"github.com/spf13/afero"
-
 	prismerrors "github.com/frankbardon/prism/errors"
+	"github.com/frankbardon/prism/internal/vfs"
 	"github.com/frankbardon/prism/plan"
 	"github.com/frankbardon/prism/spec"
 	"github.com/frankbardon/prism/table"
 )
 
-const (
-	regXMinLabel    = "_prism_xmin"
-	regXMaxLabel    = "_prism_xmax"
-	regInterceptKey = "(intercept)"
-)
-
-// RegressionNode fits an OLS regression over the source cohort and
-// emits the two endpoints of the fitted trend line. Like CrosstabNode
-// it is its own leaf — it opens the .pulse cohort directly, since Pulse
-// has no in-memory cohort constructor.
+// RegressionNode fits an OLS regression over its single upstream input
+// table and emits the two endpoints of the fitted trend line.
+// Execution is pure Go via the in-memory backend
+// (compile/inmem/regression.go) — the node carries no engine coupling.
 //
-// One Pulse Request carries both REG_OLS (for the coefficients) and
-// min/max aggregations over the predictor (for the x-domain). The node
-// synthesises two rows — (xmin, y(xmin)) and (xmax, y(xmax)) — so a
-// `line` mark over (predictor, fitted) draws the regression line. For
-// OLS every fitted point is collinear, so two endpoints suffice and
-// match Vega-Lite's sampled regression output. v1 supports a single
-// predictor — the only shape that maps to a 2-D trend line.
+// The in-memory OLS fit produces the coefficients (intercept + slope);
+// the predictor min/max supply the x-domain. The node synthesises two
+// rows — (xmin, y(xmin)) and (xmax, y(xmax)) — so a `line` mark over
+// (predictor, fitted) draws the regression line. For OLS every fitted
+// point is collinear, so two endpoints suffice and match Vega-Lite's
+// sampled regression output. v1 supports a single predictor — the only
+// shape that maps to a 2-D trend line.
 type RegressionNode struct {
 	id        plan.NodeID
+	input     plan.NodeID
 	ref       string
-	fs        afero.Fs
+	fs        vfs.Fs
 	body      spec.RegressionBody
-	outSchema *encoding.Schema
+	outSchema *table.Schema
 	predictor string
 	fittedAs  string
+	backend   plan.Backend
 }
 
-// NewRegression constructs a RegressionNode. inSchema is the source
-// cohort's schema; the output schema is {predictor, fitted}, two rows.
-func NewRegression(id plan.NodeID, ref string, fs afero.Fs, inSchema *encoding.Schema, t *spec.RegressionTransform) (*RegressionNode, error) {
+// NewRegression constructs a RegressionNode. inSchema is the upstream
+// input's schema; the output schema is {predictor, fitted}, two rows.
+func NewRegression(id, input plan.NodeID, ref string, fs vfs.Fs, inSchema *table.Schema, t *spec.RegressionTransform) (*RegressionNode, error) {
 	if inSchema == nil {
 		return nil, fmt.Errorf("regression: nil input schema")
 	}
@@ -72,12 +64,13 @@ func NewRegression(id plan.NodeID, ref string, fs afero.Fs, inSchema *encoding.S
 		fittedAs = "fitted"
 	}
 	predictor := body.Predictors[0]
-	out := &encoding.Schema{Fields: []encoding.Field{
-		{Name: predictor, Type: encoding.FieldTypeF64},
-		{Name: fittedAs, Type: encoding.FieldTypeF64},
+	out := &table.Schema{Fields: []table.Field{
+		{Name: predictor, Type: table.FieldTypeF64},
+		{Name: fittedAs, Type: table.FieldTypeF64},
 	}}
 	return &RegressionNode{
 		id:        id,
+		input:     input,
 		ref:       ref,
 		fs:        fs,
 		body:      body,
@@ -100,18 +93,19 @@ func DeriveRegressionID(ref string, t *spec.RegressionTransform) plan.NodeID {
 // ID implements plan.Node.
 func (n *RegressionNode) ID() plan.NodeID { return n.id }
 
-// Inputs implements plan.Node. Regression is a leaf — Pulse fits the
-// cohort directly.
-func (n *RegressionNode) Inputs() []plan.NodeID { return nil }
+// Inputs implements plan.Node. Regression consumes the single upstream
+// table it fits.
+func (n *RegressionNode) Inputs() []plan.NodeID { return []plan.NodeID{n.input} }
 
-// Schema implements plan.Node. Pre-computed at construction.
-func (n *RegressionNode) Schema(_ []*encoding.Schema) (*encoding.Schema, error) {
+// Schema implements plan.Node. Pre-computed at construction as the
+// native {predictor, fitted} two-row shape.
+func (n *RegressionNode) Schema(_ []*table.Schema) (*table.Schema, error) {
 	return n.outSchema, nil
 }
 
 // Fingerprint implements plan.Node.
 func (n *RegressionNode) Fingerprint() string {
-	return fingerprintFor("RegressionNode", n.ref, regressionBodyKey(n.body))
+	return fingerprintFor("RegressionNode", string(n.input), n.ref, regressionBodyKey(n.body))
 }
 
 // Ref returns the source ref so plan-visualisation tooling can show the
@@ -119,10 +113,21 @@ func (n *RegressionNode) Fingerprint() string {
 func (n *RegressionNode) Ref() string { return n.ref }
 
 // FS returns the afero filesystem this node was constructed with.
-func (n *RegressionNode) FS() afero.Fs { return n.fs }
+func (n *RegressionNode) FS() vfs.Fs { return n.fs }
 
 // Body returns the regression body for renderer + test inspection.
 func (n *RegressionNode) Body() spec.RegressionBody { return n.body }
+
+// Predictor returns the resolved single predictor field name.
+func (n *RegressionNode) Predictor() string { return n.predictor }
+
+// FittedAs returns the resolved fitted-value output column name.
+func (n *RegressionNode) FittedAs() string { return n.fittedAs }
+
+// OutSchema returns the pre-computed {predictor, fitted} output schema
+// so the in-memory backend materialises the endpoints with the right
+// column kinds.
+func (n *RegressionNode) OutSchema() *table.Schema { return n.outSchema }
 
 // Kind implements plan.Labeled.
 func (n *RegressionNode) Kind() string { return "RegressionNode" }
@@ -132,80 +137,16 @@ func (n *RegressionNode) Summary() string {
 	return fmt.Sprintf("%s: %s ~ %s", n.fittedAs, n.body.Target, n.predictor)
 }
 
-// Execute implements plan.Node. Runs one Pulse Process carrying REG_OLS
-// plus min/max aggregations over the predictor, then emits the two
-// fitted trend-line endpoints.
-func (n *RegressionNode) Execute(ctx context.Context, _ []*table.Table) (*table.Table, error) {
-	if err := ctx.Err(); err != nil {
-		return nil, err
+// Execute implements plan.Node via the injected backend.
+func (n *RegressionNode) Execute(ctx context.Context, in []*table.Table) (*table.Table, error) {
+	if n.backend == nil {
+		return nil, notImplementedErr("RegressionNode")
 	}
-	if n.fs == nil {
-		return nil, fmt.Errorf("regression: fs is nil")
-	}
-	p, err := pulse.New(pulse.Options{FS: n.fs})
-	if err != nil {
-		return nil, prismerrors.Wrap(
-			"PRISM_RESOLVE_006",
-			fmt.Sprintf("Pulse failed to open %s for regression: %v.", n.ref, err),
-			map[string]any{"Ref": n.ref, "Reason": err.Error()},
-			err,
-		)
-	}
-	req := &pulsetypes.Request{
-		Cohort: &pulsetypes.Cohort{Filename: n.ref},
-		Aggregations: []*pulsetypes.Aggregation{
-			{Type: pulsetypes.AGG_MIN, Field: n.predictor, Label: regXMinLabel},
-			{Type: pulsetypes.AGG_MAX, Field: n.predictor, Label: regXMaxLabel},
-		},
-		Regressions: []*pulsetypes.RegressionSpec{{
-			Type:       pulsetypes.REG_OLS,
-			Target:     n.body.Target,
-			Predictors: []string{n.predictor},
-		}},
-	}
-	resp, err := p.Process(ctx, req)
-	if err != nil {
-		return nil, prismerrors.Wrap(
-			"PRISM_PLAN_REGRESSION_PROCESS",
-			fmt.Sprintf("Pulse failed to fit regression on %s: %v.", n.ref, err),
-			map[string]any{"Ref": n.ref, "Reason": err.Error()},
-			err,
-		)
-	}
-	if len(resp.Regressions) == 0 || resp.Regressions[0].Coefficients == nil {
-		return nil, prismerrors.New(
-			"PRISM_PLAN_REGRESSION_PROCESS",
-			fmt.Sprintf("Pulse returned no regression coefficients for %s.", n.ref),
-			map[string]any{"Ref": n.ref},
-		)
-	}
-	coef := resp.Regressions[0].Coefficients
-	intercept := coef[regInterceptKey]
-	slope, ok := coef[n.predictor]
-	if !ok {
-		return nil, prismerrors.New(
-			"PRISM_PLAN_REGRESSION_PROCESS",
-			fmt.Sprintf("Pulse regression result missing coefficient for predictor %q.", n.predictor),
-			map[string]any{"Ref": n.ref, "Predictor": n.predictor},
-		)
-	}
-	if len(resp.Data) == 0 {
-		return nil, prismerrors.New(
-			"PRISM_PLAN_REGRESSION_PROCESS",
-			fmt.Sprintf("Pulse returned no predictor range for %s.", n.ref),
-			map[string]any{"Ref": n.ref},
-		)
-	}
-	xmin, _ := coerceFloatRow(resp.Data[0][regXMinLabel])
-	xmax, _ := coerceFloatRow(resp.Data[0][regXMaxLabel])
-
-	// Two endpoints of the fitted line; reuse the long-row materialiser.
-	rows := []map[string]any{
-		{n.predictor: xmin, n.fittedAs: intercept + slope*xmin},
-		{n.predictor: xmax, n.fittedAs: intercept + slope*xmax},
-	}
-	return tableFromLongRows(rows, n.outSchema, n.id)
+	return n.backend.Compile(ctx, n, in)
 }
+
+// SetBackend wires the compile backend that powers Execute.
+func (n *RegressionNode) SetBackend(b plan.Backend) { n.backend = b }
 
 // regressionBodyKey returns a stable canonical key for fingerprinting.
 func regressionBodyKey(b spec.RegressionBody) string {

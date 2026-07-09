@@ -4,8 +4,6 @@ import (
 	"context"
 	"strings"
 
-	"github.com/frankbardon/pulse/encoding"
-
 	"github.com/frankbardon/prism/plan"
 	"github.com/frankbardon/prism/table"
 )
@@ -32,7 +30,7 @@ func (n *SortNode) ID() plan.NodeID { return n.id }
 func (n *SortNode) Inputs() []plan.NodeID { return []plan.NodeID{n.input} }
 
 // Schema implements plan.Node. Sort never changes the schema.
-func (n *SortNode) Schema(in []*encoding.Schema) (*encoding.Schema, error) {
+func (n *SortNode) Schema(in []*table.Schema) (*table.Schema, error) {
 	return requireSingleInput("SortNode", in)
 }
 

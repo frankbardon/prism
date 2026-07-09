@@ -6,7 +6,6 @@ import (
 	"strings"
 
 	"github.com/cespare/xxhash/v2"
-	"github.com/frankbardon/pulse/encoding"
 
 	prismerrors "github.com/frankbardon/prism/errors"
 	"github.com/frankbardon/prism/internal/limits"
@@ -115,7 +114,7 @@ func (n *JoinNode) executeJoin(_ context.Context, in []*table.Table) (*table.Tab
 
 // validateJoinKeys ensures every key in `on` is present in both schemas
 // and that both sides expose the same Pulse Kind.
-func validateJoinKeys(on []string, left, right *encoding.Schema) error {
+func validateJoinKeys(on []string, left, right *table.Schema) error {
 	leftIdx := schemaIndex(left)
 	rightIdx := schemaIndex(right)
 	for _, key := range on {
@@ -139,8 +138,8 @@ func validateJoinKeys(on []string, left, right *encoding.Schema) error {
 					"Available": strings.Join(fieldNames(right), ", ")},
 			)
 		}
-		lk := table.KindFromPulseFieldType(lf.Type)
-		rk := table.KindFromPulseFieldType(rf.Type)
+		lk := table.KindFromFieldType(lf.Type)
+		rk := table.KindFromFieldType(rf.Type)
 		if lk != rk {
 			return prismerrors.New(
 				"PRISM_JOIN_001",
@@ -154,15 +153,15 @@ func validateJoinKeys(on []string, left, right *encoding.Schema) error {
 	return nil
 }
 
-func schemaIndex(s *encoding.Schema) map[string]*encoding.Field {
-	out := make(map[string]*encoding.Field, len(s.Fields))
+func schemaIndex(s *table.Schema) map[string]*table.Field {
+	out := make(map[string]*table.Field, len(s.Fields))
 	for i := range s.Fields {
 		out[s.Fields[i].Name] = &s.Fields[i]
 	}
 	return out
 }
 
-func fieldNames(s *encoding.Schema) []string {
+func fieldNames(s *table.Schema) []string {
 	out := make([]string, 0, len(s.Fields))
 	for i := range s.Fields {
 		out = append(out, s.Fields[i].Name)
@@ -173,7 +172,7 @@ func fieldNames(s *encoding.Schema) []string {
 // joinOutputSchema constructs the output schema for the given kind.
 // inner/left/outer: left columns first, then right columns excluding
 // join keys. anti: left columns only.
-func joinOutputSchema(left, right *encoding.Schema, on []string, kind JoinKind) *encoding.Schema {
+func joinOutputSchema(left, right *table.Schema, on []string, kind JoinKind) *table.Schema {
 	if kind == JoinAnti {
 		return cloneSchema(left)
 	}
@@ -236,11 +235,11 @@ func writeColValue(b *strings.Builder, c table.Column, i int) {
 // column is created nullable so left / outer joins can write explicit
 // null markers for unmatched rows; finaliseColumnsFor unwraps fields
 // that never observed a null so the no-null path stays zero-cost.
-func newColumnBuildersFor(s *encoding.Schema) map[string]*columnBuilder {
+func newColumnBuildersFor(s *table.Schema) map[string]*columnBuilder {
 	out := make(map[string]*columnBuilder, len(s.Fields))
 	for i := range s.Fields {
 		f := &s.Fields[i]
-		kind := table.KindFromPulseFieldType(f.Type)
+		kind := table.KindFromFieldType(f.Type)
 		cb := &columnBuilder{kind: kind, nullable: true, nulls: table.NewNullBitmap(0)}
 		switch kind {
 		case table.KindInt:
@@ -268,7 +267,7 @@ func newColumnBuildersFor(s *encoding.Schema) map[string]*columnBuilder {
 // Columns that observed at least one null marker wrap in NullableColumn;
 // fully-populated columns ship as plain slice-backed Columns so no-null
 // joins stay zero-overhead and the SVG golden goldens stay stable.
-func finaliseColumnsFor(cols map[string]*columnBuilder, s *encoding.Schema) map[string]table.Column {
+func finaliseColumnsFor(cols map[string]*columnBuilder, s *table.Schema) map[string]table.Column {
 	out := make(map[string]table.Column, len(cols))
 	for i := range s.Fields {
 		name := s.Fields[i].Name
@@ -297,7 +296,7 @@ func finaliseColumnsFor(cols map[string]*columnBuilder, s *encoding.Schema) map[
 
 // outputRowCount infers the row count from any one column. All columns
 // in cols share a row count by construction (we append in lockstep).
-func outputRowCount(cols map[string]*columnBuilder, s *encoding.Schema) int {
+func outputRowCount(cols map[string]*columnBuilder, s *table.Schema) int {
 	for i := range s.Fields {
 		name := s.Fields[i].Name
 		cb := cols[name]
@@ -323,7 +322,7 @@ func outputRowCount(cols map[string]*columnBuilder, s *encoding.Schema) int {
 // rightIdx == -1 (unmatched on a left/outer join).
 func appendLeftRow(
 	cols map[string]*columnBuilder,
-	outSchema *encoding.Schema,
+	outSchema *table.Schema,
 	left *table.Table, leftIdx int,
 	right *table.Table, rightIdx int,
 ) {
@@ -351,7 +350,7 @@ func appendLeftRow(
 // left non-key fields are zero values.
 func appendRightOnlyOuterRow(
 	cols map[string]*columnBuilder,
-	outSchema *encoding.Schema,
+	outSchema *table.Schema,
 	left *table.Table,
 	right *table.Table, rightIdx int,
 	on []string,
@@ -386,7 +385,7 @@ func appendRightOnlyOuterRow(
 // schema equals the left schema verbatim).
 func appendAntiRow(
 	cols map[string]*columnBuilder,
-	outSchema *encoding.Schema,
+	outSchema *table.Schema,
 	left *table.Table, leftIdx int,
 ) {
 	for i := range outSchema.Fields {

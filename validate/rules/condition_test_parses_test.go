@@ -14,7 +14,10 @@ func TestConditionTestParsesHappyPath(t *testing.T) {
 		Encoding: &spec.Encoding{
 			Color: &spec.MarkChannel{
 				ChannelCommon: spec.ChannelCommon{
-					Condition: &spec.Condition{Single: &spec.ConditionTest{Test: "score >= 0.7", Value: "green"}},
+					Condition: &spec.Condition{Single: &spec.ConditionTest{
+						Test:  &spec.Predicate{Op: spec.PredGte, Field: "score", Value: 0.7},
+						Value: "green",
+					}},
 				},
 			},
 		},
@@ -25,14 +28,20 @@ func TestConditionTestParsesHappyPath(t *testing.T) {
 	}
 }
 
-func TestConditionTestParsesFiresOnGarbage(t *testing.T) {
+// TestConditionTestParsesFiresOnMalformedPredicate — a schema-aware
+// problem (between with lo > hi) surfaces as PRISM_SPEC_026 via the
+// shared checkPredicate helper, without needing a registered schema.
+func TestConditionTestParsesFiresOnMalformedPredicate(t *testing.T) {
 	s := &spec.Spec{
 		Schema: "urn:prism:schema:v1:spec",
 		Mark:   &spec.Mark{Shorthand: "bar"},
 		Encoding: &spec.Encoding{
 			Color: &spec.MarkChannel{
 				ChannelCommon: spec.ChannelCommon{
-					Condition: &spec.Condition{Single: &spec.ConditionTest{Test: "this ?? is not (valid", Value: "red"}},
+					Condition: &spec.Condition{Single: &spec.ConditionTest{
+						Test:  &spec.Predicate{Op: spec.PredBetween, Field: "score", Lo: 10.0, Hi: 1.0},
+						Value: "red",
+					}},
 				},
 			},
 		},

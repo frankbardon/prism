@@ -21,18 +21,21 @@ type Transform struct {
 	TimeUnit   *TimeUnitTransform
 }
 
-// FilterTransform: row predicate.
+// FilterTransform: structured row predicate (E2-S1). The `filter` value
+// is a Predicate tree, not a free-form expression string.
 type FilterTransform struct {
-	Filter string `json:"filter"`
-	Data   string `json:"data,omitempty"`
-	As     string `json:"as,omitempty"`
+	Filter Predicate `json:"filter"`
+	Data   string    `json:"data,omitempty"`
+	As     string    `json:"as,omitempty"`
 }
 
-// CalculateTransform: compute new column.
+// CalculateTransform: compute a new column from a structured derived-
+// column expression (E2-S2). The `calculate` value is a CalcExpr tree,
+// not a free-form expression string.
 type CalculateTransform struct {
-	Calculate string `json:"calculate"`
-	As        string `json:"as"`
-	Data      string `json:"data,omitempty"`
+	Calculate CalcExpr `json:"calculate"`
+	As        string   `json:"as"`
+	Data      string   `json:"data,omitempty"`
 }
 
 // AggregateTransform: group-by aggregate.

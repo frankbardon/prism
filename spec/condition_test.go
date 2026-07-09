@@ -23,7 +23,7 @@ func TestConditionUnmarshalSingle(t *testing.T) {
 func TestConditionUnmarshalMulti(t *testing.T) {
 	src := `[
 		{"selection":"brush","field":"region","type":"nominal"},
-		{"test":"score >= 0.7","value":"#22c55e"}
+		{"test":{"op":"gte","field":"score","value":0.7},"value":"#22c55e"}
 	]`
 	var c Condition
 	if err := json.Unmarshal([]byte(src), &c); err != nil {
@@ -35,13 +35,16 @@ func TestConditionUnmarshalMulti(t *testing.T) {
 	if c.Multi[0].Selection != "brush" || c.Multi[0].Field != "region" {
 		t.Errorf("first entry: %+v", c.Multi[0])
 	}
-	if c.Multi[1].Test != "score >= 0.7" || c.Multi[1].Value != "#22c55e" {
-		t.Errorf("second entry: %+v", c.Multi[1])
+	if c.Multi[1].Test == nil || c.Multi[1].Test.Op != PredGte || c.Multi[1].Test.Field != "score" {
+		t.Errorf("second entry test: %+v", c.Multi[1].Test)
+	}
+	if c.Multi[1].Value != "#22c55e" {
+		t.Errorf("second entry value: %+v", c.Multi[1].Value)
 	}
 }
 
 func TestConditionRoundTripSingle(t *testing.T) {
-	c := Condition{Single: &ConditionTest{Test: "x > 0", Value: "red"}}
+	c := Condition{Single: &ConditionTest{Test: &Predicate{Op: PredGt, Field: "x", Value: 0.0}, Value: "red"}}
 	data, err := json.Marshal(c)
 	if err != nil {
 		t.Fatalf("marshal: %v", err)
@@ -50,15 +53,15 @@ func TestConditionRoundTripSingle(t *testing.T) {
 	if err := json.Unmarshal(data, &got); err != nil {
 		t.Fatalf("unmarshal: %v", err)
 	}
-	if got.Single == nil || got.Single.Test != "x > 0" || got.Single.Value != "red" {
-		t.Errorf("round-trip mismatch: %+v", got)
+	if got.Single == nil || got.Single.Test == nil || got.Single.Test.Op != PredGt || got.Single.Value != "red" {
+		t.Errorf("round-trip mismatch: %+v", got.Single)
 	}
 }
 
 func TestConditionRoundTripMulti(t *testing.T) {
 	c := Condition{Multi: []ConditionTest{
 		{Selection: "brush", Field: "region", Type: "nominal"},
-		{Test: "score >= 0.7", Value: "#22c55e"},
+		{Test: &Predicate{Op: PredGte, Field: "score", Value: 0.7}, Value: "#22c55e"},
 	}}
 	data, err := json.Marshal(c)
 	if err != nil {
@@ -68,7 +71,7 @@ func TestConditionRoundTripMulti(t *testing.T) {
 	if err := json.Unmarshal(data, &got); err != nil {
 		t.Fatalf("unmarshal: %v", err)
 	}
-	if len(got.Multi) != 2 || got.Multi[1].Test != "score >= 0.7" {
+	if len(got.Multi) != 2 || got.Multi[1].Test == nil || got.Multi[1].Test.Field != "score" {
 		t.Errorf("round-trip mismatch: %+v", got)
 	}
 }
@@ -81,6 +84,17 @@ func TestConditionInvalid(t *testing.T) {
 	}
 }
 
+// TestConditionTestRejectsExpressionString — the legacy free-form
+// expression string form of `test` is rejected at decode time by
+// Predicate.UnmarshalJSON (E2-S3).
+func TestConditionTestRejectsExpressionString(t *testing.T) {
+	var c Condition
+	err := json.Unmarshal([]byte(`{"test":"score >= 0.7","value":"green"}`), &c)
+	if err == nil || !strings.Contains(err.Error(), "structured object") {
+		t.Errorf("expected structured-predicate rejection, got err=%v", err)
+	}
+}
+
 func TestConditionEntries(t *testing.T) {
 	t.Run("single", func(t *testing.T) {
 		c := &Condition{Single: &ConditionTest{Selection: "brush"}}
@@ -90,7 +104,10 @@ func TestConditionEntries(t *testing.T) {
 		}
 	})
 	t.Run("multi", func(t *testing.T) {
-		c := &Condition{Multi: []ConditionTest{{Test: "a"}, {Test: "b"}}}
+		c := &Condition{Multi: []ConditionTest{
+			{Test: &Predicate{Op: PredGt, Field: "a", Value: 0.0}},
+			{Test: &Predicate{Op: PredLt, Field: "b", Value: 0.0}},
+		}}
 		entries := c.Entries()
 		if len(entries) != 2 {
 			t.Errorf("expected 2 entries, got %d", len(entries))
@@ -110,7 +127,7 @@ func TestChannelCommonWithCondition(t *testing.T) {
 		"type":"quantitative",
 		"condition":[
 			{"selection":"brush","value":"#22c55e"},
-			{"test":"score < 0","value":"#ef4444"}
+			{"test":{"op":"lt","field":"score","value":0},"value":"#ef4444"}
 		],
 		"value":"#cbd5e1"
 	}`
@@ -120,6 +137,9 @@ func TestChannelCommonWithCondition(t *testing.T) {
 	}
 	if ch.Condition == nil || len(ch.Condition.Multi) != 2 {
 		t.Fatalf("condition not parsed: %+v", ch.Condition)
+	}
+	if ch.Condition.Multi[1].Test == nil || ch.Condition.Multi[1].Test.Op != PredLt {
+		t.Errorf("test predicate not parsed: %+v", ch.Condition.Multi[1].Test)
 	}
 	if ch.Value != "#cbd5e1" {
 		t.Errorf("fallback value: %v", ch.Value)

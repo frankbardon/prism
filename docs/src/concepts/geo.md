@@ -40,7 +40,7 @@ otherwise). Combine with a filter transform to subset:
 ```json
 {
   "data": {"feature_collection": {"tier": "admin1-50m"}},
-  "transform": [{"filter": "parent == \"USA\""}],
+  "transform": [{"filter": {"op": "eq", "field": "parent", "value": "USA"}}],
   "mark": "geoshape",
   "projection": {"type": "albers_usa", "tier": "admin1-50m"},
   "encoding": {"feature": {"field": "id", "type": "nominal"}}
@@ -51,7 +51,11 @@ For a choropleth, bind your own data and a color channel:
 
 ```json
 {
-  "data": {"source": "country_metrics.pulse"},
+  "data": {"values": [
+    {"iso_a3": "USA", "gdp_per_capita": 76300},
+    {"iso_a3": "CAN", "gdp_per_capita": 55500},
+    {"iso_a3": "GBR", "gdp_per_capita": 46100}
+  ]},
   "mark": "geoshape",
   "projection": {"type": "naturalearth"},
   "encoding": {

@@ -4,8 +4,6 @@ import (
 	"context"
 	"strings"
 
-	"github.com/frankbardon/pulse/encoding"
-
 	"github.com/frankbardon/prism/plan"
 	"github.com/frankbardon/prism/table"
 )
@@ -45,7 +43,7 @@ func (n *PivotNode) Inputs() []plan.NodeID { return []plan.NodeID{n.input} }
 
 // Schema implements plan.Node. Conservative default; see the package
 // note above. TODO P04.
-func (n *PivotNode) Schema(in []*encoding.Schema) (*encoding.Schema, error) {
+func (n *PivotNode) Schema(in []*table.Schema) (*table.Schema, error) {
 	return requireSingleInput("PivotNode", in)
 }
 
