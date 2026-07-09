@@ -136,7 +136,7 @@ Prism ships as a WebAssembly module that renders client-side.
 Build the bundle, copy it into your site:
 
 ```
-make build-wasm
+make build-wasm-tinygo
 ./bin/prism static-bundle --wasm ./public/prism
 ```
 

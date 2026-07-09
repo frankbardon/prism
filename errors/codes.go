@@ -563,13 +563,22 @@ var Codes = map[string]CodeMetadata{
 		},
 		SeeAlso: []string{"PRISM_WASM_001"},
 	},
+	// PRISM_WASM_BUDGET_EXCEEDED is RETIRED but retained so `prism errors
+	// lookup` still resolves it. It guarded the standard-Go js/wasm size gate
+	// (`PRISM_WASM_MAX_BYTES` / `PRISM_WASM_RAW_MAX_BYTES` over the
+	// `make build-wasm` artifact). The standard-Go wasm build was dropped —
+	// TinyGo is now the sole browser artifact — so this AppError is no longer
+	// emitted. The TinyGo module carries its own, tighter size budget in
+	// `internal/gates/wasm_tinygo_size_test.go` (`PRISM_WASM_TINYGO_MAX_BYTES`
+	// / `PRISM_WASM_TINYGO_RAW_MAX_BYTES`); an overrun there surfaces as a
+	// plain Go test failure (labelled with this identifier for lookup), not a
+	// PRISM_* envelope.
 	"PRISM_WASM_BUDGET_EXCEEDED": {
 		Code:    "PRISM_WASM_BUDGET_EXCEEDED",
-		Message: `Compiled prism.wasm exceeds PRISM_WASM_MAX_BYTES={{.Limit}} (gzipped size: {{.Actual}}).`,
+		Message: `Retired code: the standard-Go wasm size gate was removed when TinyGo became the sole browser build.`,
 		Fixups: []string{
-			`Raise the ceiling by setting ` + "`PRISM_WASM_MAX_BYTES`" + ` in the environment before running ` + "`make build-wasm`" + `.`,
-			`Drop newly-imported dependencies from the WASM entry — confirm cmd/prismwasm/main.go imports only library packages buildable under js,wasm.`,
-			`Check ` + "`go list -deps ./cmd/prismwasm | sort | uniq`" + ` for transitive imports that bloat the binary (apache/arrow-go and gonum dominate).`,
+			`This code is no longer emitted. The TinyGo module is guarded by ` + "`internal/gates/wasm_tinygo_size_test.go`" + ` via ` + "`PRISM_WASM_TINYGO_MAX_BYTES`" + ` / ` + "`PRISM_WASM_TINYGO_RAW_MAX_BYTES`" + `; an overrun is a plain test failure, not a PRISM_* envelope.`,
+			`To shrink the TinyGo artifact, drop newly-imported dependencies from ` + "`cmd/prismwasm/main.go`" + ` and check ` + "`go list -deps ./cmd/prismwasm`" + ` (built under ` + "`GOOS=js GOARCH=wasm`" + `) for transitive imports that bloat the binary.`,
 		},
 	},
 	"PRISM_WARN_WASM_COLD_START": {
