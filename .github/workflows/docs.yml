@@ -43,6 +43,14 @@ jobs:
         with:
           go-version: "1.26"
 
+      # `make docs` → `docs-wasm-stage` → `build-wasm-tinygo` (repointed off the
+      # deleted standard-Go wasm build), so TinyGo must be on PATH here. Pin the
+      # exact release in lockstep with ci.yml's wasm gate.
+      - name: Set up TinyGo
+        uses: acifani/setup-tinygo@v2
+        with:
+          tinygo-version: "0.41.1"
+
       - name: Install mdBook
         uses: peaceiris/actions-mdbook@v2
         with:
