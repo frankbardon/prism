@@ -168,8 +168,8 @@ var Codes = map[string]CodeMetadata{
 		Message: `Aggregate alias {{.Alias}} is not yet supported by backend {{.Backend}}.`,
 		Fixups: []string{
 			`Use a supported alias: count, sum, mean, median, min, max, stdev, variance, mode, distinct, q1, q3, ci0, ci1, wmean, ratio, lift, share.`,
-			`If your spec relied on an upstream alias the planner forwarded, check ` + "`compile/aggregates.go`" + ` for the canonical alias-to-Pulse mapping.`,
-			`File an issue with the alias name so it can be added to the next Pulse release.`,
+			`If your spec relied on an upstream alias the planner forwarded, check ` + "`compile/aggregates.go`" + ` for the canonical alias catalogue.`,
+			`File an issue with the alias name so it can be added to the in-memory aggregate set.`,
 		},
 		SeeAlso: []string{"PRISM_SPEC_002"},
 	},
@@ -378,7 +378,7 @@ var Codes = map[string]CodeMetadata{
 		Code:    "PRISM_JOIN_001",
 		Message: `Join key {{.Key}} has incompatible kinds on the two sides (left={{.LeftKind}}, right={{.RightKind}}).`,
 		Fixups: []string{
-			`Cast the column on one side via a calculate transform so both sides share a Pulse Kind.`,
+			`Cast the column on one side via a calculate transform so both sides share a table.FieldType.`,
 			`If one side is categorical and the other numeric, decide which storage shape the join semantically requires.`,
 			`Inspect the schemas with ` + "`prism execute <spec>`" + ` to see each side's columns + kinds.`,
 		},
@@ -400,7 +400,7 @@ var Codes = map[string]CodeMetadata{
 		Fixups: []string{
 			`Pre-aggregate one or both sides upstream of the join so the cartesian product fits under the cap.`,
 			`Raise the ceiling by setting ` + "`PRISM_JOIN_MAX_ROWS`" + ` in the environment (warning: 5M ≈ 500MB at 20 columns).`,
-			`Push the join down to Pulse once Pulse exposes a relational join (deferred to a future Prism phase).`,
+			`Perform the join upstream in the host that materialises the rows, then hand Prism the pre-joined ` + "`values`" + ` inline.`,
 		},
 		SeeAlso: []string{"PRISM_RESOLVE_007"},
 	},
@@ -408,7 +408,7 @@ var Codes = map[string]CodeMetadata{
 		Code:    "PRISM_PLAN_004",
 		Message: `Union input schemas disagree: {{.Diff}}.`,
 		Fixups: []string{
-			`Make every union input expose the same column names and Pulse types in the same order.`,
+			`Make every union input expose the same column names and table.FieldTypes in the same order.`,
 			`If you need a relational union of differing shapes, project each side first to the shared columns.`,
 			`Inspect each input's schema via ` + "`prism plan <spec> --format json`" + ` and reconcile differences.`,
 		},
@@ -419,7 +419,7 @@ var Codes = map[string]CodeMetadata{
 		Message: `Channel {{.Channel}} cannot be resolved as shared: layers disagree on type ({{.Types}}).`,
 		Fixups: []string{
 			`Convert one layer's channel to the matching type via a "calculate" cast upstream of the encoder.`,
-			`Switch the channel to a Pulse-compatible measure type so every layer publishes the same scale family.`,
+			`Switch the channel to a compatible measure type so every layer publishes the same scale family.`,
 			"Set `resolve.scale.{{.Channel}}` to `independent` to keep per-layer scales + per-layer axes.",
 		},
 		SeeAlso: []string{"PRISM_PLAN_002", "PRISM_SPEC_007", "PRISM_RESOLVE_DUPLICATE_DATASET"},
@@ -710,7 +710,7 @@ var Codes = map[string]CodeMetadata{
 		Fixups: []string{
 			`Required: ` + "`crosstab.rows`" + ` (>=1 grouper), ` + "`crosstab.columns`" + ` (>=1 grouper), ` + "`crosstab.cell.aggregate`" + ` (e.g. sum, mean, count), ` + "`crosstab.cell.field`" + ` (omit only for count). Example: ` + "`{crosstab: {rows: [{field: \"region\"}], columns: [{field: \"quarter\"}], cell: {aggregate: \"sum\", field: \"revenue\", as: \"revenue\"}}}`" + `.`,
 			`Grouper type defaults to "category" (GROUP_CATEGORY). Date / range / quantile groupers land in a follow-up.`,
-			`Cell aggregate must be a Pulse-backed alias (count, sum, mean, median, min, max, stdev, variance, q1, q3, ci0, ci1, wmean, ratio). lift + share are client-side only and not yet wired into crosstab.`,
+			`Cell aggregate must be a supported client-side alias (count, sum, mean, median, min, max, stdev, variance, q1, q3, ci0, ci1, wmean, ratio). lift + share are not yet wired into crosstab.`,
 		},
 		SeeAlso: []string{"PRISM_SPEC_033", "PRISM_SPEC_034"},
 	},

@@ -56,7 +56,7 @@ func BuildLookup(s *spec.Spec, fs vfs.Fs) validate.SchemaLookup {
 		}
 		for _, f := range ds.Fields {
 			shim.Fields = append(shim.Fields, validate.FieldShim{
-				Name: f.Name, Type: pulseStorageToMeasure(f.Type),
+				Name: f.Name, Type: storageToMeasure(f.Type),
 			})
 		}
 		if len(shim.Fields) == 0 {
@@ -118,10 +118,10 @@ func inferMeasureType(v any) string {
 	}
 }
 
-// pulseStorageToMeasure folds Pulse FieldSpec.Type tokens
+// storageToMeasure folds storage-type tokens
 // (int/float/string/...) into a measure-type bucket. Matches the
 // CLI-side helper byte-for-byte (unknowns fall through to nominal).
-func pulseStorageToMeasure(storage string) string {
+func storageToMeasure(storage string) string {
 	switch strings.ToLower(storage) {
 	case "int", "int8", "int16", "int32", "int64", "float", "float32", "float64":
 		return "quantitative"
