@@ -172,82 +172,98 @@ var Codes = map[string]CodeMetadata{
 		},
 		SeeAlso: []string{"PRISM_SPEC_002"},
 	},
+	// PRISM_COMPILE_004 is RETIRED but retained so `prism errors lookup`
+	// still resolves it. It signalled the old Pulse backend's inability to
+	// accept an in-memory cohort. Prism dropped the Pulse loader in epic
+	// E4: every node now runs over the in-memory backend against a
+	// materialised table.Table, so inline data is always supported and
+	// this code can no longer be emitted.
 	"PRISM_COMPILE_004": {
 		Code:    "PRISM_COMPILE_004",
-		Message: `Inline data is not supported by the Pulse backend for node {{.NodeType}}: {{.Reason}}.`,
+		Message: `Retired code: the Pulse backend was removed; inline data always runs over the in-memory backend.`,
 		Fixups: []string{
-			`The Pulse v0.8.4 facade does not expose an in-memory cohort constructor; inline data flows through the in-memory backend.`,
-			`Materialise the inline values to a ` + "`.pulse`" + ` file via ` + "`prism import`" + ` (post-P02) and reference it as a source.`,
-			`Track the upstream phase: in-memory Pulse cohorts land when Pulse exposes pulse.FromTable / pulse.NewMemory (no ETA).`,
+			`This code is no longer emitted. Inline ` + "`data.values`" + ` / ` + "`datasets.*.values`" + ` materialise into a table.Table that every plan node consumes directly — there is no external backend that can reject them.`,
 		},
 	},
 	"PRISM_RESOLVE_001": {
 		Code:    "PRISM_RESOLVE_001",
 		Message: `Dataset {{.Dataset}} not found in any registered source.`,
 		Fixups: []string{
-			`Verify the source path or cohort id.`,
-			`Add the dataset to "datasets" or to the prism serve config.`,
+			`Verify the dataset name or ` + "`cohort:<id>`" + ` ref.`,
+			`Add the dataset to the spec's ` + "`datasets`" + ` block (with inline ` + "`values`" + `) or register it with the prism serve / DataResolver config.`,
 		},
 	},
+	// PRISM_RESOLVE_002 is RETIRED but retained so `prism errors lookup`
+	// and existing SeeAlso cross-references still resolve. It reported a
+	// missing local `.pulse` file. Prism removed the Pulse file loader in
+	// epic E4 — it never opens `.pulse` files, so there is no filesystem
+	// lookup that can miss. Data arrives inline (`values`) or through a
+	// DataResolver ref (PRISM_RESOLVE_REF_UNRESOLVED covers a ref no
+	// resolver can satisfy).
 	"PRISM_RESOLVE_002": {
 		Code:    "PRISM_RESOLVE_002",
-		Message: `Local .pulse file {{.Path}} not found on the configured filesystem.`,
+		Message: `Retired code: Prism no longer opens files from disk; supply rows inline or via a DataResolver.`,
 		Fixups: []string{
-			`Check the path spelling and that the file exists (` + "`ls -lh {{.Path}}`" + `).`,
-			`Confirm the working directory matches what the spec assumes — relative paths are resolved against the process cwd unless an afero.Fs jail is in effect.`,
-			`If the data lives in an archive, use the anchor form: ` + "`archive.pulse#shard.pulse`" + `.`,
+			`This code is no longer emitted. Provide data as inline ` + "`data.values`" + ` / ` + "`datasets.*.values`" + `, or as a ` + "`data.ref`" + ` backed by a DataResolver. An unbacked ref surfaces as PRISM_RESOLVE_REF_UNRESOLVED.`,
 		},
-		SeeAlso: []string{"PRISM_RESOLVE_003", "PRISM_RESOLVE_005"},
+		SeeAlso: []string{"PRISM_RESOLVE_REF_UNRESOLVED"},
 	},
+	// PRISM_RESOLVE_003 is RETIRED but retained so `prism errors lookup`
+	// and existing SeeAlso cross-references still resolve. It reported a
+	// missing archive shard. Prism removed the Pulse loader (and its
+	// archive/shard addressing) in epic E4, so there are no shards to
+	// miss.
 	"PRISM_RESOLVE_003": {
 		Code:    "PRISM_RESOLVE_003",
-		Message: `Shard {{.Shard}} not present in archive {{.Archive}}.`,
+		Message: `Retired code: archive-shard addressing was removed with the Pulse loader.`,
 		Fixups: []string{
-			`Run ` + "`prism inspect {{.Archive}}`" + ` to list shard names (basenames only; no path).`,
-			`Anchors are case-sensitive; copy the basename verbatim from the archive listing.`,
+			`This code is no longer emitted. Prism has no archive/shard concept — register each dataset by name with inline ` + "`values`" + ` or a DataResolver ref instead.`,
 		},
-		SeeAlso: []string{"PRISM_RESOLVE_002"},
+		SeeAlso: []string{"PRISM_RESOLVE_REF_UNRESOLVED"},
 	},
 	"PRISM_RESOLVE_004": {
 		Code:    "PRISM_RESOLVE_004",
 		Message: `Cohort id {{.Id}} is not registered in the active resolver registry.`,
 		Fixups: []string{
-			`Register the id with the resolver's Registry before resolving (` + "`registry.Lookup(\"{{.Id}}\")`" + `).`,
-			`If you intended to load a file directly, drop the ` + "`cohort:`" + ` prefix and use the path form.`,
+			`Register the id with the resolver's Registry before resolving (` + "`registry.Lookup(\"{{.Id}}\")`" + `) so the ` + "`cohort:<id>`" + ` indirection points at a backing ref.`,
+			`Or skip the indirection entirely: reference the dataset by name and supply its rows inline (` + "`datasets.*.values`" + `) or via a DataResolver.`,
 		},
 	},
 	"PRISM_RESOLVE_005": {
 		Code:    "PRISM_RESOLVE_005",
-		Message: `Reference {{.Ref}} does not match any known form (path, archive#shard, gs://, or cohort:id).`,
+		Message: `Reference {{.Ref}} does not match any known form (dataset name or cohort:id).`,
 		Fixups: []string{
-			`Use one of: ` + "`cohort.pulse`" + `, ` + "`archive.pulse#shard.pulse`" + `, ` + "`gs://bucket/path.pulse`" + `, ` + "`cohort:<id>`" + `.`,
-			`Drop trailing whitespace and double-check for leading slashes that imply absolute paths.`,
+			`Use one of: a plain dataset name (registered in ` + "`datasets`" + ` or with the DataResolver), or ` + "`cohort:<id>`" + ` indirection through the resolver Registry.`,
+			`Drop trailing whitespace and any leading slashes — Prism no longer opens files, so a filesystem-looking path is not a valid ref.`,
 		},
 	},
+	// PRISM_RESOLVE_006 is RETIRED but retained so `prism errors lookup`
+	// still resolves it. It wrapped a Pulse open/decode failure. Prism
+	// removed the Pulse loader in epic E4 and never parses `.pulse` bytes,
+	// so there is no open step that can fail here.
 	"PRISM_RESOLVE_006": {
 		Code:    "PRISM_RESOLVE_006",
-		Message: `Pulse failed to open {{.Ref}}: {{.Reason}}.`,
+		Message: `Retired code: Prism no longer opens or decodes .pulse bytes.`,
 		Fixups: []string{
-			`Run ` + "`prism inspect {{.Ref}}`" + ` for header diagnostics.`,
-			`Verify the file is a real .pulse (the first 8 bytes spell ` + "`PULSE\\x00\\x00\\x00`" + `).`,
+			`This code is no longer emitted. Rows enter as inline ` + "`values`" + ` or through a DataResolver; a malformed inline row surfaces as PRISM_RESOLVE_INLINE_TYPE_MISMATCH, and an unbacked ref as PRISM_RESOLVE_REF_UNRESOLVED.`,
 		},
-		SeeAlso: []string{"PRISM_RESOLVE_002", "PRISM_RESOLVE_003"},
+		SeeAlso: []string{"PRISM_RESOLVE_INLINE_TYPE_MISMATCH", "PRISM_RESOLVE_REF_UNRESOLVED"},
 	},
 	"PRISM_RESOLVE_007": {
 		Code:    "PRISM_RESOLVE_007",
 		Message: `Materialisation refused: {{.Actual}} rows would exceed PRISM_TABLE_MAX_ROWS={{.Limit}}.`,
 		Fixups: []string{
 			`Raise the ceiling by setting ` + "`PRISM_TABLE_MAX_ROWS`" + ` in the environment before running prism.`,
-			`Pre-aggregate, sample, or filter at the Pulse layer to bring the result under the cap.`,
-			`Switch to a streaming consumer once P03 lands streaming; for v1 every node materialises a Table.`,
+			`Pre-aggregate, sample, or filter the rows upstream (in the host that produces the inline ` + "`values`" + ` / DataResolver rows) to bring the result under the cap.`,
+			`Add a ` + "`sample`" + ` or ` + "`aggregate`" + ` transform to the spec so the plan shrinks the table before it is fully materialised.`,
 		},
 	},
 	"PRISM_RESOLVE_GCS_UNAVAILABLE": {
 		Code:    "PRISM_RESOLVE_GCS_UNAVAILABLE",
-		Message: `gs:// references are not implemented in v1 (ref: {{.Ref}}).`,
+		Message: `gs:// references are not a supported ref form (ref: {{.Ref}}).`,
 		Fixups: []string{
-			`Stage the .pulse locally (` + "`gsutil cp gs://bucket/path.pulse ./`" + `) and reference the local path.`,
-			`Track the upstream phase: gs:// support lands once Pulse ships a generic GCS afero.Fs (planned P-NN-gcs-fs).`,
+			`Prism does not fetch remote objects. Fetch the data in the host, then pass the rows to Prism as inline ` + "`data.values`" + ` / ` + "`datasets.*.values`" + `.`,
+			`Or serve the rows through a ` + "`resolve.DataResolver`" + ` and reference them with ` + "`data.ref`" + ` so the host owns the transport.`,
 		},
 	},
 	"PRISM_RESOLVE_INLINE_TYPE_MISMATCH": {
@@ -526,20 +542,25 @@ var Codes = map[string]CodeMetadata{
 		Message: `Fetch-backed filesystem failed to load {{.URL}} (HTTP {{.Status}}: {{.Reason}}).`,
 		Fixups: []string{
 			`Confirm the URL is reachable from the page origin and the server allows CORS for cross-origin requests.`,
-			`If the dataset lives behind an authentication wall, expose it through a proxy that adds the credentials before the browser hits it.`,
-			`For local development serve the .pulse files via a static file server (e.g. ` + "`python -m http.server`" + `) rather than file:// URLs — fetch refuses file:// in most browsers.`,
+			`The browser runtime only fetches geodata tier bundles (` + "`<tier>.geo.json`" + `) — set the base via ` + "`prism.geo.setBundleURL(url)`" + ` or ` + "`data-prism-geodata-url`" + ` and serve them from a static host (` + "`prism static-bundle`" + ` emits them alongside the wasm).`,
+			`Chart data does not travel over fetch: supply it inline as ` + "`data.values`" + ` / ` + "`datasets.*.values`" + `, or wire ` + "`prism.setDataResolver`" + ` to return the rows for a ` + "`data.ref`" + `.`,
 		},
-		SeeAlso: []string{"PRISM_RESOLVE_002", "PRISM_WASM_002"},
+		SeeAlso: []string{"PRISM_RESOLVE_REF_UNRESOLVED", "PRISM_GEODATA_TIER_MISSING"},
 	},
+	// PRISM_WASM_002 is RETIRED but retained so `prism errors lookup`
+	// still resolves it. It reported a static host that refused Range
+	// requests, blocking archive-shard random access in the browser. The
+	// Pulse loader and its archive/shard fetch path were removed in epic
+	// E4: the browser runtime fetches only whole geodata tiles and reads
+	// chart rows from inline `values` / a DataResolver, so there is no
+	// Range-based shard access to fail.
 	"PRISM_WASM_002": {
 		Code:    "PRISM_WASM_002",
-		Message: `Origin server for {{.URL}} does not honour Range: requests (status {{.Status}}); archive-shard random access is unavailable.`,
+		Message: `Retired code: browser archive-shard fetch was removed with the Pulse loader.`,
 		Fixups: []string{
-			`Serve archive shards from a static host that returns 206 Partial Content for Range requests (GitHub Pages, S3, Cloudflare R2, nginx with default config all do).`,
-			`If random access is impossible, materialise individual shards as standalone .pulse files at build time and reference them directly.`,
-			`Disable archive forms in the spec — load each shard via its own ` + "`<prism-dataset>`" + ` registration.`,
+			`This code is no longer emitted. The wasm runtime fetches only whole geodata tiles; chart rows arrive inline (` + "`values`" + `) or through ` + "`prism.setDataResolver`" + `, so no HTTP Range support is required.`,
 		},
-		SeeAlso: []string{"PRISM_WASM_001", "PRISM_RESOLVE_003"},
+		SeeAlso: []string{"PRISM_WASM_001"},
 	},
 	"PRISM_WASM_BUDGET_EXCEEDED": {
 		Code:    "PRISM_WASM_BUDGET_EXCEEDED",
@@ -687,8 +708,8 @@ var Codes = map[string]CodeMetadata{
 		Code:    "PRISM_SPEC_033",
 		Message: `crosstab transform must consume a source ref; it cannot follow a Prism transform.`,
 		Fixups: []string{
-			`Place ` + "`crosstab`" + ` as the FIRST transform on the chain, immediately downstream of ` + "`data`" + `. Prior filter / aggregate / join transforms materialise an in-memory table that Pulse cannot re-cohort.`,
-			`If you need to filter rows before the crosstab, push the filter into the spec via ` + "`crosstab.cell`" + `'s aggregate options or pre-aggregate the cohort upstream (e.g. emit a derived .pulse file).`,
+			`Place ` + "`crosstab`" + ` as the FIRST transform on the chain, immediately downstream of ` + "`data`" + `. It reads the materialised source rows directly and cannot follow another transform.`,
+			`If you need to filter rows before the crosstab, push the filter into the spec via ` + "`crosstab.cell`" + `'s aggregate options, or shrink the rows upstream in the host that produces the inline ` + "`values`" + ` / DataResolver dataset.`,
 		},
 		SeeAlso: []string{"PRISM_SPEC_032", "PRISM_PLAN_CROSSTAB_REQUIRES_SOURCE"},
 	},
@@ -705,7 +726,7 @@ var Codes = map[string]CodeMetadata{
 		Code:    "PRISM_PLAN_CROSSTAB_REQUIRES_SOURCE",
 		Message: `crosstab plan node could not link to a SourceNode upstream.`,
 		Fixups: []string{
-			`Crosstab opens the .pulse cohort directly via pulse.Process — there is no in-memory cohort handoff. The build must see a SourceNode as the immediate input.`,
+			`Crosstab reads the materialised source rows directly — there is no in-memory transform handoff. The build must see a SourceNode as the immediate input.`,
 			`Check that the spec places ` + "`crosstab`" + ` as the first transform on a top-level dataset, not on a derived alias.`,
 		},
 		SeeAlso: []string{"PRISM_SPEC_033"},
@@ -722,7 +743,7 @@ var Codes = map[string]CodeMetadata{
 		Code:    "PRISM_SPEC_035",
 		Message: `regression transform must be first and declare target + predictors (at {{.Path}}).`,
 		Fixups: []string{
-			`A ` + "`regression`" + ` transform fits the source cohort directly (Pulse ATTR_REG_FITTED), so it must be the first transform on the chain — not chained after a Prism filter / aggregate / join.`,
+			`A ` + "`regression`" + ` transform fits the materialised source rows directly, so it must be the first transform on the chain — not chained after a Prism filter / aggregate / join.`,
 			`Declare both ` + "`target`" + ` (the dependent variable) and a non-empty ` + "`predictors`" + ` list, e.g. ` + "`{regression: {target: \"sales\", predictors: [\"spend\"], as: \"fitted\"}}`" + `.`,
 		},
 		SeeAlso: []string{"PRISM_PLAN_REGRESSION_REQUIRES_SOURCE"},
@@ -731,7 +752,7 @@ var Codes = map[string]CodeMetadata{
 		Code:    "PRISM_PLAN_REGRESSION_REQUIRES_SOURCE",
 		Message: `regression plan node could not link to a SourceNode upstream.`,
 		Fixups: []string{
-			`Regression fits the .pulse cohort directly via pulse.Process — there is no in-memory cohort handoff. The build must see a SourceNode as the immediate input.`,
+			`Regression fits the materialised source rows directly — there is no in-memory transform handoff. The build must see a SourceNode as the immediate input.`,
 			`Check that the spec places ` + "`regression`" + ` as the first transform on a top-level dataset, not on a derived alias.`,
 		},
 		SeeAlso: []string{"PRISM_SPEC_035"},
