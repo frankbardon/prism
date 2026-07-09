@@ -39,30 +39,6 @@ const (
 	// when the env var is unset or invalid. See PRISM_TABLE_CACHE_SIZE.
 	DefaultTableCacheSize = 256
 
-	// DefaultWasmMaxBytes is the gzipped size ceiling enforced on the
-	// compiled `bin/prism.wasm` artifact by the P17 size-budget gate.
-	// See PRISM_WASM_MAX_BYTES.
-	DefaultWasmMaxBytes = 16 * 1024 * 1024
-
-	// SoftWarnWasmMaxBytes triggers a non-failing log message from the
-	// size-budget gate when the binary creeps past 75% of the ceiling.
-	// Crossing this threshold does not fail the build; only exceeding
-	// DefaultWasmMaxBytes (or the env override) does.
-	SoftWarnWasmMaxBytes = 12 * 1024 * 1024
-
-	// DefaultWasmRawMaxBytes is the uncompressed size ceiling on
-	// `bin/prism.wasm`. The gzipped gate alone is blind to the raw size
-	// that downstream static hosts serve when they do not negotiate
-	// Content-Encoding, so this guards against the raw artifact growing
-	// unnoticed. See PRISM_WASM_RAW_MAX_BYTES.
-	DefaultWasmRawMaxBytes = 80 * 1024 * 1024
-
-	// SoftWarnWasmRawMaxBytes triggers a non-failing log message when
-	// the raw binary creeps toward the raw ceiling. Crossing it does
-	// not fail the build; only exceeding DefaultWasmRawMaxBytes (or the
-	// env override) does.
-	SoftWarnWasmRawMaxBytes = 72 * 1024 * 1024
-
 	// DefaultWasmTinygoMaxBytes is the gzipped-size ceiling on the
 	// TinyGo-built `bin/prism.wasm`. The TinyGo toolchain produces a far
 	// smaller module than the standard Go toolchain, so it carries its
@@ -96,8 +72,6 @@ const (
 	EnvRenderMaxMarks        = "PRISM_RENDER_MAX_MARKS"
 	EnvQueryWorkers          = "PRISM_QUERY_WORKERS"
 	EnvTableCacheSize        = "PRISM_TABLE_CACHE_SIZE"
-	EnvWasmMaxBytes          = "PRISM_WASM_MAX_BYTES"
-	EnvWasmRawMaxBytes       = "PRISM_WASM_RAW_MAX_BYTES"
 	EnvWasmTinygoMaxBytes    = "PRISM_WASM_TINYGO_MAX_BYTES"
 	EnvWasmTinygoRawMaxBytes = "PRISM_WASM_TINYGO_RAW_MAX_BYTES"
 )
@@ -165,34 +139,6 @@ func TableCacheSize() (int, bool) {
 // MustTableCacheSize mirrors MustTableMaxRows.
 func MustTableCacheSize() int {
 	v, _ := TableCacheSize()
-	return v
-}
-
-// WasmMaxBytes returns the gzipped-size ceiling enforced on
-// `bin/prism.wasm`. The second return is false when the env var was
-// set but unparseable or non-positive; callers fall back to the
-// default value (also returned in that case).
-func WasmMaxBytes() (int, bool) {
-	return lookup(EnvWasmMaxBytes, DefaultWasmMaxBytes)
-}
-
-// MustWasmMaxBytes mirrors MustTableMaxRows.
-func MustWasmMaxBytes() int {
-	v, _ := WasmMaxBytes()
-	return v
-}
-
-// WasmRawMaxBytes returns the uncompressed-size ceiling enforced on
-// `bin/prism.wasm`. The second return is false when the env var was
-// set but unparseable or non-positive; callers fall back to the
-// default value (also returned in that case).
-func WasmRawMaxBytes() (int, bool) {
-	return lookup(EnvWasmRawMaxBytes, DefaultWasmRawMaxBytes)
-}
-
-// MustWasmRawMaxBytes mirrors MustTableMaxRows.
-func MustWasmRawMaxBytes() int {
-	v, _ := WasmRawMaxBytes()
 	return v
 }
 
