@@ -94,6 +94,14 @@ func TestPrismCLIStaticBundleRejectsMissingArg(t *testing.T) {
 // loader fetches the .gz so naive static hosts ship the small payload.
 // A fake binary stands in for the real artifact to keep the test fast.
 func TestPrismCLIStaticBundleWasmEmitsGzip(t *testing.T) {
+	// `static-bundle --wasm` sources TinyGo's wasm_exec.js via
+	// locateWasmExec (`tinygo env TINYGOROOT`), even when --wasm-binary
+	// supplies the module directly — so the command needs tinygo on PATH.
+	// Skip cleanly when absent (mirrors the sibling TinyGo smoke + the
+	// wasm CI job that installs tinygo and runs this non-skipped).
+	if _, err := exec.LookPath("tinygo"); err != nil {
+		t.Skip("tinygo not on PATH; skipping static-bundle gzip smoke (install via `brew tap tinygo-org/tools && brew install tinygo`)")
+	}
 	src := []byte("\x00asm\x01\x00\x00\x00 fake wasm payload for gzip round-trip test")
 	srcPath := filepath.Join(t.TempDir(), "fake.wasm")
 	if err := os.WriteFile(srcPath, src, 0o644); err != nil {
