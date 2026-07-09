@@ -32,48 +32,48 @@ import (
 // keys are string labels). Range / rounded / quantile groupers land
 // behind a follow-up.
 type CrosstabNode struct {
-	id        plan.NodeID
-	input     plan.NodeID
-	ref       string
-	fs        vfs.Fs
-	body      spec.CrosstabBody
-	outSchema *table.Schema
-	cellAs    string
-	backend   plan.Backend
+	id      plan.NodeID
+	input   plan.NodeID
+	ref     string
+	fs      vfs.Fs
+	body    spec.CrosstabBody
+	cellAs  string
+	backend plan.Backend
 }
 
-// NewCrosstab constructs a CrosstabNode. inSchema is the upstream
-// input's schema — used to compute the row / column grouper output
-// types so the downstream encoder sees the right column kinds. The
-// caller (plan/build) obtains it via SourceNode.Schema(nil).
-func NewCrosstab(id, input plan.NodeID, ref string, fs vfs.Fs, inSchema *table.Schema, body spec.CrosstabBody) (*CrosstabNode, error) {
-	if inSchema == nil {
-		return nil, fmt.Errorf("crosstab: nil input schema")
-	}
+// NewCrosstab constructs a CrosstabNode over the given upstream input.
+// The upstream may be ANY node (a materialised leaf or a derived
+// transform) — the pure-Go pivot reads whatever table the input yields,
+// so the output schema is derived at execute time from the upstream
+// schema (see Schema). The constructor performs only schema-independent
+// structural validation of the crosstab body (cell aggregate + axis
+// grouper types); field existence and grouper output types resolve at
+// execute time against the real input schema.
+func NewCrosstab(id, input plan.NodeID, ref string, fs vfs.Fs, body spec.CrosstabBody) (*CrosstabNode, error) {
 	if err := validateCrosstabCell(body.Cell); err != nil {
+		return nil, err
+	}
+	if err := validateCrosstabAxes(body); err != nil {
 		return nil, err
 	}
 	cellAs := body.Cell.As
 	if cellAs == "" {
 		cellAs = "_value"
 	}
-	out, err := deriveCrosstabSchema(inSchema, body, cellAs)
-	if err != nil {
-		return nil, err
-	}
 	return &CrosstabNode{
-		id:        id,
-		input:     input,
-		ref:       ref,
-		fs:        fs,
-		body:      body,
-		outSchema: out,
-		cellAs:    cellAs,
+		id:     id,
+		input:  input,
+		ref:    ref,
+		fs:     fs,
+		body:   body,
+		cellAs: cellAs,
 	}, nil
 }
 
-// DeriveCrosstabID hashes the source ref together with the canonical
-// body shape so two equivalent crosstab nodes hash identically.
+// DeriveCrosstabID hashes the upstream input ref together with the
+// canonical body shape so two equivalent crosstab nodes (same input,
+// same body) hash identically. The ref is the upstream node id — a
+// materialised leaf or any derived transform tip.
 func DeriveCrosstabID(ref string, body spec.CrosstabBody) plan.NodeID {
 	h := sha256.New()
 	h.Write([]byte(ref))
@@ -89,11 +89,16 @@ func (n *CrosstabNode) ID() plan.NodeID { return n.id }
 // table it pivots.
 func (n *CrosstabNode) Inputs() []plan.NodeID { return []plan.NodeID{n.input} }
 
-// Schema implements plan.Node. Pre-computed at construction from the
-// upstream schema; the row / column grouper output types plus the
-// cell (and any overlay / margin sentinel) columns.
-func (n *CrosstabNode) Schema(_ []*table.Schema) (*table.Schema, error) {
-	return n.outSchema, nil
+// Schema implements plan.Node. Derived at execute time from the single
+// upstream schema (mirrors GroupAggregateNode): the row / column grouper
+// output types plus the cell (and any overlay / margin sentinel)
+// columns.
+func (n *CrosstabNode) Schema(in []*table.Schema) (*table.Schema, error) {
+	s, err := requireSingleInput("CrosstabNode", in)
+	if err != nil {
+		return nil, err
+	}
+	return deriveCrosstabSchema(s, n.body, n.cellAs)
 }
 
 // Fingerprint implements plan.Node.
@@ -101,8 +106,9 @@ func (n *CrosstabNode) Fingerprint() string {
 	return fingerprintFor("CrosstabNode", string(n.input), n.ref, crosstabBodyKey(n.body))
 }
 
-// Ref returns the source ref so plan-visualisation tooling can show
-// the underlying cohort. Mirrors SourceNode.Ref().
+// Ref returns the upstream input ref (a leaf ref or a derived transform
+// tip id) so plan-visualisation tooling can show what the crosstab
+// pivots. Mirrors SourceNode.Ref().
 func (n *CrosstabNode) Ref() string { return n.ref }
 
 // FS returns the afero filesystem this node was constructed with.
@@ -114,10 +120,6 @@ func (n *CrosstabNode) Body() spec.CrosstabBody { return n.body }
 // CellAs returns the resolved cell output column name (defaults to
 // "_value" when the spec omits `as`).
 func (n *CrosstabNode) CellAs() string { return n.cellAs }
-
-// OutSchema returns the pre-computed output schema so the in-memory
-// backend materialises the long rows with the right column kinds.
-func (n *CrosstabNode) OutSchema() *table.Schema { return n.outSchema }
 
 // Kind implements plan.Labeled.
 func (n *CrosstabNode) Kind() string { return "CrosstabNode" }
@@ -242,6 +244,48 @@ func validateCrosstabCell(cell spec.CrosstabCell) error {
 var crosstabDateComponents = map[string]bool{
 	"year": true, "quarter": true, "month": true,
 	"week": true, "day": true, "day_of_week": true,
+}
+
+// validateCrosstabAxes performs the schema-independent structural
+// checks on the row / column groupers: each entry needs a non-empty
+// field, and a date grouper's period (when set) must be a supported
+// calendar component. Field existence and output-type resolution happen
+// at execute time in deriveCrosstabSchema against the real input schema.
+func validateCrosstabAxes(body spec.CrosstabBody) error {
+	check := func(groups []spec.CrosstabGroup, axis string) error {
+		for _, g := range groups {
+			if g.Field == "" {
+				return prismerrors.New(
+					"PRISM_SPEC_032",
+					fmt.Sprintf("crosstab.%s requires a non-empty field.", axis),
+					map[string]any{"Axis": axis},
+				)
+			}
+			switch g.Type {
+			case "", "category":
+				// no period on category groupers
+			case "date":
+				if g.Period != "" && !crosstabDateComponents[g.Period] {
+					return prismerrors.New(
+						"PRISM_SPEC_032",
+						fmt.Sprintf("crosstab date grouper period %q must be one of year/quarter/month/week/day/day_of_week.", g.Period),
+						map[string]any{"Axis": axis, "Period": g.Period},
+					)
+				}
+			default:
+				return prismerrors.New(
+					"PRISM_SPEC_032",
+					fmt.Sprintf("crosstab grouper type %q not supported (use category or date).", g.Type),
+					map[string]any{"Axis": axis, "Type": g.Type},
+				)
+			}
+		}
+		return nil
+	}
+	if err := check(body.Rows, "rows"); err != nil {
+		return err
+	}
+	return check(body.Columns, "columns")
 }
 
 // deriveCrosstabSchema builds the long-form output schema. Row +

@@ -156,7 +156,11 @@ func executeCrosstab(_ context.Context, n *nodes.CrosstabNode, ins []*table.Tabl
 	}
 
 	hash := hashChain(in.Hash(), n.Fingerprint())
-	return materializeCrosstab(rows, n.OutSchema(), hash)
+	outSchema, err := n.Schema([]*table.Schema{in.Schema()})
+	if err != nil {
+		return nil, err
+	}
+	return materializeCrosstab(rows, outSchema, hash)
 }
 
 // crosstabRow is one long-form output row: the typed axis-key values

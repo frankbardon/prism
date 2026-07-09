@@ -696,167 +696,31 @@ func (c *buildCtx) applyOneTransform(input plan.NodeID, t spec.Transform) (plan.
 		}
 		return c.addAndReturn(nodes.NewLimit(id, in, t.Limit.Limit, off))
 	case t.Crosstab != nil:
-		return c.buildCrosstab(input, t.Crosstab)
+		in, err := resolveInput(t.Crosstab.Data)
+		if err != nil {
+			return "", err
+		}
+		ref := string(in)
+		id := nodes.DeriveCrosstabID(ref, t.Crosstab.Crosstab)
+		node, err := nodes.NewCrosstab(id, in, ref, c.opts.FS, t.Crosstab.Crosstab)
+		if err != nil {
+			return "", err
+		}
+		return c.addAndReturn(node)
 	case t.Regression != nil:
-		return c.buildRegression(input, t.Regression)
+		in, err := resolveInput(t.Regression.Data)
+		if err != nil {
+			return "", err
+		}
+		ref := string(in)
+		id := nodes.DeriveRegressionID(ref, t.Regression)
+		node, err := nodes.NewRegression(id, in, ref, c.opts.FS, t.Regression)
+		if err != nil {
+			return "", err
+		}
+		return c.addAndReturn(node)
 	}
 	return "", outOfScopeErr("transform:unknown", "P04")
-}
-
-// materializedLeaf reports whether inNode is a legal crosstab/regression
-// root — a materialised leaf that yields an input table directly.
-// Post-Pulse the pure-Go pivot / OLS fit reads that table via the
-// in-memory backend, so both a SourceNode (from a dataset ref) and an
-// InlineNode (from `data.values`) qualify; there is no longer a .pulse
-// cohort-reader requirement. The transform must still be the first on
-// the chain (enforced by the position rule) — it consumes a leaf, not a
-// derived table. Returns the leaf's ref (for id derivation +
-// diagnostics) and its vfs.Fs (nil for inline data, which reads no
-// filesystem).
-func materializedLeaf(inNode plan.Node) (ref string, fs vfs.Fs, ok bool) {
-	switch src := inNode.(type) {
-	case *nodes.SourceNode:
-		return src.Ref(), src.FS(), true
-	case *nodes.InlineNode:
-		return src.Fingerprint(), nil, true
-	}
-	return "", nil, false
-}
-
-// buildCrosstab resolves the crosstab's upstream leaf (a SourceNode or an
-// InlineNode — see materializedLeaf) and emits a CrosstabNode consuming
-// the materialised input table. The leaf stays in the DAG as the
-// crosstab's single upstream input; the pure-Go pivot runs over that
-// table via the in-memory backend. Returns
-// PRISM_PLAN_CROSSTAB_REQUIRES_SOURCE when the immediate input is not a
-// materialised leaf.
-//
-// buildRegression mirrors buildCrosstab: it resolves the regression's
-// upstream leaf and emits a RegressionNode that fits the materialised
-// input table in-memory (OLS). The leaf stays in the DAG as the
-// regression's single upstream input. Returns
-// PRISM_PLAN_REGRESSION_REQUIRES_SOURCE when the immediate input is not a
-// materialised leaf.
-func (c *buildCtx) buildRegression(input plan.NodeID, t *spec.RegressionTransform) (plan.NodeID, error) {
-	in, err := func() (plan.NodeID, error) {
-		if t.Data == "" {
-			return input, nil
-		}
-		if id, ok := c.leafByName[t.Data]; ok {
-			return id, nil
-		}
-		return "", c.missingDatasetErr(t.Data)
-	}()
-	if err != nil {
-		return "", err
-	}
-	inNode, ok := c.b.Node(in)
-	if !ok {
-		return "", prismerrors.New(
-			"PRISM_PLAN_REGRESSION_REQUIRES_SOURCE",
-			fmt.Sprintf("regression transform input %s not in plan.", in),
-			map[string]any{"Input": string(in)},
-		)
-	}
-	ref, fs, ok := materializedLeaf(inNode)
-	if !ok {
-		return "", prismerrors.New(
-			"PRISM_PLAN_REGRESSION_REQUIRES_SOURCE",
-			fmt.Sprintf("regression transform must consume a materialised leaf (dataset ref or inline values); got %T upstream (input id %s).", inNode, in),
-			map[string]any{"InputKind": fmt.Sprintf("%T", inNode), "Input": string(in)},
-		)
-	}
-	inSchema, err := inNode.Schema(nil)
-	if err != nil {
-		return "", err
-	}
-	srcID := inNode.ID()
-	id := nodes.DeriveRegressionID(ref, t)
-	node, err := nodes.NewRegression(id, srcID, ref, fs, inSchema, t)
-	if err != nil {
-		return "", err
-	}
-	if _, err := c.addAndReturn(node); err != nil {
-		return "", err
-	}
-	// The regression is the new tip of this chain; advance the leaf
-	// bookkeeping so any following transform consumes the regression
-	// output. The leaf stays in the DAG as the regression's input.
-	for name, leafID := range c.leafByName {
-		if leafID == srcID {
-			c.leafByName[name] = id
-		}
-	}
-	if c.topLeaf == srcID {
-		c.topLeaf = id
-	}
-	for ref, leafID := range c.leafBySource {
-		if leafID == srcID {
-			c.leafBySource[ref] = id
-		}
-	}
-	return id, nil
-}
-
-func (c *buildCtx) buildCrosstab(input plan.NodeID, t *spec.CrosstabTransform) (plan.NodeID, error) {
-	in, err := func() (plan.NodeID, error) {
-		if t.Data == "" {
-			return input, nil
-		}
-		if id, ok := c.leafByName[t.Data]; ok {
-			return id, nil
-		}
-		return "", c.missingDatasetErr(t.Data)
-	}()
-	if err != nil {
-		return "", err
-	}
-	inNode, ok := c.b.Node(in)
-	if !ok {
-		return "", prismerrors.New(
-			"PRISM_PLAN_CROSSTAB_REQUIRES_SOURCE",
-			fmt.Sprintf("crosstab transform input %s not in plan.", in),
-			map[string]any{"Input": string(in)},
-		)
-	}
-	ref, fs, ok := materializedLeaf(inNode)
-	if !ok {
-		return "", prismerrors.New(
-			"PRISM_PLAN_CROSSTAB_REQUIRES_SOURCE",
-			fmt.Sprintf("crosstab transform must consume a materialised leaf (dataset ref or inline values); got %T upstream (input id %s).", inNode, in),
-			map[string]any{"InputKind": fmt.Sprintf("%T", inNode), "Input": string(in)},
-		)
-	}
-	inSchema, err := inNode.Schema(nil)
-	if err != nil {
-		return "", err
-	}
-	srcID := inNode.ID()
-	id := nodes.DeriveCrosstabID(ref, t.Crosstab)
-	node, err := nodes.NewCrosstab(id, srcID, ref, fs, inSchema, t.Crosstab)
-	if err != nil {
-		return "", err
-	}
-	if _, err := c.addAndReturn(node); err != nil {
-		return "", err
-	}
-	// The crosstab is the new tip of this chain; advance the leaf
-	// bookkeeping so any following transform consumes the crosstab
-	// output. The leaf stays in the DAG as the crosstab's input.
-	for name, leafID := range c.leafByName {
-		if leafID == srcID {
-			c.leafByName[name] = id
-		}
-	}
-	if c.topLeaf == srcID {
-		c.topLeaf = id
-	}
-	for ref, leafID := range c.leafBySource {
-		if leafID == srcID {
-			c.leafBySource[ref] = id
-		}
-	}
-	return id, nil
 }
 
 // addAndReturn wraps b.AddNode + returns the new node's id. If the
