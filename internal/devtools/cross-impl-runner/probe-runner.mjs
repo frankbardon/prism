@@ -17,6 +17,19 @@
 //       loads the wasm and prints the string value the module parked on
 //       globalThis[globalName] (used by the floatprobe entrypoint).
 //
+//   probe-runner.mjs error <wasm> <exec> <specPath>
+//       loads the wasm and calls globalThis.prism.validate(spec) on an
+//       INVALID spec, expecting a structured {"ok":false,...} error
+//       envelope (with rendered fixups) to be RETURNED — not thrown.
+//       This is the E6-S2 regression guard: rendering a fixup used to
+//       reach text/template → reflect.Value.MethodByName, which TinyGo
+//       does not implement, so any error path trapped the wasm with
+//       "RuntimeError: unreachable" and no envelope ever reached JS. If
+//       the module traps, prism.validate throws and node exits non-zero
+//       (stderr carries the RuntimeError). On success the envelope JSON
+//       is printed to stdout. Exits non-zero if validate returned a
+//       non-envelope or an ok result.
+//
 //   probe-runner.mjs pipeline <wasm> <exec> <specPath> [sidecarPath]
 //       loads the wasm and drives the FULL pipeline over the exported
 //       globalThis.prism surface: validate(spec) → plan(spec, datasets)
@@ -88,6 +101,26 @@ if (mode === "render") {
 } else if (mode === "global") {
   await waitFor(() => typeof globalThis[arg] === "string", `globalThis.${arg}`);
   process.stdout.write(globalThis[arg]);
+  process.exit(0);
+} else if (mode === "error") {
+  await waitFor(
+    () => globalThis.prism && typeof globalThis.prism.validate === "function",
+    "globalThis.prism.validate",
+  );
+  const specText = await readFile(arg, "utf-8");
+  // If the wasm traps (the pre-E6-S2 TinyGo behaviour), this call throws
+  // a WebAssembly RuntimeError and the process exits non-zero — the Go
+  // harness treats that as a failure.
+  const res = globalThis.prism.validate(specText);
+  if (typeof res !== "string") {
+    console.error("probe-runner: prism.validate returned a non-string:", res);
+    process.exit(4);
+  }
+  if (!res.startsWith(`{"ok":false`)) {
+    console.error("probe-runner: expected an {ok:false} error envelope, got:", res);
+    process.exit(4);
+  }
+  process.stdout.write(res.endsWith("\n") ? res : res + "\n");
   process.exit(0);
 } else if (mode === "pipeline") {
   await waitFor(

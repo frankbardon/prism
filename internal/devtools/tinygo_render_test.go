@@ -97,6 +97,47 @@ func TestTinyGoWasmRenderPipeline(t *testing.T) {
 	}
 }
 
+// TestTinyGoWasmErrorEnvelope is the E6-S2 regression closer: it proves
+// an ERROR path through the TinyGo-built wasm now returns a structured
+// PRISM_* envelope instead of trapping.
+//
+// Before E6-S2, rendering any fixup reached text/template's Execute,
+// which calls reflect.Value.MethodByName — unimplemented in TinyGo — so
+// every error path crashed the module with "RuntimeError: unreachable"
+// and no envelope ever reached JS. The fixture spec (a bar mark carrying
+// a theta channel) fails validation with PRISM_SPEC_003, whose fixups
+// interpolate {{.Mark}} / {{.Allowed}} / {{.Channel}} — exactly the
+// path that used to trap. We assert a well-formed {"ok":false,...}
+// envelope comes back with the code and rendered fixups, and that no
+// RuntimeError leaked to stderr.
+//
+// Opt-in like the other TinyGo tests: needs node + tinygo + PRISM_CROSS_IMPL_TINYGO=1.
+//
+// Run: PRISM_CROSS_IMPL_TINYGO=1 go test ./internal/devtools/ -run TinyGoWasmErrorEnvelope
+func TestTinyGoWasmErrorEnvelope(t *testing.T) {
+	root := requireTinyGoParityEnv(t)
+
+	wasmPath, execPath := buildTinyGoWasm(t, root, "./cmd/prismwasm")
+	runner := filepath.Join(root, "internal", "devtools", "cross-impl-runner", "probe-runner.mjs")
+	specPath := filepath.Join(root, "internal", "devtools", "testdata", "tinygo_render", "validate_error.json")
+
+	out := string(runNodePipeline(t, root, runner, "error", wasmPath, execPath, specPath))
+
+	if strings.Contains(out, "RuntimeError") || strings.Contains(out, "unreachable") {
+		t.Fatalf("error path trapped the TinyGo wasm instead of returning an envelope:\n%s", out)
+	}
+	for _, want := range []string{`"ok":false`, "PRISM_SPEC_003", "fixups"} {
+		if !strings.Contains(out, want) {
+			t.Errorf("error envelope missing %q\nenvelope:\n%s", want, out)
+		}
+	}
+	// The rendered fixup must carry the interpolated placeholders (proof
+	// the non-reflective interpolator ran, not a raw template body).
+	if !strings.Contains(out, "channel supported by bar") {
+		t.Errorf("fixup placeholders were not interpolated\nenvelope:\n%s", out)
+	}
+}
+
 // runNodePipeline invokes probe-runner.mjs with an arbitrary argument
 // tail (the pipeline mode takes an optional resolver-data path beyond
 // the fixed <mode> <wasm> <exec> <spec> quad) and returns its stdout.

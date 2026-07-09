@@ -1,9 +1,10 @@
 package errors
 
 import (
-	"bytes"
+	"fmt"
+	"reflect"
 	"sort"
-	"text/template"
+	"strings"
 )
 
 // CodeMetadata describes one Prism error code: its message template,
@@ -733,10 +734,10 @@ var Codes = map[string]CodeMetadata{
 	},
 	"PRISM_PLAN_CROSSTAB_PROCESS": {
 		Code:    "PRISM_PLAN_CROSSTAB_PROCESS",
-		Message: `Pulse rejected the crosstab request for {{.Ref}}: {{.Reason}}.`,
+		Message: `The crosstab computation failed for {{.Ref}}: {{.Reason}}.`,
 		Fixups: []string{
-			`The Pulse error envelope includes the precise rule — check that every grouper field exists in the cohort schema, that the cell field's column type is numeric for sum / mean / etc., and that no aggregator alias was promoted from client-side (lift, share).`,
-			`Run ` + "`prism inspect`" + ` to view the cohort schema without re-executing.`,
+			`The reason names the precise rule — check that every grouper field exists in the input schema, that the cell field's column type is numeric for sum / mean / etc., and that no aggregator alias was promoted from client-side (lift, share).`,
+			`Run ` + "`prism inspect`" + ` to view the input schema without re-executing.`,
 		},
 	},
 	"PRISM_SPEC_035": {
@@ -762,7 +763,7 @@ var Codes = map[string]CodeMetadata{
 		Message: `The regression fit failed for {{.Ref}}: {{.Reason}}.`,
 		Fixups: []string{
 			`Check that the target and predictor exist in the input schema, are numeric columns, and that at least two complete (predictor, target) records remain after filtering.`,
-			`Run ` + "`prism inspect`" + ` to view the cohort schema without re-executing.`,
+			`Run ` + "`prism inspect`" + ` to view the input schema without re-executing.`,
 		},
 	},
 	"PRISM_SPEC_030": {
@@ -915,16 +916,143 @@ func RenderMessage(code string, ctx map[string]any) string {
 	return renderTemplate("msg_"+code, meta.Message, ctx)
 }
 
+// renderTemplate expands a fixup / message body against ctx using a
+// small, non-reflective interpolator instead of text/template. TinyGo
+// does not implement reflect.Value.MethodByName, which text/template's
+// Execute reaches even for the trivial `{{.Field}}` actions used here —
+// so under TinyGo every error path that rendered a fixup crashed the
+// wasm with "RuntimeError: unreachable" and no envelope ever reached JS.
+//
+// The interpolator recognises exactly the action forms the catalog
+// uses and reproduces text/template's `missingkey=zero` behaviour over
+// a map[string]any byte-for-byte:
+//
+//   - {{.Ident}} / {{ .Ident }} — substitute ctx["Ident"]; a missing or
+//     nil value renders as the literal "<no value>" (the string
+//     text/template + missingkey=zero emits for a nil interface).
+//   - {{if .Ident}} … {{end}} / spaced forms — emit the body only when
+//     ctx["Ident"] is "true" by text/template's isTrue rules (non-empty
+//     string / non-zero number / true / non-empty collection); missing
+//     or nil is false. Frames nest via a stack.
+//
+// name is retained for signature stability with the previous
+// text/template-backed helper; it is not otherwise consulted.
 func renderTemplate(name, body string, ctx map[string]any) string {
-	tpl, err := template.New(name).Option("missingkey=zero").Parse(body)
-	if err != nil {
+	if !strings.Contains(body, "{{") {
 		return body
 	}
-	var buf bytes.Buffer
-	if err := tpl.Execute(&buf, ctx); err != nil {
-		return body
+
+	var sb strings.Builder
+	// frames holds one bool per open {{if}}: whether that frame (given
+	// all its parents) is currently emitting. active() is the effective
+	// emit state.
+	var frames []bool
+	active := func() bool {
+		if len(frames) == 0 {
+			return true
+		}
+		return frames[len(frames)-1]
 	}
-	return buf.String()
+
+	i := 0
+	for i < len(body) {
+		open := strings.Index(body[i:], "{{")
+		if open < 0 {
+			if active() {
+				sb.WriteString(body[i:])
+			}
+			break
+		}
+		open += i
+		if active() {
+			sb.WriteString(body[i:open])
+		}
+
+		rel := strings.Index(body[open+2:], "}}")
+		if rel < 0 {
+			// Unterminated action: emit the remainder verbatim.
+			if active() {
+				sb.WriteString(body[open:])
+			}
+			break
+		}
+		closeIdx := open + 2 + rel
+		action := strings.TrimSpace(body[open+2 : closeIdx])
+		i = closeIdx + 2
+
+		switch {
+		case action == "end":
+			if len(frames) > 0 {
+				frames = frames[:len(frames)-1]
+			}
+		case action == "if" || strings.HasPrefix(action, "if "):
+			parent := active()
+			arg := strings.TrimSpace(strings.TrimPrefix(action, "if"))
+			v, _ := lookupField(ctx, arg)
+			frames = append(frames, parent && truthy(v))
+		case strings.HasPrefix(action, "."):
+			if active() {
+				v, ok := lookupField(ctx, action)
+				sb.WriteString(formatValue(v, ok))
+			}
+		default:
+			// Unrecognised action: reproduce it verbatim so nothing is
+			// silently dropped (matches the old fall-back-to-body intent).
+			if active() {
+				sb.WriteString(body[open : closeIdx+2])
+			}
+		}
+	}
+	return sb.String()
+}
+
+// lookupField resolves a `.Ident` reference against ctx, returning the
+// value and whether the key was present.
+func lookupField(ctx map[string]any, ref string) (any, bool) {
+	key := strings.TrimPrefix(ref, ".")
+	v, ok := ctx[key]
+	return v, ok
+}
+
+// formatValue renders a substituted value the way text/template +
+// missingkey=zero does: a missing key or a nil value becomes the
+// literal "<no value>"; anything else is printed with %v (which matches
+// text/template's default fmt-backed formatting for the scalar and
+// slice values the catalog carries).
+func formatValue(v any, ok bool) string {
+	if !ok || v == nil {
+		return "<no value>"
+	}
+	return fmt.Sprintf("%v", v)
+}
+
+// truthy mirrors text/template's isTrue for the {{if}} guard: the zero
+// value of a type is false, everything else true. Reflection here is
+// limited to Kind/Len/Bool/Int/Uint/Float/IsNil (all TinyGo-supported);
+// it never reaches MethodByName.
+func truthy(v any) bool {
+	rv := reflect.ValueOf(v)
+	if !rv.IsValid() {
+		return false
+	}
+	switch rv.Kind() {
+	case reflect.Array, reflect.Map, reflect.Slice, reflect.String:
+		return rv.Len() > 0
+	case reflect.Bool:
+		return rv.Bool()
+	case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64:
+		return rv.Int() != 0
+	case reflect.Uint, reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64, reflect.Uintptr:
+		return rv.Uint() != 0
+	case reflect.Float32, reflect.Float64:
+		return rv.Float() != 0
+	case reflect.Complex64, reflect.Complex128:
+		return rv.Complex() != 0
+	case reflect.Chan, reflect.Func, reflect.Ptr, reflect.Interface:
+		return !rv.IsNil()
+	default:
+		return true
+	}
 }
 
 // itoa is a tiny inline integer formatter; avoids importing strconv.
