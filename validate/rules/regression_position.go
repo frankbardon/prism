@@ -13,11 +13,11 @@ import (
 //   - A regression transform must declare target + at least one
 //     predictor.
 //   - It may only appear as the first transform on a chain — like
-//     crosstab, the OLS prepass fits the source cohort directly (Pulse
-//     has no in-memory cohort constructor), so it cannot consume a prior
-//     Prism transform's output. The plan builder enforces this at build
-//     time via PRISM_PLAN_REGRESSION_REQUIRES_SOURCE; this rule surfaces
-//     it statically before any I/O.
+//     crosstab, the OLS fit reads a materialised leaf table directly (a
+//     dataset ref or inline `data.values`), so it cannot consume a prior
+//     Prism transform's derived output. The plan builder enforces this
+//     at build time via PRISM_PLAN_REGRESSION_REQUIRES_SOURCE; this rule
+//     surfaces it statically before any I/O.
 type RegressionPosition struct{}
 
 // Code returns PRISM_SPEC_035.
@@ -44,8 +44,10 @@ func walkRegression(s *spec.Spec, prefix string, out *[]*errors.AppError) {
 		}
 		path := fmt.Sprintf("%stransform[%d].regression", prefix, i)
 		// Position: must be the first transform on the chain (or
-		// reference a registered dataset via its `data` alias — that is
-		// also leaf-bound).
+		// reference a registered dataset via its `data` alias). The
+		// regression fits a materialised leaf table — a dataset ref
+		// (SourceNode) or inline `data.values` (InlineNode) — so it may
+		// not chain after a prior Prism transform's derived output.
 		if i > 0 && t.Regression.Data == "" {
 			*out = append(*out, errors.New(
 				"PRISM_SPEC_035",

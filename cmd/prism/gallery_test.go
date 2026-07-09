@@ -57,19 +57,6 @@ func TestPrismGalleryFixtures(t *testing.T) {
 		"themes/bar_light.prism.json":                      true,
 		"themes/bar_dark.prism.json":                       true,
 		"themes/bar_print.prism.json":                      true,
-		// crosstab / regression still require a SourceNode as their
-		// immediate input (the pure-Go pivot/OLS reads a materialised
-		// source table — there is no in-memory cohort constructor), so
-		// binding them to inline `data.values` (an InlineNode) trips
-		// PRISM_PLAN_{CROSSTAB,REGRESSION}_REQUIRES_SOURCE at plan time.
-		// These four are therefore validate-only fixtures: they decode +
-		// validate clean over inline rows but do not plot from a bare CLI
-		// invocation (which wires no dataset registry / source ref). See
-		// E4-S5.
-		"composite-marks/crosstab_heatmap.prism.json":              true,
-		"composite-marks/crosstab_overlay_share.prism.json":        true,
-		"composite-marks/regression_trend.prism.json":              true,
-		"composite-marks/crosstab_significance_shading.prism.json": true,
 	}
 
 	updateGoldens := os.Getenv("UPDATE_GOLDENS") == "1"
