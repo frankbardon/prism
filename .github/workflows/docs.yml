@@ -47,7 +47,7 @@ jobs:
       # deleted standard-Go wasm build), so TinyGo must be on PATH here. Pin the
       # exact release in lockstep with ci.yml's wasm gate.
       - name: Set up TinyGo
-        uses: acifani/setup-tinygo@v2
+        uses: acifani/setup-tinygo@v3
         with:
           tinygo-version: "0.41.1"
 

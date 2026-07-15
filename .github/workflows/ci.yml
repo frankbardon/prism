@@ -76,7 +76,7 @@ jobs:
       # silently blow (or slacken) the gate. Bump this in lockstep with the
       # Makefile / CLAUDE.md TinyGo version note.
       - name: Set up TinyGo
-        uses: acifani/setup-tinygo@v2
+        uses: acifani/setup-tinygo@v3
         with:
           tinygo-version: "0.41.1"
 
