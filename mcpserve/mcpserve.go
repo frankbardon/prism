@@ -82,21 +82,42 @@ func newServer(facade *rpc.PrismServer, opts Options) (*mcpsdk.Server, error) {
 	return srv, nil
 }
 
+// ServeTransport runs an MCP server bound to facade over t, a transport the
+// caller supplies. It blocks until ctx is cancelled or the transport fails.
+//
+// Reach for it instead of Serve whenever the transport is not a plain
+// reader/writer pair — most notably mcpsdk.NewInMemoryTransports, which mounts
+// Prism in-process so an SDK client in the same program can drive it over a
+// real session rather than through a pipe or a subprocess.
+//
+// The caller owns t's lifetime: this function never closes it and never wraps
+// it. Serve differs — it hands go-sdk the caller's streams inside non-closing
+// adapters, so the server loop cannot close streams it does not own.
+//
+// The dataset registry, filesystem, and executor hooks configured on facade
+// are exposed verbatim; a nil facade serves the zero-value server (empty
+// registry, OS filesystem, no hooks).
+func ServeTransport(ctx context.Context, facade *rpc.PrismServer, opts Options, t mcpsdk.Transport) error {
+	srv, err := newServer(facade, opts)
+	if err != nil {
+		return err
+	}
+	return srv.Run(ctx, t)
+}
+
 // Serve runs an MCP server bound to facade, reading JSON-RPC requests from in
 // and writing responses to out. It blocks until ctx is cancelled or a
 // transport error occurs. The dataset registry, filesystem, and executor hooks
 // configured on facade are exposed verbatim; a nil facade serves the zero-value
 // server (empty registry, OS filesystem, no hooks).
+//
+// in and out stay the caller's to close: both are wrapped in non-closing
+// adapters before they reach the transport.
 func Serve(ctx context.Context, facade *rpc.PrismServer, opts Options, in io.Reader, out io.Writer) error {
-	srv, err := newServer(facade, opts)
-	if err != nil {
-		return err
-	}
-	transport := &mcpsdk.IOTransport{
+	return ServeTransport(ctx, facade, opts, &mcpsdk.IOTransport{
 		Reader: io.NopCloser(in),
 		Writer: nopWriteCloser{out},
-	}
-	return srv.Run(ctx, transport)
+	})
 }
 
 // ServeStdio is Serve over the process's stdin/stdout — the transport MCP
