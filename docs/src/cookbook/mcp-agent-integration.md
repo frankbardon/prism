@@ -7,9 +7,10 @@ Protocol surface four ways:
 1. **The `prism mcp` CLI** — a ready-to-run stdio server (zero Go code).
 2. **The SDK-free `mcp.Tools(cfg)` catalog** — mount Prism's tools on
    *your own* MCP server with **no Prism-supplied MCP SDK** in your build.
-3. **The `mcpserve.Serve` / `ServeStdio` runner** — run a fully wired
-   Prism MCP server inside *your* process, over an io pair or over
-   stdio, without shelling out to the `prism` binary.
+3. **The `mcpserve` runner (`Serve` / `ServeStdio` / `ServeTransport`)** —
+   run a fully wired Prism MCP server inside *your* process, over an io
+   pair, over stdio, or over a transport you supply, without shelling out
+   to the `prism` binary.
 4. **The `mcp/gosdk.Register` one-call adapter** — graft all four tools
    plus the embedded example resources onto a
    [`modelcontextprotocol/go-sdk`](https://github.com/modelcontextprotocol/go-sdk)
@@ -191,12 +192,73 @@ return mcpserve.ServeStdio(&rpc.PrismServer{Fs: afero.NewOsFs()}, mcpserve.Optio
 `initialize`; defaults to `1.0.0` when empty), `ExamplesRoot`, and
 `ExamplesFS`. The server name is always `prism`.
 
-**Which one do I want?** Reach for `mcpserve` when you want a configured
-Prism mounted in your own process and you do not care what the transport is
-— it picks one for you. Reach for `gosdk.Register` (below) when you already
-run a go-sdk server, when Prism's tools have to sit alongside your own, or
-when you need a transport `mcpserve` does not hand you; `Register` grafts
-onto the server you built, so the transport stays yours.
+#### Bring your own transport: `ServeTransport`
+
+`Serve` picks the transport for you — it wraps `in` and `out` in a go-sdk
+`IOTransport`. `ServeTransport(ctx, facade, opts, t)` skips that step and runs
+the server over any `mcp.Transport` you hand it. Pair it with
+`mcp.NewInMemoryTransports()` and the whole session stays inside one program:
+no pipes, no subprocess, and no JSON-RPC framing to hand-roll, because a real
+`*mcp.Client` sits on the other half.
+
+```go
+import (
+	"context"
+	"fmt"
+
+	"github.com/modelcontextprotocol/go-sdk/mcp"
+	"github.com/spf13/afero"
+
+	"github.com/frankbardon/prism/mcpserve"
+	"github.com/frankbardon/prism/rpc"
+)
+
+// mountInMemory serves a Prism MCP on one half of an in-memory transport pair
+// and returns a client session already initialized against the other half. The
+// returned channel carries the server's exit error; cancelling ctx stops it.
+func mountInMemory(ctx context.Context) (*mcp.ClientSession, <-chan error, error) {
+	clientT, serverT := mcp.NewInMemoryTransports()
+
+	facade := &rpc.PrismServer{Fs: afero.NewOsFs()}
+
+	// Start the server first: the transports are pipe-backed, so Connect below
+	// blocks until the server half is reading.
+	exit := make(chan error, 1)
+	go func() {
+		exit <- mcpserve.ServeTransport(ctx, facade, mcpserve.Options{Version: "1.2.3"}, serverT)
+	}()
+
+	client := mcp.NewClient(&mcp.Implementation{Name: "my-host", Version: "0.1.0"}, nil)
+	session, err := client.Connect(ctx, clientT, nil)
+	if err != nil {
+		return nil, nil, fmt.Errorf("connect prism session: %w", err)
+	}
+	return session, exit, nil
+}
+```
+
+`session` is then an ordinary go-sdk client session: `session.ListTools`,
+`session.CallTool` and `session.InitializeResult` all work against the
+in-process Prism.
+
+**The caller owns the transport's lifetime.** `ServeTransport` never closes `t`
+and never wraps it; tearing it down is your job — close the client session and
+cancel `ctx`, and both halves retire. That is the one behavioural difference
+from `Serve`, which wraps the caller's streams in non-closing adapters exactly
+so the server loop cannot close streams it does not own.
+
+#### Which one do I want?
+
+- **`ServeStdio` / `Serve`** — you want a configured Prism mounted and the
+  transport is not your concern. `ServeStdio` takes the process's stdin and
+  stdout, `Serve` takes any reader/writer pair; both build the transport for
+  you.
+- **`ServeTransport`** — you already have a transport: an in-memory pair for a
+  client in the same program, or your own `mcp.Transport` implementation. Prism
+  runs on it, and it stays yours to close.
+- **`gosdk.Register`** (below) — you already run a go-sdk server and want
+  Prism's tools grafted in beside your own. `Register` mounts onto the server
+  you built, so the server *and* the transport stay yours.
 
 ### go-sdk: graft everything with one `Register` call
 
