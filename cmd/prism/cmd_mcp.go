@@ -33,6 +33,24 @@ func mcpCommand() *cli.Command {
 	}
 }
 
+// mcpOptions is the single place `prism mcp`'s flags become mcpserve.Options.
+// Every Options field the CLI can influence is populated here and nowhere
+// else, so the flag surface is auditable from one function.
+//
+// It is a pure builder: it reads flag values only, and performs no I/O and no
+// process-global mutation (applyGeodataDir and loadDatasetRegistry stay in
+// runMCP for that reason). cmd_mcp_test.go guards its completeness — it drives
+// every `prism mcp` flag through this function and fails when any exported
+// Options field comes back at its zero value, so a newly added field cannot
+// silently go unwired.
+func mcpOptions(cmd *cli.Command) mcpserve.Options {
+	return mcpserve.Options{
+		Version:      versionString,
+		ExamplesRoot: cmd.String("examples-root"),
+		ExamplesFS:   afero.NewOsFs(),
+	}
+}
+
 func runMCP(ctx context.Context, cmd *cli.Command) error {
 	// Point the host geodata loader at the configured directory before
 	// the stdio server starts, so prism_plot tool calls on geoshape /
@@ -52,11 +70,7 @@ func runMCP(ctx context.Context, cmd *cli.Command) error {
 	// the server construction, the tool registration, and the stdio transport.
 	// The build version becomes the advertised server identity and the
 	// examples-root override (if any) flows through into the tool catalog.
-	if err := mcpserve.ServeStdio(impl, mcpserve.Options{
-		Version:      versionString,
-		ExamplesRoot: cmd.String("examples-root"),
-		ExamplesFS:   afero.NewOsFs(),
-	}); err != nil {
+	if err := mcpserve.ServeStdio(impl, mcpOptions(cmd)); err != nil {
 		return cli.Exit(fmt.Sprintf("mcp serve: %v", err), 1)
 	}
 	return nil
