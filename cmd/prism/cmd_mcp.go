@@ -6,13 +6,11 @@ import (
 	"context"
 	"fmt"
 
-	gosdk "github.com/modelcontextprotocol/go-sdk/mcp"
 	"github.com/spf13/afero"
 	"github.com/urfave/cli/v3"
 
 	"github.com/frankbardon/prism/internal/observability"
-	prismmcp "github.com/frankbardon/prism/mcp"
-	gosdkadapter "github.com/frankbardon/prism/mcp/gosdk"
+	"github.com/frankbardon/prism/mcpserve"
 	"github.com/frankbardon/prism/rpc"
 )
 
@@ -50,20 +48,15 @@ func runMCP(ctx context.Context, cmd *cli.Command) error {
 		Fs:              afero.NewOsFs(),
 		ExecOpts:        observability.Hooks(),
 	}
-	// Thread the build version into the server identity; the examples-root
-	// override (if any) flows through the config into the tool catalog. The
-	// CLI stays thin — all wiring lives in the mcp/gosdk adapter.
-	cfg := prismmcp.Config{
-		ServerName:   "prism",
+	// Hand the configured facade to the shipped in-process runner, which owns
+	// the server construction, the tool registration, and the stdio transport.
+	// The build version becomes the advertised server identity and the
+	// examples-root override (if any) flows through into the tool catalog.
+	if err := mcpserve.ServeStdio(impl, mcpserve.Options{
 		Version:      versionString,
 		ExamplesRoot: cmd.String("examples-root"),
 		ExamplesFS:   afero.NewOsFs(),
-	}
-	srv := gosdk.NewServer(&gosdk.Implementation{Name: cfg.ServerName, Version: cfg.Version}, nil)
-	if err := gosdkadapter.Register(srv, impl, cfg); err != nil {
-		return cli.Exit(fmt.Sprintf("mcp register: %v", err), 1)
-	}
-	if err := srv.Run(ctx, &gosdk.StdioTransport{}); err != nil {
+	}); err != nil {
 		return cli.Exit(fmt.Sprintf("mcp serve: %v", err), 1)
 	}
 	return nil

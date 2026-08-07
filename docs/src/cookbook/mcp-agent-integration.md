@@ -2,15 +2,18 @@
 
 Expose Prism to an LLM agent so it can plot, validate, describe, and
 search example specs as tool calls. Prism ships its Model Context
-Protocol surface three ways:
+Protocol surface four ways:
 
 1. **The `prism mcp` CLI** — a ready-to-run stdio server (zero Go code).
 2. **The SDK-free `mcp.Tools(cfg)` catalog** — mount Prism's tools on
    *your own* MCP server with **no Prism-supplied MCP SDK** in your build.
-3. **The `mcp/gosdk.Register` one-call adapter** — graft all four tools
+3. **The `mcpserve.Serve` / `ServeStdio` runner** — run a fully wired
+   Prism MCP server inside *your* process, over an io pair or over
+   stdio, without shelling out to the `prism` binary.
+4. **The `mcp/gosdk.Register` one-call adapter** — graft all four tools
    plus the embedded example resources onto a
    [`modelcontextprotocol/go-sdk`](https://github.com/modelcontextprotocol/go-sdk)
-   server.
+   server you already own.
 
 ## Start the MCP server
 
@@ -65,8 +68,9 @@ at `prism serve --addr :8080`. Generated clients live under
 ## Embed Prism's tools in your own Go binary
 
 The CLI is a thin adapter over the importable
-`github.com/frankbardon/prism/mcp` package. Pick the path that matches
-whether you want an MCP SDK in your dependency graph.
+`github.com/frankbardon/prism/mcp` core and the `mcpserve` runner that
+wraps it. Pick the path that matches whether you want an MCP SDK in your
+dependency graph, and how much of the server you want to own.
 
 ### SDK-free: mount the `Tools(cfg)` catalog
 
@@ -119,13 +123,89 @@ type-erased descriptors.
 > package's transitive imports ever include one. Depending on the catalog
 > never couples your binary to a particular MCP protocol library or version.
 
+### In-process: run a server with `mcpserve`
+
+`github.com/frankbardon/prism/mcpserve` is the runner the other two paths
+leave out by design. The catalog and the `gosdk` adapter only *mount* tools;
+neither constructs or runs a server. `mcpserve` does both: hand it a
+configured `*rpc.PrismServer` and it builds a go-sdk server, registers the
+full Prism surface through `gosdk.Register`, and serves it — so the dataset
+registry, the afero filesystem seam, and the executor hooks you set on the
+facade are all exposed verbatim to the agent. That is more than `prism mcp`
+can offer, since the binary only surfaces what its flags reach.
+
+`Serve(ctx, facade, opts, in, out)` runs over any `io.Reader` / `io.Writer`
+pair and blocks until `ctx` is cancelled or the transport errors. For an
+in-process client, wire it with two pipes:
+
+```go
+import (
+	"context"
+	"io"
+
+	"github.com/spf13/afero"
+
+	"github.com/frankbardon/prism/mcpserve"
+	"github.com/frankbardon/prism/rpc"
+)
+
+// mountInProcess starts a Prism MCP server on a pair of pipes and hands back
+// the ends your MCP client talks to: write JSON-RPC frames to reqs, read
+// responses from resps. The returned channel carries the server's exit error.
+func mountInProcess(ctx context.Context) (reqs io.WriteCloser, resps io.Reader, done <-chan error) {
+	facade := &rpc.PrismServer{
+		Fs: afero.NewOsFs(),
+		// DatasetRegistry and ExecOpts are optional — the zero value works,
+		// and a nil facade serves the zero-value server.
+	}
+
+	reqR, reqW := io.Pipe()   // client → server
+	respR, respW := io.Pipe() // server → client
+
+	exit := make(chan error, 1)
+	go func() {
+		defer respW.Close()
+		exit <- mcpserve.Serve(ctx, facade, mcpserve.Options{
+			Version: "1.2.3",
+			// ExamplesRoot left empty → serve the embedded example corpus.
+			// Set it (plus ExamplesFS) to walk an on-disk directory instead.
+		}, reqR, respW)
+	}()
+
+	return reqW, respR, exit
+}
+```
+
+`Serve` never closes `out` — the caller owns its lifetime, which is why the
+goroutine above closes `respW` itself.
+
+`ServeStdio(facade, opts)` is the same thing over the process's stdin and
+stdout, taking no `ctx`; it blocks until stdin closes or the client
+disconnects. It is a one-liner, and exactly what `prism mcp` runs:
+
+```go
+return mcpserve.ServeStdio(&rpc.PrismServer{Fs: afero.NewOsFs()}, mcpserve.Options{Version: "1.2.3"})
+```
+
+`Options` carries three fields: `Version` (the identity advertised during
+`initialize`; defaults to `1.0.0` when empty), `ExamplesRoot`, and
+`ExamplesFS`. The server name is always `prism`.
+
+**Which one do I want?** Reach for `mcpserve` when you want a configured
+Prism mounted in your own process and you do not care what the transport is
+— it picks one for you. Reach for `gosdk.Register` (below) when you already
+run a go-sdk server, when Prism's tools have to sit alongside your own, or
+when you need a transport `mcpserve` does not hand you; `Register` grafts
+onto the server you built, so the transport stays yours.
+
 ### go-sdk: graft everything with one `Register` call
 
 If you already run (or want) a `modelcontextprotocol/go-sdk` server,
 `github.com/frankbardon/prism/mcp/gosdk` mounts all four tools **and** the
 embedded example specs (as read-only `prism://examples/<stem>` resources)
-in a single call. This is exactly what `prism mcp` does internally — build
-a bare server, `Register`, then serve:
+in a single call. This is the shape `mcpserve` wraps, spelled out — build a
+bare server, `Register`, then serve — and `prism mcp` reaches it through
+`mcpserve.ServeStdio`:
 
 ```go
 import (
