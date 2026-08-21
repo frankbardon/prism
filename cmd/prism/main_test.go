@@ -213,8 +213,12 @@ func TestValidateCLISmoke(t *testing.T) {
 		if !strings.Contains(out, `viewBox="0 0 800 600"`) {
 			t.Errorf("missing default viewBox: %s", firstChars(out, 200))
 		}
-		if !strings.Contains(out, "<rect ") {
-			t.Errorf("bar plot missing <rect> elements: %s", firstChars(out, 200))
+		// A themed bar carries a corner radius on its value end, which
+		// an SVG <rect> cannot express (rx rounds all four corners), so
+		// the renderer emits a <path> instead. Either element is a bar;
+		// the class is the stable hook.
+		if !strings.Contains(out, `class="prism-mark-bar"`) {
+			t.Errorf("bar plot missing bar marks: %s", firstChars(out, 200))
 		}
 	})
 

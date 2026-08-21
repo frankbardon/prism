@@ -7,9 +7,8 @@ import (
 )
 
 // renderLegends emits one <g class="prism-legend"> per Scene.Legend.
-// Symbol entries get a 12×12 swatch + label; gradient entries get a
-// 12×120 rect filled via url(#gradient-id) with axis labels along
-// the side.
+// Swatch extent and row pitch come from the legend's own resolved
+// tokens; entry positions come from the encoder.
 func renderLegends(w *Writer, legends []scene.Legend) {
 	if len(legends) == 0 {
 		return
@@ -23,90 +22,121 @@ func renderLegends(w *Writer, legends []scene.Legend) {
 	w.EndTag("g")
 }
 
+// renderLegend emits one legend block.
+//
+// Entry POSITIONS arrive resolved on each LegendEntry rather than
+// being re-derived here from a hardcoded 18px row pitch. The encoder
+// computed them against the same metrics it reserved the frame with,
+// which is what keeps a horizontal legend's ragged wrapping inside
+// the space set aside for it.
 func renderLegend(w *Writer, lg scene.Legend) {
 	w.OpenTag("g")
 	w.Attr("class", "prism-legend prism-legend-"+string(lg.Channel))
 	w.Attr("data-prism-legend-id", lg.ID)
 	w.CloseTagOpen()
 
-	// Title (if any) above entries.
-	const titleH = 14.0
+	sym := lg.SymbolSize
+	if sym <= 0 {
+		sym = 10
+	}
 	if lg.Title != "" {
 		w.OpenTag("text")
 		w.Attr("class", "prism-legend-title")
-		w.AttrFloat("x", lg.Frame.X+4)
-		w.AttrFloat("y", lg.Frame.Y+titleH)
+		w.AttrFloat("x", lg.Frame.X)
+		w.AttrFloat("y", lg.Frame.Y+sym)
 		w.CloseTagOpen()
 		w.Text(lg.Title)
 		w.EndTag("text")
 	}
 
-	rowOffset := 0.0
-	if lg.Title != "" {
-		rowOffset = titleH + 4
-	}
-
-	for i, entry := range lg.Entries {
-		y := lg.Frame.Y + rowOffset + float64(i)*18 + 8
+	for _, entry := range lg.Entries {
+		x := lg.Frame.X + entry.X
+		y := lg.Frame.Y + entry.Y
+		labelX := x + sym*1.6
+		// Centre the label's baseline on the swatch rather than on the
+		// row, so a swatch and its name read as one object.
+		labelY := y + sym*0.85
 		switch entry.Swatch.Type {
-		case scene.SwatchSolid:
-			// 12x12 swatch + label.
-			w.OpenTag("rect")
-			w.Attr("class", "prism-legend-swatch")
-			w.AttrFloat("x", lg.Frame.X+4)
-			w.AttrFloat("y", y)
-			w.AttrFloat("width", 12)
-			w.AttrFloat("height", 12)
-			if entry.Swatch.Color != nil {
-				w.Attr("fill", entry.Swatch.Color.CSS())
-			}
-			w.SelfClose()
-			w.OpenTag("text")
-			w.Attr("class", "prism-legend-label")
-			w.AttrFloat("x", lg.Frame.X+22)
-			w.AttrFloat("y", y+10)
-			w.CloseTagOpen()
-			w.Text(entry.Label)
-			w.EndTag("text")
 		case scene.SwatchGradient:
-			// 12-wide × Frame.H-tall rect filled with the gradient.
 			w.OpenTag("rect")
 			w.Attr("class", "prism-legend-swatch")
-			w.AttrFloat("x", lg.Frame.X+4)
+			w.AttrFloat("x", x)
 			w.AttrFloat("y", y)
-			w.AttrFloat("width", 12)
-			w.AttrFloat("height", lg.Frame.H-rowOffset-16)
+			w.AttrFloat("width", sym*1.1)
+			w.AttrFloat("height", gradientBarLength)
 			w.Attr("fill", fmt.Sprintf("url(#%s)", entry.Swatch.GradientID))
 			w.SelfClose()
-			w.OpenTag("text")
-			w.Attr("class", "prism-legend-label")
-			w.AttrFloat("x", lg.Frame.X+22)
-			w.AttrFloat("y", y+10)
-			w.CloseTagOpen()
-			w.Text(entry.Label)
-			w.EndTag("text")
+			// A continuous ramp is labelled at its ends, not in the
+			// middle: the label carries "max min" and each half anchors
+			// to the end it describes.
+			hi, lo := splitRangeLabel(entry.Label)
+			emitLegendLabel(w, hi, "", x+sym*1.6, y+sym*0.8)
+			emitLegendLabel(w, lo, "", x+sym*1.6, y+gradientBarLength)
 		case scene.SwatchSymbol:
-			// Reuse the solid swatch shape with a class hint.
 			w.OpenTag("circle")
 			w.Attr("class", "prism-legend-symbol")
-			w.AttrFloat("cx", lg.Frame.X+10)
-			w.AttrFloat("cy", y+6)
-			w.AttrFloat("r", 5)
+			w.AttrFloat("cx", x+sym/2)
+			w.AttrFloat("cy", y+sym/2)
+			w.AttrFloat("r", sym/2)
 			if entry.Swatch.Color != nil {
 				w.Attr("fill", entry.Swatch.Color.CSS())
 			}
 			w.SelfClose()
-			w.OpenTag("text")
-			w.Attr("class", "prism-legend-label")
-			w.AttrFloat("x", lg.Frame.X+22)
-			w.AttrFloat("y", y+10)
-			w.CloseTagOpen()
-			w.Text(entry.Label)
-			w.EndTag("text")
+			emitLegendLabel(w, entry.Label, entry.Full, labelX, labelY)
+		default:
+			w.OpenTag("rect")
+			w.Attr("class", "prism-legend-swatch")
+			w.AttrFloat("x", x)
+			w.AttrFloat("y", y)
+			w.AttrFloat("width", sym)
+			w.AttrFloat("height", sym)
+			w.Attr("rx", "var(--prism-legend-symbol-corner-radius, 2)")
+			if entry.Swatch.Color != nil {
+				w.Attr("fill", entry.Swatch.Color.CSS())
+			}
+			w.SelfClose()
+			emitLegendLabel(w, entry.Label, entry.Full, labelX, labelY)
 		}
 	}
 
 	w.EndTag("g")
+}
+
+// gradientBarLength mirrors the encoder's reservation for a
+// continuous legend's colour bar.
+const gradientBarLength = 120
+
+// emitLegendLabel writes one legend label, attaching the untruncated
+// text as a <title> when the encoder shortened it.
+func emitLegendLabel(w *Writer, label, full string, x, y float64) {
+	if label == "" {
+		return
+	}
+	w.OpenTag("text")
+	w.Attr("class", "prism-legend-label")
+	w.AttrFloat("x", x)
+	w.AttrFloat("y", y)
+	w.CloseTagOpen()
+	w.Text(label)
+	if full != "" {
+		w.OpenTag("title")
+		w.CloseTagOpen()
+		w.Text(full)
+		w.EndTag("title")
+	}
+	w.EndTag("text")
+}
+
+// splitRangeLabel splits the gradient legend's "max min" label into
+// its two ends. A label without the separator is treated as the high
+// end alone.
+func splitRangeLabel(s string) (hi, lo string) {
+	for i := len(s) - 1; i >= 0; i-- {
+		if s[i] == ' ' {
+			return s[:i], s[i+1:]
+		}
+	}
+	return s, ""
 }
 
 // renderDefs emits a single <defs> block for scene-level resources

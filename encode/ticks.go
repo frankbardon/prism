@@ -3,8 +3,8 @@ package encode
 import (
 	"fmt"
 	"math"
-	"strconv"
 
+	prismformat "github.com/frankbardon/prism/encode/format"
 	"github.com/frankbardon/prism/encode/scene"
 )
 
@@ -119,11 +119,18 @@ func reverseFloats(xs []float64) {
 }
 
 // TicksWithLabels formats raw tick values into scene.Tick entries.
-// Each tick's Pixel is computed by applying scale.Apply to the
-// value; the Label is formatted via the supplied format spec (use
-// "" for the default %g rendering). Errors from scale.Apply are
-// surfaced as a wrapped error tagged with the failing value.
+// Each tick's Pixel is computed by applying scale.Apply to the value.
+//
+// With no explicit format, labels come from AutoTickFormat, which
+// reads the whole tick set at once and picks separators and precision
+// from its step and magnitude. The previous default was strconv 'g'
+// per value, which has no view of the set and produced "1e+06" beside
+// "800000" on the same axis.
+//
+// Errors from scale.Apply are surfaced as a wrapped error tagged with
+// the failing value.
 func TicksWithLabels(values []float64, scale Scale, format string) ([]scene.Tick, error) {
+	auto := AutoTickFormat(values)
 	out := make([]scene.Tick, 0, len(values))
 	for _, v := range values {
 		pix, err := scale.Apply(v)
@@ -133,18 +140,20 @@ func TicksWithLabels(values []float64, scale Scale, format string) ([]scene.Tick
 		out = append(out, scene.Tick{
 			Value: v,
 			Pixel: pix,
-			Label: formatTick(v, format),
+			Label: formatTick(v, format, auto),
 		})
 	}
 	return out, nil
 }
 
-// formatTick renders a numeric tick value. P05's default is %g (the
-// Go stdlib's compact float format); explicit format overrides via
-// fmt verbs.
-func formatTick(v float64, format string) string {
+// formatTick renders a numeric tick value: the spec's explicit format
+// when it gave one, the axis-wide automatic format otherwise.
+func formatTick(v float64, format string, auto TickFormatter) string {
 	if format == "" {
-		return strconv.FormatFloat(v, 'g', -1, 64)
+		return auto.Format(v)
+	}
+	if sp, err := prismformat.Parse(format); err == nil {
+		return sp.Apply(v)
 	}
 	return fmt.Sprintf(format, v)
 }

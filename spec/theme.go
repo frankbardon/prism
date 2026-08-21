@@ -41,23 +41,31 @@ type AxisStyle struct {
 	TitleFontSize   *float64  `json:"title_font_size,omitempty"`
 	TitleFontWeight string    `json:"title_font_weight,omitempty"`
 	TitlePadding    *float64  `json:"title_padding,omitempty"`
+	ZeroColor       string    `json:"zero_color,omitempty"`
+	ZeroWidth       *float64  `json:"zero_width,omitempty"`
+	BandPadding     *float64  `json:"band_padding,omitempty"`
+	BandMaxWidth    *float64  `json:"band_max_width,omitempty"`
 }
 
 // LegendStyle mirrors theme.LegendStyle.
 type LegendStyle struct {
-	FillColor         string   `json:"fill_color,omitempty"`
-	StrokeColor       string   `json:"stroke_color,omitempty"`
-	StrokeWidth       *float64 `json:"stroke_width,omitempty"`
-	Padding           *float64 `json:"padding,omitempty"`
-	SymbolSize        *float64 `json:"symbol_size,omitempty"`
-	SymbolStrokeWidth *float64 `json:"symbol_stroke_width,omitempty"`
-	LabelColor        string   `json:"label_color,omitempty"`
-	LabelFontSize     *float64 `json:"label_font_size,omitempty"`
-	TitleColor        string   `json:"title_color,omitempty"`
-	TitleFontSize     *float64 `json:"title_font_size,omitempty"`
-	TitleFontWeight   string   `json:"title_font_weight,omitempty"`
-	RowPadding        *float64 `json:"row_padding,omitempty"`
-	ColumnPadding     *float64 `json:"column_padding,omitempty"`
+	FillColor          string   `json:"fill_color,omitempty"`
+	StrokeColor        string   `json:"stroke_color,omitempty"`
+	StrokeWidth        *float64 `json:"stroke_width,omitempty"`
+	Padding            *float64 `json:"padding,omitempty"`
+	SymbolSize         *float64 `json:"symbol_size,omitempty"`
+	SymbolStrokeWidth  *float64 `json:"symbol_stroke_width,omitempty"`
+	LabelColor         string   `json:"label_color,omitempty"`
+	LabelFontSize      *float64 `json:"label_font_size,omitempty"`
+	TitleColor         string   `json:"title_color,omitempty"`
+	TitleFontSize      *float64 `json:"title_font_size,omitempty"`
+	TitleFontWeight    string   `json:"title_font_weight,omitempty"`
+	RowPadding         *float64 `json:"row_padding,omitempty"`
+	ColumnPadding      *float64 `json:"column_padding,omitempty"`
+	Gap                *float64 `json:"gap,omitempty"`
+	RowHeight          *float64 `json:"row_height,omitempty"`
+	SymbolExtent       *float64 `json:"symbol_extent,omitempty"`
+	SymbolCornerRadius *float64 `json:"symbol_corner_radius,omitempty"`
 }
 
 // TitleStyle mirrors theme.TitleStyle.

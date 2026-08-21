@@ -32,7 +32,13 @@ type Mark struct {
 	// "region=west") materialised from whichever encoding channel
 	// declared `key: true` in the spec. Empty when no animation is in
 	// play; the SVG renderer ignores it.
-	Key     string   `json:"key,omitempty"`
+	Key string `json:"key,omitempty"`
+	// Series names the colour category this mark belongs to, for the
+	// path marks (line, area) that emit one mark per series rather
+	// than one per row. It gives the renderer a stable per-series hook
+	// — data-prism-series — that a client can use to highlight or hide
+	// one series without re-deriving the grouping.
+	Series  string   `json:"series,omitempty"`
 	Style   Style    `json:"style,omitempty"`
 	Tooltip *Tooltip `json:"tooltip,omitempty"`
 	Datum   *Datum   `json:"datum,omitempty"`

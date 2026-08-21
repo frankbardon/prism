@@ -180,6 +180,32 @@ non-2xx). It arrives in the JS bridge as a standard `{ok:false, error}`
 envelope; `prism.mjs` rethrows it as an `Error` with `prismCode` +
 `prismFixups` attached.
 
+## Host light/dark
+
+A chart rendered on a light-family base carries both token sets, so a
+host that flips theme repaints every chart on the page through CSS
+alone — no re-render, no round trip, and a chart already streamed into
+a transcript flips with everything around it.
+
+The host declares which applies, on the chart or any ancestor:
+
+```html
+<div class="prism-dark">   <!-- dark host   -->
+<div class="prism-auto">   <!-- follow the OS -->
+<div>                      <!-- light: nothing to do -->
+```
+
+`prefers-color-scheme` alone does not flip an un-classed chart, and
+that is on purpose: an SVG is inlined into whatever page embeds it, so
+a light page on a dark-OS machine would otherwise get light-grey labels
+on white. `prism-auto` is the explicit opt-in for a host that wants the
+OS setting to decide.
+
+Because the flip is pure CSS, it works on a static
+`prism static-bundle` page and on server-rendered SVG with no WASM
+loaded at all. See [Themes → Dark mode](themes.md#dark-mode) for which
+bases carry a companion and what the companion may contain.
+
 ## What's still in JS
 
 The four `.mjs` files together total ~10 KiB. They handle the

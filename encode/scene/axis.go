@@ -52,6 +52,30 @@ type Axis struct {
 	LabelAngle float64      `json:"label_angle,omitempty"`
 	LabelStyle Style        `json:"label_style,omitempty"`
 	TitleStyle Style        `json:"title_style,omitempty"`
+
+	// HideDomain suppresses the axis domain line. Set when a grid
+	// line already lands on the same pixels — drawing both puts two
+	// strokes of different weight on one edge, which reads as a
+	// rendering artefact rather than a decision.
+	HideDomain bool `json:"hide_domain,omitempty"`
+	// ZeroLine is the emphasised baseline at value 0, emitted only
+	// when 0 falls strictly inside the domain. A chart whose bars
+	// cross zero needs the crossing to be legible; one that starts at
+	// zero already has it as the axis edge.
+	ZeroLine *Line `json:"zero_line,omitempty"`
+	// HideTicks suppresses the little perpendicular stroke beside each
+	// label. Set on whichever axis carries the grid: the grid line
+	// already points at the label across the whole plot, and a 4px
+	// stub repeating that is chrome for its own sake.
+	HideTicks bool `json:"hide_ticks,omitempty"`
+	// LabelOffset is the perpendicular distance from the plot edge to
+	// the tick label's anchor point, resolved from theme tokens at
+	// encode time rather than hardcoded in the renderer.
+	LabelOffset float64 `json:"label_offset,omitempty"`
+	// TitleOffset is the perpendicular distance from the plot edge to
+	// the axis title's baseline, measured past the widest label so
+	// the title never collides with the tick column.
+	TitleOffset float64 `json:"title_offset,omitempty"`
 }
 
 // Tick is one resolved tick mark: value + pixel + pre-formatted label.
@@ -61,6 +85,11 @@ type Tick struct {
 	Label       string  `json:"label"`
 	Minor       bool    `json:"minor,omitempty"`
 	LabelHidden bool    `json:"label_hidden,omitempty"`
+	// Full is the untruncated label, populated only when Label was
+	// shortened to fit. The renderer emits it as a <title> child so a
+	// truncated category is still recoverable on hover — a label is
+	// never the only place a value existed.
+	Full string `json:"full,omitempty"`
 }
 
 // ScaleSpec is the post-resolve scale (Type + Domain + Range + flags).

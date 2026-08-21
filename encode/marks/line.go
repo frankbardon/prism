@@ -6,10 +6,14 @@ import (
 	"github.com/frankbardon/prism/encode/scene"
 )
 
-// encodeLine emits exactly one scene.Mark with LineGeom carrying
-// every row's (x, y) point. Order = upstream row order; sorting by x
-// is the encoder's responsibility (T05.10's tip-id resolution may
-// inject an explicit Sort transform, but P05 trusts the spec).
+// encodeLine emits one scene.Mark with LineGeom per colour series.
+//
+// One mark per SERIES, not one per chart: see series.go for why a
+// single polyline over every row was drawing connections between
+// unrelated measurements.
+//
+// Row order within a series is the upstream order — sorting by x is
+// the caller's decision (a Sort transform), not the encoder's.
 func encodeLine(in Inputs) ([]scene.Mark, error) {
 	xs, err := readField(in.Table, in.X.Field)
 	if err != nil {
@@ -26,27 +30,45 @@ func encodeLine(in Inputs) ([]scene.Mark, error) {
 		return nil, nil
 	}
 
-	pts := make([][2]float64, 0, len(xs))
-	for i := range xs {
-		x, err := in.X.Scale.Apply(xs[i])
-		if err != nil {
-			return nil, err
+	runs := splitSeries(in, len(xs))
+	out := make([]scene.Mark, 0, len(runs))
+	for si, run := range runs {
+		pts := make([][2]float64, 0, len(run.Rows))
+		for _, row := range run.Rows {
+			x, err := in.X.Scale.Apply(xs[row])
+			if err != nil {
+				return nil, err
+			}
+			y, err := in.Y.Scale.Apply(ys[row])
+			if err != nil {
+				return nil, err
+			}
+			pts = append(pts, [2]float64{x, y})
 		}
-		y, err := in.Y.Scale.Apply(ys[i])
-		if err != nil {
-			return nil, err
+		if len(pts) == 0 {
+			continue
 		}
-		pts = append(pts, [2]float64{x, y})
+		style := in.Style
+		if run.Color != nil {
+			style.Stroke = run.Color
+		}
+		id := "line-0"
+		if run.Category != "" {
+			id = fmt.Sprintf("line-%d", si)
+		}
+		mark := scene.Mark{
+			Type:  scene.MarkLine,
+			ID:    id,
+			Style: style,
+			Line: &scene.LineGeom{
+				Points: pts,
+				Curve:  scene.CurveLinear,
+			},
+		}
+		if run.Category != "" {
+			mark.Series = run.Category
+		}
+		out = append(out, mark)
 	}
-
-	mark := scene.Mark{
-		Type:  scene.MarkLine,
-		ID:    "line-0",
-		Style: in.Style,
-		Line: &scene.LineGeom{
-			Points: pts,
-			Curve:  scene.CurveLinear,
-		},
-	}
-	return []scene.Mark{mark}, nil
+	return out, nil
 }

@@ -25,6 +25,9 @@ func ApplyOverride(base *Theme, o *spec.ThemeOverride) *Theme {
 	if o.Color != "" {
 		override.TextColor = o.Color
 	}
+	if o.ColorMuted != "" {
+		override.TextMutedColor = o.ColorMuted
+	}
 	if len(o.Palette) > 0 {
 		override.ColorSchemeCategorical = append([]string(nil), o.Palette...)
 	}
@@ -126,6 +129,10 @@ func copyAxisStyle(s *spec.AxisStyle) *AxisStyle {
 	out.LabelPadding = copyFloat(s.LabelPadding)
 	out.TitleFontSize = copyFloat(s.TitleFontSize)
 	out.TitlePadding = copyFloat(s.TitlePadding)
+	out.ZeroColor = s.ZeroColor
+	out.ZeroWidth = copyFloat(s.ZeroWidth)
+	out.BandPadding = copyFloat(s.BandPadding)
+	out.BandMaxWidth = copyFloat(s.BandMaxWidth)
 	if s.GridDash != nil {
 		out.GridDash = append([]float64(nil), s.GridDash...)
 	}
@@ -150,6 +157,10 @@ func copyLegendStyle(s *spec.LegendStyle) *LegendStyle {
 	out.LabelFontSize = copyFloat(s.LabelFontSize)
 	out.TitleFontSize = copyFloat(s.TitleFontSize)
 	out.RowPadding = copyFloat(s.RowPadding)
+	out.Gap = copyFloat(s.Gap)
+	out.RowHeight = copyFloat(s.RowHeight)
+	out.SymbolExtent = copyFloat(s.SymbolExtent)
+	out.SymbolCornerRadius = copyFloat(s.SymbolCornerRadius)
 	out.ColumnPadding = copyFloat(s.ColumnPadding)
 	return out
 }

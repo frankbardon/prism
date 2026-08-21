@@ -83,7 +83,22 @@ func encodeLayerComposite(s *spec.Spec, composite *plan.CompositeDAG, childTable
 	}
 
 	hasTitle := s.Title != nil
-	layout := Compute(width, height, hasTitle)
+	layoutStyle := layoutStyleFromTheme(fullTheme)
+	layoutIn := LayoutInputs{
+		Width: width, Height: height, Style: layoutStyle,
+		HasXAxis: true, HasYAxis: true,
+	}
+	if hasTitle {
+		layoutIn.Title = titleText(s)
+	}
+	// Layer composites reserve a legend column up front, sized to the
+	// widest label any child will contribute. A layered chart is where
+	// the old overlapping legend hurt most — every layer added another
+	// block on top of the marks.
+	if res := reserveCompositeLegend(s, composite, childTables, layoutStyle, width, height); res != nil {
+		layoutIn.Legend = res
+	}
+	layout := Compute(layoutIn)
 
 	var warnings []scene.Warning
 
@@ -158,6 +173,8 @@ func encodeLayerComposite(s *spec.Spec, composite *plan.CompositeDAG, childTable
 	var sceneLayers []scene.SceneLayer
 	var perCellAxes []scene.Axis
 	var legends []scene.Legend
+	legendStackOffset := 0.0
+	_ = legendStackOffset
 	seenIndependentX := false
 	seenIndependentY := false
 	for _, lc := range live {
@@ -254,15 +271,23 @@ func encodeLayerComposite(s *spec.Spec, composite *plan.CompositeDAG, childTable
 				Palette:    ResolveCategoricalPalette(fullTheme, schemeNameOf(childEnc.Color)),
 			}
 			if len(cats) > 1 {
-				legend := BuildSymbolLegend(LegendInputs{
+				title := fmt.Sprintf("layer-%d: %s", lc.idx, childEnc.Color.Field)
+				in := LegendInputs{
 					Channel:    scene.ChannelColor,
-					Title:      fmt.Sprintf("layer-%d: %s", lc.idx, childEnc.Color.Field),
+					Title:      title,
 					Categories: cats,
 					Palette:    colorChannel.Palette,
-					Position:   scene.LegendTopRight,
-				}, layout.Plot)
-				if legend != nil {
+					Style:      layoutStyle,
+				}
+				res := ReserveSymbolLegend(in, width, height)
+				// Stack this layer's block under the ones already placed
+				// so two layered colour channels do not draw over
+				// each other.
+				frame := layout.LegendFrame
+				frame.Y += legendStackOffset
+				if legend := BuildSymbolLegend(in, res, frame); legend != nil {
 					legends = append(legends, *legend)
+					legendStackOffset += frame.H + layoutStyle.LegendRowH
 				}
 			}
 		}
@@ -739,4 +764,58 @@ func offsetMark(m *scene.Mark, dx, dy float64) {
 		m.Arc.Cx += dx
 		m.Arc.Cy += dy
 	}
+}
+
+// reserveCompositeLegend measures the widest legend any layer will
+// contribute, so the layered chart reserves one column up front
+// rather than discovering it needs one after the plot rect is fixed.
+// Returns nil when no layer binds a multi-category colour channel.
+func reserveCompositeLegend(
+	s *spec.Spec, composite *plan.CompositeDAG,
+	childTables []map[plan.NodeID]*table.Table,
+	st LayoutStyle, width, height float64,
+) *LegendReserve {
+	var widest *LegendReserve
+	for i, child := range composite.Children {
+		if i >= len(childTables) {
+			break
+		}
+		tbl, ok := childTables[i][child.Tip]
+		if !ok || tbl == nil || child.Spec == nil || child.Spec.Encoding == nil {
+			continue
+		}
+		ch := child.Spec.Encoding.Color
+		if ch == nil || ch.Field == "" {
+			continue
+		}
+		col, ok := tbl.Column(ch.Field)
+		if !ok {
+			continue
+		}
+		cats := []string{}
+		seen := map[string]bool{}
+		for r := 0; r < col.Len(); r++ {
+			v, ok := col.ValueAt(r).(string)
+			if !ok || seen[v] {
+				continue
+			}
+			seen[v] = true
+			cats = append(cats, v)
+		}
+		res := ReserveSymbolLegend(LegendInputs{
+			Channel:    scene.ChannelColor,
+			Title:      fmt.Sprintf("layer-%d: %s", i, ch.Field),
+			Categories: cats,
+			Style:      st,
+		}, width, height)
+		if res == nil {
+			continue
+		}
+		if widest == nil || res.Width > widest.Width {
+			widest = res
+		} else if res.Height > widest.Height {
+			widest.Height = res.Height
+		}
+	}
+	return widest
 }

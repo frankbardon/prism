@@ -1,5 +1,116 @@
 # Changelog
 
+## Unreleased — chart output refresh
+
+Visual overhaul of the rendered chart, plus the correctness bugs found
+while looking closely at it. The consumption contract is unchanged: a
+viewBox-only SVG with one leading `<style>` block declaring `--prism-*`
+custom properties under a single `:root` rule. Every new visual knob is
+a token with a default; nothing is a hardcoded literal.
+
+### Correctness
+
+- **Marks on a categorical axis were drawn half a band off their own
+  labels.** `BandScale.Apply` returns a band's left edge, which is right
+  for a bar and wrong for everything without width. Lines, points,
+  areas, rules, text and ticks now sit at the band CENTRE, where the
+  axis label already is. A four-quarter line previously started half a
+  band left of "Q1" and stopped short of "Q4".
+- **Multi-series lines and areas collapsed into one path.** A `color`
+  channel now splits `line` and `area` into one mark per category, each
+  with its own palette colour and a `data-prism-series` attribute.
+  Before, a six-brand chart drew one polyline through every row in table
+  order — jumping back across the chart between series — in a single
+  colour, beneath a legend listing six.
+- **Half the labels on every vertical axis were dropped.** The overlap
+  check compared label extents in slice order; a y axis is ascending by
+  value and therefore DESCENDING by pixel, so every pair read as
+  colliding regardless of spacing. Extents are now compared in absolute
+  pixel order. This is the "0 and 40, nothing else" output.
+- **Legends were drawn on top of the plot.** The legend frame anchored
+  inside `plot.Right()`. Space is now RESERVED for it before the plot
+  rect is fixed, and it moves under the plot when a right-hand column
+  would claim more than a third of the frame.
+- **A categorical y axis produced negative extents.** `BandWidth`
+  returned the signed step, so every `rect` heatmap-lite cell was
+  emitted with `height="-177.9"` and drew nothing. `BandWidth` is now
+  unsigned and `Apply` returns the band's low coordinate.
+- **Box plot whiskers were painted with nothing.** Composite encoders
+  inherit the parent mark's style, which is a FILL; an SVG `<line>`
+  needs a stroke. Every box plot rendered as bare rectangles with its
+  median, whiskers and caps invisible at the correct coordinates.
+
+### Layout
+
+- The plot rectangle is **measured**, not fixed. Prism renders the axes
+  once against a provisional rect, measures the labels with the new
+  `encode.TextMetrics`, then places the real rect around them. A
+  `1,284,000` label no longer clips and a `0/5/10` axis no longer wastes
+  three quarters of its column.
+- Legends are reserved rather than overlaid, and lay out horizontally
+  under the plot when a column would be too wide.
+- X labels escalate level → rotate −45° → truncate with the full text on
+  a `<title>` child. Category labels are never dropped for space;
+  numeric ones are, last.
+- `--prism-title-anchor` is honoured; titles were centred regardless.
+
+### Axes
+
+- One axis carries the grid, and it is the measure axis. Whichever axis
+  carries it drops its domain line and tick marks, which a grid line
+  already covers.
+- Tick count follows the plot's pixel extent, so a facet cell and a
+  full-width chart are both legible. Continuous domains round out to the
+  tick step, putting the top grid line on the plot's edge.
+- Zero is included for marks that measure magnitude (bar, area, rect,
+  histogram, box plot, violin, bullet, funnel) and NOT for marks that
+  mark position (line, point, rule, tick) — forcing it on the latter
+  flattens the variation the chart exists to show. `scale.zero`
+  overrides per channel, and is now read.
+- Zero drawn as an emphasised baseline when it falls strictly inside a
+  domain.
+- Automatic tick formatting: thousands separators below 10,000, SI
+  compact above (`1.5M`), precision from the step, never `1e+06`, never
+  `-0`, never `0M`. Numeric labels render with tabular numerals.
+
+### Marks and colour
+
+- New default categorical palette, ordered for adjacent contrast and
+  validated against protanopia, deuteranopia and tritanopia: worst
+  adjacent pair ΔE 18.9 (was 10.8), worst pair among the first five 14.5
+  (was 1.6). Every entry clears both grounds at ≥ 2.4:1.
+- Bar corner radius 2px on the value end only; the baseline stays
+  square. A bar with a radius emits as `<path class="prism-mark-bar">`
+  rather than `<rect>` — same class and attributes; select on the class.
+- Band padding 0.28 (was 0.10) and a 96px band width cap, so a
+  single-datum chart reads as one measurement rather than a rendering
+  failure.
+- Areas render as a faded fill plus a solid upper edge
+  (`.prism-mark-area-edge`); line joins and caps are round.
+- Line 2px, point size 100 with a surface-coloured halo.
+
+### Theming
+
+- New tokens: `--prism-color-text-muted`, `--prism-axis-zero-*`,
+  `--prism-axis-band-padding`, `--prism-axis-band-max-width`,
+  `--prism-legend-{gap,row-height,symbol-extent,symbol-corner-radius}`.
+- Chrome geometry and the type scale moved to `theme/chrome.go`, shared
+  by all five bases, which had quietly drifted apart.
+- **Dark companion.** A light-family base emits both token sets; a host
+  flips with `.prism-dark` (or `.prism-auto` to follow the OS) and the
+  chart repaints through CSS with no re-render. The companion carries
+  colour values only — geometry in it would silently override an
+  organisation's own override on dark hosts. `prefers-color-scheme`
+  never reaches an un-classed chart, which would render dark charts on a
+  light page whenever the reader's OS happened to be dark.
+
+### Known, unchanged
+
+`facet` / `repeat` grids remain broken in the same way they were before
+this work: only the first cell draws axes, bars overflow cell bounds,
+and row labels overlap the axis. The composition path does not use the
+measured layout. Diagnosed, not fixed — it needs its own story.
+
 ## v0.4.0 — 2026-06-18
 
 Additive feature release surfacing Pulse v0.22 capabilities as Prism

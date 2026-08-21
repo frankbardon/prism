@@ -102,7 +102,11 @@ func encodeFacetComposite(s *spec.Spec, composite *plan.CompositeDAG, childTable
 	// path.
 
 	// Pre-compute shared scales when requested.
-	cellLayout := Compute(cellW, cellH, false)
+	cellLayout := Compute(LayoutInputs{
+		Width: cellW, Height: cellH,
+		Style:    layoutStyleFromTheme(fullTheme),
+		HasXAxis: true, HasYAxis: true,
+	})
 	xMode := resolution[scene.ChannelX]
 	yMode := resolution[scene.ChannelY]
 

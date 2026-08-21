@@ -7,26 +7,29 @@ import (
 )
 
 // CSSVariables returns the <style>...</style> block that the SVG
-// renderer embeds at the top of every output document. Format
-// mirrors design/07-rendering.md § Theming via CSS variables.
+// renderer embeds at the top of every output document.
 //
 // Output shape:
 //
 //	<style>:root{
 //	  --prism-color-axis:#...;
 //	  --prism-color-grid:#...;
-//	  --prism-mark-bar-fill:#...;
-//	  --prism-axis-tick-size:5px;
 //	  ...
 //	}
+//	<dark-mode override rules, when a companion base is set>
 //	.prism-axis-domain { ... }
 //	.prism-grid-line   { ... }
-//	.prism-mark-bar    { ... }
 //	...
 //	</style>
 //
+// The `:root{` prefix is load-bearing for consumers: Arc rewrites
+// that exact selector to scope the token block per chart, and
+// per-organisation theming swaps the values inside it. Never emit a
+// second `:root{` — the dark companion block below intentionally uses
+// compound selectors so the rewrite has exactly one target.
+//
 // Variable categories:
-//   - --prism-color-*       core palette (axis/grid/text/bg)
+//   - --prism-color-*       core palette (axis/grid/text/text-muted/bg)
 //   - --prism-font-*        typography
 //   - --prism-axis-*        axis tokens
 //   - --prism-grid-*        grid tokens
@@ -47,9 +50,151 @@ func (t *Theme) CSSVariables() string {
 	b.WriteString(":root{")
 	writeRootVars(&b, t)
 	b.WriteString("}")
+	writeCompanionVars(&b, t)
 	writeClassSelectors(&b)
 	b.WriteString("</style>")
 	return b.String()
+}
+
+// CompanionDark names the theme whose token values are emitted as the
+// dark-mode override block alongside this theme's own.
+//
+// This is the coupling between a chart and its host's light/dark
+// state. A rendered SVG carries BOTH token sets, so a host that flips
+// theme repaints the chart through CSS alone — no re-render, no round
+// trip, and a chart already streamed into a chat transcript flips with
+// everything around it.
+//
+// The alternative — a theme hint on the render request — makes the
+// host's theme part of the chart's identity, which means every cached
+// SVG is cached under the wrong one half the time.
+//
+// Only the light-family bases carry a companion. A theme explicitly
+// chosen as `dark` is an explicit choice that must not be re-flipped
+// by the host, and `print` has no dark mode by definition.
+func (t *Theme) CompanionDark() string {
+	if t == nil {
+		return ""
+	}
+	switch t.Name {
+	case "light":
+		return "dark"
+	case "high_contrast":
+		return "high_contrast_dark"
+	case "colorblind":
+		return "colorblind_dark"
+	}
+	return ""
+}
+
+// darkScopeSelectors are how a host says "dark" to a chart.
+//
+// Explicit only. An earlier draft also let `prefers-color-scheme:
+// dark` flip an un-classed chart, and that is wrong in a way that is
+// easy to miss until you look at one: an SVG is inlined into whatever
+// page embeds it, and a light page viewed on a machine whose OS is
+// set to dark would have rendered dark-theme charts on white — light
+// grey labels, near-invisible grid. The OS setting says nothing about
+// the background this particular chart landed on.
+//
+// So the host, which does know, says so: `prism-dark` on the SVG or
+// any ancestor. A host that genuinely wants to follow the OS opts in
+// with `prism-auto`, which is the only selector the media query below
+// touches.
+const darkScopeSelectors = ".prism-dark,.prism-dark :root,:root.prism-dark"
+
+// writeCompanionVars emits the dark-mode token overrides.
+//
+// Two filters, both load-bearing:
+//
+//  1. Only tokens that actually DIFFER from the light values. A token
+//     repeated at the same value is bytes the consumer pays for on
+//     every chart, and it makes a diff of the two bases unreadable.
+//
+//  2. Only COLOUR tokens. This one is a correctness fix, not a size
+//     one. The companion block wins over :root by specificity, so a
+//     geometry token in it silently overrides whatever the ORGANISATION
+//     set: an org that raised --prism-axis-band-padding to 0.5 got 0.5
+//     on a light host and Prism's 0.28 on a dark one, because the
+//     companion carried the dark base's default for a token the org had
+//     already customised. Geometry does not depend on the ground and
+//     must never appear here — which is also why the two bases are
+//     required to share their chrome measurements exactly.
+func writeCompanionVars(b *strings.Builder, t *Theme) {
+	name := t.CompanionDark()
+	if name == "" {
+		return
+	}
+	dark, ok := Get(name)
+	if !ok || dark == nil {
+		return
+	}
+
+	var light, darkBuf strings.Builder
+	writeRootVars(&light, t)
+	writeRootVars(&darkBuf, dark)
+	diff := diffDeclarations(light.String(), darkBuf.String())
+	if diff == "" {
+		return
+	}
+
+	fmt.Fprintf(b, "%s{%s}", darkScopeSelectors, diff)
+	fmt.Fprintf(b, "@media (prefers-color-scheme:dark){.prism-auto,.prism-auto :root,:root.prism-auto{%s}}", diff)
+}
+
+// diffDeclarations returns the declarations in dark that are absent
+// from light or carry a different value, in dark's own order.
+func diffDeclarations(light, dark string) string {
+	base := make(map[string]string)
+	for _, d := range strings.Split(light, ";") {
+		k, v, ok := strings.Cut(d, ":")
+		if ok {
+			base[k] = v
+		}
+	}
+	var b strings.Builder
+	for _, d := range strings.Split(dark, ";") {
+		k, v, ok := strings.Cut(d, ":")
+		if !ok {
+			continue
+		}
+		if base[k] == v {
+			continue
+		}
+		if !isColorValue(v) {
+			continue
+		}
+		b.WriteString(k)
+		b.WriteByte(':')
+		b.WriteString(v)
+		b.WriteByte(';')
+	}
+	return b.String()
+}
+
+// isColorValue reports whether a declaration's value is a colour
+// rather than a measurement. Intentionally narrow: hex, the CSS colour
+// functions, and the two keywords a theme can legitimately carry.
+// Anything it does not recognise is treated as geometry and left out
+// of the dark companion, which is the safe direction to be wrong in.
+func isColorValue(v string) bool {
+	v = strings.TrimSpace(v)
+	if v == "" {
+		return false
+	}
+	if v[0] == '#' {
+		return true
+	}
+	switch v {
+	case "transparent", "currentColor", "none":
+		return true
+	}
+	for _, fn := range []string{"rgb(", "rgba(", "hsl(", "hsla(", "oklch(", "oklab(", "lab(", "lch(", "color("} {
+		if strings.HasPrefix(v, fn) {
+			return true
+		}
+	}
+	return false
 }
 
 func writeRootVars(b *strings.Builder, t *Theme) {
@@ -62,6 +207,9 @@ func writeRootVars(b *strings.Builder, t *Theme) {
 	}
 	if t.TextColor != "" {
 		fmt.Fprintf(b, "--prism-color-text:%s;", t.TextColor)
+	}
+	if t.TextMutedColor != "" {
+		fmt.Fprintf(b, "--prism-color-text-muted:%s;", t.TextMutedColor)
 	}
 	if t.BackgroundColor != "" {
 		fmt.Fprintf(b, "--prism-color-bg:%s;", t.BackgroundColor)
@@ -137,6 +285,18 @@ func writeAxisVars(b *strings.Builder, a *AxisStyle) {
 	if len(a.GridDash) > 0 {
 		fmt.Fprintf(b, "--prism-grid-dash:%s;", dashString(a.GridDash))
 	}
+	if a.ZeroColor != "" {
+		fmt.Fprintf(b, "--prism-axis-zero-color:%s;", a.ZeroColor)
+	}
+	if a.ZeroWidth != nil {
+		fmt.Fprintf(b, "--prism-axis-zero-width:%gpx;", *a.ZeroWidth)
+	}
+	if a.BandPadding != nil {
+		fmt.Fprintf(b, "--prism-axis-band-padding:%g;", *a.BandPadding)
+	}
+	if a.BandMaxWidth != nil {
+		fmt.Fprintf(b, "--prism-axis-band-max-width:%gpx;", *a.BandMaxWidth)
+	}
 	if a.LabelColor != "" {
 		fmt.Fprintf(b, "--prism-axis-label-color:%s;", a.LabelColor)
 	}
@@ -182,8 +342,20 @@ func writeLegendVars(b *strings.Builder, l *LegendStyle) {
 	if l.SymbolSize != nil {
 		fmt.Fprintf(b, "--prism-legend-symbol-size:%gpx;", *l.SymbolSize)
 	}
+	if l.SymbolExtent != nil {
+		fmt.Fprintf(b, "--prism-legend-symbol-extent:%gpx;", *l.SymbolExtent)
+	}
+	if l.SymbolCornerRadius != nil {
+		fmt.Fprintf(b, "--prism-legend-symbol-corner-radius:%gpx;", *l.SymbolCornerRadius)
+	}
 	if l.SymbolStrokeWidth != nil {
 		fmt.Fprintf(b, "--prism-legend-symbol-stroke-width:%gpx;", *l.SymbolStrokeWidth)
+	}
+	if l.Gap != nil {
+		fmt.Fprintf(b, "--prism-legend-gap:%gpx;", *l.Gap)
+	}
+	if l.RowHeight != nil {
+		fmt.Fprintf(b, "--prism-legend-row-height:%gpx;", *l.RowHeight)
 	}
 	if l.LabelColor != "" {
 		fmt.Fprintf(b, "--prism-legend-label-color:%s;", l.LabelColor)
@@ -320,13 +492,23 @@ func writeStateVars(b *strings.Builder, states map[string]*StateStyle) {
 func writeClassSelectors(b *strings.Builder) {
 	b.WriteString(".prism-axis-domain{stroke:var(--prism-axis-domain-color,var(--prism-color-axis));stroke-width:var(--prism-axis-domain-width,1px);fill:none;}")
 	b.WriteString(".prism-axis-tick{stroke:var(--prism-axis-tick-color,var(--prism-color-axis));stroke-width:var(--prism-axis-tick-width,1px);}")
-	b.WriteString(".prism-axis-label{fill:var(--prism-axis-label-color,var(--prism-color-text));font-family:var(--prism-font-sans);font-size:var(--prism-axis-label-font-size,var(--prism-font-size-label,11px));font-weight:var(--prism-axis-label-font-weight,400);}")
-	b.WriteString(".prism-axis-title{fill:var(--prism-axis-title-color,var(--prism-color-text));font-family:var(--prism-font-sans);font-size:var(--prism-axis-title-font-size,var(--prism-font-size-axis-title,12px));font-weight:var(--prism-axis-title-font-weight,600);}")
-	b.WriteString(".prism-grid-line{stroke:var(--prism-grid-color,var(--prism-color-grid));stroke-width:var(--prism-grid-width,1px);}")
-	b.WriteString(".prism-title{fill:var(--prism-title-color,var(--prism-color-text));font-family:var(--prism-font-sans);font-size:var(--prism-title-font-size,var(--prism-font-size-title,16px));font-weight:var(--prism-title-font-weight,600);}")
-	b.WriteString(".prism-legend-title{fill:var(--prism-legend-title-color,var(--prism-color-text));font-family:var(--prism-font-sans);font-size:var(--prism-legend-title-font-size,12px);font-weight:var(--prism-legend-title-font-weight,600);}")
+	// Tabular numerals keep a right-aligned numeric column aligned on
+	// its digits rather than on its glyph widths, which is the
+	// difference between a tick column and a ragged list. font-kerning
+	// off stops a proportional fallback face from re-introducing it.
+	b.WriteString(".prism-axis-label{fill:var(--prism-axis-label-color,var(--prism-color-text-muted,var(--prism-color-text)));font-family:var(--prism-font-sans);font-size:var(--prism-axis-label-font-size,var(--prism-font-size-label,11px));font-weight:var(--prism-axis-label-font-weight,400);font-variant-numeric:tabular-nums;font-feature-settings:\"tnum\" 1;}")
+	b.WriteString(".prism-axis-title{fill:var(--prism-axis-title-color,var(--prism-color-text-muted,var(--prism-color-text)));font-family:var(--prism-font-sans);font-size:var(--prism-axis-title-font-size,var(--prism-font-size-axis-title,11px));font-weight:var(--prism-axis-title-font-weight,500);letter-spacing:var(--prism-axis-title-letter-spacing,0.01em);}")
+	b.WriteString(".prism-grid-line{stroke:var(--prism-grid-color,var(--prism-color-grid));stroke-width:var(--prism-grid-width,1px);stroke-opacity:var(--prism-grid-opacity,1);shape-rendering:crispEdges;}")
+	b.WriteString(".prism-zero-line{stroke:var(--prism-axis-zero-color,var(--prism-axis-domain-color,var(--prism-color-axis)));stroke-width:var(--prism-axis-zero-width,1px);shape-rendering:crispEdges;}")
+	b.WriteString(".prism-title{fill:var(--prism-title-color,var(--prism-color-text));font-family:var(--prism-font-sans);font-size:var(--prism-title-font-size,var(--prism-font-size-title,15px));font-weight:var(--prism-title-font-weight,600);letter-spacing:var(--prism-title-letter-spacing,-0.006em);}")
+	b.WriteString(".prism-legend-title{fill:var(--prism-legend-title-color,var(--prism-color-text-muted,var(--prism-color-text)));font-family:var(--prism-font-sans);font-size:var(--prism-legend-title-font-size,11px);font-weight:var(--prism-legend-title-font-weight,500);}")
 	b.WriteString(".prism-legend-label{fill:var(--prism-legend-label-color,var(--prism-color-text));font-family:var(--prism-font-sans);font-size:var(--prism-legend-label-font-size,11px);}")
 	b.WriteString(".prism-legend-swatch{stroke:none;}")
+	// The area's fill and its upper edge are two elements; give the
+	// edge the same token the fill's stroke reads so an override
+	// reaches both.
+	b.WriteString(".prism-mark-area-edge{fill:none;stroke-linejoin:round;stroke-linecap:round;}")
+	b.WriteString(".prism-empty-note{fill:var(--prism-color-text-muted,var(--prism-color-text));font-family:var(--prism-font-sans);font-size:var(--prism-font-size-label,11px);font-style:italic;}")
 	b.WriteString(".prism-selected{opacity:var(--prism-selected-opacity,1);}")
 	b.WriteString(".prism-deselected{opacity:var(--prism-deselected-opacity,0.3);}")
 }

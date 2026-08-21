@@ -292,7 +292,11 @@ func renderScene(w *Writer, s scene.Scene) {
 		w.Attr("class", "prism-title")
 		w.AttrFloat("x", s.Title.X)
 		w.AttrFloat("y", s.Title.Y)
-		w.Attr("text-anchor", "middle")
+		anchor := s.Title.Anchor
+		if anchor == "" {
+			anchor = "start"
+		}
+		w.Attr("text-anchor", anchor)
 		w.CloseTagOpen()
 		w.Text(s.Title.Content)
 		w.EndTag("text")

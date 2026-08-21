@@ -14,6 +14,7 @@
         "font":       {"type": "string", "description": "Default font family (legacy)."},
         "font_size":  {"type": "number", "minimum": 0, "description": "Default font size in pixels (legacy)."},
         "color":      {"$ref": "shared.schema.json#/$defs/color", "description": "Default foreground color (legacy)."},
+        "color_muted": {"$ref": "shared.schema.json#/$defs/color", "description": "Secondary text color: axis labels, axis titles, legend titles. Paired with `color` so the hierarchy between chrome and data survives an override that sets only one of them."},
         "palette":    {
           "type": "array",
           "items": {"$ref": "shared.schema.json#/$defs/color"},
@@ -96,7 +97,11 @@
         "title_color":        {"$ref": "shared.schema.json#/$defs/color"},
         "title_font_size":    {"type": "number", "minimum": 0},
         "title_font_weight":  {"type": ["string", "number"]},
-        "title_padding":      {"type": "number", "minimum": 0}
+        "title_padding":      {"type": "number", "minimum": 0},
+        "zero_color":         {"$ref": "shared.schema.json#/$defs/color", "description": "Color of the emphasised baseline drawn where a continuous domain crosses zero. Distinct from the grid: the point of the line is that it is not one of the grid lines."},
+        "zero_width":         {"type": "number", "minimum": 0, "description": "Stroke width of the zero baseline, in pixels."},
+        "band_padding":       {"type": "number", "minimum": 0, "exclusiveMaximum": 1, "description": "Fraction of each categorical step left empty between bands, in [0,1). Raise it for lighter bars, lower it for a denser dashboard."},
+        "band_max_width":     {"type": "number", "minimum": 0, "description": "Cap on one band's pixel width. Stops a single-category chart from drawing one bar across the whole plot. 0 disables the cap."}
       }
     },
 
@@ -116,7 +121,11 @@
         "title_font_size":     {"type": "number", "minimum": 0},
         "title_font_weight":   {"type": ["string", "number"]},
         "row_padding":         {"type": "number", "minimum": 0},
-        "column_padding":      {"type": "number", "minimum": 0}
+        "column_padding":      {"type": "number", "minimum": 0},
+        "gap":                 {"type": "number", "minimum": 0, "description": "Space between the plot's edge and the legend block, in pixels."},
+        "row_height":          {"type": "number", "minimum": 0, "description": "Pitch of one legend row (swatch + label + leading), in pixels. The layout reserves space with this number and the renderer places entries with it."},
+        "symbol_extent":       {"type": "number", "minimum": 0, "description": "Swatch side length in pixels. Distinct from symbol_size, which is an AREA in Vega-Lite's convention (64 = 8x8) and is not interchangeable with it."},
+        "symbol_corner_radius": {"type": "number", "minimum": 0, "description": "Corner radius of a legend swatch, in pixels. Match it to the bar corner radius so a swatch reads as a sample of the mark."}
       }
     },
 

@@ -143,6 +143,21 @@ type AxisStyle struct {
 	TitleFontSize   *float64  `json:"title_font_size,omitempty"`
 	TitleFontWeight string    `json:"title_font_weight,omitempty"`
 	TitlePadding    *float64  `json:"title_padding,omitempty"`
+
+	// ZeroColor / ZeroWidth style the emphasised baseline drawn where
+	// a domain crosses zero. Separate from the grid because the whole
+	// point of the line is that it is NOT one of the grid lines.
+	ZeroColor string   `json:"zero_color,omitempty"`
+	ZeroWidth *float64 `json:"zero_width,omitempty"`
+	// BandPadding is the fraction of each categorical step left empty
+	// between bars, in [0,1). It is a theme token because bar weight
+	// is a house style: a dense operational dashboard wants 0.15, an
+	// editorial chart wants 0.35.
+	BandPadding *float64 `json:"band_padding,omitempty"`
+	// BandMaxWidth caps a single band's pixel width. Without it a
+	// one-category chart draws one bar across the whole plot, which
+	// reads as a rendering failure rather than as one measurement.
+	BandMaxWidth *float64 `json:"band_max_width,omitempty"`
 }
 
 // LegendStyle holds legend tokens.
@@ -160,6 +175,21 @@ type LegendStyle struct {
 	TitleFontWeight   string   `json:"title_font_weight,omitempty"`
 	RowPadding        *float64 `json:"row_padding,omitempty"`
 	ColumnPadding     *float64 `json:"column_padding,omitempty"`
+
+	// Gap is the space between the plot's edge and the legend block.
+	Gap *float64 `json:"gap,omitempty"`
+	// RowHeight is the pitch of one legend row (swatch + label +
+	// leading), used by the layout to reserve the block and by the
+	// renderer to place each entry — one number, so they cannot drift.
+	RowHeight *float64 `json:"row_height,omitempty"`
+	// SymbolExtent is the swatch's side length in pixels. SymbolSize
+	// is an AREA (Vega-Lite's convention, 64 = 8x8) and the two are
+	// not interchangeable; the renderer needs the extent.
+	SymbolExtent *float64 `json:"symbol_extent,omitempty"`
+	// SymbolCornerRadius rounds the swatch. A swatch that matches the
+	// bar corner radius reads as a sample of the mark rather than as
+	// an unrelated square.
+	SymbolCornerRadius *float64 `json:"symbol_corner_radius,omitempty"`
 }
 
 // TitleStyle holds title block tokens.

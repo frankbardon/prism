@@ -180,14 +180,21 @@ func resolveOrdinal(values []any, rangeMin, rangeMax float64) (Scale, *scene.War
 			map[string]any{"Field": "<ordinal>", "Source": "<scale>", "Available": "string"},
 		)
 	}
-	// Evenly distribute positions across [rangeMin, rangeMax].
+	// One equal slice per category, positioned at its CENTRE.
+	//
+	// Endpoints used to land exactly on rangeMin and rangeMax, which
+	// welded the first and last point of a line to the plot's edges —
+	// the first marker half-clipped by the y axis and the last one
+	// touching the frame. Centring insets both by half a slice, which
+	// is also where a band scale would have put them, so an ordinal
+	// axis and a band axis of the same categories now agree.
 	positions := make([]float64, len(cats))
 	if len(cats) == 1 {
 		positions[0] = (rangeMin + rangeMax) / 2
 	} else {
-		step := (rangeMax - rangeMin) / float64(len(cats)-1)
+		step := (rangeMax - rangeMin) / float64(len(cats))
 		for i := range cats {
-			positions[i] = rangeMin + step*float64(i)
+			positions[i] = rangeMin + step*(float64(i)+0.5)
 		}
 	}
 	return &OrdinalScale{Categories: cats, Positions: positions}, nil, nil

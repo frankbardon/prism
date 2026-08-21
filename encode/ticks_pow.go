@@ -18,10 +18,15 @@ func PowTicks(s *PowScale, count int) []scene.Tick {
 	tMin := signedPow(s.DomainMin, exp)
 	tMax := signedPow(s.DomainMax, exp)
 	rawTicks := NiceTicks(tMin, tMax, count)
-	out := make([]scene.Tick, 0, len(rawTicks))
+	// Label from the ORIGINAL values, not the transformed ones: the
+	// formatter picks precision from the step a reader sees.
+	origs := make([]float64, 0, len(rawTicks))
 	for _, t := range rawTicks {
-		// Invert: original_value = sign(t) * |t|^(1/exp)
-		orig := signedPow(t, 1.0/exp)
+		origs = append(origs, signedPow(t, 1.0/exp))
+	}
+	auto := AutoTickFormat(origs)
+	out := make([]scene.Tick, 0, len(rawTicks))
+	for _, orig := range origs {
 		pix, err := s.Apply(orig)
 		if err != nil {
 			continue
@@ -29,7 +34,7 @@ func PowTicks(s *PowScale, count int) []scene.Tick {
 		out = append(out, scene.Tick{
 			Value: orig,
 			Pixel: pix,
-			Label: formatTick(orig, ""),
+			Label: formatTick(orig, "", auto),
 		})
 	}
 	return out

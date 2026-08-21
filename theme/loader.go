@@ -57,6 +57,9 @@ func Merge(base, override *Theme) *Theme {
 	if override.TextColor != "" {
 		out.TextColor = override.TextColor
 	}
+	if override.TextMutedColor != "" {
+		out.TextMutedColor = override.TextMutedColor
+	}
 	if override.BackgroundColor != "" {
 		out.BackgroundColor = override.BackgroundColor
 	}
@@ -216,6 +219,21 @@ func mergeAxis(base, override *AxisStyle) *AxisStyle {
 		v := *override.TitlePadding
 		out.TitlePadding = &v
 	}
+	if override.ZeroColor != "" {
+		out.ZeroColor = override.ZeroColor
+	}
+	if override.ZeroWidth != nil {
+		v := *override.ZeroWidth
+		out.ZeroWidth = &v
+	}
+	if override.BandPadding != nil {
+		v := *override.BandPadding
+		out.BandPadding = &v
+	}
+	if override.BandMaxWidth != nil {
+		v := *override.BandMaxWidth
+		out.BandMaxWidth = &v
+	}
 	return &out
 }
 
@@ -277,6 +295,22 @@ func mergeLegend(base, override *LegendStyle) *LegendStyle {
 	if override.ColumnPadding != nil {
 		v := *override.ColumnPadding
 		out.ColumnPadding = &v
+	}
+	if override.Gap != nil {
+		v := *override.Gap
+		out.Gap = &v
+	}
+	if override.RowHeight != nil {
+		v := *override.RowHeight
+		out.RowHeight = &v
+	}
+	if override.SymbolExtent != nil {
+		v := *override.SymbolExtent
+		out.SymbolExtent = &v
+	}
+	if override.SymbolCornerRadius != nil {
+		v := *override.SymbolCornerRadius
+		out.SymbolCornerRadius = &v
 	}
 	return &out
 }

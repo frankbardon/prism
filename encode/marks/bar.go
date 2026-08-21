@@ -7,6 +7,44 @@ import (
 	prismerrors "github.com/frankbardon/prism/errors"
 )
 
+// clampCornerRadius keeps the radius inside the rect it rounds. A 2px
+// radius on a 3px-tall bar (a near-zero value) would otherwise round
+// the bar into a lozenge and overstate it.
+func clampCornerRadius(r, w, h float64) float64 {
+	if r <= 0 {
+		return 0
+	}
+	if m := w / 2; r > m {
+		r = m
+	}
+	if m := h / 2; r > m {
+		r = m
+	}
+	if r < 0.5 {
+		return 0
+	}
+	return r
+}
+
+// valueEndSide reports which end of a vertical bar the value reaches.
+func valueEndSide(v any) string {
+	switch n := v.(type) {
+	case float64:
+		if n < 0 {
+			return "bottom"
+		}
+	case int:
+		if n < 0 {
+			return "bottom"
+		}
+	case int64:
+		if n < 0 {
+			return "bottom"
+		}
+	}
+	return "top"
+}
+
 // encodeBar emits one scene.Mark with RectGeom per table row.
 // Expects x = band scale (categorical), y = linear scale. The bar
 // grows from the plot's baseline (y where data value = 0) up or
@@ -51,7 +89,7 @@ func encodeBar(in Inputs) ([]scene.Mark, error) {
 		baseline = in.Layout.Bottom()
 	}
 
-	cornerR := 0.0
+	cornerR := in.CornerRadius
 	if in.Mark != nil && in.Mark.CornerRadius != nil {
 		cornerR = *in.Mark.CornerRadius
 	}
@@ -92,7 +130,10 @@ func encodeBar(in Inputs) ([]scene.Mark, error) {
 				Y:       top,
 				W:       width,
 				H:       h,
-				CornerR: cornerR,
+				CornerR: clampCornerRadius(cornerR, width, h),
+				// Round the end the value reaches, which flips for a bar
+				// that hangs below zero.
+				CornerSide: valueEndSide(ys[i]),
 			},
 		})
 	}

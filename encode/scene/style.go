@@ -13,9 +13,17 @@ type Style struct {
 	StrokeWidth float64   `json:"stroke_width,omitempty"`
 	StrokeDash  []float64 `json:"stroke_dash,omitempty"`
 	Opacity     float64   `json:"opacity,omitempty"`
-	FontFamily  string    `json:"font_family,omitempty"`
-	FontWeight  int       `json:"font_weight,omitempty"`
-	Cursor      string    `json:"cursor,omitempty"`
+	// FillOpacity fades the fill WITHOUT fading the stroke.
+	//
+	// It exists for the area mark, whose fill has to be pale enough to
+	// read the grid through and whose upper edge has to be a solid
+	// line. Element-level opacity cannot express that: it multiplies
+	// both, so a 0.18 area came with an 0.18 outline, which is to say
+	// no outline at all.
+	FillOpacity float64 `json:"fill_opacity,omitempty"`
+	FontFamily  string  `json:"font_family,omitempty"`
+	FontWeight  int     `json:"font_weight,omitempty"`
+	Cursor      string  `json:"cursor,omitempty"`
 }
 
 // Color is an 8-bit RGBA color. Gradient / pattern fills go through

@@ -95,10 +95,99 @@ See the [scales gallery](../gallery/scales) for one fixture per type.
 
 ## Axes & legends
 
-Both are auto-generated based on the encoded channels but can be
+Both are auto-generated from the encoded channels and can be
 overridden per channel. Bundled support: 4 orientations
 (bottom/left/top/right), major + minor ticks, grid toggle, label
 rotation, overlap handling, gradient + symbol legends.
+
+The defaults below are what Prism picks when the spec says nothing.
+Anything stated on `encoding.<channel>.axis` wins over all of them.
+
+### Grid: one axis carries it
+
+One axis carries the reference lines, and it is the **measure** axis —
+the one whose values a reader interpolates. Categorical positions are
+read off the label directly, so a grid line through them adds a stroke
+and no information.
+
+| Chart | Grid |
+|---|---|
+| Vertical bars, lines, scatter | horizontal, off the y axis |
+| Horizontal bars (categorical y) | vertical, off the x axis |
+| Both axes categorical (heatmap) | none |
+
+A scatter with two continuous axes takes the y grid only, not a full
+mesh. Whichever axis carries the grid drops both its domain line and
+its tick marks: a grid line already lands on those pixels, and a domain
+line under a grid line is two strokes of different weight on one edge.
+
+Set `"axis": {"grid": true}` on a channel to force a grid onto it; that
+also restores its own domain line and ticks.
+
+### Zero baseline
+
+Whether an axis includes zero depends on what the mark encodes:
+
+- **Bars, areas, rects, histograms, box plots, violins, bullets,
+  funnels** measure *magnitude* — the length of the mark is the value —
+  so their axis always includes zero. A bar chart truncated at 40 says
+  something false about the ratio between 48 and 62.
+- **Lines, points, rules, ticks** mark *position*. Forcing zero on them
+  is not honesty but the opposite: it compresses the variation the
+  chart exists to show into a strip at the top. Conversion rates of
+  3.2% to 3.6% become a flat line.
+
+Either way the axis is labelled, so a reader can always see where it
+starts. Override per channel with `"scale": {"zero": true}` or
+`{"zero": false}`.
+
+Where zero falls strictly *inside* a domain, it is drawn as an
+emphasised baseline (`.prism-zero-line`, `--prism-axis-zero-*`) rather
+than as one more grid line.
+
+### Tick count and domain rounding
+
+The tick count comes from the plot's pixel extent — roughly one label
+per 150px vertically and 190px horizontally — not from a fixed number,
+so a facet cell and a full-width chart are both legible. Continuous
+domains round outward to the tick step, which puts the topmost grid
+line on the plot's own edge instead of leaving an unexplained strip
+above it.
+
+### Tick labels
+
+With no `axis.format`, labels are chosen from the tick **step** and the
+domain **magnitude** together:
+
+| Domain | Renders as |
+|---|---|
+| `0 … 80`, step 20 | `0`, `20`, `40`, `60`, `80` |
+| `0 … 3000`, step 1000 | `0`, `1,000`, `2,000`, `3,000` |
+| `0 … 2000000`, step 500000 | `0`, `0.5M`, `1M`, `1.5M`, `2M` |
+| `2.8 … 3.8`, step 0.2 | `2.8`, `3`, `3.2`, `3.4`, `3.6`, `3.8` |
+
+Past 10,000 labels compact to SI (`24k`, `1.5M`, `3.2B`); below it they
+keep their exact value with thousands separators. Precision follows the
+step, so an axis stepping by 10 never prints `40.0`. Zero is always
+`0` — never `-0`, never `0M`.
+
+An explicit `axis.format` is a d3-format specifier and overrides all of
+this.
+
+### Label overflow
+
+When x labels do not fit their slot the escalation is, in order:
+
+1. keep them level;
+2. rotate to −45°, which still says the whole word;
+3. truncate with an ellipsis, carrying the full text as a `<title>`
+   child so the value is recoverable on hover and by a screen reader;
+4. hide every other label — last resort, and only on numeric axes,
+   where the omitted values are interpolable. Category labels are never
+   dropped this way.
+
+Rotation before truncation because a rotated label has lost only
+convenience; a truncated one has lost information.
 
 ## Tooltip channel
 

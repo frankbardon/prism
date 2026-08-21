@@ -19,14 +19,15 @@ Any change to Prism code, configuration, spec vocabulary, schema bundle, or publ
 
 | If you change... | You MUST also update... |
 |---|---|
-| A mark in `encode/marks/` | `docs/src/concepts/marks.md` + add a gallery entry under `docs/src/gallery/<family>/` if user-visible |
+| A mark in `encode/marks/` | `docs/src/concepts/marks.md` + add a gallery entry under `docs/src/gallery/<family>/` if user-visible. Also classify it in `encode/chrome.go`: `zeroBaselineMarks` (does its geometry measure magnitude from zero?) and `tilingMarks` (does it fill its categorical cell or draw a discrete object inside it?), plus `bandPointMarks` in `encode/encode.go` (does it sit at a band's centre or take the band's full width?). All three default to the wrong answer for a new mark that needs the other one |
 | An encoding channel | `docs/src/concepts/encoding.md` + `schema/v1/` JSON Schema for the channel shape |
 | A transform (`filter`, `aggregate`, `bin`, `calculate`, `join`, `pivot`, `sample`, `sort`, `unpivot`, `window`, `crosstab`, `regression`, `timeunit`) | `docs/src/concepts/spec.md` (transform section) + add a Plan node under `plan/nodes/` + add a `Spec*Transform` union variant in `spec/transform_union.go` + register `transformDiscriminators` + `transformAsName` switch in `plan/build/build.go` + JSON Schema variant in `schema/v1/transform.schema.json` (`oneOf` entry + `$def`). The `filter` predicate grammar lives in `spec/predicate.go` and `calculate` in `spec/calc_expr.go` (structured built-ins, no expression string) — extending either operator/function set also touches those types, the `predicate_*` / `calc_expr` `$defs` in `schema/v1/transform.schema.json`, the `compile/inmem/filter.go` / `calculate.go` evaluators, and the `PRISM_SPEC_037` / `PRISM_SPEC_038` validate rules |
 | An analytic transform that pivots/fits the whole materialized table (e.g. `crosstab`, `regression`) | New plan node under `plan/nodes/` (mirror `crosstab.go` / `regression.go` — computes over the upstream `table.Table` pure-Go in `compile/inmem/`, deriving its output schema at execute-time via `Schema([]*table.Schema)` like `GroupAggregateNode`) + matching spec transform variant + a **structural** validate rule (`*_structure.go` — shape checks only, e.g. cell aggregate / target + ≥1 predictor; NO position constraint) + `PRISM_SPEC_NNN` error code + plan-build dispatch in `plan/build/build.go` that routes the transform through the standard `resolveInput()` path like any other transform. These transforms accept **any upstream table** (a source ref, inline `data.values`, or the output of an earlier transform), so they compose anywhere in a chain — they are NOT first-transform-only. (Historical note: the retired `PRISM_SPEC_033` and `PRISM_PLAN_<NAME>_REQUIRES_SOURCE` codes enforced the old source-rooted / first-position model; they survive as `Retired code:` history entries in `errors/codes.go`. `PRISM_SPEC_035` was reworded to its structural-only meaning.) |
 | A composition operator (`layer`, `concat`, `hconcat`, `vconcat`, `facet`, `repeat`) | `docs/src/concepts/composition.md` + composite encoder under `encode/encode_composite.go` |
-| A scale type | `docs/src/concepts/encoding.md` (scale section) + `encode/scale/` implementation + tick generator under `encode/ticks*.go` |
-| A theme (or built-in theme value) | `docs/src/concepts/themes.md` + `theme/<name>.go` + register in `theme/registry.go` + token entry in `theme/css.go` + gallery fixture in `docs/src/gallery/themes/` + gallery index row in `docs/src/gallery/index.md` |
-| A theme token (nested block field on `theme.Theme`) | `theme/style.go` (struct field) + matching spec wire field in `spec/theme.go` + override copy helper in `theme/override.go` + JSON Schema property in `schema/v1/theme.schema.json` + CSS variable emitter in `theme/css.go` + clone/merge in `theme/loader.go` + every built-in theme that should set the new token |
+| A scale type | `docs/src/concepts/encoding.md` (scale section) + `encode/scale/` implementation + tick generator under `encode/ticks*.go` + a `rerangeScale` case in `encode/chrome.go` (the second layout pass re-ranges every scale onto the final plot rect; a type missing from that switch silently keeps the provisional geometry) |
+| A theme (or built-in theme value) | `docs/src/concepts/themes.md` + `theme/<name>.go` + register in `theme/registry.go` + token entry in `theme/css.go` + gallery fixture in `docs/src/gallery/themes/` + gallery index row in `docs/src/gallery/index.md`. Shared chrome (axis/legend/title/view geometry, per-mark defaults) comes from `theme/chrome.go` — a base supplies colour + type scale and inherits the rest, so a proportion fix reaches every base at once |
+| A theme token (nested block field on `theme.Theme`) | `theme/style.go` (struct field) + matching spec wire field in `spec/theme.go` + override copy helper in `theme/override.go` + JSON Schema property in `schema/v1/theme.schema.json` + CSS variable emitter in `theme/css.go` + clone/merge in `theme/loader.go` + every built-in theme that should set the new token. A token the LAYOUT measures with also needs a field on `encode.LayoutStyle` and a read in `encode.layoutStyleFromTheme`, or it emits into the CSS and moves nothing. `theme/css_dark_test.go` fails on a token missing from any base |
+| The dark companion (`theme.Theme.CompanionDark`, the `.prism-dark` / `.prism-auto` block in `theme/css.go`) | `docs/src/concepts/themes.md` (Dark mode) + `docs/src/concepts/browser.md` (Host light/dark) + `theme/css_dark_test.go`. The companion may carry **colour values only** — it wins over `:root` by specificity, so a geometry token in it silently overrides an organisation's own override on dark hosts. `prefers-color-scheme` must reach `.prism-auto` alone, never an un-classed chart |
 | A named color scheme | `theme/schemes.go` (`builtinSchemes` entry — name, kind, hex list) + `docs/src/concepts/themes.md` scheme catalogue + (if accessibility-relevant) consider seeding it as the default in `theme/colorblind.go` or `theme/high_contrast.go` |
 | A `theme.Range` slot | `theme/range.go` (`Range` struct + `Clone` + `MergeRange`) + matching spec wire field in `spec/theme.go` + override copy in `theme/override.go` (`copyRange`) + JSON Schema property in `schema/v1/theme.schema.json` (`range_block`) + scale-resolution call site in `encode/palette.go` (or marks/heatmap.go for sequential) + every built-in theme that should default the slot |
 | A semantic validation rule | `validate/RULES.md` + new rule file under `validate/rules/` + register in `validate/semantic.go` + new `PRISM_SPEC_NNN` row in `errors/codes.go` |
@@ -93,7 +94,11 @@ prism/
 │   ├── encode.go           # Main spec → scene encoder
 │   ├── encode_composite.go # layer / concat / facet / repeat
 │   ├── encode_facet.go encode_repeat.go encode_selection*.go
-│   ├── layout.go scale.go palette.go ticks*.go axis_build.go legend_build.go
+│   ├── layout.go           # Measurement-driven plot rect (two-pass; see below)
+│   ├── textmetrics.go      # Font-free text extent estimator + truncation
+│   ├── ticklabel.go        # Automatic numeric tick formatting (grouping / SI compact)
+│   ├── chrome.go           # Theme → layout tokens, grid plan, band shaping, domain nicing
+│   ├── scale.go palette.go ticks*.go axis_build.go legend_build.go
 │   ├── selection_build.go  # Selection materialisation
 │   ├── marks/              # Per-mark encoders (bar, line, area, point, rule, text, tick, rect, arc, pie, donut, histogram, heatmap, boxplot, violin, sankey, funnel, sparkline, sparkbar, winloss, sparkarea, bullet, image, path, geoshape, geopoint)
 │   ├── scale/              # linear, log, pow, sqrt, time, band, point, ordinal
@@ -112,8 +117,9 @@ prism/
 │   ├── data_resolver.go    # DataResolver interface + Dataset (runtime `data: {ref}` variant)
 │   └── resolver.go         # Resolver interface
 ├── theme/                  # Theme registry + loader
-│   ├── light.go dark.go print.go
-│   ├── css.go              # CSS variable manifest
+│   ├── light.go dark.go print.go high_contrast.go colorblind.go
+│   ├── chrome.go           # Chrome geometry + type scale shared by every base
+│   ├── css.go              # CSS variable manifest + dark companion block
 │   └── loader.go override.go
 ├── geodata/                # Manifest (countries + admin-1 IDs / bbox) + tier bundles (TopoJSON-lite)
 ├── schema/v1/              # JSON Schema bundle (`urn:prism:schema:v1:spec`)
@@ -184,6 +190,29 @@ Rules register through `validate/rules/register.go` (loaded via `init()`). Add a
 
 `plan.Build(spec, registry) (*Plan, error)` constructs the DAG without executing. `plan.Execute(ctx, p, opts)` runs it. Topological order with bounded worker fan-out per `ExecOpts.Workers` (0 ⇒ `PRISM_QUERY_WORKERS` env ⇒ `runtime.NumCPU()`; 1 ⇒ serial). Partial-failure policy controlled by `ExecOpts.FailFast` (defaults true). Optimizer passes run between Build and Execute in this order: `DedupSources`, `FilterPushdown`, `ProjectionPruning`, `AggregateFusion`, `SampleInjection`. All transforms execute over the in-memory backend against the materialised `table.Table`. Add new passes via `plan/passes/register.go`.
 
+### Layout
+
+The plot rectangle is measured, not fixed. `encode.Encode` runs two
+passes: `ComputeProvisional` gives the scales a range to resolve
+against, the axes are built once against it, and the resulting tick
+labels are measured with `encode.TextMetrics` (a font-free per-character
+advance table, since the browser — not Prism — does the real layout, and
+a font engine is not available in the WASM build). `Compute(LayoutInputs)`
+then places the real rect around those measurements, and the scales are
+re-ranged onto it via `rerangeScale`. Two passes rather than a fixed
+point: the only feedback from pass two into pass one is the tick COUNT,
+which changes labels only when the plot extent crosses a ~150px band.
+
+Everything the layout measures with is a `--prism-*` token read through
+`layoutStyleFromTheme`, so a theme that raises its label size widens the
+margin that holds it. A legend is RESERVED (its rect leaves the plot
+rather than overlaying it) and moves under the plot once a right-hand
+column would claim more than a third of the frame.
+
+Anything that runs twice must be idempotent — `niceLinearDomain`
+especially, since it is called against both the provisional and the
+final rect.
+
 ### Composition
 
 `encode/encode_composite.go` handles `layer`, `concat`, `hconcat`, `vconcat`, `facet`, `repeat`. Cross-layer scale resolution defaults to **shared** for matching channel + field pairs; opt-out via `resolve: "independent"` per scale. `facet`/`repeat` expand into per-cell child scenes whose absolute positions land via `encode/layout.go`.
@@ -198,7 +227,11 @@ The `datasets` block in a spec declares named cohorts. Per-layer / per-mark `dat
 
 ### Theming
 
-Three built-in themes ship: `light` (default), `dark`, `print`. Each lives in `theme/<name>.go` and supplies a `theme.Tokens` struct (colors, fonts, sizes). The renderer materialises tokens as CSS variables in the SVG output via `theme/css.go` — downstream consumers can theme post-hoc by overriding variables. Custom themes load from `theme.json` via `theme/loader.go`; sparse spec-level overrides merge through `theme/override.go`. Adding a token requires updating every built-in theme and `theme/css.go`'s manifest emitter.
+Five built-in themes ship: `light` (default), `dark`, `print`, `high_contrast`, `colorblind`. Each lives in `theme/<name>.go` and supplies colours plus a type scale; the CHROME — axis/legend/title/view geometry and the per-mark defaults — comes from `theme/chrome.go`, which every base builds on. Chrome is not what distinguishes a base, and before it was shared the five had quietly drifted apart. The renderer materialises tokens as CSS variables in the SVG output via `theme/css.go` — downstream consumers can theme post-hoc by overriding variables. Custom themes load from `theme.json` via `theme/loader.go`; sparse spec-level overrides merge through `theme/override.go`. Adding a token requires updating every built-in theme and `theme/css.go`'s manifest emitter (`theme/css_dark_test.go` fails on one that is missing from any base), and — if the LAYOUT reads it — a field on `encode.LayoutStyle` plus a read in `encode.layoutStyleFromTheme`.
+
+`CSSVariables()` emits exactly one `:root{` rule, which downstream consumers rewrite to scope tokens per chart; never emit a second. A light-family base also emits a dark COMPANION block (`.prism-dark` / `.prism-auto`) carrying the dark base's colour tokens, so a host flips light/dark with a container class and no re-render. Two invariants: the companion carries **colour values only** (it wins over `:root` by specificity, so a geometry token in it would silently override an organisation's own override on dark hosts), and `prefers-color-scheme` reaches `.prism-auto` alone — never an un-classed chart, which would repaint a chart dark inside a light page whenever the reader's OS happened to be dark. `high_contrast_dark` and `colorblind_dark` exist as companions only; they are registered so `Get` can reach them, not offered as bases.
+
+The categorical default (`theme.prismCategorical`) is ordered, not just chosen: slots 1-5 carry the strongest mutual separation under normal vision plus all three dichromacies (Viénot/Brettel simulation, minimum ΔE 14.5 vs tableau10's 1.6), and neighbouring pairs differ in lightness as well as hue. Past ~6 series no palette is pairwise safe — chart it with facets or direct labels instead.
 
 ### Geographic marks
 
@@ -208,7 +241,7 @@ Three built-in themes ship: `light` (default), `dark`, `print`. Each lives in `t
 
 `make build` (default), `make build-wasm-tinygo`, `make test`, `make test-race`, `make fmt`, `make fmt-check`, `make vet`, `make lint`, `make cover`, `make clean`, `make proto`, `make docs`, `make docs-serve`, `make docs-clean`. A `.env` at repo root is auto-loaded by the Makefile.
 
-`make build-wasm-tinygo` is the **sole** wasm build (`tinygo build -target=wasm -stack-size=$(TINYGO_STACK_SIZE) -o bin/prism.wasm ./cmd/prismwasm`, TinyGo 0.41.1+) — the standard-Go `GOOS=js GOARCH=wasm` target was retired, so `make build` needs no wasm toolchain. It emits ~7.2 MB raw / ~2.2 MB gzip. Its companion `wasm_exec.js` comes from `$(tinygo env TINYGOROOT)/targets/wasm_exec.js` and pairs only with the TinyGo binary (never mix it with a Go-toolchain loader). The filesystem seam is routed through `internal/vfs` (a host alias for `github.com/spf13/afero`, a native afero-free interface under the `wasm` build tag) so afero — and thus `net/http`, which TinyGo cannot compile for js/wasm — never enters the WASM import graph. `-stack-size` is raised from TinyGo's ~16 KB default because the JSON-Schema shape validator recurses deep enough to trap a small stack. `cmd/prismwasm/main.go` parks `main` on a package-level channel (not `select{}`, which TinyGo folds to a deadlock panic).
+`make build-wasm-tinygo` is the **sole** wasm build (`tinygo build -target=wasm -stack-size=$(TINYGO_STACK_SIZE) -o bin/prism.wasm ./cmd/prismwasm`, TinyGo 0.41.1+) — the standard-Go `GOOS=js GOARCH=wasm` target was retired, so `make build` needs no wasm toolchain. It emits ~6.9 MB raw / ~2.2 MB gzip. Its companion `wasm_exec.js` comes from `$(tinygo env TINYGOROOT)/targets/wasm_exec.js` and pairs only with the TinyGo binary (never mix it with a Go-toolchain loader). The filesystem seam is routed through `internal/vfs` (a host alias for `github.com/spf13/afero`, a native afero-free interface under the `wasm` build tag) so afero — and thus `net/http`, which TinyGo cannot compile for js/wasm — never enters the WASM import graph. `-stack-size` is raised from TinyGo's ~16 KB default because the JSON-Schema shape validator recurses deep enough to trap a small stack. `cmd/prismwasm/main.go` parks `main` on a package-level channel (not `select{}`, which TinyGo folds to a deadlock panic).
 
 **Environment variables:**
 

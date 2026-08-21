@@ -24,7 +24,11 @@ func TestBuildAxisGridToggle(t *testing.T) {
 func TestBuildAxisMinorTicks(t *testing.T) {
 	scale := &LinearScale{DomainMin: 0, DomainMax: 10, RangeMin: 0, RangeMax: 500}
 	plot := scene.Rect{X: 40, Y: 20, W: 500, H: 400}
+	// Minor ticks are off by default now — they were a second grid at a
+	// second weight, which is texture rather than reference. The
+	// machinery stays for a spec that asks for them, so ask.
 	opts := DefaultAxisOpts("score")
+	opts.MinorTicks = true
 	a := BuildAxisWithOpts(scale, scene.ChannelY, scene.AxisPositionLeft, plot, opts)
 	majors, minors := 0, 0
 	for _, t := range a.Ticks {
@@ -66,7 +70,7 @@ func TestApplyLabelOverlapParity(t *testing.T) {
 		{Value: 4.0, Pixel: 15, Label: "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAA"},
 		{Value: 5.0, Pixel: 20, Label: "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAA"},
 	}
-	out := applyLabelOverlap(ticks, "parity", scene.AxisPositionBottom)
+	out := applyLabelOverlap(ticks, "parity", scene.AxisPositionBottom, DefaultLayoutStyle())
 	hidden := 0
 	for _, t := range out {
 		if t.LabelHidden {
