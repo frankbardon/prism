@@ -73,4 +73,7 @@ func writeStyleAttrs(w *Writer, s scene.Style) {
 	if s.Opacity > 0 && s.Opacity < 1 {
 		w.AttrFloat("opacity", s.Opacity)
 	}
+	if s.FillOpacity > 0 && s.FillOpacity < 1 {
+		w.AttrFloat("fill-opacity", s.FillOpacity)
+	}
 }

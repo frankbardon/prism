@@ -16,7 +16,11 @@ type BandScale struct {
 	Padding    float64 // [0,1) inner padding (fraction of step)
 }
 
-// step returns the full step width per category (band + gap).
+// step returns the SIGNED step per category (band + gap).
+//
+// Signed because a y-axis band scale is built with an inverted range
+// (RangeMin = the plot's bottom, RangeMax = its top) so that low
+// values land low on screen. Everything below has to survive that.
 func (s *BandScale) step() float64 {
 	if len(s.Categories) == 0 {
 		return 0
@@ -24,10 +28,20 @@ func (s *BandScale) step() float64 {
 	return (s.RangeMax - s.RangeMin) / float64(len(s.Categories))
 }
 
-// BandWidth returns the pixel width of one band (post-padding).
+// BandWidth returns the pixel extent of one band (post-padding),
+// always positive.
+//
+// It used to return the signed value, so a categorical Y axis handed
+// the rect encoder a NEGATIVE height and every heatmap-lite cell was
+// emitted as `height="-177.9"` — which an SVG renderer draws as
+// nothing at all. The chart rendered its axes, its labels and its
+// legend around an empty plot.
 func (s *BandScale) BandWidth() float64 {
-	step := s.step()
-	return step * (1 - s.Padding)
+	w := s.step() * (1 - s.Padding)
+	if w < 0 {
+		return -w
+	}
+	return w
 }
 
 // Apply implements Scale. Returns the left edge of the band for the
@@ -45,7 +59,14 @@ func (s *BandScale) Apply(value any) (float64, error) {
 		if c == cat {
 			step := s.step()
 			pad := step * s.Padding / 2
-			return s.RangeMin + float64(i)*step + pad, nil
+			start := s.RangeMin + float64(i)*step + pad
+			// Return the band's LOW coordinate, which is what a rect's
+			// x/y means. On an inverted range the band runs backwards
+			// from start, so the low edge is the far one.
+			if step < 0 {
+				return start + step*(1-s.Padding), nil
+			}
+			return start, nil
 		}
 	}
 	return 0, prismerrors.New(
@@ -55,13 +76,15 @@ func (s *BandScale) Apply(value any) (float64, error) {
 	)
 }
 
-// BandCenter returns the center x of the band for category cat.
+// BandCenter returns the centre of the band for category cat. Correct
+// for both range directions because Apply returns the low edge and
+// BandWidth is unsigned.
 func (s *BandScale) BandCenter(cat string) (float64, error) {
-	left, err := s.Apply(cat)
+	low, err := s.Apply(cat)
 	if err != nil {
 		return 0, err
 	}
-	return left + s.BandWidth()/2, nil
+	return low + s.BandWidth()/2, nil
 }
 
 // Domain implements Scale.

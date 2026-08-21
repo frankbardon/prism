@@ -73,6 +73,15 @@ func writeDatumAttr(w *Writer, m scene.Mark) {
 // carries the animation join key (PR animation-1). Empty keys
 // (the default) emit nothing, preserving existing SVG goldens
 // byte-for-byte for non-animated specs.
+// writeSeriesAttr stamps the colour category a path mark belongs to,
+// giving a client a stable hook to highlight or hide one series
+// without re-deriving the grouping the encoder already did.
+func writeSeriesAttr(w *Writer, m scene.Mark) {
+	if m.Series != "" {
+		w.Attr("data-prism-series", m.Series)
+	}
+}
+
 func writeKeyAttr(w *Writer, m scene.Mark) {
 	if m.Key == "" {
 		return
@@ -101,6 +110,13 @@ func writeTooltipChild(w *Writer, m scene.Mark) {
 
 func renderRect(w *Writer, m scene.Mark) {
 	g := m.Rect
+	// A rect rounded on ONE side cannot be an SVG <rect>: rx rounds
+	// all four corners. Emit a path instead, which keeps the bar
+	// planted on its baseline while softening the value end.
+	if g.CornerR > 0 && g.CornerSide != "" {
+		renderRoundedEndRect(w, m)
+		return
+	}
 	w.OpenTag("rect")
 	w.Attr("class", "prism-mark-bar")
 	if m.ID != "" {
@@ -108,6 +124,7 @@ func renderRect(w *Writer, m scene.Mark) {
 	}
 	writeDatumAttr(w, m)
 	writeKeyAttr(w, m)
+	writeSeriesAttr(w, m)
 	w.AttrFloat("x", g.X)
 	w.AttrFloat("y", g.Y)
 	w.AttrFloat("width", g.W)
@@ -125,6 +142,76 @@ func renderRect(w *Writer, m scene.Mark) {
 	w.SelfClose()
 }
 
+// renderRoundedEndRect emits a bar as a path with two rounded corners
+// on the side the value reaches and two square corners on the
+// baseline side.
+func renderRoundedEndRect(w *Writer, m scene.Mark) {
+	g := m.Rect
+	w.OpenTag("path")
+	w.Attr("class", "prism-mark-bar")
+	if m.ID != "" {
+		w.Attr("data-prism-id", m.ID)
+	}
+	writeDatumAttr(w, m)
+	writeKeyAttr(w, m)
+	writeSeriesAttr(w, m)
+	w.Attr("d", roundedEndPath(g.X, g.Y, g.W, g.H, g.CornerR, g.CornerSide))
+	writeStyleAttrs(w, m.Style)
+	if hasTooltip(m) {
+		w.CloseTagOpen()
+		writeTooltipChild(w, m)
+		w.EndTag("path")
+		return
+	}
+	w.SelfClose()
+}
+
+// roundedEndPath builds the SVG d-string for a rect with two rounded
+// corners. Coordinates route through formatF so the path quantises to
+// the same 3 decimals as every other primitive and the cross-impl
+// goldens stay byte-stable.
+func roundedEndPath(x, y, wd, h, r float64, side string) string {
+	f := formatF
+	arc := func(cx, cy float64) string {
+		return "A" + f(r) + " " + f(r) + " 0 0 1 " + f(cx) + " " + f(cy)
+	}
+	switch side {
+	case "bottom":
+		// Rounded along y+h.
+		return "M" + f(x) + " " + f(y) +
+			"H" + f(x+wd) +
+			"V" + f(y+h-r) +
+			arc(x+wd-r, y+h) +
+			"H" + f(x+r) +
+			arc(x, y+h-r) +
+			"Z"
+	case "left":
+		return "M" + f(x+wd) + " " + f(y) +
+			"H" + f(x+r) +
+			arc(x, y+r) +
+			"V" + f(y+h-r) +
+			arc(x+r, y+h) +
+			"H" + f(x+wd) +
+			"Z"
+	case "right":
+		return "M" + f(x) + " " + f(y) +
+			"H" + f(x+wd-r) +
+			arc(x+wd, y+r) +
+			"V" + f(y+h-r) +
+			arc(x+wd-r, y+h) +
+			"H" + f(x) +
+			"Z"
+	default: // "top"
+		return "M" + f(x) + " " + f(y+h) +
+			"V" + f(y+r) +
+			arc(x+r, y) +
+			"H" + f(x+wd-r) +
+			arc(x+wd, y+r) +
+			"V" + f(y+h) +
+			"Z"
+	}
+}
+
 func renderLine(w *Writer, m scene.Mark) {
 	g := m.Line
 	if len(g.Points) == 0 {
@@ -140,6 +227,7 @@ func renderLine(w *Writer, m scene.Mark) {
 	}
 	writeDatumAttr(w, m)
 	writeKeyAttr(w, m)
+	writeSeriesAttr(w, m)
 	w.OpenAttr("points")
 	for i, p := range g.Points {
 		if i > 0 {
@@ -152,6 +240,11 @@ func renderLine(w *Writer, m scene.Mark) {
 	w.CloseAttr()
 	// Lines need fill="none" so they don't fill the enclosed area.
 	w.Attr("fill", "none")
+	// Round joins and caps: a mitred join on a sharp reversal throws a
+	// spike several times the stroke width past the vertex, which
+	// reads as a data point that is not there.
+	w.Attr("stroke-linejoin", "round")
+	w.Attr("stroke-linecap", "round")
 	writeStyleAttrs(w, m.Style)
 	if hasTooltip(m) {
 		w.CloseTagOpen()
@@ -177,6 +270,7 @@ func renderArea(w *Writer, m scene.Mark) {
 	}
 	writeDatumAttr(w, m)
 	writeKeyAttr(w, m)
+	writeSeriesAttr(w, m)
 	w.OpenAttr("d")
 	// Upper edge: M x0,y0 L x1,y1 L x2,y2 ...
 	w.Raw("M")
@@ -200,13 +294,56 @@ func renderArea(w *Writer, m scene.Mark) {
 	}
 	w.Raw(" Z")
 	w.CloseAttr()
-	writeStyleAttrs(w, m.Style)
+	// The filled shape never takes the stroke.
+	//
+	// Stroking a closed area outlines the baseline and both vertical
+	// sides as well as the top, boxing the fill in three lines that
+	// encode nothing. The top edge — the one that IS the data — is
+	// emitted separately below.
+	fill := m.Style
+	fill.Stroke = nil
+	fill.StrokeWidth = 0
+	writeStyleAttrs(w, fill)
 	if hasTooltip(m) {
 		w.CloseTagOpen()
 		writeTooltipChild(w, m)
 		w.EndTag("path")
+	} else {
+		w.SelfClose()
+	}
+	renderAreaEdge(w, m)
+}
+
+// renderAreaEdge draws the area's upper boundary as an open path, so a
+// pale fill still has a definite line along the values it represents.
+// Emitted only when the style carries a stroke.
+func renderAreaEdge(w *Writer, m scene.Mark) {
+	if m.Style.Stroke == nil || m.Style.StrokeWidth <= 0 || len(m.Area.Upper) < 2 {
 		return
 	}
+	w.OpenTag("path")
+	w.Attr("class", "prism-mark-area-edge")
+	if m.ID != "" {
+		w.Attr("data-prism-id", m.ID+"-edge")
+	}
+	writeSeriesAttr(w, m)
+	w.OpenAttr("d")
+	w.Raw("M")
+	w.Raw(render.FormatFloat(m.Area.Upper[0][0]))
+	w.Raw(",")
+	w.Raw(render.FormatFloat(m.Area.Upper[0][1]))
+	for _, p := range m.Area.Upper[1:] {
+		w.Raw(" L")
+		w.Raw(render.FormatFloat(p[0]))
+		w.Raw(",")
+		w.Raw(render.FormatFloat(p[1]))
+	}
+	w.CloseAttr()
+	w.Attr("fill", "none")
+	w.Attr("stroke", m.Style.Stroke.CSS())
+	w.AttrFloat("stroke-width", m.Style.StrokeWidth)
+	w.Attr("stroke-linejoin", "round")
+	w.Attr("stroke-linecap", "round")
 	w.SelfClose()
 }
 
@@ -219,6 +356,7 @@ func renderPoint(w *Writer, m scene.Mark) {
 	}
 	writeDatumAttr(w, m)
 	writeKeyAttr(w, m)
+	writeSeriesAttr(w, m)
 	w.AttrFloat("cx", g.Cx)
 	w.AttrFloat("cy", g.Cy)
 	w.AttrFloat("r", g.R)
@@ -241,6 +379,7 @@ func renderTextMark(w *Writer, m scene.Mark) {
 	}
 	writeDatumAttr(w, m)
 	writeKeyAttr(w, m)
+	writeSeriesAttr(w, m)
 	w.AttrFloat("x", g.X)
 	w.AttrFloat("y", g.Y)
 	switch g.Anchor {
@@ -277,6 +416,7 @@ func renderArc(w *Writer, m scene.Mark) {
 	}
 	writeDatumAttr(w, m)
 	writeKeyAttr(w, m)
+	writeSeriesAttr(w, m)
 	w.Attr("d", arcPath(g))
 	writeStyleAttrs(w, m.Style)
 	if hasTooltip(m) {
@@ -355,6 +495,7 @@ func renderPath(w *Writer, m scene.Mark) {
 	}
 	writeDatumAttr(w, m)
 	writeKeyAttr(w, m)
+	writeSeriesAttr(w, m)
 	w.Attr("d", g.D)
 	writeStyleAttrs(w, m.Style)
 	if hasTooltip(m) {
@@ -379,6 +520,7 @@ func renderImage(w *Writer, m scene.Mark) {
 	}
 	writeDatumAttr(w, m)
 	writeKeyAttr(w, m)
+	writeSeriesAttr(w, m)
 	w.AttrFloat("x", g.X)
 	w.AttrFloat("y", g.Y)
 	w.AttrFloat("width", g.W)
@@ -403,6 +545,7 @@ func renderRule(w *Writer, m scene.Mark) {
 	}
 	writeDatumAttr(w, m)
 	writeKeyAttr(w, m)
+	writeSeriesAttr(w, m)
 	w.AttrFloat("x1", g.X1)
 	w.AttrFloat("y1", g.Y1)
 	w.AttrFloat("x2", g.X2)

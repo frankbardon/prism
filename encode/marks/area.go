@@ -6,13 +6,17 @@ import (
 	"github.com/frankbardon/prism/encode/scene"
 )
 
-// encodeArea emits exactly one scene.Mark with AreaGeom whose Upper
-// is the row-by-row points and whose Lower is the y=0 baseline edge
-// (one point per Upper x, snapped to the pixel where the data value
-// is 0). The baseline is the scale's zero, so positive-only domains
-// fill down to the plot bottom and zero-crossing domains fill above
-// and below the mid-plot zero line. Stacked / streamgraph variants
-// land in P08.
+// encodeArea emits one scene.Mark with AreaGeom per colour series,
+// whose Upper is that series' row-by-row points and whose Lower is
+// the y=0 baseline edge (one point per Upper x, snapped to the pixel
+// where the data value is 0). The baseline is the scale's zero, so
+// positive-only domains fill down to the plot bottom and
+// zero-crossing domains fill above and below the mid-plot zero line.
+//
+// Per-series like the line mark, and for the same reason: a single
+// polygon over every row of a multi-series table closes across
+// unrelated points and shades a region that means nothing. Stacked /
+// streamgraph variants land in P08.
 func encodeArea(in Inputs) ([]scene.Mark, error) {
 	xs, err := readField(in.Table, in.X.Field)
 	if err != nil {
@@ -36,29 +40,51 @@ func encodeArea(in Inputs) ([]scene.Mark, error) {
 	if err != nil {
 		baseline = in.Layout.Bottom()
 	}
-	upper := make([][2]float64, 0, len(xs))
-	lower := make([][2]float64, 0, len(xs))
-	for i := range xs {
-		x, err := in.X.Scale.Apply(xs[i])
-		if err != nil {
-			return nil, err
+	runs := splitSeries(in, len(xs))
+	out := make([]scene.Mark, 0, len(runs))
+	for si, run := range runs {
+		upper := make([][2]float64, 0, len(run.Rows))
+		lower := make([][2]float64, 0, len(run.Rows))
+		for _, row := range run.Rows {
+			x, err := in.X.Scale.Apply(xs[row])
+			if err != nil {
+				return nil, err
+			}
+			y, err := in.Y.Scale.Apply(ys[row])
+			if err != nil {
+				return nil, err
+			}
+			upper = append(upper, [2]float64{x, y})
+			lower = append(lower, [2]float64{x, baseline})
 		}
-		y, err := in.Y.Scale.Apply(ys[i])
-		if err != nil {
-			return nil, err
+		if len(upper) == 0 {
+			continue
 		}
-		upper = append(upper, [2]float64{x, y})
-		lower = append(lower, [2]float64{x, baseline})
+		style := in.Style
+		if run.Color != nil {
+			style.Fill = run.Color
+			if style.Stroke != nil {
+				style.Stroke = run.Color
+			}
+		}
+		id := "area-0"
+		if run.Category != "" {
+			id = fmt.Sprintf("area-%d", si)
+		}
+		mark := scene.Mark{
+			Type:  scene.MarkArea,
+			ID:    id,
+			Style: style,
+			Area: &scene.AreaGeom{
+				Upper: upper,
+				Lower: lower,
+				Curve: scene.CurveLinear,
+			},
+		}
+		if run.Category != "" {
+			mark.Series = run.Category
+		}
+		out = append(out, mark)
 	}
-	mark := scene.Mark{
-		Type:  scene.MarkArea,
-		ID:    "area-0",
-		Style: in.Style,
-		Area: &scene.AreaGeom{
-			Upper: upper,
-			Lower: lower,
-			Curve: scene.CurveLinear,
-		},
-	}
-	return []scene.Mark{mark}, nil
+	return out, nil
 }

@@ -219,6 +219,61 @@ For a data-driven polyline, prefer `line` with `x`/`y` encodings.
 Validate rules: `PRISM_SPEC_016` (image URL allowed), `PRISM_SPEC_017`
 (non-empty path `d`).
 
+## Default rendering
+
+The defaults below are theme tokens, not literals — every one is
+reachable through `theme.marks.<type>` and the matching
+`--prism-mark-<type>-*` CSS variable.
+
+### Bars sit on a band, and only the value end is rounded
+
+A categorical axis leaves `axis.band_padding` (default `0.28`) of each
+step empty, and one band never exceeds `axis.band_max_width` (default
+`96px`). The cap is what makes the degenerate cases read as intentional:
+a one-category chart draws one bar of normal width, centred, rather
+than one bar as wide as the plot.
+
+`marks.bar.corner_radius` (default `2`) rounds the end the value
+reaches — the top for a positive bar, the bottom for a negative one.
+The baseline end stays square: a bar rounded on all four corners is
+lifted off its own axis and reads as a floating pill rather than as a
+measurement from zero. A bar too short to hold the radius loses it
+rather than becoming a lozenge.
+
+Because SVG's `rx` rounds all four corners, a bar with a corner radius
+is emitted as `<path class="prism-mark-bar">` rather than `<rect>`. The
+class, `data-prism-id`, `data-prism-datum-row` and the `fill` attribute
+are identical either way — select on the class, not the element name.
+
+### Lines and areas split by series
+
+A `color` channel splits a `line` or `area` into one mark per
+category, each carrying its own palette colour and a
+`data-prism-series` attribute. Without the split, one path runs to the
+end of the first series, jumps back across the chart and continues —
+asserting connections between measurements that have nothing to do
+with each other.
+
+Row order *within* a series is the upstream order; sorting by x is a
+`sort` transform's job, not the encoder's.
+
+An area renders as two elements: a filled path
+(`.prism-mark-area`, faded by `marks.area.fill_opacity`) and its upper
+boundary (`.prism-mark-area-edge`, drawn at
+`marks.area.stroke_width`). The fill never takes the stroke — stroking
+a closed area outlines the baseline and both vertical sides as well as
+the top, boxing the fill in three lines that encode nothing.
+
+Line joins and caps are round, so a sharp reversal does not throw a
+mitre spike past the vertex and invent a data point that is not there.
+
+### Marks on a categorical axis sit at the band's centre
+
+Bars and rects fill their band and take its left edge and full width.
+Every other mark — line, area, point, rule, text, tick — has no extent
+along the categorical axis and is placed at the band's **centre**,
+which is where the axis label already sits.
+
 ## Channel allowlists
 
 Not every channel is valid for every mark — `theta` only makes sense

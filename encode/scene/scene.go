@@ -43,4 +43,10 @@ type TextElement struct {
 	X       float64 `json:"x"`
 	Y       float64 `json:"y"`
 	Style   Style   `json:"style,omitempty"`
+	// Anchor is the SVG text-anchor for this element ("start",
+	// "middle", "end"). Empty keeps the renderer's per-element
+	// default. Carried on the element because title alignment is a
+	// theme token, and the renderer must not re-derive it from the
+	// frame.
+	Anchor string `json:"anchor,omitempty"`
 }

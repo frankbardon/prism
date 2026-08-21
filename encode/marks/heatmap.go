@@ -145,20 +145,16 @@ func encodeHeatmap(in Inputs) ([]scene.Mark, error) {
 		if len(opacityValues) > 0 {
 			style.Opacity = opacityFor(opacityValues[i], omn, omx)
 		}
-		// Band step is signed: the y axis runs from plot.bottom to
-		// plot.top so yBand.BandWidth() is negative. SVG rejects rects
-		// with negative width/height, so we normalise here — the rect
-		// renders from (min, max) regardless of the band scale's
-		// direction.
+		// BandWidth is unsigned and Apply returns the band's LOW
+		// coordinate, so a y axis built with an inverted range (bottom
+		// to top, which is how low values land low on screen) needs no
+		// correction here. It used to: BandWidth returned the signed
+		// step, so this encoder normalised locally while the plain rect
+		// encoder did not, and every heatmap-lite chart emitted cells
+		// with a negative height and drew nothing.
 		w := xBand.BandWidth()
 		h := yBand.BandWidth()
 		rx, ry := x, y
-		if w < 0 {
-			rx, w = x+w, -w
-		}
-		if h < 0 {
-			ry, h = y+h, -h
-		}
 		marks = append(marks, scene.Mark{
 			Type:  scene.MarkRect,
 			ID:    fmt.Sprintf("heatmap-%d", i),

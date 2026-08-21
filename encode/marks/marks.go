@@ -102,6 +102,19 @@ type Inputs struct {
 	// GeoTier (P18) is the manifest tier the encoder pulls features
 	// from. Defaults to TierWorld110m.
 	GeoTier geodata.Tier
+	// CornerRadius is the theme's per-mark corner radius, in pixels.
+	// Distinct from Mark.CornerRadius, which is the spec's per-chart
+	// override and wins when set: the theme states the house style and
+	// the spec states this chart's exception.
+	CornerRadius float64
+	// BandCenter tells encoders whose mark is a POINT on a categorical
+	// axis (line, area, point, rule, text, tick) to place it at the
+	// band's centre. Bars use the band's left edge and its full width;
+	// everything else has no width and belongs on the centre, under
+	// the axis label. Without it those marks sat on the band's left
+	// edge while their labels sat at its centre, and every value was
+	// drawn half a band away from the category it belonged to.
+	BandCenter bool
 	// LayerID is the scene-layer identifier stamped onto every
 	// per-row mark's Datum back-reference (D077). Empty defaults to
 	// "layer-0" — matches the flat-encoder hardcoded layer ID.
@@ -113,6 +126,32 @@ type Inputs struct {
 	// match marks across scene swaps. Empty (default) leaves Mark.Key
 	// blank; the SVG renderer ignores Mark.Key either way.
 	KeyField string
+}
+
+// strokeRuleMarks gives a rule its fill colour as a stroke when it has
+// none.
+//
+// A rule renders as an SVG <line>, and a line with no stroke draws
+// NOTHING however it is filled. Composite encoders that build their
+// own rules — boxplot's median, whiskers and caps; violin's centre
+// line — inherit the parent mark's style, and the parent mark's style
+// is a FILL. So every boxplot in the gallery rendered as two bare
+// rectangles: the median line, both whiskers and all four caps were
+// emitted at the correct coordinates and painted with nothing.
+//
+// Fixed here rather than in each composite encoder so the scene JSON
+// is correct for the browser renderer too, not just for the Go one.
+func strokeRuleMarks(ms []scene.Mark) {
+	for i := range ms {
+		m := &ms[i]
+		if m.Type != scene.MarkRule || m.Style.Stroke != nil || m.Style.Fill == nil {
+			continue
+		}
+		m.Style.Stroke = m.Style.Fill
+		if m.Style.StrokeWidth == 0 {
+			m.Style.StrokeWidth = 1
+		}
+	}
 }
 
 // Encode dispatches markType to its per-mark helper. Returns the
@@ -214,6 +253,7 @@ func Encode(markType string, in Inputs) ([]scene.Mark, *scene.Warning, error) {
 		tooltips := BuildTooltips(in.Table, in.Tooltip, in.Table.NumRows())
 		AttachTooltips(marksOut, tooltips)
 	}
+	strokeRuleMarks(marksOut)
 	return marksOut, warn, nil
 }
 

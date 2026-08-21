@@ -48,6 +48,15 @@ type RectGeom struct {
 	W       float64 `json:"w"`
 	H       float64 `json:"h"`
 	CornerR float64 `json:"corner_r,omitempty"`
+	// CornerSide restricts the rounding to one end of the rect:
+	// "top", "bottom", "left", "right". Empty rounds all four.
+	//
+	// A bar rounded on all four corners is lifted off its own
+	// baseline — the axis line runs straight and the bar curves away
+	// from it, which reads as a floating pill rather than as a
+	// measurement from zero. Rounding only the value end keeps the
+	// bar planted and still softens the shoulder.
+	CornerSide string `json:"corner_side,omitempty"`
 }
 
 // LineGeom is the geometry for a line mark (one polyline per mark).

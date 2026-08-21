@@ -52,4 +52,11 @@ func init() {
 	Register("print", printTheme())
 	Register("high_contrast", highContrastTheme())
 	Register("colorblind", colorblindTheme())
+	// Dark companions. Not user-selectable bases in their own right —
+	// they exist so CSSVariables can emit a dark token set alongside
+	// the light one and let a host flip theme without a re-render.
+	// Registered rather than constructed inline so a theme author can
+	// still name one explicitly, and so Names() reports the full set.
+	Register("high_contrast_dark", highContrastDarkTheme())
+	Register("colorblind_dark", colorblindDarkTheme())
 }

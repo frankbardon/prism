@@ -29,6 +29,13 @@ type Theme struct {
 	GridColor       string `json:"grid_color,omitempty"`
 	TextColor       string `json:"text_color,omitempty"`
 	BackgroundColor string `json:"background_color,omitempty"`
+	// TextMutedColor is the secondary text colour: axis labels, axis
+	// titles, legend labels, captions. It exists because the previous
+	// output set every one of those to TextColor, so a chart's
+	// scaffolding competed with its data for the reader's attention.
+	// The hierarchy is the point — the numbers should be the darkest
+	// thing on the chart after the marks themselves.
+	TextMutedColor string `json:"text_muted_color,omitempty"`
 
 	// Legacy typography (pre-v2).
 	FontSans          string  `json:"font_sans,omitempty"`

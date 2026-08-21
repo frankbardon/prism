@@ -1,93 +1,84 @@
 package theme
 
-// darkTheme inverts the light palette: dark background, light text,
-// brighter primary mark colors for contrast. v2 refresh: observable10
-// for categorical (designed for dark mode), magma for sequential.
+// darkColors is the dark base's chrome palette.
+//
+// Held to the same hierarchy as light rather than a straight
+// inversion: an inverted light theme puts pure white on near-black,
+// which glares and makes the axis chrome the brightest thing on the
+// chart. Text sits at #E6EBF2 rather than #FFFFFF, muted at #93A3B8,
+// and the grid at #1E293B — barely above the ground, which is what
+// makes it read as a grid rather than as a cage.
+var darkColors = chromeColors{
+	Text:       "#E6EBF2",
+	TextMuted:  "#93A3B8",
+	Axis:       "#64748B",
+	Grid:       "#1E293B",
+	Domain:     "#334155",
+	Zero:       "#64748B",
+	Background: "#0F1620",
+	Surface:    "#0F1620",
+}
+
+// darkTheme carries the light base's hues onto a dark ground.
+//
+// It is also the companion CSSVariables emits alongside the light
+// token set, so a host that flips to dark repaints every chart on the
+// page through CSS alone. That coupling is why the two bases must
+// stay in lock-step on GEOMETRY: only colour may differ between them,
+// or a theme flip would move the drawing and the two token sets would
+// disagree about where the plot rect is.
 func darkTheme() *Theme {
-	f := func(v float64) *float64 { return &v }
-	primary := "#4269d0"
+	sc := ChromeScale{LabelSize: 11, TitleSize: 15}
+	c := darkColors
+	primary := prismCategoricalDark[0]
 	return &Theme{
-		AxisColor:         "#9ca3af",
-		GridColor:         "#374151",
-		TextColor:         "#f3f4f6",
-		BackgroundColor:   "#0b1220",
-		FontSans:          "Inter, system-ui, sans-serif",
-		FontMono:          "ui-monospace, SF Mono, monospace",
-		FontSizeLabel:     11,
-		FontSizeTitle:     16,
-		FontSizeAxisTitle: 12,
-		ColorSchemeCategorical: []string{
-			"#4269d0", "#efb118", "#ff725c", "#6cc5b0", "#3ca951",
-			"#ff8ab7", "#a463f2", "#97bbf5", "#9c6b4e", "#9498a0",
-		},
+		AxisColor:              c.Axis,
+		GridColor:              c.Grid,
+		TextColor:              c.Text,
+		TextMutedColor:         c.TextMuted,
+		BackgroundColor:        c.Background,
+		FontSans:               "Inter, system-ui, sans-serif",
+		FontMono:               "ui-monospace, SF Mono, monospace",
+		FontSizeLabel:          sc.LabelSize,
+		FontSizeTitle:          sc.TitleSize,
+		FontSizeAxisTitle:      sc.LabelSize,
+		ColorSchemeCategorical: append([]string(nil), prismCategoricalDark...),
 		ColorSchemeSequential: []string{
 			"#000004", "#1c1044", "#4f127b", "#812581", "#b5367a",
 			"#e55964", "#fb8861", "#fec287", "#fcfdbf",
 		},
 		Mark: &MarkStyle{
 			Fill:        primary,
-			Opacity:     f(1),
-			StrokeWidth: f(0),
+			Opacity:     ptr(1),
+			StrokeWidth: ptr(0),
 		},
-		Marks: map[string]*MarkStyle{
-			"line":     {Stroke: primary, StrokeWidth: f(1.5), Fill: "transparent"},
-			"rule":     {Stroke: primary, StrokeWidth: f(1)},
-			"area":     {Fill: primary, Opacity: f(0.7)},
-			"point":    {Fill: primary, StrokeWidth: f(0), Size: f(64)},
-			"bar":      {Fill: primary, CornerRadius: f(0)},
-			"text":     {Fill: "#f3f4f6", FontSize: f(11)},
-			"tick":     {Stroke: primary, StrokeWidth: f(1)},
-			"geoshape": {Fill: "#334155", Stroke: "#0b1220", StrokeWidth: f(0.5)},
-			"geopoint": {Fill: primary, StrokeWidth: f(0), Size: f(36)},
-			"arc":      {Stroke: "#0b1220", StrokeWidth: f(1)},
-		},
-		Axis: &AxisStyle{
-			DomainColor:   "#9ca3af",
-			DomainWidth:   f(1),
-			TickColor:     "#9ca3af",
-			TickWidth:     f(1),
-			TickSize:      f(5),
-			GridColor:     "#374151",
-			GridWidth:     f(1),
-			LabelColor:    "#f3f4f6",
-			LabelFontSize: f(11),
-			LabelPadding:  f(4),
-			TitleColor:    "#f3f4f6",
-			TitleFontSize: f(12),
-			TitlePadding:  f(8),
-		},
-		Legend: &LegendStyle{
-			LabelColor:      "#f3f4f6",
-			LabelFontSize:   f(11),
-			TitleColor:      "#f3f4f6",
-			TitleFontSize:   f(12),
-			TitleFontWeight: "600",
-			SymbolSize:      f(64),
-			Padding:         f(8),
-			RowPadding:      f(4),
-		},
-		Title: &TitleStyle{
-			Color:      "#f3f4f6",
-			FontSize:   f(16),
-			FontWeight: "600",
-			Anchor:     "start",
-			Padding:    f(12),
-		},
-		View: &ViewStyle{
-			Background: "#0b1220",
-			Padding:    f(0),
-		},
+		Marks:  darkMarks(primary, c),
+		Axis:   chromeAxis(sc, c),
+		Legend: chromeLegend(sc, c),
+		Title:  chromeTitle(sc, c),
+		View:   chromeView(c),
 		Range: &Range{
-			Category:  &RangeSlot{Scheme: "observable10"},
+			Category:  &RangeSlot{Colors: append([]string(nil), prismCategoricalDark...)},
 			Ordinal:   &RangeSlot{Scheme: "purples"},
 			Ramp:      &RangeSlot{Scheme: "magma"},
 			Heatmap:   &RangeSlot{Scheme: "magma"},
 			Diverging: &RangeSlot{Scheme: "rdbu"},
-			Symbol:    &RangeSlot{Scheme: "observable10"},
+			Symbol:    &RangeSlot{Colors: append([]string(nil), prismCategoricalDark...)},
 		},
 		States: map[string]*StateStyle{
-			"selected":   {Opacity: f(1)},
-			"deselected": {Opacity: f(0.25)},
+			"selected":   {Opacity: ptr(1)},
+			"deselected": {Opacity: ptr(0.25)},
 		},
 	}
+}
+
+// darkMarks adjusts two of the shared mark defaults for a dark
+// ground: the geoshape base fill has to sit above the background
+// rather than below it, and an area's fill needs more opacity to
+// register at all against near-black.
+func darkMarks(primary string, c chromeColors) map[string]*MarkStyle {
+	m := chromeMarks(primary, c)
+	m["geoshape"] = &MarkStyle{Fill: "#334155", Stroke: c.Surface, StrokeWidth: ptr(0.5)}
+	m["area"] = &MarkStyle{Fill: primary, FillOpacity: ptr(0.24), Stroke: primary, StrokeWidth: ptr(2)}
+	return m
 }

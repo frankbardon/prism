@@ -122,15 +122,22 @@ func Encode(s *spec.Spec, tables map[plan.NodeID]*table.Table, tipID plan.NodeID
 	}
 
 	hasTitle := s.Title != nil
+	layoutStyle := layoutStyleFromTheme(fullTheme)
+	titleAnchor := titleAnchorFromTheme(fullTheme)
 	// Sparkline (D067): 4-px-padded plot rect, no axis/legend/title
 	// reservation; the title block, axes, and legends are suppressed
 	// at scene-assembly time below.
+	//
+	// Everything else gets the PROVISIONAL rect here. It exists only
+	// so the scales have a range to resolve against; the real rect is
+	// computed further down, once the tick labels those scales produce
+	// have been measured. See the second Compute call.
 	var layout Layout
 	if isSparkMark(markType) {
 		layout = ComputeSparkline(width, height)
 		hasTitle = false
 	} else {
-		layout = Compute(width, height, hasTitle)
+		layout = ComputeProvisional(width, height, hasTitle)
 	}
 
 	var warnings []scene.Warning
@@ -205,18 +212,6 @@ func Encode(s *spec.Spec, tables map[plan.NodeID]*table.Table, tipID plan.NodeID
 		}
 	}
 
-	// Build axes (only when the channel was bound). Sparkline (D067)
-	// suppresses axes entirely — leave axes empty.
-	axes := make([]scene.Axis, 0, 2)
-	if !isSparkMark(markType) && !geoMark {
-		if xScale != nil {
-			axes = append(axes, BuildAxisWithOpts(xScale, scene.ChannelX, scene.AxisPositionBottom, layout.Plot, axisOptsFor(enc.X)))
-		}
-		if yScale != nil {
-			axes = append(axes, BuildAxisWithOpts(yScale, scene.ChannelY, scene.AxisPositionLeft, layout.Plot, axisOptsFor(enc.Y)))
-		}
-	}
-
 	// Resolve color channel (P05 supports nominal only).
 	var colorChannel *marks.ColorChannel
 	if enc.Color != nil && enc.Color.Field != "" {
@@ -246,6 +241,119 @@ func Encode(s *spec.Spec, tables map[plan.NodeID]*table.Table, tipID plan.NodeID
 		}
 	}
 
+	bandPad, bandCap := bandShapeFor(fullTheme, markType)
+
+	// Legend reservation. Measured before the plot rect is fixed so
+	// the legend takes space FROM the plot rather than being drawn on
+	// top of it — the previous placement anchored the legend inside
+	// plot.Right() and overlapped the last series in every multi-series
+	// chart.
+	var legendReserve *LegendReserve
+	legendTitle := ""
+	if !isSparkMark(markType) && colorChannel != nil && len(colorChannel.Categories) > 1 {
+		legendTitle = colorChannel.Field
+		if enc.Color != nil && enc.Color.Field != "" {
+			legendTitle = enc.Color.Field
+		}
+		legendReserve = ReserveSymbolLegend(LegendInputs{
+			Channel:    scene.ChannelColor,
+			Title:      legendTitle,
+			Categories: colorChannel.Categories,
+			Style:      layoutStyle,
+		}, width, height)
+	}
+
+	// Second layout pass: measure what pass one produced, then place
+	// the plot rect for real. Skipped when a composite parent supplied
+	// the scales — their ranges are the parent's geometry, and
+	// re-laying-out here would move this cell off the shared grid.
+	plan := planGrid(xScale, yScale)
+	var xTickStep, yTickStep float64
+	if !isSparkMark(markType) && !geoMark && opts.OverrideXScale == nil && opts.OverrideYScale == nil {
+		applyBandShape(xScale, bandPad, bandCap)
+		applyBandShape(yScale, bandPad, 0)
+		relaxZeroBaseline(xScale, enc.X, tbl, markType)
+		relaxZeroBaseline(yScale, enc.Y, tbl, markType)
+		if xScale != nil && !isCategoricalScale(xScale) {
+			xTickStep = niceLinearDomain(xScale, tickTargetFor(layout.Plot.W, true))
+		}
+		if yScale != nil && !isCategoricalScale(yScale) {
+			yTickStep = niceLinearDomain(yScale, tickTargetFor(layout.Plot.H, false))
+		}
+		in := LayoutInputs{
+			Width: width, Height: height, Style: layoutStyle,
+			// A self-scaling mark (histogram) builds its own x/y scales
+			// inside its encoder, so there is no scale here to measure —
+			// but it still draws two axes and still needs the margins.
+			// Without this the plot rect collapsed to the edge inset and
+			// every histogram rendered its y labels at x=0 and its x
+			// labels below the viewBox.
+			HasXAxis: xScale != nil || selfScaleMark,
+			HasYAxis: yScale != nil || selfScaleMark,
+			Legend:   legendReserve,
+		}
+		if hasTitle {
+			in.Title = titleText(s)
+		}
+		// The probe measures EVERY label, overlap handling disabled.
+		//
+		// With it enabled the probe hid half the categories first, so
+		// the layout measured three labels in a six-label axis, computed
+		// a slot twice the real width, concluded they fit horizontally,
+		// and then the final build hid half of them anyway. Deciding
+		// whether labels fit has to see all of them.
+		if xScale != nil {
+			o := axisOptsWith(enc.X, layoutStyle, plan.XGrid, plan.XHideDomain, plan.XHideTicks, 0, 0, xTickStep)
+			o.LabelOverlap = "none"
+			probe := BuildAxisWithOpts(xScale, scene.ChannelX, scene.AxisPositionBottom, layout.Plot, o)
+			in.XLabels = tickLabelsOf(probe)
+			in.XTitle = probe.Title
+			in.XCategorical = isCategoricalScale(xScale)
+		}
+		if yScale != nil {
+			o := axisOptsWith(enc.Y, layoutStyle, plan.YGrid, plan.YHideDomain, plan.YHideTicks, 0, 0, yTickStep)
+			o.LabelOverlap = "none"
+			probe := BuildAxisWithOpts(yScale, scene.ChannelY, scene.AxisPositionLeft, layout.Plot, o)
+			in.YLabels = tickLabelsOf(probe)
+			in.YTitle = probe.Title
+		}
+		layout = Compute(in)
+
+		// Re-range the scales onto the final rect. Domains are already
+		// settled — only the pixel range moves — so this is arithmetic,
+		// not a second resolution pass.
+		rerangeScale(xScale, layout.Plot.X, layout.Plot.Right())
+		rerangeScale(yScale, layout.Plot.Bottom(), layout.Plot.Y)
+		applyBandShape(xScale, bandPad, bandCap)
+		applyBandShape(yScale, bandPad, 0)
+
+		// Re-derive the tick step against the FINAL plot size. The
+		// provisional rect is wider than the final one whenever a legend
+		// took a column, and a step chosen for the wider rect puts
+		// visibly too many lines on the narrower one — a scatter with a
+		// four-entry legend drew six x labels where three were intended.
+		if xScale != nil && !isCategoricalScale(xScale) {
+			xTickStep = niceLinearDomain(xScale, tickTargetFor(layout.Plot.W, true))
+		}
+		if yScale != nil && !isCategoricalScale(yScale) {
+			yTickStep = niceLinearDomain(yScale, tickTargetFor(layout.Plot.H, false))
+		}
+	}
+
+	// Build axes (only when the channel was bound). Sparkline (D067)
+	// suppresses axes entirely — leave axes empty.
+	axes := make([]scene.Axis, 0, 2)
+	if !isSparkMark(markType) && !geoMark {
+		if xScale != nil {
+			axes = append(axes, BuildAxisWithOpts(xScale, scene.ChannelX, scene.AxisPositionBottom, layout.Plot,
+				axisOptsWith(enc.X, layoutStyle, plan.XGrid, plan.XHideDomain, plan.XHideTicks, layout.XLabelAngle, layout.XLabelMaxWidth, xTickStep)))
+		}
+		if yScale != nil {
+			axes = append(axes, BuildAxisWithOpts(yScale, scene.ChannelY, scene.AxisPositionLeft, layout.Plot,
+				axisOptsWith(enc.Y, layoutStyle, plan.YGrid, plan.YHideDomain, plan.YHideTicks, 0, layout.YLabelMaxWidth, yTickStep)))
+		}
+	}
+
 	// Field-driven opacity channel (per-cell opacity from a numeric
 	// column; consumed by the heatmap encoder today).
 	var opacityChannel *marks.OpacityChannel
@@ -262,8 +370,8 @@ func Encode(s *spec.Spec, tables map[plan.NodeID]*table.Table, tipID plan.NodeID
 	// For polar marks (arc/pie/donut), the theta channel field flows
 	// in via marks.Channel.X.Field — the arc encoder builds its own
 	// share-based geometry without an x/y scale (D059).
-	markX := marks.Channel{Field: fieldOf(enc.X), Scale: toMarkScale(xScale)}
-	markY := marks.Channel{Field: fieldOf(enc.Y), Scale: toMarkScale(yScale)}
+	markX := marks.Channel{Field: fieldOf(enc.X), Scale: centreBandFor(markType, xScale)}
+	markY := marks.Channel{Field: fieldOf(enc.Y), Scale: centreBandFor(markType, yScale)}
 	if polarMark && enc.Theta != nil && enc.Theta.Field != "" {
 		markX = marks.Channel{Field: enc.Theta.Field}
 	}
@@ -278,6 +386,8 @@ func Encode(s *spec.Spec, tables map[plan.NodeID]*table.Table, tipID plan.NodeID
 		Style:    style,
 		Tooltip:  enc.Tooltip,
 		KeyField: keyFieldFromEncoding(enc),
+
+		CornerRadius: themeCornerRadius(fullTheme, markType),
 	}
 	if s.Mark != nil {
 		markInputs.Mark = s.Mark.Def
@@ -395,7 +505,7 @@ func Encode(s *spec.Spec, tables map[plan.NodeID]*table.Table, tipID plan.NodeID
 			}
 			axes = append(axes, BuildAxisWithOpts(hr.YScale, scene.ChannelY, scene.AxisPositionLeft, layout.Plot, DefaultAxisOpts(yTitle)))
 		}
-		return buildSceneDoc(s, layout, axes, hr.Marks, markType, colorChannel, enc, sceneTheme, warnings, hasTitle), nil
+		return buildSceneDoc(s, layout, axes, hr.Marks, markType, colorChannel, enc, sceneTheme, warnings, hasTitle, layoutStyle, titleAnchorFromTheme(fullTheme)), nil
 	}
 
 	markList, markWarn, err := marks.Encode(markType, markInputs)
@@ -428,13 +538,19 @@ func Encode(s *spec.Spec, tables map[plan.NodeID]*table.Table, tipID plan.NodeID
 		if enc.Color != nil && enc.Color.Field != "" {
 			title = enc.Color.Field
 		}
+		if legendReserve == nil {
+			legendReserve = ReserveSymbolLegend(LegendInputs{
+				Channel: scene.ChannelColor, Title: title,
+				Categories: colorChannel.Categories, Style: layoutStyle,
+			}, width, height)
+		}
 		legend := BuildSymbolLegend(LegendInputs{
 			Channel:    scene.ChannelColor,
 			Title:      title,
 			Categories: colorChannel.Categories,
 			Palette:    colorChannel.Palette,
-			Position:   scene.LegendTopRight,
-		}, layout.Plot)
+			Style:      layoutStyle,
+		}, legendReserve, layout.LegendFrame)
 		if legend != nil {
 			legends = append(legends, *legend)
 		}
@@ -451,11 +567,7 @@ func Encode(s *spec.Spec, tables map[plan.NodeID]*table.Table, tipID plan.NodeID
 		Animation:  animationFromSpec(s),
 	}
 	if hasTitle {
-		sceneObj.Title = &scene.TextElement{
-			Content: titleText(s),
-			X:       layout.Plot.CenterX(),
-			Y:       20,
-		}
+		sceneObj.Title = placeTitle(titleText(s), titleAnchor, layout, layoutStyle)
 	}
 	doc := scene.NewDoc()
 	doc.Theme = sceneTheme
@@ -477,6 +589,7 @@ func buildSceneDoc(
 	s *spec.Spec, layout Layout, axes []scene.Axis, markList []scene.Mark,
 	markType string, colorChannel *marks.ColorChannel, enc *spec.Encoding,
 	sceneTheme *scene.Theme, warnings []scene.Warning, hasTitle bool,
+	layoutStyle LayoutStyle, titleAnchor string,
 ) *scene.SceneDoc {
 	layer := scene.SceneLayer{
 		ID:    "layer-0",
@@ -485,15 +598,15 @@ func buildSceneDoc(
 	}
 	var legends []scene.Legend
 	if colorChannel != nil && len(colorChannel.Categories) > 1 {
-		title := enc.Color.Field
-		legend := BuildSymbolLegend(LegendInputs{
+		in := LegendInputs{
 			Channel:    scene.ChannelColor,
-			Title:      title,
+			Title:      enc.Color.Field,
 			Categories: colorChannel.Categories,
 			Palette:    colorChannel.Palette,
-			Position:   scene.LegendTopRight,
-		}, layout.Plot)
-		if legend != nil {
+			Style:      layoutStyle,
+		}
+		res := ReserveSymbolLegend(in, layout.Frame.W, layout.Frame.H)
+		if legend := BuildSymbolLegend(in, res, layout.LegendFrame); legend != nil {
 			legends = append(legends, *legend)
 		}
 	}
@@ -508,11 +621,7 @@ func buildSceneDoc(
 		Animation:  animationFromSpec(s),
 	}
 	if hasTitle {
-		sceneObj.Title = &scene.TextElement{
-			Content: titleText(s),
-			X:       layout.Plot.CenterX(),
-			Y:       20,
-		}
+		sceneObj.Title = placeTitle(titleText(s), titleAnchor, layout, layoutStyle)
 	}
 	doc := scene.NewDoc()
 	doc.Theme = sceneTheme
@@ -617,6 +726,50 @@ func toMarkScale(s Scale) marks.Scale {
 	return s
 }
 
+// bandPointMarks are the marks that occupy a POINT on a categorical
+// axis rather than a band's full width.
+//
+// Bars and rects fill the band, so they take its left edge and its
+// width. Everything here has no extent along the categorical axis, so
+// it belongs on the band's centre — where the axis label already sits.
+// BandScale.Apply returns the LEFT EDGE, so before this a line over
+// four quarters was drawn half a band left of the Q1..Q4 labels it
+// was supposedly plotting, and its last point fell short of the last
+// label entirely.
+var bandPointMarks = map[string]bool{
+	"line": true, "area": true, "point": true, "rule": true,
+	"text": true, "tick": true, "sparkline": true, "sparkarea": true,
+	"boxplot": true, "violin": true, "bullet": true,
+}
+
+// centredBandScale delegates Apply to the band's CENTRE. Wrapping
+// rather than changing BandScale.Apply: bars genuinely need the left
+// edge, and one scale cannot answer both questions.
+type centredBandScale struct{ inner *BandScale }
+
+func (c centredBandScale) Apply(v any) (float64, error) {
+	cat, ok := v.(string)
+	if !ok {
+		return c.inner.Apply(v)
+	}
+	return c.inner.BandCenter(cat)
+}
+func (c centredBandScale) Domain() []any      { return c.inner.Domain() }
+func (c centredBandScale) BandWidth() float64 { return c.inner.BandWidth() }
+
+// centreBandFor wraps s when markType places its marks on band
+// centres. Any other scale passes through untouched.
+func centreBandFor(markType string, s Scale) marks.Scale {
+	if s == nil {
+		return nil
+	}
+	b, ok := s.(*BandScale)
+	if !ok || !bandPointMarks[markType] {
+		return toMarkScale(s)
+	}
+	return centredBandScale{inner: b}
+}
+
 // fieldOf returns the channel's field name, or "" when the channel
 // is nil.
 func fieldOf(ch *spec.PositionChannel) string {
@@ -672,6 +825,9 @@ func hardcodedDefaultStyle(markType string) scene.Style {
 // before this call, so the user gets a chart even if a theme ships
 // a malformed color).
 func applyThemeMarkStyle(style *scene.Style, ms *theme.MarkStyle) {
+	if ms.FillOpacity != nil {
+		style.FillOpacity = *ms.FillOpacity
+	}
 	if ms.Fill != "" {
 		if c, err := scene.ColorFromHex(ms.Fill); err == nil {
 			style.Fill = c

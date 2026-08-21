@@ -45,11 +45,16 @@ type ResolveChannelMap struct {
 // Scheme, Padding) remain for back-compat with v1 specs; they seed
 // the nested blocks via theme.ApplyOverride.
 type ThemeOverride struct {
-	Name       string   `json:"name,omitempty"`
-	Background string   `json:"background,omitempty"`
-	Font       string   `json:"font,omitempty"`
-	FontSize   float64  `json:"font_size,omitempty"`
-	Color      string   `json:"color,omitempty"`
+	Name       string  `json:"name,omitempty"`
+	Background string  `json:"background,omitempty"`
+	Font       string  `json:"font,omitempty"`
+	FontSize   float64 `json:"font_size,omitempty"`
+	Color      string  `json:"color,omitempty"`
+	// ColorMuted overrides the secondary text colour (axis labels and
+	// titles, legend labels). Paired with Color so an organisation
+	// setting one is offered the other rather than losing the
+	// hierarchy between them.
+	ColorMuted string   `json:"color_muted,omitempty"`
 	Palette    []string `json:"palette,omitempty"`
 	Scheme     string   `json:"scheme,omitempty"`
 	Padding    *Padding `json:"padding,omitempty"`
