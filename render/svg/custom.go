@@ -46,7 +46,7 @@ func renderCustom(w *Writer, s scene.Scene, sceneTheme *scene.Theme) error {
 		)
 	}
 
-	tokens := themeTokensFromScene(sceneTheme)
+	tokens := ThemeTokensFromScene(sceneTheme)
 
 	var fragment string
 	var wrapHTML bool
@@ -106,7 +106,7 @@ func renderCustom(w *Writer, s scene.Scene, sceneTheme *scene.Theme) error {
 	return nil
 }
 
-// themeTokensFromScene builds a best-effort *theme.Theme from the
+// ThemeTokensFromScene builds a best-effort *theme.Theme from the
 // resolved *scene.Theme in scope at render time. render/svg only ever
 // receives the pared-down wire-form scene.Theme (RenderOpts.Theme /
 // SceneDoc.Theme) — the fully resolved theme.Theme (per-mark blocks,
@@ -117,7 +117,11 @@ func renderCustom(w *Writer, s scene.Scene, sceneTheme *scene.Theme) error {
 // exactly this kind of downstream consumer, which is what a custom
 // mark actually needs to stay visually consistent — see
 // docs/FOLLOWUPS in the E2-S2 story for the fuller tradeoff.
-func themeTokensFromScene(t *scene.Theme) *theme.Theme {
+//
+// Exported (E2-S3) so render/html can build the same tokens for a
+// custom mark it renders directly (an HTMLCustomRenderer call), not
+// just when delegating to this package's own renderCustom.
+func ThemeTokensFromScene(t *scene.Theme) *theme.Theme {
 	if t == nil {
 		t = scene.Default()
 	}

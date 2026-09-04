@@ -27,6 +27,19 @@
 // against) and rendered via svg.New().Render, so the inline <svg>
 // spliced into the <td> inherits the exact same emitters/precision
 // path as any top-level chart.
+//
+// A custom mark (E2-S1/E2-S3, custom.go) gets the same "no SVG
+// geometry of its own" treatment as a table: when a cell's
+// Scene.Custom is populated, Render resolves the registered
+// custommark.CustomRenderer and emits its output directly instead of
+// delegating the whole doc to svg.Render. Unlike the SVG backend
+// (render/svg/custom.go), which prefers a splice-able SVGCustom-
+// Renderer and falls back to a <foreignObject>-wrapped HTMLCustom-
+// Renderer, this native HTML host prefers HTMLCustomRenderer — its
+// output lands verbatim in the document (any author <script> tag
+// executes normally) — and falls back to an inline <svg> fragment
+// (via svg.New().Render, the same sub-mark-embedding mechanism above)
+// when only SVGCustomRenderer is implemented.
 package html
 
 import (
@@ -75,6 +88,10 @@ func (r *Renderer) Render(doc *scene.SceneDoc, opts render.RenderOpts) ([]byte, 
 
 	if tableScene := firstTableScene(doc); tableScene != nil {
 		return r.renderTableDoc(doc, tableScene, opts)
+	}
+
+	if customScene := firstCustomScene(doc); customScene != nil {
+		return r.renderCustomDoc(doc, customScene, opts)
 	}
 
 	svgOpts := opts
