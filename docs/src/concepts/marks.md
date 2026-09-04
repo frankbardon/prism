@@ -48,6 +48,7 @@ arcs, etc. Specify via top-level `mark` (shorthand string) or
 | `geoshape` | Country / admin-1 polygons (choropleth). See [Geographic Marks](geo.md). |
 | `geopoint` | Lon/lat → point overlay. See [Geographic Marks](geo.md). |
 | `table` | Interactive, paginated data table. Columns replace x/y — see [Table](#table) below. |
+| `custom` | Escape hatch for a caller-registered renderer function. No position channels — see [Custom](#custom) below. |
 
 ### Spark adornments
 
@@ -262,6 +263,50 @@ entries](../gallery/index.md#table) for full worked examples
 (including a paginated plain-column table and a `sparkline`
 sub-mark column).
 
+### Custom
+
+`custom` (E2) is the escape hatch for a visualization none of the
+built-in marks express: a consuming application registers its own
+render function under a name (`prism.RegisterCustomMark(name,
+renderer)`), and a spec references that name instead of describing
+geometry. Like `table`, it has no position channels — the mark-def
+`renderer` field is the entire visual contract, and `encoding` may be
+left empty (`{}`).
+
+Mark-def field:
+
+- `renderer` (string, required) — the name a `CustomRenderer` was
+  registered under. Always a plain string key, never executable code
+  — the spec JSON never carries the implementation itself (this
+  preserves Prism's no-expression-language invariant). Resolved
+  against the active registry at render time, not decode time: an
+  unregistered name is a render-time error
+  (`PRISM_RENDER_CUSTOM_MARK_NOT_FOUND`), not a validate-time one.
+
+A registered renderer implements at least one of two Go interfaces
+(`prism.SVGCustomRenderer` / `prism.HTMLCustomRenderer` — thin
+re-exports of `github.com/frankbardon/prism/custommark`, the package
+that actually owns the registry), or is registered as a synchronous JS
+callback in the browser via `prism.registerCustomMark(name, fn)`. Both
+paths, the full SVG/HTML dual-method fallback matrix, and — most
+importantly — **the security contract (the renderer author owns
+escaping row data and owns all script execution, not Prism)** are
+covered in the [Custom marks cookbook
+entry](../cookbook/custom-marks.md).
+
+```json
+{
+  "mark": {"type": "custom", "renderer": "badge"},
+  "encoding": {}
+}
+```
+
+Errors: `PRISM_RENDER_CUSTOM_MARK_NOT_FOUND` (unregistered `renderer`
+name at render time, naming every currently-registered name in its
+details). See [Renderer compatibility](#renderer-compatibility) below
+— unlike `table`, `custom` renders through **both** backends, since a
+renderer can implement `RenderSVG`, `RenderHTML`, or both.
+
 ## Channel allowlists
 
 Not every channel is valid for every mark — `theta` only makes sense
@@ -304,8 +349,12 @@ directly rather than through `prism-element.mjs`.
 
 ## Worked examples
 
-Every mark above has a fixture in the [gallery](../gallery/index.md).
-Start with:
+Every mark above has a fixture in the [gallery](../gallery/index.md),
+with one exception: `custom` has no gallery fixture, since rendering
+one requires a registered `CustomRenderer` implementation (Go code),
+not just a JSON spec — see the [Custom marks
+cookbook](../cookbook/custom-marks.md) for worked, runnable examples
+instead. Start the gallery tour with:
 
 - [bar_basic](../gallery/basic-marks/bar_basic.prism.json)
 - [line_basic](../gallery/basic-marks/line_basic.prism.json)
