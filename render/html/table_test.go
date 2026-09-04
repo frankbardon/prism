@@ -66,6 +66,77 @@ const tableSparklineSpecJSON = `{
   }
 }`
 
+// tablePaginatedSpecJSON declares a small page_size (2) against five
+// rows — E1-S5 acceptance criterion 3: a table with more rows than
+// page_size must render pagination controls in the markup (the
+// client, static/vendor/prism/prism-table.mjs, does the actual
+// slicing; Go's job is only to decide whether the controls are
+// needed and to render every row so the client has the full set to
+// slice from).
+const tablePaginatedSpecJSON = `{
+  "$schema": "urn:prism:schema:v1:spec",
+  "data": {
+    "values": [
+      {"name": "Acme", "revenue": 120},
+      {"name": "Globex", "revenue": 80},
+      {"name": "Initech", "revenue": 60},
+      {"name": "Umbrella", "revenue": 200},
+      {"name": "Soylent", "revenue": 40}
+    ]
+  },
+  "mark": {"type": "table", "page_size": 2},
+  "encoding": {
+    "columns": [
+      {"field": "name", "type": "nominal", "title": "Account"},
+      {"field": "revenue", "type": "quantitative"}
+    ]
+  }
+}`
+
+// TestPrismHTMLTablePagination asserts pagination controls render
+// only when row count exceeds page_size, that every row still lands
+// in the markup (client-side slicing needs the full set, not a
+// server-paginated subset), and that the page-size + indicator values
+// reflect the spec's declared page_size.
+func TestPrismHTMLTablePagination(t *testing.T) {
+	got, err := renderTableSpec(t, tablePaginatedSpecJSON)
+	if err != nil {
+		t.Fatalf("render: %v", err)
+	}
+	s := string(got)
+
+	if !strings.Contains(s, `data-prism-page-size="2"`) {
+		t.Errorf("expected data-prism-page-size=\"2\" on <table>:\n%s", truncate(got, 1200))
+	}
+	if !strings.Contains(s, "data-prism-table-pagination") {
+		t.Errorf("expected pagination controls for 5 rows / page_size 2:\n%s", truncate(got, 1200))
+	}
+	if !strings.Contains(s, "Page 1 of 3") {
+		t.Errorf("expected page indicator \"Page 1 of 3\" (ceil(5/2)):\n%s", truncate(got, 1200))
+	}
+	for _, name := range []string{"Acme", "Globex", "Initech", "Umbrella", "Soylent"} {
+		if !strings.Contains(s, name) {
+			t.Errorf("expected all 5 rows pre-rendered (client slices, server does not paginate); missing %q:\n%s", name, truncate(got, 1200))
+		}
+	}
+	if !strings.Contains(s, "data-prism-page-prev") || !strings.Contains(s, "data-prism-page-next") {
+		t.Errorf("expected prev/next pagination buttons:\n%s", truncate(got, 1200))
+	}
+}
+
+// TestPrismHTMLTableNoPaginationWhenUnderPageSize asserts the basic
+// (2-row, default page_size 25) fixture renders no pagination
+// controls — the negative case for acceptance criterion 3.
+func TestPrismHTMLTableNoPaginationWhenUnderPageSize(t *testing.T) {
+	got, err := renderTableSpec(t, tableBasicSpecJSON)
+	if err != nil {
+		t.Fatalf("render: %v", err)
+	}
+	if strings.Contains(string(got), "data-prism-table-pagination") {
+		t.Errorf("did not expect pagination controls for 2 rows / default page_size 25:\n%s", truncate(got, 1200))
+	}
+}
+
 // TestPrismHTMLTableGoldensStable golden-tests the <table> rendering
 // path for both a plain table and a table with an embedded sparkline
 // column. Mirrors TestPrismHTMLGoldensStable's shape; set
@@ -118,8 +189,10 @@ func TestPrismHTMLTableStructure(t *testing.T) {
 	s := string(got)
 	for _, want := range []string{
 		"<!doctype html>", "<html>", "</html>",
-		`<table class="prism-html-table">`,
-		"<thead>", "<th>Account</th>", "<th>revenue</th>",
+		`<table class="prism-html-table"`,
+		"<thead>",
+		`<th data-prism-field="name">Account</th>`,
+		`<th data-prism-field="revenue">revenue</th>`,
 		"<tbody>", "Acme", "Globex", "120", "80",
 	} {
 		if !strings.Contains(s, want) {

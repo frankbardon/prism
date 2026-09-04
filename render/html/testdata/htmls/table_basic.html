@@ -3,27 +3,29 @@
 <head>
 <meta charset="utf-8">
 <title>Prism chart</title>
-<style>html,body{margin:0;padding:0}.prism-html-table{border-collapse:collapse}.prism-html-table th,.prism-html-table td{padding:4px 8px;text-align:left;vertical-align:middle}</style>
+<style>html,body{margin:0;padding:0}.prism-html-table{border-collapse:collapse}.prism-html-table th,.prism-html-table td{padding:4px 8px;text-align:left;vertical-align:middle}.prism-html-table th{cursor:pointer;user-select:none}.prism-html-table-pagination{display:flex;align-items:center;gap:8px;padding:4px 8px}.prism-html-table tr.prism-selected{background:rgba(76,120,168,0.15)}</style>
 </head>
 <body>
-<table class="prism-html-table">
+<div class="prism-html-table-wrap" data-prism-table-root>
+<table class="prism-html-table" data-prism-scene="scene-0" data-prism-layer="layer-0" data-prism-page-size="25">
 <thead>
 <tr>
-<th>Account</th>
-<th>revenue</th>
+<th data-prism-field="name">Account</th>
+<th data-prism-field="revenue">revenue</th>
 </tr>
 </thead>
 <tbody>
 <tr data-prism-datum-row="0">
-<td>Acme</td>
-<td>120</td>
+<td data-prism-sort-value="&#34;Acme&#34;">Acme</td>
+<td data-prism-sort-value="120">120</td>
 </tr>
 <tr data-prism-datum-row="1">
-<td>Globex</td>
-<td>80</td>
+<td data-prism-sort-value="&#34;Globex&#34;">Globex</td>
+<td data-prism-sort-value="80">80</td>
 </tr>
 </tbody>
 </table>
+</div>
 
 </body>
 </html>

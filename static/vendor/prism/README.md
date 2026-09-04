@@ -12,6 +12,7 @@ committed is what the browser loads.
 | `prism-element.mjs`   | `<prism-chart>` + `<prism-dataset>` + `<prism-coordinator>` custom elements, shadow-DOM lifecycle, URL-hash state persistence. |
 | `prism-resolver.mjs`  | Page-level dataset registry (`register` / `unregister` / `fetch` with dedupe). |
 | `prism-selection.mjs` | Pointer-event hit testing against `data-prism-*` attrs; `broadcast` / `listen` helpers for cross-chart coordination. |
+| `prism-table.mjs`     | Table-mark interactivity (E1-S5): header-click sort (by underlying field value, not rendered display), client-side pagination, row-click selection. Operates on `render/html`'s emitted `<table>` markup directly — no WASM round trip (the WASM bridge only renders SVG). |
 
 `prism.wasm` and `wasm_exec.js` are produced by `make build-wasm-tinygo`
 (TinyGo is the sole wasm build) and shipped alongside this tree by

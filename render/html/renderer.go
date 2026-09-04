@@ -30,6 +30,7 @@
 package html
 
 import (
+	"encoding/json"
 	"fmt"
 	gohtml "html"
 	"strconv"
@@ -135,7 +136,11 @@ func (r *Renderer) renderTableDoc(doc *scene.SceneDoc, tableScene *scene.Scene, 
 		title = tableScene.Title.Content
 	}
 
-	tableHTML, err := renderTableMarkup(doc, tableScene.Table, opts)
+	layerID := ""
+	if len(tableScene.Layers) > 0 {
+		layerID = tableScene.Layers[0].ID
+	}
+	tableHTML, err := renderTableMarkup(doc, tableScene.Table, tableScene.ID, layerID, opts)
 	if err != nil {
 		return nil, err
 	}
@@ -149,6 +154,9 @@ func (r *Renderer) renderTableDoc(doc *scene.SceneDoc, tableScene *scene.Scene, 
 	w.WriteString("<style>html,body{margin:0;padding:0}" +
 		".prism-html-table{border-collapse:collapse}" +
 		".prism-html-table th,.prism-html-table td{padding:4px 8px;text-align:left;vertical-align:middle}" +
+		".prism-html-table th{cursor:pointer;user-select:none}" +
+		".prism-html-table-pagination{display:flex;align-items:center;gap:8px;padding:4px 8px}" +
+		".prism-html-table tr.prism-selected{background:rgba(76,120,168,0.15)}" +
 		"</style>\n")
 	w.WriteString("</head>\n<body>\n")
 	w.WriteString(tableHTML)
@@ -157,16 +165,60 @@ func (r *Renderer) renderTableDoc(doc *scene.SceneDoc, tableScene *scene.Scene, 
 	return []byte(w.String()), nil
 }
 
-// renderTableMarkup builds the <table>...</table> fragment: one
-// <th> per TableColumn (header text), one <tr> per TableRow. A
-// column with no sub-mark bound renders its row's plain scalar
-// (TableRow.Values); a column bound to a sub-mark (TableRow.Cells)
-// renders that cell's nested Scene IR as inline SVG instead.
-func renderTableMarkup(doc *scene.SceneDoc, tbl *scene.Table, opts render.RenderOpts) (string, error) {
+// renderTableMarkup builds the interactive table fragment (E1-S5):
+// a wrapping <div data-prism-table-root> containing the <table> plus
+// (when the row count exceeds tbl.PageSize) a sibling pagination
+// control block. One <th> per TableColumn (header text), one <tr>
+// per TableRow. A column with no sub-mark bound renders its row's
+// plain scalar (TableRow.Values); a column bound to a sub-mark
+// (TableRow.Cells) renders that cell's nested Scene IR as inline SVG
+// instead.
+//
+// Attributes stamped for static/vendor/prism/prism-table.mjs to read
+// (mirrors the data-prism-* convention prism-selection.mjs already
+// relies on for chart marks):
+//
+//   - <table data-prism-scene="..."> — the enclosing scene's ID, so a
+//     row-click selection event can populate SceneID the same way
+//     the SVG backend's data-scene-id does for chart marks.
+//   - <table data-prism-layer="..."> — the table's single scene
+//     layer ID, so a row-click selection event can populate
+//     SelectedMark the same way a chart mark's click handler does.
+//   - <table data-prism-page-size="N"> — mirrors scene.Table.PageSize
+//     so the client can slice the already-rendered rows into pages
+//     without another round trip.
+//   - <th data-prism-field="..."> — the column's underlying table
+//     field, so a header click can look up the right value per row.
+//   - <td data-prism-sort-value="..."> — the column's underlying
+//     value for this row (JSON-encoded TableRow.Values[field]),
+//     *not* the cell's rendered display. This is what lets a
+//     sub-mark column (e.g. a sparkline, whose visible content is an
+//     <svg> with no plain text/number to sort by) sort correctly:
+//     the JS side reads this attribute instead of the cell's
+//     rendered content. Every column gets one (not just sub-mark
+//     columns) so the sort comparator has one uniform source of
+//     truth regardless of column kind.
+func renderTableMarkup(doc *scene.SceneDoc, tbl *scene.Table, sceneID, layerID string, opts render.RenderOpts) (string, error) {
 	var w strings.Builder
-	w.WriteString(`<table class="prism-html-table">` + "\n<thead>\n<tr>\n")
+	w.WriteString(`<div class="prism-html-table-wrap" data-prism-table-root>` + "\n")
+	w.WriteString(`<table class="prism-html-table"`)
+	if sceneID != "" {
+		w.WriteString(` data-prism-scene="`)
+		w.WriteString(gohtml.EscapeString(sceneID))
+		w.WriteString(`"`)
+	}
+	if layerID != "" {
+		w.WriteString(` data-prism-layer="`)
+		w.WriteString(gohtml.EscapeString(layerID))
+		w.WriteString(`"`)
+	}
+	w.WriteString(` data-prism-page-size="`)
+	w.WriteString(strconv.Itoa(tbl.PageSize))
+	w.WriteString(`">` + "\n<thead>\n<tr>\n")
 	for _, col := range tbl.Columns {
-		w.WriteString("<th>")
+		w.WriteString(`<th data-prism-field="`)
+		w.WriteString(gohtml.EscapeString(col.Field))
+		w.WriteString(`">`)
 		w.WriteString(gohtml.EscapeString(col.Header))
 		w.WriteString("</th>\n")
 	}
@@ -177,7 +229,13 @@ func renderTableMarkup(doc *scene.SceneDoc, tbl *scene.Table, opts render.Render
 		w.WriteString(strconv.FormatInt(row.ID, 10))
 		w.WriteString("\">\n")
 		for _, col := range tbl.Columns {
-			w.WriteString("<td>")
+			sortValue, err := json.Marshal(row.Values[col.Field])
+			if err != nil {
+				return "", fmt.Errorf("html.renderTableMarkup: marshal sort value for field %q: %w", col.Field, err)
+			}
+			w.WriteString(`<td data-prism-sort-value="`)
+			w.WriteString(gohtml.EscapeString(string(sortValue)))
+			w.WriteString(`">`)
 			if cell, ok := row.Cells[col.Field]; ok && cell != nil {
 				svgFrag, err := renderSubMarkSVG(doc, opts, cell)
 				if err != nil {
@@ -192,6 +250,19 @@ func renderTableMarkup(doc *scene.SceneDoc, tbl *scene.Table, opts render.Render
 		w.WriteString("</tr>\n")
 	}
 	w.WriteString("</tbody>\n</table>\n")
+
+	if tbl.PageSize > 0 && len(tbl.Rows) > tbl.PageSize {
+		totalPages := (len(tbl.Rows) + tbl.PageSize - 1) / tbl.PageSize
+		w.WriteString(`<div class="prism-html-table-pagination" data-prism-table-pagination>` + "\n")
+		w.WriteString(`<button type="button" data-prism-page-prev disabled>Prev</button>` + "\n")
+		w.WriteString(`<span data-prism-page-indicator>Page 1 of `)
+		w.WriteString(strconv.Itoa(totalPages))
+		w.WriteString("</span>\n")
+		w.WriteString(`<button type="button" data-prism-page-next>Next</button>` + "\n")
+		w.WriteString("</div>\n")
+	}
+
+	w.WriteString("</div>\n")
 	return w.String(), nil
 }
 

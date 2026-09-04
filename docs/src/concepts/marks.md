@@ -277,16 +277,31 @@ backends](themes.md#rendering-backends)); `render/html` reuses
 `render/svg`'s own emitters internally, so there is nothing
 mark-specific to opt into.
 
-The one forward-looking exception is the `table` mark (landing in a
-later story): it renders as DOM/CSS markup — sortable/paginated rows,
-row selection — with no SVG geometry equivalent. Requesting a
-top-level `table` mark via the `svg` backend fails with
-`PRISM_RENDER_MARK_UNSUPPORTED` naming the mark and backend, rather
-than silently emitting an empty `<svg>`; render it via the `html`
-backend instead. This restriction applies only to a `table` mark
-used directly — embedding a geometry-bearing mark (e.g. a
-`sparkline` column) inside a future table's cells is unaffected and
-renders normally via either backend.
+The one exception is the `table` mark: it renders as DOM/CSS markup —
+sortable/paginated rows, row selection — with no SVG geometry
+equivalent. Requesting a top-level `table` mark via the `svg` backend
+fails with `PRISM_RENDER_MARK_UNSUPPORTED` naming the mark and
+backend, rather than silently emitting an empty `<svg>`; render it via
+the `html` backend instead. This restriction applies only to a
+`table` mark used directly — embedding a geometry-bearing mark (e.g.
+a `sparkline` column) inside a table's cells is unaffected and
+renders normally via either backend (the `html` backend re-invokes
+`render/svg`'s own emitters for that one cell's inline `<svg>`).
+
+The `html` backend's `<table>` markup is inert until wired up with
+`static/vendor/prism/prism-table.mjs` (E1-S5): `installTableHandlers(root)`
+attaches header-click sort (by each column's underlying field value —
+read from a `data-prism-sort-value` attribute stamped on every `<td>`,
+not the cell's rendered display, so a `sparkline` column sorts by its
+numeric series rather than by its `<svg>` markup), client-side
+pagination (slices the already-rendered rows using `page_size`; no
+extra network/WASM round trip), and row-click selection (dispatches
+the same structured `prism:select` event other marks emit, keyed off
+the `data-prism-datum-row` attribute every `<tr>` carries). This path
+is independent of the `<prism-chart>`/WASM pipeline — a table mark
+never renders through `prism.wasm`'s SVG-only bridge — so a host page
+that serves/mounts `html`-backend output imports `prism-table.mjs`
+directly rather than through `prism-element.mjs`.
 
 ## Worked examples
 

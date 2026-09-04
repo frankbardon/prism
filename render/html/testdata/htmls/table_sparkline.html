@@ -3,22 +3,23 @@
 <head>
 <meta charset="utf-8">
 <title>Prism chart</title>
-<style>html,body{margin:0;padding:0}.prism-html-table{border-collapse:collapse}.prism-html-table th,.prism-html-table td{padding:4px 8px;text-align:left;vertical-align:middle}</style>
+<style>html,body{margin:0;padding:0}.prism-html-table{border-collapse:collapse}.prism-html-table th,.prism-html-table td{padding:4px 8px;text-align:left;vertical-align:middle}.prism-html-table th{cursor:pointer;user-select:none}.prism-html-table-pagination{display:flex;align-items:center;gap:8px;padding:4px 8px}.prism-html-table tr.prism-selected{background:rgba(76,120,168,0.15)}</style>
 </head>
 <body>
-<table class="prism-html-table">
+<div class="prism-html-table-wrap" data-prism-table-root>
+<table class="prism-html-table" data-prism-scene="scene-0" data-prism-layer="layer-0" data-prism-page-size="25">
 <thead>
 <tr>
-<th>Account</th>
-<th>revenue</th>
-<th>Trend</th>
+<th data-prism-field="name">Account</th>
+<th data-prism-field="revenue">revenue</th>
+<th data-prism-field="trend">Trend</th>
 </tr>
 </thead>
 <tbody>
 <tr data-prism-datum-row="0">
-<td>Acme</td>
-<td>120</td>
-<td><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 24" overflow="hidden">
+<td data-prism-sort-value="&#34;Acme&#34;">Acme</td>
+<td data-prism-sort-value="120">120</td>
+<td data-prism-sort-value="&#34;[10,12,9,14,20]&#34;"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 24" overflow="hidden">
   <style>:root{--prism-color-axis:#6b7280;--prism-color-grid:#e5e7eb;--prism-color-text:#111827;--prism-color-bg:transparent;--prism-font-sans:Inter, system-ui, sans-serif;--prism-font-mono:ui-monospace, SF Mono, monospace;--prism-font-size-label:11px;--prism-font-size-title:16px;--prism-font-size-axis-title:12px;--prism-axis-domain-color:#6b7280;--prism-axis-domain-width:1px;--prism-axis-tick-color:#6b7280;--prism-axis-tick-width:1px;--prism-axis-tick-size:5px;--prism-grid-color:#e5e7eb;--prism-grid-width:1px;--prism-axis-label-color:#111827;--prism-axis-label-font-size:11px;--prism-axis-label-padding:4px;--prism-axis-title-color:#111827;--prism-axis-title-font-size:12px;--prism-axis-title-padding:8px;--prism-legend-padding:8px;--prism-legend-symbol-size:64px;--prism-legend-label-color:#111827;--prism-legend-label-font-size:11px;--prism-legend-title-color:#111827;--prism-legend-title-font-size:12px;--prism-legend-title-font-weight:600;--prism-legend-row-padding:4px;--prism-title-color:#111827;--prism-title-font-size:16px;--prism-title-font-weight:600;--prism-title-anchor:start;--prism-title-padding:12px;--prism-view-bg:transparent;--prism-view-padding:0px;--prism-mark-fill:#4c78a8;--prism-mark-stroke-width:0px;--prism-mark-opacity:1;--prism-mark-arc-stroke:#ffffff;--prism-mark-arc-stroke-width:1px;--prism-mark-area-fill:#4c78a8;--prism-mark-area-opacity:0.7;--prism-mark-bar-fill:#4c78a8;--prism-mark-bar-corner-radius:0px;--prism-mark-geopoint-fill:#4c78a8;--prism-mark-geopoint-stroke-width:0px;--prism-mark-geopoint-size:36;--prism-mark-geoshape-fill:#cbd5e1;--prism-mark-geoshape-stroke:#ffffff;--prism-mark-geoshape-stroke-width:0.5px;--prism-mark-line-fill:transparent;--prism-mark-line-stroke:#4c78a8;--prism-mark-line-stroke-width:1.5px;--prism-mark-point-fill:#4c78a8;--prism-mark-point-stroke-width:0px;--prism-mark-point-size:64;--prism-mark-rule-stroke:#4c78a8;--prism-mark-rule-stroke-width:1px;--prism-mark-text-fill:#111827;--prism-mark-text-font-size:11px;--prism-mark-tick-stroke:#4c78a8;--prism-mark-tick-stroke-width:1px;--prism-deselected-opacity:0.3;--prism-selected-opacity:1;}.prism-axis-domain{stroke:var(--prism-axis-domain-color,var(--prism-color-axis));stroke-width:var(--prism-axis-domain-width,1px);fill:none;}.prism-axis-tick{stroke:var(--prism-axis-tick-color,var(--prism-color-axis));stroke-width:var(--prism-axis-tick-width,1px);}.prism-axis-label{fill:var(--prism-axis-label-color,var(--prism-color-text));font-family:var(--prism-font-sans);font-size:var(--prism-axis-label-font-size,var(--prism-font-size-label,11px));font-weight:var(--prism-axis-label-font-weight,400);}.prism-axis-title{fill:var(--prism-axis-title-color,var(--prism-color-text));font-family:var(--prism-font-sans);font-size:var(--prism-axis-title-font-size,var(--prism-font-size-axis-title,12px));font-weight:var(--prism-axis-title-font-weight,600);}.prism-grid-line{stroke:var(--prism-grid-color,var(--prism-color-grid));stroke-width:var(--prism-grid-width,1px);}.prism-title{fill:var(--prism-title-color,var(--prism-color-text));font-family:var(--prism-font-sans);font-size:var(--prism-title-font-size,var(--prism-font-size-title,16px));font-weight:var(--prism-title-font-weight,600);}.prism-legend-title{fill:var(--prism-legend-title-color,var(--prism-color-text));font-family:var(--prism-font-sans);font-size:var(--prism-legend-title-font-size,12px);font-weight:var(--prism-legend-title-font-weight,600);}.prism-legend-label{fill:var(--prism-legend-label-color,var(--prism-color-text));font-family:var(--prism-font-sans);font-size:var(--prism-legend-label-font-size,11px);}.prism-legend-swatch{stroke:none;}.prism-selected{opacity:var(--prism-selected-opacity,1);}.prism-deselected{opacity:var(--prism-deselected-opacity,0.3);}</style>
 
   <g class="prism-scene" data-scene-id="table-cell">
@@ -32,9 +33,9 @@
 </td>
 </tr>
 <tr data-prism-datum-row="1">
-<td>Globex</td>
-<td>80</td>
-<td><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 24" overflow="hidden">
+<td data-prism-sort-value="&#34;Globex&#34;">Globex</td>
+<td data-prism-sort-value="80">80</td>
+<td data-prism-sort-value="&#34;[5,6,4,7,9]&#34;"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 24" overflow="hidden">
   <style>:root{--prism-color-axis:#6b7280;--prism-color-grid:#e5e7eb;--prism-color-text:#111827;--prism-color-bg:transparent;--prism-font-sans:Inter, system-ui, sans-serif;--prism-font-mono:ui-monospace, SF Mono, monospace;--prism-font-size-label:11px;--prism-font-size-title:16px;--prism-font-size-axis-title:12px;--prism-axis-domain-color:#6b7280;--prism-axis-domain-width:1px;--prism-axis-tick-color:#6b7280;--prism-axis-tick-width:1px;--prism-axis-tick-size:5px;--prism-grid-color:#e5e7eb;--prism-grid-width:1px;--prism-axis-label-color:#111827;--prism-axis-label-font-size:11px;--prism-axis-label-padding:4px;--prism-axis-title-color:#111827;--prism-axis-title-font-size:12px;--prism-axis-title-padding:8px;--prism-legend-padding:8px;--prism-legend-symbol-size:64px;--prism-legend-label-color:#111827;--prism-legend-label-font-size:11px;--prism-legend-title-color:#111827;--prism-legend-title-font-size:12px;--prism-legend-title-font-weight:600;--prism-legend-row-padding:4px;--prism-title-color:#111827;--prism-title-font-size:16px;--prism-title-font-weight:600;--prism-title-anchor:start;--prism-title-padding:12px;--prism-view-bg:transparent;--prism-view-padding:0px;--prism-mark-fill:#4c78a8;--prism-mark-stroke-width:0px;--prism-mark-opacity:1;--prism-mark-arc-stroke:#ffffff;--prism-mark-arc-stroke-width:1px;--prism-mark-area-fill:#4c78a8;--prism-mark-area-opacity:0.7;--prism-mark-bar-fill:#4c78a8;--prism-mark-bar-corner-radius:0px;--prism-mark-geopoint-fill:#4c78a8;--prism-mark-geopoint-stroke-width:0px;--prism-mark-geopoint-size:36;--prism-mark-geoshape-fill:#cbd5e1;--prism-mark-geoshape-stroke:#ffffff;--prism-mark-geoshape-stroke-width:0.5px;--prism-mark-line-fill:transparent;--prism-mark-line-stroke:#4c78a8;--prism-mark-line-stroke-width:1.5px;--prism-mark-point-fill:#4c78a8;--prism-mark-point-stroke-width:0px;--prism-mark-point-size:64;--prism-mark-rule-stroke:#4c78a8;--prism-mark-rule-stroke-width:1px;--prism-mark-text-fill:#111827;--prism-mark-text-font-size:11px;--prism-mark-tick-stroke:#4c78a8;--prism-mark-tick-stroke-width:1px;--prism-deselected-opacity:0.3;--prism-selected-opacity:1;}.prism-axis-domain{stroke:var(--prism-axis-domain-color,var(--prism-color-axis));stroke-width:var(--prism-axis-domain-width,1px);fill:none;}.prism-axis-tick{stroke:var(--prism-axis-tick-color,var(--prism-color-axis));stroke-width:var(--prism-axis-tick-width,1px);}.prism-axis-label{fill:var(--prism-axis-label-color,var(--prism-color-text));font-family:var(--prism-font-sans);font-size:var(--prism-axis-label-font-size,var(--prism-font-size-label,11px));font-weight:var(--prism-axis-label-font-weight,400);}.prism-axis-title{fill:var(--prism-axis-title-color,var(--prism-color-text));font-family:var(--prism-font-sans);font-size:var(--prism-axis-title-font-size,var(--prism-font-size-axis-title,12px));font-weight:var(--prism-axis-title-font-weight,600);}.prism-grid-line{stroke:var(--prism-grid-color,var(--prism-color-grid));stroke-width:var(--prism-grid-width,1px);}.prism-title{fill:var(--prism-title-color,var(--prism-color-text));font-family:var(--prism-font-sans);font-size:var(--prism-title-font-size,var(--prism-font-size-title,16px));font-weight:var(--prism-title-font-weight,600);}.prism-legend-title{fill:var(--prism-legend-title-color,var(--prism-color-text));font-family:var(--prism-font-sans);font-size:var(--prism-legend-title-font-size,12px);font-weight:var(--prism-legend-title-font-weight,600);}.prism-legend-label{fill:var(--prism-legend-label-color,var(--prism-color-text));font-family:var(--prism-font-sans);font-size:var(--prism-legend-label-font-size,11px);}.prism-legend-swatch{stroke:none;}.prism-selected{opacity:var(--prism-selected-opacity,1);}.prism-deselected{opacity:var(--prism-deselected-opacity,0.3);}</style>
 
   <g class="prism-scene" data-scene-id="table-cell">
@@ -49,6 +50,7 @@
 </tr>
 </tbody>
 </table>
+</div>
 
 </body>
 </html>
