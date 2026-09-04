@@ -23,7 +23,7 @@ output into the document.
 >   returns is inserted verbatim and the browser executes it normally
 >   — under the `html` render backend directly, and under WASM's
 >   `<prism-chart>` element once its markup mounts. This is
->   deliberate (it's how interactive custom marks attach behavior),
+>   intentional (it's how interactive custom marks attach behavior),
 >   but it means a `custom` mark is exactly as trustworthy as the code
 >   you registered under its name. Never register a renderer that
 >   builds markup from data you don't control without escaping it
@@ -131,7 +131,7 @@ safe for concurrent use.
 
 ### Test isolation
 
-The registry is process-global mutable state — a deliberate deviation
+The registry is process-global mutable state — an intentional deviation
 from the rest of Prism's hermetic, dependency-threaded convention (see
 `custommark`'s package doc comment), accepted for simpler call sites.
 If your own test suite registers a custom mark, call
