@@ -95,10 +95,10 @@ func renderCustomFixture(t *testing.T, specJSON []byte) ([]byte, error) {
 // exact fragment content, not a stripped/escaped variant.
 func TestPrismHTMLCustomMarkScriptTagRoundTrips(t *testing.T) {
 	const name = "test-html-script"
+	custommark.ResetForTest(t)
 	if err := custommark.Register(name, scriptHTMLRenderer{}); err != nil {
 		t.Fatalf("custommark.Register: %v", err)
 	}
-	t.Cleanup(func() { custommark.Unregister(name) })
 
 	got, err := renderCustomFixture(t, customFixtureSpec(name))
 	if err != nil {
@@ -127,10 +127,10 @@ func TestPrismHTMLCustomMarkScriptTagRoundTrips(t *testing.T) {
 // under the HTML backend.
 func TestPrismHTMLCustomMarkSVGOnlyEmbedsInlineSVG(t *testing.T) {
 	const name = "test-svg-only"
+	custommark.ResetForTest(t)
 	if err := custommark.Register(name, fixedSVGOnlyRenderer{}); err != nil {
 		t.Fatalf("custommark.Register: %v", err)
 	}
-	t.Cleanup(func() { custommark.Unregister(name) })
 
 	got, err := renderCustomFixture(t, customFixtureSpec(name))
 	if err != nil {
@@ -180,10 +180,10 @@ func TestPrismHTMLCustomMarkGoldensStable(t *testing.T) {
 	for _, tc := range cases {
 		tc := tc
 		t.Run(tc.name, func(t *testing.T) {
+			custommark.ResetForTest(t)
 			if err := custommark.Register(tc.renderer, tc.impl); err != nil {
 				t.Fatalf("custommark.Register: %v", err)
 			}
-			t.Cleanup(func() { custommark.Unregister(tc.renderer) })
 
 			got, err := renderCustomFixture(t, customFixtureSpec(tc.renderer))
 			if err != nil {

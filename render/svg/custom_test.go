@@ -104,10 +104,10 @@ func TestPrismSVGCustomMarkGoldens(t *testing.T) {
 	for _, tc := range cases {
 		tc := tc
 		t.Run(tc.name, func(t *testing.T) {
+			custommark.ResetForTest(t)
 			if err := custommark.Register(tc.renderer, tc.impl); err != nil {
 				t.Fatalf("custommark.Register: %v", err)
 			}
-			t.Cleanup(func() { custommark.Unregister(tc.renderer) })
 
 			got, err := renderCustomFixture(t, customFixtureSpec(tc.renderer))
 			if err != nil {
@@ -140,10 +140,10 @@ func TestPrismSVGCustomMarkGoldens(t *testing.T) {
 // escaping of the fragment's own markup).
 func TestPrismSVGCustomMarkSplicesUnwrapped(t *testing.T) {
 	const name = "test-svg-splice-unwrapped"
+	custommark.ResetForTest(t)
 	if err := custommark.Register(name, fixedSVGRenderer{}); err != nil {
 		t.Fatalf("custommark.Register: %v", err)
 	}
-	t.Cleanup(func() { custommark.Unregister(name) })
 
 	got, err := renderCustomFixture(t, customFixtureSpec(name))
 	if err != nil {
@@ -166,10 +166,10 @@ func TestPrismSVGCustomMarkSplicesUnwrapped(t *testing.T) {
 // XHTML-namespaced element.
 func TestPrismSVGCustomMarkForeignObjectFallback(t *testing.T) {
 	const name = "test-html-fallback-wrapped"
+	custommark.ResetForTest(t)
 	if err := custommark.Register(name, fixedHTMLRenderer{}); err != nil {
 		t.Fatalf("custommark.Register: %v", err)
 	}
-	t.Cleanup(func() { custommark.Unregister(name) })
 
 	got, err := renderCustomFixture(t, customFixtureSpec(name))
 	if err != nil {

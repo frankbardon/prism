@@ -40,26 +40,16 @@ func (bothRenderer) RenderHTML(rows []table.Row, box scene.Box, tokens *theme.Th
 // neitherRenderer implements neither interface.
 type neitherRenderer struct{}
 
-// unregisterCustomMarkForTest removes name from the shared registry
-// (custommark.Unregister). Test-only cleanup local to this file — the
-// shared registry test-isolation helper for downstream consumers
-// lands in E2-S4; this just keeps this package's own tests from
-// bleeding registrations into each other.
-func unregisterCustomMarkForTest(t *testing.T, name string) {
-	t.Helper()
-	custommark.Unregister(name)
-}
-
 // TestRegisterCustomMarkAcceptsSVGOnly asserts a renderer implementing
 // only RenderSVG registers successfully and type-asserts to
 // SVGCustomRenderer but not HTMLCustomRenderer — the "optional method"
 // contract the interface split exists to express.
 func TestRegisterCustomMarkAcceptsSVGOnly(t *testing.T) {
+	custommark.ResetForTest(t)
 	const name = "test-svg-only"
 	if err := RegisterCustomMark(name, svgOnlyRenderer{}); err != nil {
 		t.Fatalf("RegisterCustomMark: %v", err)
 	}
-	t.Cleanup(func() { unregisterCustomMarkForTest(t, name) })
 
 	got, ok := LookupCustomMark(name)
 	if !ok {
@@ -76,11 +66,11 @@ func TestRegisterCustomMarkAcceptsSVGOnly(t *testing.T) {
 // TestRegisterCustomMarkAcceptsHTMLOnly mirrors
 // TestRegisterCustomMarkAcceptsSVGOnly for the HTML-only case.
 func TestRegisterCustomMarkAcceptsHTMLOnly(t *testing.T) {
+	custommark.ResetForTest(t)
 	const name = "test-html-only"
 	if err := RegisterCustomMark(name, htmlOnlyRenderer{}); err != nil {
 		t.Fatalf("RegisterCustomMark: %v", err)
 	}
-	t.Cleanup(func() { unregisterCustomMarkForTest(t, name) })
 
 	got, ok := LookupCustomMark(name)
 	if !ok {
@@ -98,11 +88,11 @@ func TestRegisterCustomMarkAcceptsHTMLOnly(t *testing.T) {
 // both methods registers successfully and type-asserts to both
 // interfaces.
 func TestRegisterCustomMarkAcceptsBoth(t *testing.T) {
+	custommark.ResetForTest(t)
 	const name = "test-both"
 	if err := RegisterCustomMark(name, bothRenderer{}); err != nil {
 		t.Fatalf("RegisterCustomMark: %v", err)
 	}
-	t.Cleanup(func() { unregisterCustomMarkForTest(t, name) })
 
 	got, ok := LookupCustomMark(name)
 	if !ok {
@@ -120,6 +110,7 @@ func TestRegisterCustomMarkAcceptsBoth(t *testing.T) {
 // neither single-method interface is rejected at registration time,
 // and never appears in the registry.
 func TestRegisterCustomMarkRejectsNeither(t *testing.T) {
+	custommark.ResetForTest(t)
 	const name = "test-neither"
 	if err := RegisterCustomMark(name, neitherRenderer{}); err == nil {
 		t.Fatalf("RegisterCustomMark: expected error, got nil")
@@ -132,6 +123,7 @@ func TestRegisterCustomMarkRejectsNeither(t *testing.T) {
 // TestRegisterCustomMarkRejectsEmptyNameAndNil covers the remaining
 // input-validation guards.
 func TestRegisterCustomMarkRejectsEmptyNameAndNil(t *testing.T) {
+	custommark.ResetForTest(t)
 	if err := RegisterCustomMark("", svgOnlyRenderer{}); err == nil {
 		t.Errorf("RegisterCustomMark(\"\", ...): expected error, got nil")
 	}
@@ -144,6 +136,7 @@ func TestRegisterCustomMarkRejectsEmptyNameAndNil(t *testing.T) {
 // ok=false rather than panicking or returning a zero-value renderer
 // silently.
 func TestLookupCustomMarkMissing(t *testing.T) {
+	custommark.ResetForTest(t)
 	if _, ok := LookupCustomMark("does-not-exist"); ok {
 		t.Errorf("LookupCustomMark: expected ok=false for unregistered name")
 	}
@@ -152,12 +145,12 @@ func TestLookupCustomMarkMissing(t *testing.T) {
 // TestCustomMarkNamesSorted asserts CustomMarkNames reflects
 // registrations in sorted order, mirroring theme.Names().
 func TestCustomMarkNamesSorted(t *testing.T) {
+	custommark.ResetForTest(t)
 	names := []string{"test-names-b", "test-names-a", "test-names-c"}
 	for _, n := range names {
 		if err := RegisterCustomMark(n, svgOnlyRenderer{}); err != nil {
 			t.Fatalf("RegisterCustomMark(%q): %v", n, err)
 		}
-		t.Cleanup(func(n string) func() { return func() { unregisterCustomMarkForTest(t, n) } }(n))
 	}
 	got := CustomMarkNames()
 	want := map[string]bool{"test-names-a": true, "test-names-b": true, "test-names-c": true}

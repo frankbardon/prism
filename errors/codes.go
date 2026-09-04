@@ -360,12 +360,24 @@ var Codes = map[string]CodeMetadata{
 		},
 		SeeAlso: []string{"PRISM_RENDER_FORMAT_UNAVAILABLE"},
 	},
-	// PRISM_RENDER_CUSTOM_MARK_NOT_FOUND is a placeholder landed by
-	// E2-S2 (SVG backend support for custom marks) so a missing/
-	// unregistered `custom` mark renderer fails loudly instead of
-	// panicking or leaking a raw Go error; E2-S4 owns refining or
-	// relocating this code as the fuller custom-mark error catalog
-	// takes shape.
+	// PRISM_RENDER_CUSTOM_MARK_NOT_FOUND covers a `custom` mark (E2)
+	// whose spec-level mark.renderer name has no matching entry in the
+	// process-global custommark registry at render time — landed as a
+	// placeholder by E2-S2 (SVG backend) and finalized here (E2-S4):
+	// this is the domain-code home it belongs in (PRISM_RENDER_*,
+	// alongside the other render-time-only failures such as
+	// PRISM_RENDER_MARK_UNSUPPORTED), and both the SVG (render/svg/
+	// custom.go) and HTML (render/html/custom.go) backends raise it
+	// identically so a caller sees the same code regardless of which
+	// backend rendered the spec. It is also reused, defensively, for a
+	// registry entry that type-asserts to neither
+	// custommark.SVGCustomRenderer nor custommark.HTMLCustomRenderer —
+	// custommark.Register already rejects such a value at registration
+	// time, so that branch is unreachable through the public API and
+	// exists only as a belt-and-braces guard against a future registry
+	// bypass; see the "default" cases in render/svg/custom.go and
+	// render/html/custom.go and E2-S4's FOLLOWUPS for why no separate
+	// code was added for it.
 	"PRISM_RENDER_CUSTOM_MARK_NOT_FOUND": {
 		Code:    "PRISM_RENDER_CUSTOM_MARK_NOT_FOUND",
 		Message: `Custom mark renderer {{.Renderer}} is not registered (registered: {{.Available}}).`,
