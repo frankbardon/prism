@@ -106,7 +106,10 @@ func (r *Renderer) renderCustomDoc(doc *scene.SceneDoc, customScene *scene.Scene
 // — same code, same shape, so a caller sees a consistent error
 // regardless of which backend rendered the spec.
 func renderCustomMarkup(c *scene.Custom, sceneTheme *scene.Theme, opts render.RenderOpts) (string, error) {
-	renderer, ok := custommark.Lookup(c.Renderer)
+	// LookupWithJSFallback (not Lookup): see render/svg/custom.go's
+	// matching call site (E2-S5) — a custom mark registered only via
+	// the WASM entry's prism.registerCustomMark still resolves here.
+	renderer, ok := custommark.LookupWithJSFallback(c.Renderer)
 	if !ok {
 		return "", prismerrors.New(
 			"PRISM_RENDER_CUSTOM_MARK_NOT_FOUND",

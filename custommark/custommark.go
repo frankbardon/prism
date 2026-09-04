@@ -149,3 +149,26 @@ func Unregister(name string) {
 	defer mu.Unlock()
 	delete(registry, name)
 }
+
+// LookupWithJSFallback resolves name against the Go-side registry
+// first (identical to Lookup), then — only when the running binary is
+// the WASM build — against the parallel JS-side registry populated by
+// prism.registerCustomMark (E2-S5). render/svg and render/html both
+// resolve a scene.Custom node's renderer through this function rather
+// than calling Lookup directly, so a custom mark registered only from
+// the browser (no Go-side custommark.Register call at all) still
+// resolves correctly under the shared prebuilt bin/prism.wasm runtime
+// — the whole point of E2-S5: a Go func compiled into that binary
+// can't be "registered" at runtime from JS, so this is the parallel
+// path a browser page actually can use.
+//
+// jsLookup is a build-tag-gated seam: js_bridge_js.go (js && wasm)
+// provides the real syscall/js-backed lookup; js_bridge_other.go
+// (everywhere else) stubs it to always report "not found" so the host
+// build never references syscall/js.
+func LookupWithJSFallback(name string) (CustomRenderer, bool) {
+	if r, ok := Lookup(name); ok {
+		return r, true
+	}
+	return jsLookup(name)
+}

@@ -43,12 +43,25 @@
 //       seam and the previously-Pulse transforms (crosstab/regression)
 //       that require a source-rooted chain. Any error envelope returned
 //       by an export aborts with a non-zero exit.
+//
+//   probe-runner.mjs custommark <wasm> <exec> <specPath> <rendererName>
+//       loads the wasm, calls globalThis.prism.registerCustomMark
+//       (rendererName, fn) with a JS-side fn — NO matching Go-side
+//       custommark.Register call exists anywhere in this process — then
+//       drives the same validate → plan → execute → render pipeline as
+//       `pipeline` mode over a spec whose `custom` mark references
+//       rendererName. Proves the E2-S5 JS-side custom-mark registration
+//       path: the render must succeed and the SVG must carry the
+//       fn's own returned markup, resolved purely through the JS
+//       fallback custommark.LookupWithJSFallback consults when the
+//       Go-side registry misses. Any error envelope aborts with a
+//       non-zero exit.
 
 import { readFile } from "node:fs/promises";
 
 const [, , mode, wasmPath, execPath, arg, arg2] = process.argv;
 if (!mode || !wasmPath || !execPath || !arg) {
-  console.error("usage: probe-runner.mjs <render|global|pipeline> <wasm> <exec> <scenePath|globalName|specPath> [resolverDataPath]");
+  console.error("usage: probe-runner.mjs <render|global|pipeline|custommark> <wasm> <exec> <scenePath|globalName|specPath> [resolverDataPath|rendererName]");
   process.exit(2);
 }
 
@@ -163,6 +176,59 @@ if (mode === "render") {
   }
 
   const sceneJSON = globalThis.prism.execute(specText, datasetsJSON);
+  if (isErrorEnvelope(sceneJSON)) {
+    console.error("probe-runner: prism.execute returned an error envelope:", sceneJSON);
+    process.exit(4);
+  }
+
+  const svg = globalThis.prism.render(sceneJSON);
+  if (isErrorEnvelope(svg)) {
+    console.error("probe-runner: prism.render returned an error envelope:", svg);
+    process.exit(4);
+  }
+
+  process.stdout.write(svg.endsWith("\n") ? svg : svg + "\n");
+  process.exit(0);
+} else if (mode === "custommark") {
+  const rendererName = arg2;
+  if (!rendererName) {
+    console.error("usage: probe-runner.mjs custommark <wasm> <exec> <specPath> <rendererName>");
+    process.exit(2);
+  }
+
+  await waitFor(
+    () =>
+      globalThis.prism &&
+      typeof globalThis.prism.registerCustomMark === "function" &&
+      typeof globalThis.prism.validate === "function" &&
+      typeof globalThis.prism.execute === "function" &&
+      typeof globalThis.prism.render === "function",
+    "globalThis.prism custommark exports",
+  );
+
+  // The JS-side callback: no matching Go-side custommark.Register call
+  // exists anywhere in this process, so a successful render proves the
+  // JS fallback (custommark.LookupWithJSFallback) resolved it. Echoes
+  // the row count and box dimensions it received back into the
+  // fragment so the Go-side assertions can confirm the bridge actually
+  // marshalled real data across, not just that SOME string came back.
+  const regResult = globalThis.prism.registerCustomMark(rendererName, (rows, box) => {
+    return `<div class="js-custom-mark" data-rows="${rows.length}" data-w="${box.w}" data-h="${box.h}">js rendered</div>`;
+  });
+  if (isErrorEnvelope(regResult)) {
+    console.error("probe-runner: prism.registerCustomMark returned an error envelope:", regResult);
+    process.exit(4);
+  }
+
+  const specText = await readFile(arg, "utf-8");
+
+  const validated = globalThis.prism.validate(specText);
+  if (isErrorEnvelope(validated)) {
+    console.error("probe-runner: prism.validate returned an error envelope:", validated);
+    process.exit(4);
+  }
+
+  const sceneJSON = globalThis.prism.execute(specText, "");
   if (isErrorEnvelope(sceneJSON)) {
     console.error("probe-runner: prism.execute returned an error envelope:", sceneJSON);
     process.exit(4);

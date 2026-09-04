@@ -27,6 +27,7 @@ import (
 
 	prism "github.com/frankbardon/prism"
 	"github.com/frankbardon/prism/compile/inmem"
+	"github.com/frankbardon/prism/custommark"
 	"github.com/frankbardon/prism/encode"
 	"github.com/frankbardon/prism/encode/scene"
 	prismerrors "github.com/frankbardon/prism/errors"
@@ -55,6 +56,7 @@ func main() {
 	api.Set("execute", js.FuncOf(executeFunc))
 	api.Set("compile", js.FuncOf(compileFunc))
 	api.Set("setDataResolver", js.FuncOf(setDataResolverFunc))
+	api.Set("registerCustomMark", js.FuncOf(registerCustomMarkFunc))
 	api.Set("applyPatch", js.FuncOf(applyPatchFunc))
 	api.Set("diffSpecs", js.FuncOf(diffSpecsFunc))
 	api.Set("render", js.FuncOf(renderFunc))
@@ -462,6 +464,36 @@ func setDataResolverFunc(_ js.Value, args []js.Value) any {
 		return errEnvelope("PRISM_WASM_001", "setDataResolver(fn): argument must be a function or null")
 	}
 	jsDataResolver = fn
+	return ""
+}
+
+// registerCustomMarkFunc shape: prism.registerCustomMark(name, fn) —
+// fn must be a synchronous (rows, box) -> string function, where rows
+// is a plain JS array of plain objects (one per data row) and box is
+// a plain {w, h} object. Registers fn as the JS-side fallback a
+// `custom` mark's renderer resolves to when NO Go-side
+// custommark.Register call exists for name (see
+// custommark.LookupWithJSFallback, consulted by both render/svg and
+// render/html at render time).
+//
+// This is what lets a custom mark work in the shared, prebuilt
+// bin/prism.wasm browser runtime with no rebuild: the Go-side registry
+// (custommark.Register) is compiled into the binary at build time, so
+// a browser page loading that binary has no way to call it — this
+// parallel JS-side registration path is the one it can call. Returns
+// the empty string on success or an error envelope on bad input.
+func registerCustomMarkFunc(_ js.Value, args []js.Value) any {
+	if len(args) < 2 || args[0].Type() != js.TypeString || args[1].IsUndefined() {
+		return errEnvelope("PRISM_WASM_001", "registerCustomMark(name, fn): missing or invalid arguments")
+	}
+	name := args[0].String()
+	fn := args[1]
+	if fn.Type() != js.TypeFunction {
+		return errEnvelope("PRISM_WASM_001", "registerCustomMark(name, fn): fn must be a function")
+	}
+	if err := custommark.RegisterJS(name, fn); err != nil {
+		return errEnvelope("PRISM_WASM_001", err.Error())
+	}
 	return ""
 }
 

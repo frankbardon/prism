@@ -37,7 +37,13 @@ func renderCustom(w *Writer, s scene.Scene, sceneTheme *scene.Theme) error {
 		return nil
 	}
 
-	renderer, ok := custommark.Lookup(c.Renderer)
+	// LookupWithJSFallback (not Lookup) so a custom mark registered
+	// only via the WASM entry's prism.registerCustomMark (E2-S5, no
+	// Go-side custommark.Register call at all) still resolves under
+	// the shared prebuilt bin/prism.wasm browser runtime. On the host
+	// build this is exactly Lookup's behaviour — the JS-side registry
+	// only exists under js/wasm.
+	renderer, ok := custommark.LookupWithJSFallback(c.Renderer)
 	if !ok {
 		return prismerrors.New(
 			"PRISM_RENDER_CUSTOM_MARK_NOT_FOUND",

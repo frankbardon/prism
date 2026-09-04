@@ -53,6 +53,35 @@ func TestRegisterLookupUnregisterRoundTrip(t *testing.T) {
 	}
 }
 
+// TestLookupWithJSFallbackDelegatesToGoRegistryOnHost is E2-S5's host-
+// build coverage for the new seam: on a non-WASM build, jsLookup
+// (js_bridge_other.go) always misses, so LookupWithJSFallback must
+// behave IDENTICALLY to Lookup — both for a name that IS registered
+// (Go-side hit) and one that is not (miss, since there is no JS
+// runtime on host to fall back to). The WASM-side half of the
+// contract (a name resolving ONLY via the JS registry) is covered by
+// internal/devtools' TinyGo custom-mark smoke test, which is the only
+// place a real JS runtime is available to register into.
+func TestLookupWithJSFallbackDelegatesToGoRegistryOnHost(t *testing.T) {
+	custommark.ResetForTest(t)
+	const name = "js-fallback-host-test"
+
+	if _, ok := custommark.LookupWithJSFallback(name); ok {
+		t.Fatalf("LookupWithJSFallback(%q): unexpectedly found before registration", name)
+	}
+
+	if err := custommark.Register(name, svgOnly{}); err != nil {
+		t.Fatalf("Register: %v", err)
+	}
+	got, ok := custommark.LookupWithJSFallback(name)
+	if !ok {
+		t.Fatalf("LookupWithJSFallback(%q): not found after Register", name)
+	}
+	if _, ok := got.(custommark.SVGCustomRenderer); !ok {
+		t.Errorf("LookupWithJSFallback(%q) renderer does not satisfy SVGCustomRenderer", name)
+	}
+}
+
 // TestResetForTestPreventsRegistryBleed is E2-S4's acceptance
 // criterion for the shared test-isolation helper: two subtests
 // register a mark under the SAME name, and the second subtest must
