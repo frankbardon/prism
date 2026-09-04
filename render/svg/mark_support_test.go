@@ -12,10 +12,10 @@ import (
 // TestPrismSVGTableMarkUnsupported guards the E1-S1 decision: a
 // top-level `table` mark has no SVG geometry equivalent, so the SVG
 // backend must fail loudly with PRISM_RENDER_MARK_UNSUPPORTED rather
-// than silently emitting an empty <svg>. The `table` mark type
-// itself doesn't exist in spec/encode yet (lands in E1-S2/E1-S3), so
-// this test builds the SceneDoc by hand to exercise the general
-// backend-capability guard ahead of that mark type landing.
+// than silently emitting an empty <svg>. The Scene IR table node
+// itself doesn't exist yet (lands in E1-S3 on top of E1-S2's spec
+// mark type), so this test builds the SceneDoc by hand to exercise
+// the general backend-capability guard ahead of that node landing.
 func TestPrismSVGTableMarkUnsupported(t *testing.T) {
 	doc := scene.NewDoc()
 	doc.Grid = scene.SceneGrid{
@@ -26,7 +26,7 @@ func TestPrismSVGTableMarkUnsupported(t *testing.T) {
 				Frame: scene.Rect{W: 800, H: 600},
 				Plot:  scene.Rect{X: 40, Y: 20, W: 740, H: 540},
 				Layers: []scene.SceneLayer{
-					{ID: "layer-0", Mark: scene.MarkType("table")},
+					{ID: "layer-0", Mark: scene.MarkTable},
 				},
 			}},
 		},

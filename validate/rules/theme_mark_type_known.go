@@ -50,6 +50,7 @@ var validMarkTypes = map[string]bool{
 	"tree":       true,
 	"dendrogram": true,
 	"network":    true,
+	"table":      true,
 }
 
 // Check walks every spec node and reports unknown mark-type keys

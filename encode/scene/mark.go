@@ -19,6 +19,15 @@ const (
 	MarkPath     MarkType = "path"
 	MarkImage    MarkType = "image"
 	MarkGeoshape MarkType = "geoshape"
+
+	// MarkTable (E1) is the top-level layer mark for a table (E1-S2
+	// spec/schema/validate landed the spec-level "table" mark type;
+	// the Scene IR table node itself lands in E1-S3). It has no
+	// *Geom pointer on Mark and is never populated as a geometry
+	// value — checkMarkSupport (render/svg/mark_support.go) rejects
+	// it before the SVG backend attempts to walk marks for it, since
+	// a table renders as DOM/CSS markup, not SVG geometry.
+	MarkTable MarkType = "table"
 )
 
 // Mark is the atomic visual primitive. Discriminated union: exactly

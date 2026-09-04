@@ -140,6 +140,12 @@ func allowedChannelsForMark(mark string) []string {
 		set = geopointMark
 	case "tree", "dendrogram", "network":
 		set = treeMark
+	case "table":
+		// Table declares its entire visual contract through
+		// encoding.columns[] (see PRISM_SPEC_040), not scalar
+		// position/mark channels — no x/y (or any other geometry
+		// channel) is meaningful here, so only the common set applies.
+		set = nil
 	default:
 		set = append(cartesianMark, polarMark...)
 	}

@@ -47,6 +47,7 @@ arcs, etc. Specify via top-level `mark` (shorthand string) or
 | `path` | Raw SVG path data — escape hatch. |
 | `geoshape` | Country / admin-1 polygons (choropleth). See [Geographic Marks](geo.md). |
 | `geopoint` | Lon/lat → point overlay. See [Geographic Marks](geo.md). |
+| `table` | Interactive, paginated data table. Columns replace x/y — see [Table](#table) below. |
 
 ### Spark adornments
 
@@ -218,6 +219,49 @@ For a data-driven polyline, prefer `line` with `x`/`y` encodings.
 
 Validate rules: `PRISM_SPEC_016` (image URL allowed), `PRISM_SPEC_017`
 (non-empty path `d`).
+
+### Table
+
+`table` is an interactive, paginated data table (E1). It has no
+position channels — `encoding.columns[]` is the entire visual
+contract, and each entry is a standard channel binding (`field`,
+`type`, `aggregate`, `title`, `format`, …) plus an optional `mark`
+naming a sub-mark that renders that column's cells (e.g. `sparkline`
+for an inline trend column) instead of formatted text.
+
+This section covers the spec shape landed in E1-S2 (spec/schema/validate
+only — no plan/encode/render pipeline yet); the full write-up with
+worked examples and a gallery entry lands in E1-S6.
+
+Mark-def options:
+
+- `page_size` — rows rendered per page. Defaults to `25` when unset
+  (`spec.TablePageSizeDefault`).
+
+Column fields (`encoding.columns[]`, one object per column):
+
+- `field`, `type`, `aggregate`, `scale`, `title`, `format`, `bin`,
+  `sort`, `value`, `condition` — same shape and meaning as any other
+  channel encoding.
+- `mark` — optional sub-mark rendering this column's cells (e.g.
+  `"sparkline"`). Omit to render the column as formatted text.
+
+```json
+{
+  "mark": {"type": "table", "page_size": 50},
+  "encoding": {
+    "columns": [
+      {"field": "name", "type": "nominal", "title": "Account"},
+      {"field": "revenue", "type": "quantitative", "aggregate": "sum", "format": "$,.0f"},
+      {"field": "trend", "type": "quantitative", "mark": "sparkline"}
+    ]
+  }
+}
+```
+
+Validate rule: `PRISM_SPEC_040` (`encoding.columns[]` required and
+non-empty). See [Renderer compatibility](#renderer-compatibility)
+below for the `svg` vs `html` backend split.
 
 ## Channel allowlists
 

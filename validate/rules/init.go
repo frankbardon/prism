@@ -40,4 +40,5 @@ func init() {
 	validate.RegisterDefault(func() validate.SemanticRule { return RegressionStructure{} })
 	validate.RegisterDefault(func() validate.SemanticRule { return BulletBands{} })
 	validate.RegisterDefault(func() validate.SemanticRule { return FilterPredicate{} })
+	validate.RegisterDefault(func() validate.SemanticRule { return TableColumns{} })
 }

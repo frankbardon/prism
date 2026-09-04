@@ -814,7 +814,7 @@ var Codes = map[string]CodeMetadata{
 		Code:    "PRISM_SPEC_031",
 		Message: `Theme defines defaults for unknown mark type {{.Mark}} (at theme.marks.{{.Mark}}).`,
 		Fixups: []string{
-			`Mark type must match a registered mark: bar, line, area, point, rule, text, tick, rect, arc, pie, donut, histogram, heatmap, boxplot, violin, sankey, funnel, sparkline, image, path, geoshape, geopoint, tree, dendrogram, network.`,
+			`Mark type must match a registered mark: bar, line, area, point, rule, text, tick, rect, arc, pie, donut, histogram, heatmap, boxplot, violin, sankey, funnel, sparkline, image, path, geoshape, geopoint, tree, dendrogram, network, table.`,
 			`Typos like ` + "`bars`" + ` or ` + "`Bar`" + ` (with capital) fail this rule — mark names are lowercase, singular.`,
 		},
 	},
@@ -853,6 +853,15 @@ var Codes = map[string]CodeMetadata{
 			`Or keep the spec portable and defer the data to the host: use ` + "`{\"data\": {\"ref\": \"<id>\"}}`" + ` and supply a ` + "`resolve.DataResolver`" + ` (server / ` + "`prism.setDataResolver`" + ` in the browser) that returns the rows for that ref.`,
 		},
 		SeeAlso: []string{"PRISM_SPEC_009", "PRISM_RESOLVE_REF_UNRESOLVED"},
+	},
+	"PRISM_SPEC_040": {
+		Code:    "PRISM_SPEC_040",
+		Message: `Mark "table" requires at least one column in encoding.columns[].`,
+		Fixups: []string{
+			`A table mark declares its entire visual contract through encoding.columns[] rather than x/y position channels, e.g. ` + "`{mark: {type: \"table\"}, encoding: {columns: [{field: \"name\", type: \"nominal\"}, {field: \"trend\", type: \"quantitative\", mark: \"sparkline\"}]}}`" + `.`,
+			`Each column entry accepts the same bindings as any other channel (field, type, aggregate, format, title, …) plus an optional ` + "`mark`" + ` naming a sub-mark (e.g. ` + "`sparkline`" + `) to render that column's cells; omit ` + "`mark`" + ` to render formatted text.`,
+		},
+		SeeAlso: []string{"PRISM_SPEC_003"},
 	},
 	"PRISM_WARN_NETWORK_CYCLE": {
 		Code:    "PRISM_WARN_NETWORK_CYCLE",

@@ -95,7 +95,21 @@ type MarkDef struct {
 	// ReferenceBand shades a horizontal normal-range band behind the
 	// spark, bounded by From/To in value-axis data space. Nil = no band.
 	ReferenceBand *ReferenceBand `json:"reference_band,omitempty"`
+
+	// PageSize (E1, table mark) caps the number of rows rendered per
+	// page. A table mark declares its column set via
+	// Encoding.Columns rather than mark-def fields; PageSize is the
+	// one mark-def input the table needs (paging is a rendering
+	// concern, not a channel binding). Nil = the default of 25 rows
+	// per page, applied at encode time (E1-S3). Must be >= 1 when
+	// set — validated alongside the table column-presence rule.
+	PageSize *int `json:"page_size,omitempty"`
 }
+
+// TablePageSizeDefault is the number of rows rendered per page for a
+// table mark whose mark_def omits page_size. Documented in
+// docs/src/concepts/marks.md; keep both in sync.
+const TablePageSizeDefault = 25
 
 // ReferenceBand bounds the shaded normal-range band drawn behind a
 // spark mark (E4 adornments). From and To are data-space values on the

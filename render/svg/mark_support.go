@@ -8,17 +8,17 @@ import (
 )
 
 // unsupportedMarks lists mark types the SVG backend cannot represent
-// as geometry. Empty today — every mark type in the current Scene IR
-// has an SVG emitter — but the check is wired ahead of the `table`
-// mark landing (E1-S2/E1-S3): a top-level table renders as
-// DOM/CSS-driven markup (sort, paginate, row selection) with no
-// meaningful SVG geometry equivalent, so asking the SVG backend to
-// render one directly must fail loudly with PRISM_RENDER_MARK_UNSUPPORTED
-// rather than silently emitting an empty <svg>. Embedding a table's
-// per-cell sub-marks (e.g. a sparkline column) is unaffected — those
-// stay ordinary geometry-bearing marks and are absent from this set.
+// as geometry. `table` (E1-S2 landed the spec-level mark type; the
+// Scene IR node itself lands in E1-S3) is the sole entry: a top-level
+// table renders as DOM/CSS-driven markup (sort, paginate, row
+// selection) with no meaningful SVG geometry equivalent, so asking
+// the SVG backend to render one directly must fail loudly with
+// PRISM_RENDER_MARK_UNSUPPORTED rather than silently emitting an
+// empty <svg>. Embedding a table's per-cell sub-marks (e.g. a
+// sparkline column) is unaffected — those stay ordinary
+// geometry-bearing marks and are absent from this set.
 var unsupportedMarks = map[scene.MarkType]bool{
-	"table": true,
+	scene.MarkTable: true,
 }
 
 // checkMarkSupport walks every top-level layer in doc.Grid and

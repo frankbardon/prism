@@ -37,6 +37,34 @@ type Encoding struct {
 	// values are geodata feature IDs (e.g. "USA", "US-CA"). Resolves
 	// to polygon geometry via the geodata.Store.
 	Feature *MarkChannel `json:"feature,omitempty"`
+	// Columns declares the column list for a table mark (E1). Each
+	// entry is a standard channel binding (field/type/aggregate/…)
+	// plus an optional sub-mark, so a column can render as formatted
+	// text (the default) or as an embedded mark (e.g. "sparkline").
+	// Required and non-empty for mark type "table" — see
+	// PRISM_SPEC_040.
+	Columns []TableColumn `json:"columns,omitempty"`
+}
+
+// TableColumn is one column definition inside a table mark's
+// encoding.columns[] array (E1). It carries the same channel-binding
+// fields as any other channel encoding (field, type, aggregate,
+// scale, title, format, bin, sort, value, condition) via the shared
+// ChannelCommon shape, plus an optional sub-mark selecting how the
+// column's cells render.
+//
+// Unlike PositionChannel/MarkChannel, TableColumn does not intercept
+// the "field" key for repeat-ref substitution — a plain string field
+// name is all that's supported for now — so it needs no custom
+// UnmarshalJSON; the embedded ChannelCommon decodes (and inherits
+// Decode's DisallowUnknownFields strictness) via plain reflection.
+type TableColumn struct {
+	ChannelCommon
+	// Mark selects the sub-mark used to render this column's cells
+	// (e.g. "sparkline" for an inline trend chart). Empty renders the
+	// column as formatted text — the default. The encode-time
+	// dispatch for a populated Mark lands in E1-S3.
+	Mark string `json:"mark,omitempty"`
 }
 
 // ChannelCommon holds the fields shared by every channel class.
