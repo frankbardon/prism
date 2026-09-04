@@ -360,6 +360,21 @@ var Codes = map[string]CodeMetadata{
 		},
 		SeeAlso: []string{"PRISM_RENDER_FORMAT_UNAVAILABLE"},
 	},
+	// PRISM_RENDER_CUSTOM_MARK_NOT_FOUND is a placeholder landed by
+	// E2-S2 (SVG backend support for custom marks) so a missing/
+	// unregistered `custom` mark renderer fails loudly instead of
+	// panicking or leaking a raw Go error; E2-S4 owns refining or
+	// relocating this code as the fuller custom-mark error catalog
+	// takes shape.
+	"PRISM_RENDER_CUSTOM_MARK_NOT_FOUND": {
+		Code:    "PRISM_RENDER_CUSTOM_MARK_NOT_FOUND",
+		Message: `Custom mark renderer {{.Renderer}} is not registered (registered: {{.Available}}).`,
+		Fixups: []string{
+			`Call prism.RegisterCustomMark("{{.Renderer}}", ...) before compiling/rendering this spec.`,
+			`Check the spec's mark.renderer value for a typo against the name the renderer was registered under.`,
+			`A renderer must implement at least one of prism.SVGCustomRenderer or prism.HTMLCustomRenderer.`,
+		},
+	},
 	"PRISM_ENCODE_001": {
 		Code:    "PRISM_ENCODE_001",
 		Message: `Encode-time mismatch: field {{.Field}} not present in upstream table from source {{.Source}}.`,

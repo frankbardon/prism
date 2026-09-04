@@ -3,6 +3,7 @@ package prism
 import (
 	"testing"
 
+	"github.com/frankbardon/prism/custommark"
 	"github.com/frankbardon/prism/encode/scene"
 	"github.com/frankbardon/prism/table"
 	"github.com/frankbardon/prism/theme"
@@ -39,16 +40,14 @@ func (bothRenderer) RenderHTML(rows []table.Row, box scene.Box, tokens *theme.Th
 // neitherRenderer implements neither interface.
 type neitherRenderer struct{}
 
-// unregisterCustomMarkForTest removes name from the package-level
-// registry. Test-only cleanup local to this file — the shared
-// registry test-isolation helper for downstream consumers lands in
-// E2-S4; this just keeps this package's own tests from bleeding
-// registrations into each other.
+// unregisterCustomMarkForTest removes name from the shared registry
+// (custommark.Unregister). Test-only cleanup local to this file — the
+// shared registry test-isolation helper for downstream consumers
+// lands in E2-S4; this just keeps this package's own tests from
+// bleeding registrations into each other.
 func unregisterCustomMarkForTest(t *testing.T, name string) {
 	t.Helper()
-	customMarkMu.Lock()
-	defer customMarkMu.Unlock()
-	delete(customMarkRegistry, name)
+	custommark.Unregister(name)
 }
 
 // TestRegisterCustomMarkAcceptsSVGOnly asserts a renderer implementing

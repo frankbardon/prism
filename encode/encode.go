@@ -144,6 +144,17 @@ func Encode(s *spec.Spec, tables map[plan.NodeID]*table.Table, tipID plan.NodeID
 		return buildTableSceneDoc(s, tbl, enc, fullTheme, sceneTheme, layout, hasTitle)
 	}
 
+	// Custom (E2) is likewise freeform/document-flow — no cartesian/
+	// polar scale resolution applies — but unlike table it IS
+	// consumed by the SVG backend directly (render/svg/custom.go).
+	if markType == "custom" {
+		var markDef *spec.MarkDef
+		if s.Mark != nil {
+			markDef = s.Mark.Def
+		}
+		return buildCustomSceneDoc(s, tbl, markDef, sceneTheme, layout, hasTitle)
+	}
+
 	// Polar marks (arc / pie / donut) consume theta + (optional) color;
 	// they do not need cartesian x / y scales. Histogram builds its
 	// own synthetic x/y scales inside the encoder (D060) so the

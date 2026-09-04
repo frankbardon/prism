@@ -17,6 +17,12 @@ import (
 // empty <svg>. Embedding a table's per-cell sub-marks (e.g. a
 // sparkline column) is unaffected — those stay ordinary
 // geometry-bearing marks and are absent from this set.
+//
+// scene.MarkCustom (E2) is intentionally absent here: a custom mark
+// IS supported directly by the SVG backend — see render/svg/custom.go
+// — either by splicing a registered SVGCustomRenderer's fragment
+// verbatim, or by <foreignObject>-wrapping an HTMLCustomRenderer's
+// fragment as a fallback.
 var unsupportedMarks = map[scene.MarkType]bool{
 	scene.MarkTable: true,
 }

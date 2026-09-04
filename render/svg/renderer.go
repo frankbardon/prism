@@ -108,7 +108,9 @@ func (r *Renderer) Render(doc *scene.SceneDoc, opts render.RenderOpts) ([]byte, 
 	// carries pre-offset coordinates from EncodeComposite — the
 	// renderer never has to wrap cells in a <g transform=> group.
 	for _, cell := range doc.Grid.Cells {
-		renderScene(w, cell.Scene)
+		if err := renderScene(w, cell.Scene, theme); err != nil {
+			return nil, err
+		}
 	}
 
 	// Shared axes (D051): emit once at the grid edge, outside any
@@ -276,8 +278,12 @@ func renderGridHeaders(w *Writer, g scene.SceneGrid) {
 	w.Newline()
 }
 
-// renderScene emits the per-Scene structural tree.
-func renderScene(w *Writer, s scene.Scene) {
+// renderScene emits the per-Scene structural tree. sceneTheme is the
+// resolved theme in scope for the whole render call (RenderOpts.Theme
+// falling back to doc.Theme falling back to scene.Default()) — passed
+// through so a custom mark's layer can hand it to the registered
+// CustomRenderer as tokens (E2).
+func renderScene(w *Writer, s scene.Scene, sceneTheme *scene.Theme) error {
 	w.Newline()
 	w.Indent(2)
 	w.OpenTag("g")
@@ -348,6 +354,13 @@ func renderScene(w *Writer, s scene.Scene) {
 		w.Attr("data-prism-layer", layer.ID)
 		w.CloseTagOpen()
 		w.Newline()
+		if layer.Mark == scene.MarkCustom {
+			w.Indent(8)
+			if err := renderCustom(w, s, sceneTheme); err != nil {
+				return err
+			}
+			w.Newline()
+		}
 		for _, m := range layer.Marks {
 			w.Indent(8)
 			renderMark(w, m)
@@ -371,4 +384,5 @@ func renderScene(w *Writer, s scene.Scene) {
 	w.Indent(2)
 	w.EndTag("g")
 	w.Newline()
+	return nil
 }
