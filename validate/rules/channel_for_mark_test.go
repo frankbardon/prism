@@ -87,3 +87,36 @@ func TestChannelForMarkRejectsXOnTable(t *testing.T) {
 		t.Fatalf("expected one PRISM_SPEC_003, got: %+v", errs)
 	}
 }
+
+// TestChannelForMarkAcceptsCustomWithNoChannels asserts a custom mark
+// (E2) with no encoding channels at all does not trip PRISM_SPEC_003
+// — custom is freeform/document-flow and never participates in the
+// scale/axis or position-channel system.
+func TestChannelForMarkAcceptsCustomWithNoChannels(t *testing.T) {
+	s := &spec.Spec{
+		Schema:   "urn:prism:schema:v1:spec",
+		Mark:     &spec.Mark{Def: &spec.MarkDef{Type: "custom", Renderer: "my-viz"}},
+		Encoding: &spec.Encoding{},
+	}
+	errs := ChannelForMark{}.Check(s, validate.EmptyLookup{})
+	if len(errs) != 0 {
+		t.Fatalf("expected no errors on custom mark with no channels, got: %+v", errs)
+	}
+}
+
+// TestChannelForMarkRejectsXOnCustom asserts a stray position channel
+// on a custom mark is rejected — custom's allowlist carries no
+// position/mark channels, only the common set (mirrors table).
+func TestChannelForMarkRejectsXOnCustom(t *testing.T) {
+	s := &spec.Spec{
+		Schema: "urn:prism:schema:v1:spec",
+		Mark:   &spec.Mark{Def: &spec.MarkDef{Type: "custom", Renderer: "my-viz"}},
+		Encoding: &spec.Encoding{
+			X: &spec.PositionChannel{ChannelCommon: spec.ChannelCommon{Field: "x", Type: "nominal"}},
+		},
+	}
+	errs := ChannelForMark{}.Check(s, validate.EmptyLookup{})
+	if len(errs) != 1 || errs[0].Code != "PRISM_SPEC_003" {
+		t.Fatalf("expected one PRISM_SPEC_003, got: %+v", errs)
+	}
+}

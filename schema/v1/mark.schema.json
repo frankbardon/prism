@@ -15,7 +15,8 @@
         "image", "path",
         "geoshape", "geopoint",
         "tree", "dendrogram", "network",
-        "table"
+        "table",
+        "custom"
       ]
     },
     "mark": {
@@ -94,7 +95,8 @@
           },
           "description": "Spark adornment: shade a horizontal normal-range band behind the spark, spanning the full plot width between from and to."
         },
-        "page_size":     {"type": "integer", "minimum": 1, "description": "Rows per page for table marks. Defaults to 25 when unset."}
+        "page_size":     {"type": "integer", "minimum": 1, "description": "Rows per page for table marks. Defaults to 25 when unset."},
+        "renderer":      {"type": "string", "minLength": 1, "description": "Name of the CustomRenderer registered for a custom mark (prism.RegisterCustomMark). A plain string key, never executable code."}
       }
     }
   }

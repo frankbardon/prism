@@ -146,6 +146,14 @@ func allowedChannelsForMark(mark string) []string {
 		// position/mark channels — no x/y (or any other geometry
 		// channel) is meaningful here, so only the common set applies.
 		set = nil
+	case "custom":
+		// Custom (E2) is freeform/document-flow content rendered by a
+		// registered CustomRenderer (prism.RegisterCustomMark) from
+		// raw rows — it never resolves a shared x/y scale, composes
+		// against a shared axis, or runs a layout algorithm, so no
+		// position/geometry channel is meaningful here either; only
+		// the common set applies.
+		set = nil
 	default:
 		set = append(cartesianMark, polarMark...)
 	}

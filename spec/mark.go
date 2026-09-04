@@ -104,6 +104,17 @@ type MarkDef struct {
 	// per page, applied at encode time (E1-S3). Must be >= 1 when
 	// set — validated alongside the table column-presence rule.
 	PageSize *int `json:"page_size,omitempty"`
+
+	// Renderer (E2, custom mark) names the registered CustomRenderer
+	// (prism.RegisterCustomMark) to invoke for a `custom` mark. Always
+	// a plain string key, never executable code — the spec JSON
+	// never carries a renderer's implementation, only the name it was
+	// registered under (preserving Prism's no-expression-language
+	// invariant). Resolved against the active Go or JS registry at
+	// encode/render time (E2-S2/E2-S3), not at decode time — an
+	// unregistered name is a runtime error at that later stage, not a
+	// decode-time one.
+	Renderer string `json:"renderer,omitempty"`
 }
 
 // TablePageSizeDefault is the number of rows rendered per page for a
