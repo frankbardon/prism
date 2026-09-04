@@ -73,6 +73,32 @@ func TestPrismTwirpServerPlotSVG(t *testing.T) {
 	}
 }
 
+func TestPrismTwirpServerPlotHTML(t *testing.T) {
+	srv := newServer()
+	resp, err := srv.Plot(context.Background(), &PlotRequest{
+		Spec:   minimalSpec,
+		Format: "html",
+		Width:  400,
+		Height: 300,
+	})
+	if err != nil {
+		t.Fatalf("Plot: %v", err)
+	}
+	if resp.Mime != "text/html" {
+		t.Fatalf("Plot mime = %q, want text/html", resp.Mime)
+	}
+	if len(resp.Bytes) == 0 {
+		t.Fatalf("Plot returned zero bytes")
+	}
+	body := strings.TrimSpace(string(resp.Bytes))
+	if !strings.HasPrefix(body, "<!doctype html>") {
+		t.Fatalf("Plot bytes do not start with <!doctype html>: %q...", resp.Bytes[:min(len(resp.Bytes), 32)])
+	}
+	if !strings.Contains(body, "<svg") {
+		t.Fatalf("Plot bytes missing embedded <svg")
+	}
+}
+
 func TestPrismTwirpServerPlotPNGUnimplemented(t *testing.T) {
 	srv := newServer()
 	_, err := srv.Plot(context.Background(), &PlotRequest{

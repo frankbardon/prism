@@ -225,6 +225,25 @@ Not every channel is valid for every mark — `theta` only makes sense
 on `arc`, `source`/`target` only on `sankey`, etc. The validator
 catches mismatches with `PRISM_SPEC_003`.
 
+## Renderer compatibility
+
+Every mark listed above renders through both Go backends
+(`render/svg` and `render/html` — see [Themes: Rendering
+backends](themes.md#rendering-backends)); `render/html` reuses
+`render/svg`'s own emitters internally, so there is nothing
+mark-specific to opt into.
+
+The one forward-looking exception is the `table` mark (landing in a
+later story): it renders as DOM/CSS markup — sortable/paginated rows,
+row selection — with no SVG geometry equivalent. Requesting a
+top-level `table` mark via the `svg` backend fails with
+`PRISM_RENDER_MARK_UNSUPPORTED` naming the mark and backend, rather
+than silently emitting an empty `<svg>`; render it via the `html`
+backend instead. This restriction applies only to a `table` mark
+used directly — embedding a geometry-bearing mark (e.g. a
+`sparkline` column) inside a future table's cells is unaffected and
+renders normally via either backend.
+
 ## Worked examples
 
 Every mark above has a fixture in the [gallery](../gallery/index.md).

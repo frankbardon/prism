@@ -72,6 +72,27 @@ func TestPrismPlotProducesValidSVGForAllFixtures(t *testing.T) {
 	}
 }
 
+// TestPrismPlotProducesHTMLForBasicFixture proves `prism plot
+// --format html` dispatches to the html backend end-to-end: the
+// output is a well-formed HTML document wrapping an inline <svg>.
+// There's no table-mark Scene IR yet (E1-S2/E1-S3), so this uses the
+// simplest existing mark (bar) as the integration test for the html
+// backend's CLI wiring — mirrors render/html's own golden test.
+func TestPrismPlotProducesHTMLForBasicFixture(t *testing.T) {
+	fixturePath := repoFile(t, "examples", "specs", "bar_basic.json")
+	out, exit := runCLI(t, "prism", "plot", "--format", "html", fixturePath)
+	if exit != 0 {
+		t.Fatalf("plot --format html exited %d: %s", exit, firstChars(out, 400))
+	}
+	body := stripLeadingWarnings(out)
+	if !strings.HasPrefix(body, "<!doctype html>") {
+		t.Fatalf("output does not start with <!doctype html>: %s", firstChars(body, 200))
+	}
+	if !strings.Contains(body, "<svg ") {
+		t.Fatalf("output missing embedded <svg: %s", firstChars(body, 400))
+	}
+}
+
 // TestPrismPlotRejectsPDFFormat asserts the removed PDF backend is
 // reported cleanly: `prism plot --format pdf` must exit non-zero with
 // PRISM_RENDER_FORMAT_UNAVAILABLE rather than crash or emit bytes.

@@ -20,8 +20,8 @@ option go_package = "github.com/frankbardon/prism/rpc;rpc";
 // are JSON-encoded per the schemas under `schema/v1/`.
 service Prism {
   // Plot compiles a spec and renders it to bytes in the requested
-  // format. SVG is always supported; PNG (P15) and PDF (P16) return
-  // PRISM_RENDER_FORMAT_UNAVAILABLE in P14.
+  // format. SVG and HTML are supported; PNG (P15) and PDF (P16)
+  // return PRISM_RENDER_FORMAT_UNAVAILABLE in P14.
   rpc Plot         (PlotRequest)     returns (PlotResponse);
 
   // Validate returns ok=true with no errors when the spec is valid,

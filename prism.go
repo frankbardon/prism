@@ -9,11 +9,12 @@
 //     cheaper than a full Render (the encode + raster stages are the
 //     expensive ones).
 //
-//   - Render — full pipeline → byte stream (SVG).
+//   - RenderPlan — take a CompiledPlan and produce a byte stream via
+//     the named backend ("svg" | "html" today).
 //
-// Both helpers accept either a parsed *spec.Spec or raw JSON bytes
-// and surface diagnostics (PRISM_WARN_* warnings) alongside any
-// hard-error envelope.
+// Compile and CompileJSON accept either a parsed *spec.Spec or raw
+// JSON bytes and surface diagnostics (PRISM_WARN_* warnings) alongside
+// any hard-error envelope.
 package prism
 
 import (
@@ -26,6 +27,9 @@ import (
 	prismerrors "github.com/frankbardon/prism/errors"
 	"github.com/frankbardon/prism/plan"
 	"github.com/frankbardon/prism/plan/build"
+	"github.com/frankbardon/prism/render"
+	"github.com/frankbardon/prism/render/html"
+	"github.com/frankbardon/prism/render/svg"
 	"github.com/frankbardon/prism/resolve"
 	"github.com/frankbardon/prism/spec"
 	"github.com/frankbardon/prism/table"
@@ -44,8 +48,8 @@ type CompileOptions struct {
 // CompiledPlan is the structured output of Compile: the same
 // information the renderer would consume, exposed as a stable JSON
 // shape. Callers can inspect the plan, diff two plans against each
-// other, or hand its Scene to a renderer separately (a render.Renderer,
-// e.g. render/svg).
+// other, or render it via RenderPlan (or hand its Scene to a
+// render.Renderer directly, e.g. render/svg or render/html).
 //
 // The Scene field carries the canonical IR; the flattened views
 // (Marks, Scales, Data, Layout) summarise it for programmatic
@@ -113,8 +117,9 @@ type Diagnostic struct {
 }
 
 // Compile runs Validate → Plan → Execute → Encode and returns a
-// CompiledPlan. The result is renderer-agnostic; pass its Scene to a
-// render.Renderer (e.g. render/svg) to produce bytes. Typical cost is
+// CompiledPlan. The result is renderer-agnostic; pass it to
+// RenderPlan (or its Scene to a render.Renderer directly, e.g.
+// render/svg or render/html) to produce bytes. Typical cost is
 // dominated by the executor (aggregation over the materialised rows);
 // the marshalled CompiledPlan
 // itself is light. Callers that want only the plan summary can
@@ -157,6 +162,48 @@ func CompileJSON(ctx context.Context, specJSON []byte, opts CompileOptions) (*Co
 			map[string]any{"Schema": "(decode failed)"})
 	}
 	return Compile(ctx, s, opts)
+}
+
+// RenderPlan renders a CompiledPlan's Scene to bytes via the backend
+// named in opts.Format, and returns the backend's MIME type alongside
+// the bytes. This is the library-level counterpart to the CLI's
+// `--format` flag and the RPC/MCP request's `format` field — all
+// three surfaces select the same set of backends by the same format
+// string ("svg" | "html" today; opts.Format == "" defaults to "svg").
+//
+// Callers that already hold a render.Renderer (e.g. a custom or
+// vendored backend) can skip RenderPlan and call plan.Scene through
+// it directly; RenderPlan exists so library consumers don't have to
+// hand-roll the same format-name switch the CLI and RPC server carry.
+// An unrecognised format returns PRISM_RENDER_FORMAT_UNAVAILABLE,
+// matching the CLI/RPC error shape.
+func RenderPlan(plan *CompiledPlan, opts render.RenderOpts) ([]byte, string, error) {
+	if plan == nil || plan.Scene == nil {
+		return nil, "", fmt.Errorf("prism.RenderPlan: nil plan or plan.Scene")
+	}
+	format := opts.Format
+	if format == "" {
+		format = "svg"
+	}
+	var rend render.Renderer
+	switch format {
+	case "svg":
+		rend = svg.New()
+	case "html":
+		rend = html.New()
+	default:
+		return nil, "", prismerrors.New(
+			"PRISM_RENDER_FORMAT_UNAVAILABLE",
+			fmt.Sprintf("Render format %s is not available in the current Prism build.", format),
+			map[string]any{"Format": format},
+		)
+	}
+	opts.Format = format
+	bytes, err := rend.Render(plan.Scene, opts)
+	if err != nil {
+		return nil, "", err
+	}
+	return bytes, rend.MimeType(), nil
 }
 
 // runPipeline mirrors cmd/prismwasm's executePipeline so both the

@@ -33,6 +33,7 @@ import (
 	"github.com/frankbardon/prism/plan"
 	"github.com/frankbardon/prism/plan/build"
 	"github.com/frankbardon/prism/render"
+	"github.com/frankbardon/prism/render/html"
 	"github.com/frankbardon/prism/render/svg"
 	"github.com/frankbardon/prism/resolve"
 	"github.com/frankbardon/prism/spec"
@@ -185,7 +186,7 @@ func dimsOrDefault(w, h int32) (float64, float64) {
 	return width, height
 }
 
-// Plot implements the Plot RPC. SVG renders inline; PNG and
+// Plot implements the Plot RPC. SVG and HTML render inline; PNG and
 // canvas-json return PRISM_RENDER_FORMAT_UNAVAILABLE — the interceptor
 // maps that code to twirp.Unimplemented per D085.
 func (s *PrismServer) Plot(ctx context.Context, req *PlotRequest) (*PlotResponse, error) {
@@ -197,7 +198,7 @@ func (s *PrismServer) Plot(ctx context.Context, req *PlotRequest) (*PlotResponse
 		format = "svg"
 	}
 	switch format {
-	case "svg":
+	case "svg", "html":
 		// handled below
 	case "png", "canvas-json":
 		// Match the CLI's landing-phase message so users see the
@@ -238,6 +239,14 @@ func (s *PrismServer) Plot(ctx context.Context, req *PlotRequest) (*PlotResponse
 		rend := svg.New()
 		bytes, err = rend.Render(doc, render.RenderOpts{
 			Format: "svg",
+			Width:  width,
+			Height: height,
+		})
+		mime = rend.MimeType()
+	case "html":
+		rend := html.New()
+		bytes, err = rend.Render(doc, render.RenderOpts{
+			Format: "html",
 			Width:  width,
 			Height: height,
 		})

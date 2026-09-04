@@ -351,6 +351,15 @@ var Codes = map[string]CodeMetadata{
 			`Drop --theme to fall back to the default (light).`,
 		},
 	},
+	"PRISM_RENDER_MARK_UNSUPPORTED": {
+		Code:    "PRISM_RENDER_MARK_UNSUPPORTED",
+		Message: `Mark type {{.Mark}} has no {{.Format}} geometry — render this scene via a different backend.`,
+		Fixups: []string{
+			`The table mark is DOM/CSS-driven (sort, paginate, row selection) and has no SVG geometry equivalent — request it via the html backend instead: --format html (CLI), format: "html" (RPC/MCP), or opts.Format = "html" (library RenderPlan).`,
+			`Non-table marks (bar, line, point, ...) render fine via svg; this error only fires for backend/mark combinations that cannot be represented.`,
+		},
+		SeeAlso: []string{"PRISM_RENDER_FORMAT_UNAVAILABLE"},
+	},
 	"PRISM_ENCODE_001": {
 		Code:    "PRISM_ENCODE_001",
 		Message: `Encode-time mismatch: field {{.Field}} not present in upstream table from source {{.Source}}.`,

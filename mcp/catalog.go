@@ -94,7 +94,7 @@ func Tools(cfg Config) []ToolDescriptor {
 	return []ToolDescriptor{
 		{
 			Name:         "prism_plot",
-			Description:  "Compile a Prism spec and render to image bytes. SVG is supported; PNG returns PRISM_RENDER_FORMAT_UNAVAILABLE (V2).",
+			Description:  "Compile a Prism spec and render to image bytes. SVG and HTML are supported; PNG returns PRISM_RENDER_FORMAT_UNAVAILABLE (V2).",
 			InputSchema:  plotInputSchema,
 			OutputSchema: plotOutputSchema,
 			Invoke: func(ctx context.Context, f *rpc.PrismServer, raw json.RawMessage) (any, error) {

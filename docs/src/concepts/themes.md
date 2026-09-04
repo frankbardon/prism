@@ -227,6 +227,28 @@ The full set scales with the tokens the active theme defines —
 unset tokens omit the variable so renderers fall back to hard-coded
 defaults inside the CSS class declarations.
 
+## Rendering backends
+
+Three backends consume the same `scene.SceneDoc` + theme tokens:
+
+| Backend | Package | MIME type | Notes |
+|---|---|---|---|
+| `svg` (default) | `render/svg` | `image/svg+xml` | Canonical vector output; the `<style>` block above is emitted inline. |
+| `html` | `render/html` | `text/html` | Wraps `render/svg`'s own output in a small standalone HTML document (`<!doctype html><html>…<div class="prism-html-chart"><svg>…</svg></div>…`) — the embedded SVG carries the identical theme `<style>` block, so a theme picked at plot time (`--theme=dark`, etc.) looks the same in either backend. |
+| `canvas` | vendored ESM (`static/`) | n/a (DOM) | Browser-only web component bridge; not a Go backend. |
+
+Select the backend the same way across every surface: `prism plot
+--format html` (CLI), `format: "html"` on the Twirp `Plot` RPC / the
+`prism_plot` MCP tool, or `opts.Format = "html"` passed to
+`prism.RenderPlan` (library). An unsupported or misspelled format
+returns `PRISM_RENDER_FORMAT_UNAVAILABLE` from all three surfaces.
+
+A mark can also be unsupported by a specific backend rather than the
+format itself being unavailable — the SVG backend rejects a top-level
+`table` mark (DOM/CSS-driven, no SVG geometry equivalent) with
+`PRISM_RENDER_MARK_UNSUPPORTED`, naming the mark and pointing at the
+`html` backend instead. See [Marks](marks.md#renderer-compatibility).
+
 ## Worked examples
 
 - [bar_light](../gallery/themes/bar_light.prism.json)

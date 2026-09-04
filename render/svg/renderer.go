@@ -44,6 +44,9 @@ func (r *Renderer) Render(doc *scene.SceneDoc, opts render.RenderOpts) ([]byte, 
 	if doc == nil {
 		return nil, fmt.Errorf("svg.Render: nil SceneDoc")
 	}
+	if err := checkMarkSupport(doc); err != nil {
+		return nil, err
+	}
 	theme := opts.Theme
 	if theme == nil {
 		theme = doc.Theme
