@@ -1,5 +1,19 @@
 package scene
 
+// TableCellSparkWidth / TableCellSparkHeight are the pixel dimensions
+// of the coordinate space a table cell's sub-mark (e.g. a "sparkline"
+// column) is encoded against — see encode/table.go's
+// buildTableSubMarkCell, which resolves the sub-mark's X/Y scales
+// against exactly this box. A render backend that re-wraps
+// TableCell.Marks in its own SceneDoc to emit standalone geometry for
+// one cell (E1-S4's inline-<svg>-per-cell HTML path) must size that
+// wrapper Scene's Frame/Plot to match, or the sub-mark's
+// already-resolved coordinates land outside the visible viewBox.
+const (
+	TableCellSparkWidth  = 120.0
+	TableCellSparkHeight = 24.0
+)
+
 // Table is the Scene IR node for a table mark (E1). Unlike Mark, a
 // Table carries no positioned geometry — its rows and columns render
 // as DOM/CSS markup downstream (E1-S4), not SVG primitives. It hangs

@@ -19,10 +19,13 @@ import (
 // fit its own cell layout — these are just the coordinate space the
 // nested Scene IR's geometry is expressed in, matching the compact
 // sparkline footprint used elsewhere (encode/layout.go's
-// ComputeSparkline uses the same order of magnitude).
+// ComputeSparkline uses the same order of magnitude). Aliased to the
+// exported scene.TableCellSparkWidth/Height constants so the render
+// backend that re-wraps a cell's Scene IR for standalone emission
+// (render/html) shares the exact same coordinate-space contract.
 const (
-	tableCellSparkWidth  = 120.0
-	tableCellSparkHeight = 24.0
+	tableCellSparkWidth  = scene.TableCellSparkWidth
+	tableCellSparkHeight = scene.TableCellSparkHeight
 )
 
 // buildTableSceneDoc builds the full SceneDoc for a table-mark spec
