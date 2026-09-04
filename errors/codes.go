@@ -923,6 +923,15 @@ var Codes = map[string]CodeMetadata{
 		},
 		SeeAlso: []string{"PRISM_SPEC_023"},
 	},
+	"PRISM_WARN_TABLE_CELL_UNPARSEABLE": {
+		Code:    "PRISM_WARN_TABLE_CELL_UNPARSEABLE",
+		Message: `Table row {{.Row}} column {{.Field}}: value could not be parsed as a numeric series for sub-mark {{.Mark}}.`,
+		Fixups: []string{
+			`A sub-mark column (e.g. "mark": "sparkline") expects each row's field value to be an array of numbers, or a JSON string encoding one.`,
+			`The cell renders with no embedded sub-mark for this row; other rows and columns are unaffected.`,
+		},
+		SeeAlso: []string{"PRISM_SPEC_040"},
+	},
 }
 
 // CodesSorted returns the catalog keys in ascending order.

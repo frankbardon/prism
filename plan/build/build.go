@@ -805,6 +805,16 @@ func (c *buildCtx) injectEncodingAggregate(tip plan.NodeID, enc *spec.Encoding) 
 	collectMark(enc.Opacity)
 	collectMark(enc.Size)
 	collectMark(enc.Shape)
+	// Table columns (E1) carry the same field/aggregate shape via the
+	// embedded ChannelCommon, so a table column declaring an
+	// aggregate triggers the synthetic GroupAggregateNode exactly
+	// like any other channel's aggregate does.
+	for _, tc := range enc.Columns {
+		if tc.Field == "" {
+			continue
+		}
+		entries = append(entries, entry{field: tc.Field, agg: tc.Aggregate})
+	}
 
 	var hasAgg bool
 	for _, e := range entries {
