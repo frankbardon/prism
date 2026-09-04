@@ -229,10 +229,6 @@ contract, and each entry is a standard channel binding (`field`,
 naming a sub-mark that renders that column's cells (e.g. `sparkline`
 for an inline trend column) instead of formatted text.
 
-This section covers the spec shape landed in E1-S2 (spec/schema/validate
-only — no plan/encode/render pipeline yet); the full write-up with
-worked examples and a gallery entry lands in E1-S6.
-
 Mark-def options:
 
 - `page_size` — rows rendered per page. Defaults to `25` when unset
@@ -261,7 +257,10 @@ Column fields (`encoding.columns[]`, one object per column):
 
 Validate rule: `PRISM_SPEC_040` (`encoding.columns[]` required and
 non-empty). See [Renderer compatibility](#renderer-compatibility)
-below for the `svg` vs `html` backend split.
+below for the `svg` vs `html` backend split, and the [gallery `table/`
+entries](../gallery/index.md#table) for full worked examples
+(including a paginated plain-column table and a `sparkline`
+sub-mark column).
 
 ## Channel allowlists
 
@@ -313,3 +312,4 @@ Start with:
 - [histogram](../gallery/composite-marks/histogram.prism.json)
 - [pie](../gallery/composite-marks/pie.prism.json)
 - [sankey_user_flow](../gallery/specialty-marks/sankey_user_flow.prism.json)
+- [table_revenue_trend](../gallery/table/table_revenue_trend.prism.json) (`html` backend; renders a `sparkline` sub-mark column)
