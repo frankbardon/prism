@@ -61,17 +61,21 @@ func TestPrismGalleryFixtures(t *testing.T) {
 		t.Fatalf("gallery has %d fixtures; expected ≥50 per P16 PHASE.md", len(fixtures))
 	}
 
-	// Selection-only specs and a few specialty marks render axes-only
-	// or empty SVG today (PRISM_WARN flagged). They still validate; we
-	// only assert validate exit and skip the SVG assertion.
+	// Selection-only specs render axes-only SVG today (PRISM_WARN
+	// flagged). They still validate; we only assert validate exit and
+	// skip the SVG assertion. (The sparkline_inline* fixtures used to
+	// be skip-listed here too — they rendered blank because the theme
+	// gave "sparkline" a Fill-only default style with no Stroke, and
+	// the SVG renderer hardcodes fill="none" on every line polyline.
+	// Fixed in E1-S1 via a Stroke-carrying "sparkline" default in
+	// encode/encode.go + every built-in theme's MarkStyle map, so they
+	// now render and golden normally.)
 	plotSkip := map[string]bool{
-		"selections/selection_point.prism.json":            true,
-		"selections/selection_interval.prism.json":         true,
-		"specialty-marks/sparkline_inline.prism.json":      true,
-		"specialty-marks/sparkline_inline_grid.prism.json": true,
-		"themes/bar_light.prism.json":                      true,
-		"themes/bar_dark.prism.json":                       true,
-		"themes/bar_print.prism.json":                      true,
+		"selections/selection_point.prism.json":    true,
+		"selections/selection_interval.prism.json": true,
+		"themes/bar_light.prism.json":              true,
+		"themes/bar_dark.prism.json":               true,
+		"themes/bar_print.prism.json":              true,
 	}
 
 	updateGoldens := os.Getenv("UPDATE_GOLDENS") == "1"

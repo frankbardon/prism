@@ -674,8 +674,14 @@ func defaultMarkStyle(t *theme.Theme, markType string) scene.Style {
 func hardcodedDefaultStyle(markType string) scene.Style {
 	defaultFill, _ := scene.ColorFromHex("#3b82f6")
 	switch markType {
-	case "line", "rule":
+	case "line", "rule", "sparkline":
 		return scene.Style{Stroke: defaultFill, StrokeWidth: 1.5}
+	case "network":
+		// network draws both scene.MarkLine edges and scene.MarkPoint /
+		// scene.MarkRect nodes from this single Style (encode/marks/network.go
+		// reuses in.Style for both), so it needs Fill (nodes) AND Stroke
+		// (edges) — unlike line/rule/sparkline, which are Stroke-only.
+		return scene.Style{Fill: defaultFill, Stroke: defaultFill, StrokeWidth: 1}
 	case "area":
 		return scene.Style{Fill: defaultFill, Opacity: 0.7}
 	case "geoshape":
