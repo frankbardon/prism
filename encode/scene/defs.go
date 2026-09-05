@@ -10,7 +10,14 @@ type Defs struct {
 	Filters   map[string]Filter   `json:"filters,omitempty"`
 }
 
-// Gradient is a linear or radial color gradient.
+// Gradient is a linear or radial color gradient. Also reused by
+// scene.Theme.Gradients (E3-S3) to carry the resolved
+// theme.Theme.Gradients registry through to render/svg's
+// <linearGradient>/<radialGradient> emitters (writeGradientPatternDefs).
+// For Type == "radial", X1/Y1 hold the center (cx/cy) and X2 holds
+// the radius (r); Y2 is unused. Coordinates are fractions of the
+// bounding box (SVG's default objectBoundingBox gradientUnits) —
+// theme.GradientDef.sceneDef does the angle/center math.
 type Gradient struct {
 	Type  string         `json:"type"` // "linear" | "radial"
 	Stops []GradientStop `json:"stops"`
@@ -27,9 +34,24 @@ type GradientStop struct {
 }
 
 // Pattern is a tiled fill pattern (e.g. crosshatch for accessibility).
+// This same shape is reused by scene.Theme.Patterns (E3-S3), which
+// carries the resolved theme.Theme.Patterns registry through to
+// render/svg's <pattern> emitters (writeGradientPatternDefs). Type is
+// one of theme.PatternTypes ("diagonal-stripes", "dots",
+// "cross-hatch", "grid") for a built-in catalogue entry, or ""
+// (empty) for a raw-content pattern, in which case Content carries
+// the verbatim SVG to place inside the <pattern> wrapper — same trust
+// tier as scene.Theme.Filters/RawCSS (developer-authored, never
+// sanitized). Color/Spacing/Size tune the built-in generators only;
+// Content ignores them. Spacing/Size are always resolved to concrete
+// (defaulted) values by theme.PatternDef.sceneDef before landing here
+// — this type never carries an "unset" sentinel for either.
 type Pattern struct {
-	Type string  `json:"type"`
-	Size float64 `json:"size"`
+	Type    string  `json:"type"`
+	Size    float64 `json:"size"`
+	Color   string  `json:"color,omitempty"`
+	Spacing float64 `json:"spacing,omitempty"`
+	Content string  `json:"content,omitempty"`
 }
 
 // Filter is a post-process effect (blur, drop-shadow).

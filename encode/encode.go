@@ -666,7 +666,7 @@ func defaultMarkStyle(t *theme.Theme, markType string) scene.Style {
 		return style
 	}
 	if ms := t.MarkDefault(markType); ms != nil {
-		applyThemeMarkStyle(&style, ms)
+		applyThemeMarkStyle(&style, ms, t)
 	}
 	return style
 }
@@ -703,19 +703,33 @@ func hardcodedDefaultStyle(markType string) scene.Style {
 	}
 }
 
-// applyThemeMarkStyle folds a theme.MarkStyle into a scene.Style.
-// Hex parse failures degrade silently (the hardcoded fallback held
-// before this call, so the user gets a chart even if a theme ships
-// a malformed color).
-func applyThemeMarkStyle(style *scene.Style, ms *theme.MarkStyle) {
+// applyThemeMarkStyle folds a theme.MarkStyle into a scene.Style. A
+// Fill/Stroke written as url(#name) that resolves against t's
+// Gradients/Patterns registries (theme.Theme.ResolveFillRef, E3-S2)
+// sets FillRef/StrokeRef to the def id instead of parsing as a
+// literal color (E3-S3) — see scene.Style.FillRef. Hex parse failures
+// (and a url(#name) value that doesn't resolve, which
+// theme.Theme.Validate would already have rejected for any
+// normally-loaded theme) degrade silently: the hardcoded fallback
+// held before this call, so the user gets a chart even if a theme
+// ships a malformed color.
+func applyThemeMarkStyle(style *scene.Style, ms *theme.MarkStyle, t *theme.Theme) {
 	if ms.Fill != "" {
-		if c, err := scene.ColorFromHex(ms.Fill); err == nil {
+		if id := t.ResolveFillRef(ms.Fill).DefID(); id != "" {
+			style.FillRef = id
+			style.Fill = nil
+		} else if c, err := scene.ColorFromHex(ms.Fill); err == nil {
 			style.Fill = c
+			style.FillRef = ""
 		}
 	}
 	if ms.Stroke != "" {
-		if c, err := scene.ColorFromHex(ms.Stroke); err == nil {
+		if id := t.ResolveFillRef(ms.Stroke).DefID(); id != "" {
+			style.StrokeRef = id
+			style.Stroke = nil
+		} else if c, err := scene.ColorFromHex(ms.Stroke); err == nil {
 			style.Stroke = c
+			style.StrokeRef = ""
 		}
 	}
 	if ms.StrokeWidth != nil {

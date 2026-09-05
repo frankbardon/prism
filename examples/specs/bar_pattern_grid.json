@@ -1,0 +1,48 @@
+{
+  "$schema": "urn:prism:schema:v1:spec",
+  "title": "Brand score (bar with grid pattern fill)",
+  "data": {
+    "name": "brand_scores",
+    "values": [
+      {
+        "brand_id": "alpha",
+        "score": 0.42
+      },
+      {
+        "brand_id": "beta",
+        "score": 0.71
+      },
+      {
+        "brand_id": "gamma",
+        "score": 0.58
+      }
+    ]
+  },
+  "mark": "bar",
+  "encoding": {
+    "x": {
+      "field": "brand_id",
+      "type": "nominal"
+    },
+    "y": {
+      "field": "score",
+      "type": "quantitative"
+    }
+  },
+  "theme": {
+    "name": "light",
+    "patterns": {
+      "hatch_grid": {
+        "type": "grid",
+        "color": "#e45756",
+        "spacing": 8,
+        "size": 1
+      }
+    },
+    "marks": {
+      "bar": {
+        "fill": "url(#hatch_grid)"
+      }
+    }
+  }
+}

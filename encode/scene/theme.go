@@ -37,6 +37,29 @@ type Theme struct {
 	LegendFilter string `json:"legend_filter,omitempty"`
 	TitleFilter  string `json:"title_filter,omitempty"`
 	ViewFilter   string `json:"view_filter,omitempty"`
+	// Gradients/Patterns mirror theme.Theme.Gradients/Patterns,
+	// pre-resolved to SVG-emission-ready shape by
+	// theme.Theme.ToSceneTheme (angle-to-vector and center/radius math
+	// already done for gradients; Spacing/Size defaults already
+	// resolved for patterns). The renderer emits one
+	// <linearGradient>/<radialGradient id="prism-gradient-<name>">
+	// def per Gradients entry and one <pattern id="prism-pattern-<name>">
+	// def per Patterns entry (render/svg/style.go's
+	// writeGradientPatternDefs), regardless of whether a Style
+	// actually references it that render pass — same "emit the whole
+	// registry" convention as Filters.
+	Gradients map[string]Gradient `json:"gradients,omitempty"`
+	Patterns  map[string]Pattern  `json:"patterns,omitempty"`
+	// ViewBackgroundRef carries the resolved theme.ViewStyle.Background
+	// url(#name) reference (see theme.Theme.ResolveFillRef), already
+	// prefixed as "prism-gradient-<name>" or "prism-pattern-<name>".
+	// Empty means the background is unset or a plain literal color
+	// (theme.ViewStyle.Background carries no rendered fill today for
+	// the literal-color case — see render/svg/renderer.go's
+	// renderScene). The renderer applies
+	// fill="url(#<ViewBackgroundRef>)" to the view background rect
+	// when non-empty.
+	ViewBackgroundRef string `json:"view_background_ref,omitempty"`
 	// AxisLabelLineHeight/AxisLabelLetterSpacing and
 	// AxisTitleLineHeight/AxisTitleLetterSpacing carry the resolved
 	// theme.AxisStyle line_height/letter_spacing tokens (E2-S2),

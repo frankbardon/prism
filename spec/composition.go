@@ -80,8 +80,10 @@ type ThemeOverride struct {
 	// linear/radial gradient definitions. Patterns mirrors
 	// theme.Theme.Patterns — a named registry of pattern fills (built-
 	// in catalogue or raw-SVG Content, same trust tier as Filters/
-	// RawCSS). url(#name) resolution against Fill/Stroke/Background
-	// lands in E3-S2; SVG emission lands in E3-S3.
+	// RawCSS). A Fill/Stroke/Background value written as url(#name)
+	// resolves against these registries (theme.Theme.ResolveFillRef)
+	// and the SVG renderer emits a matching
+	// <linearGradient>/<radialGradient>/<pattern> def.
 	Gradients map[string]GradientDef `json:"gradients,omitempty"`
 	Patterns  map[string]PatternDef  `json:"patterns,omitempty"`
 }

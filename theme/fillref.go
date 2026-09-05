@@ -88,3 +88,25 @@ func (t *Theme) ResolveFillRef(value string) FillRef {
 	}
 	return FillRef{Kind: FillRefUnknown, Name: name}
 }
+
+// DefID returns the SVG def id an emitted fill="url(#...)" /
+// stroke="url(#...)" attribute should reference for r —
+// "prism-gradient-<name>" or "prism-pattern-<name>" — or "" for
+// FillRefNone (plain literal color, nothing to reference) and
+// FillRefUnknown (nothing registered to reference). A theme loaded
+// through the normal Register/LoadFile path has already had
+// FillRefUnknown rejected by Theme.Validate, so render/svg is not
+// expected to observe it in practice; treating it as "" here is a
+// defensive no-op rather than a panic, mirroring the silent-fallback
+// precedent used for malformed hex colors elsewhere in encode
+// (see encode.applyThemeMarkStyle).
+func (r FillRef) DefID() string {
+	switch r.Kind {
+	case FillRefGradient:
+		return "prism-gradient-" + r.Name
+	case FillRefPattern:
+		return "prism-pattern-" + r.Name
+	default:
+		return ""
+	}
+}

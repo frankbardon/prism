@@ -250,4 +250,135 @@ func TestApplyOverride_GradientsPatterns(t *testing.T) {
 	}
 }
 
+// TestGradientDef_SceneDef covers the E3-S3 angle/center-radius math
+// that converts a GradientDef into the scene-level Gradient shape
+// render/svg emits <linearGradient>/<radialGradient> defs from.
+func TestGradientDef_SceneDef(t *testing.T) {
+	t.Run("linear angle 0 defaults to left-to-right vector", func(t *testing.T) {
+		g := GradientDef{
+			Type:  "linear",
+			Stops: []GradientStop{{Offset: 0, Color: "#4c78a8"}, {Offset: 1, Color: "#f58518"}},
+		}
+		got := g.sceneDef()
+		if got.Type != "linear" {
+			t.Fatalf("sceneDef: Type = %q, want linear", got.Type)
+		}
+		// angle 0 => dx=1,dy=0 => x1=0,y1=0.5,x2=1,y2=0.5.
+		if !almostEqual(got.X1, 0) || !almostEqual(got.Y1, 0.5) || !almostEqual(got.X2, 1) || !almostEqual(got.Y2, 0.5) {
+			t.Fatalf("sceneDef: linear vector = (%v,%v)-(%v,%v), want (0,0.5)-(1,0.5)", got.X1, got.Y1, got.X2, got.Y2)
+		}
+		if len(got.Stops) != 2 || got.Stops[0].Color.Hex() != "#4c78a8" || got.Stops[1].Color.Hex() != "#f58518" {
+			t.Fatalf("sceneDef: Stops = %+v, want the two hex colors preserved in order", got.Stops)
+		}
+	})
+
+	t.Run("linear angle 90 points top-to-bottom (clockwise)", func(t *testing.T) {
+		g := GradientDef{
+			Type:  "linear",
+			Angle: floatPtr(90),
+			Stops: []GradientStop{{Offset: 0, Color: "#000000"}, {Offset: 1, Color: "#ffffff"}},
+		}
+		got := g.sceneDef()
+		if !almostEqual(got.X1, 0.5) || !almostEqual(got.Y1, 0) || !almostEqual(got.X2, 0.5) || !almostEqual(got.Y2, 1) {
+			t.Fatalf("sceneDef: linear vector = (%v,%v)-(%v,%v), want (0.5,0)-(0.5,1)", got.X1, got.Y1, got.X2, got.Y2)
+		}
+	})
+
+	t.Run("radial defaults center/radius to 0.5 when unset", func(t *testing.T) {
+		g := GradientDef{
+			Type:  "radial",
+			Stops: []GradientStop{{Offset: 0, Color: "#000000"}, {Offset: 1, Color: "#ffffff"}},
+		}
+		got := g.sceneDef()
+		if got.Type != "radial" {
+			t.Fatalf("sceneDef: Type = %q, want radial", got.Type)
+		}
+		// Radial packs cx/cy/r into X1/Y1/X2 (see scene.Gradient's doc).
+		if !almostEqual(got.X1, 0.5) || !almostEqual(got.Y1, 0.5) || !almostEqual(got.X2, 0.5) {
+			t.Fatalf("sceneDef: radial (cx,cy,r) = (%v,%v,%v), want (0.5,0.5,0.5)", got.X1, got.Y1, got.X2)
+		}
+	})
+
+	t.Run("radial honors explicit cx/cy/radius", func(t *testing.T) {
+		g := GradientDef{
+			Type:   "radial",
+			CX:     floatPtr(0.25),
+			CY:     floatPtr(0.75),
+			Radius: floatPtr(0.6),
+			Stops:  []GradientStop{{Offset: 0, Color: "#000000"}, {Offset: 1, Color: "#ffffff"}},
+		}
+		got := g.sceneDef()
+		if !almostEqual(got.X1, 0.25) || !almostEqual(got.Y1, 0.75) || !almostEqual(got.X2, 0.6) {
+			t.Fatalf("sceneDef: radial (cx,cy,r) = (%v,%v,%v), want (0.25,0.75,0.6)", got.X1, got.Y1, got.X2)
+		}
+	})
+
+	t.Run("unparsable stop color degrades to opaque black rather than dropping the stop", func(t *testing.T) {
+		g := GradientDef{
+			Type:  "linear",
+			Stops: []GradientStop{{Offset: 0, Color: "not-a-hex-color"}, {Offset: 1, Color: "#ffffff"}},
+		}
+		got := g.sceneDef()
+		if len(got.Stops) != 2 {
+			t.Fatalf("sceneDef: Stops = %+v, want 2 (malformed stop preserved, not dropped)", got.Stops)
+		}
+		if got.Stops[0].Color.Hex() != "#000000" {
+			t.Fatalf("sceneDef: malformed stop color = %s, want #000000 fallback", got.Stops[0].Color.Hex())
+		}
+	})
+}
+
+// TestPatternDef_SceneDef covers the E3-S3 default-resolution logic
+// that converts a PatternDef into the scene-level Pattern shape
+// render/svg emits <pattern> defs from.
+func TestPatternDef_SceneDef(t *testing.T) {
+	t.Run("built-in type defaults spacing/size/color", func(t *testing.T) {
+		p := PatternDef{Type: "dots"}
+		got := p.sceneDef()
+		if got.Type != "dots" {
+			t.Fatalf("sceneDef: Type = %q, want dots", got.Type)
+		}
+		if got.Spacing != defaultPatternSpacing || got.Size != defaultPatternSize || got.Color != defaultPatternColor {
+			t.Fatalf("sceneDef: (Spacing,Size,Color) = (%v,%v,%q), want (%v,%v,%q)",
+				got.Spacing, got.Size, got.Color, defaultPatternSpacing, defaultPatternSize, defaultPatternColor)
+		}
+	})
+
+	t.Run("explicit spacing/size/color pass through unchanged", func(t *testing.T) {
+		p := PatternDef{Type: "grid", Color: "#e45756", Spacing: floatPtr(10), Size: floatPtr(2)}
+		got := p.sceneDef()
+		if got.Spacing != 10 || got.Size != 2 || got.Color != "#e45756" {
+			t.Fatalf("sceneDef: (Spacing,Size,Color) = (%v,%v,%q), want (10,2,#e45756)", got.Spacing, got.Size, got.Color)
+		}
+	})
+
+	t.Run("raw-content pattern leaves Color empty when unset", func(t *testing.T) {
+		p := PatternDef{Content: "<circle/>"}
+		got := p.sceneDef()
+		if got.Type != "" {
+			t.Fatalf("sceneDef: Type = %q, want empty (raw content)", got.Type)
+		}
+		if got.Color != "" {
+			t.Fatalf("sceneDef: Color = %q, want empty for raw content (author supplies its own colors)", got.Color)
+		}
+		if got.Content != "<circle/>" {
+			t.Fatalf("sceneDef: Content = %q, want verbatim passthrough", got.Content)
+		}
+		// Spacing/Size still default even for raw content (they size
+		// the <pattern> tile itself, independent of Content).
+		if got.Spacing != defaultPatternSpacing || got.Size != defaultPatternSize {
+			t.Fatalf("sceneDef: (Spacing,Size) = (%v,%v), want defaults even for raw content", got.Spacing, got.Size)
+		}
+	})
+}
+
+func almostEqual(a, b float64) bool {
+	const eps = 1e-9
+	d := a - b
+	if d < 0 {
+		d = -d
+	}
+	return d < eps
+}
+
 func floatPtr(v float64) *float64 { return &v }

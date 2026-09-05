@@ -191,6 +191,30 @@ func TestValidate_FillRef_ViewBackground(t *testing.T) {
 	})
 }
 
+// TestFillRef_DefID covers the E3-S3 def-id naming helper: gradient
+// and pattern kinds get their matching "prism-gradient-"/
+// "prism-pattern-" prefix, and the no-reference kinds (None, the
+// pre-Validate-rejection Unknown case) degrade to "".
+func TestFillRef_DefID(t *testing.T) {
+	cases := []struct {
+		name string
+		ref  FillRef
+		want string
+	}{
+		{"gradient", FillRef{Kind: FillRefGradient, Name: "brand_fade"}, "prism-gradient-brand_fade"},
+		{"pattern", FillRef{Kind: FillRefPattern, Name: "hatch"}, "prism-pattern-hatch"},
+		{"none", FillRef{Kind: FillRefNone}, ""},
+		{"unknown", FillRef{Kind: FillRefUnknown, Name: "nope"}, ""},
+	}
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			if got := tc.ref.DefID(); got != tc.want {
+				t.Fatalf("DefID() = %q, want %q", got, tc.want)
+			}
+		})
+	}
+}
+
 // TestRegister_RejectsUnresolvedFillRef mirrors the filter/gradient/
 // pattern registration coverage: Register must reject (and not
 // mutate the registry for) a theme with a dangling url(#name) fill.

@@ -148,8 +148,8 @@ prism plot bar.json --theme=colorblind > bar-cb.svg
 | `states`   | State overlays (selected, deselected, hover, focus). Materialise as `.prism-<state>` CSS classes. |
 | `filters`  | Named registry of raw SVG `<filter>` inner-content bodies. `mark`/`marks.<type>`/`style.<name>`/`axis`/`legend`/`title`/`view` each carry a `filter` field naming an entry here. |
 | `raw_css`  | Raw CSS string appended verbatim to the emitted `<style>` block. |
-| `gradients` | Named registry of linear/radial gradient definitions (model + validation only — see [Gradients and patterns](#gradients-and-patterns)). |
-| `patterns`  | Named registry of pattern fills — built-in catalogue or raw-SVG content (model + validation only — see [Gradients and patterns](#gradients-and-patterns)). |
+| `gradients` | Named registry of linear/radial gradient definitions, referenced via `url(#name)` fills (see [Gradients and patterns](#gradients-and-patterns)). |
+| `patterns`  | Named registry of pattern fills — built-in catalogue or raw-SVG content — referenced via `url(#name)` fills (see [Gradients and patterns](#gradients-and-patterns)). |
 
 ### Typography tokens
 
@@ -229,18 +229,26 @@ hatch.
 ### Gradients and patterns
 
 `gradients` and `patterns` declare named fill definitions on the
-theme. A `mark.fill`/`stroke` or `view.background` value written as
-`url(#name)` — the same convention native SVG `fill`/`stroke` use —
-resolves against these registries: `theme.gradients` is checked
-first, then `theme.patterns`. Any other value (a hex color, a CSS
-color keyword, `"transparent"`, …) is unaffected and keeps resolving
-as a plain literal color exactly as before. **SVG emission is still
-pending**: no `<linearGradient>`/`<radialGradient>`/`<pattern>` markup
-is written yet, so a resolved reference doesn't yet change rendered
-output — that lands in a later story. For now, resolution and
-validation are wired up so a `url(#name)` value that doesn't name a
-registered gradient or pattern fails loud instead of silently
-rendering nothing.
+theme. A `mark.fill`/`stroke`, `marks.<type>.fill`/`stroke`, or
+`view.background` value written as `url(#name)` — the same convention
+native SVG `fill`/`stroke` use — resolves against these registries:
+`theme.gradients` is checked first, then `theme.patterns`. Any other
+value (a hex color, a CSS color keyword, `"transparent"`, …) is
+unaffected and keeps resolving as a plain literal color exactly as
+before. A resolved reference renders as an actual
+`<linearGradient>`/`<radialGradient>`/`<pattern>` def, with the
+resolved attribute rewritten to `fill="url(#prism-gradient-<name>)"`
+or `fill="url(#prism-pattern-<name>)"` (same for `stroke`, and for the
+view background rect). A `url(#name)` value that doesn't name a
+registered gradient or pattern fails loud at theme load instead of
+silently rendering nothing.
+
+Note the per-type `marks.<type>` block always outranks the global
+`mark` block for any field it sets (see [Theme
+structure](#theme-structure)) — every built-in theme ships a
+per-type default `fill` for common marks like `bar`, so a `url(#name)`
+fill usually needs to go on `marks.bar.fill` (etc.) rather than the
+global `mark.fill` to actually take effect.
 
 A `GradientDef` is either `"linear"` (oriented by `angle`, in
 degrees, 0 = left-to-right, clockwise) or `"radial"` (centered at
@@ -266,8 +274,20 @@ each an `{ "offset": 0-1, "color": "..." }` pair:
 A `PatternDef` is either a built-in catalogue entry — `type` set to
 one of `diagonal-stripes`, `dots`, `cross-hatch`, `grid`, tuned via
 `color`, `spacing`, and `size` — or a bespoke pattern supplied as raw
-SVG through `content` (the inner markup of an eventual `<pattern>`
-element). Exactly one of `type` or `content` must be set:
+SVG through `content` (the inner markup of the `<pattern>` element,
+verbatim). Exactly one of `type` or `content` must be set. `spacing`
+and `size` default to `8` and `4` (user-space pixels — pattern tiles
+use `patternUnits="userSpaceOnUse"`, so they stay a fixed physical
+size regardless of the shape they fill) and `color` defaults to
+`#000000` for built-in types when unset:
+
+- `diagonal-stripes` — a solid stripe of width `size` per tile
+  (pitch `spacing`), tile rotated 45°.
+- `dots` — one centered dot of diameter `size` per tile (pitch
+  `spacing`).
+- `cross-hatch` — an X across the tile (`size` stroke width, tile
+  size `spacing`).
+- `grid` — a lattice of `size`-wide lines at `spacing` pitch.
 
 ```json
 {
@@ -295,6 +315,18 @@ for the filter escape hatch).
 **Trust boundary:** `content` on a `PatternDef` is the same trust
 tier as `filters`/`raw_css` — developer-authored SVG that Prism does
 not sanitize. Never route untrusted theme JSON through it.
+
+**Rendering:** the SVG backend emits one `<linearGradient>`/
+`<radialGradient id="prism-gradient-<name>">` element per entry in
+`gradients` and one `<pattern id="prism-pattern-<name>">` element per
+entry in `patterns`, inside the same top-level `<defs>` block the
+filter escape hatch uses. A resolved `fill`/`stroke`/`background`
+gets rewritten to `url(#prism-gradient-<name>)` / `url(#prism-pattern-<name>)`
+on the corresponding element — the mark itself, or (only when
+`view.background` resolves) a `<rect class="prism-view">` background
+rect sized to the chart frame. `render/html/` inherits this
+automatically, the same as the filter escape hatch. The Canvas
+backend does not implement this escape hatch.
 
 ## Color schemes
 

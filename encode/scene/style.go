@@ -8,8 +8,19 @@ import (
 // Style carries per-mark visual properties. Pointer-typed fields
 // preserve the unset / explicit-zero distinction.
 type Style struct {
-	Fill        *Color    `json:"fill,omitempty"`
-	Stroke      *Color    `json:"stroke,omitempty"`
+	Fill   *Color `json:"fill,omitempty"`
+	Stroke *Color `json:"stroke,omitempty"`
+	// FillRef/StrokeRef carry a def id ("prism-gradient-<name>" or
+	// "prism-pattern-<name>") when the theme resolved this Fill/Stroke
+	// to a Theme.Gradients/Patterns entry via theme.Theme.ResolveFillRef
+	// (a mark.fill/stroke value written as url(#name)) instead of a
+	// literal color — see encode.applyThemeMarkStyle. When set, Fill/
+	// Stroke above are left nil and the renderer emits
+	// fill="url(#<FillRef>)" / stroke="url(#<StrokeRef>)" instead of
+	// the literal-color CSS() attr. Empty means unset (the common
+	// case): the renderer falls back to Fill/Stroke.
+	FillRef     string    `json:"fill_ref,omitempty"`
+	StrokeRef   string    `json:"stroke_ref,omitempty"`
 	StrokeWidth float64   `json:"stroke_width,omitempty"`
 	StrokeDash  []float64 `json:"stroke_dash,omitempty"`
 	Opacity     float64   `json:"opacity,omitempty"`
@@ -33,7 +44,8 @@ type Style struct {
 }
 
 // Color is an 8-bit RGBA color. Gradient / pattern fills go through
-// scene-level Defs and a string ID reference (not modelled here).
+// Style.FillRef/StrokeRef and Theme.Gradients/Patterns instead of a
+// Color (see Style.FillRef).
 type Color struct {
 	R uint8 `json:"r"`
 	G uint8 `json:"g"`

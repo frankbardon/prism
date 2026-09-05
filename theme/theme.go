@@ -146,6 +146,24 @@ func (t *Theme) ToSceneTheme() *scene.Theme {
 	}
 	if t.View != nil {
 		out.ViewFilter = t.View.Filter
+		out.ViewBackgroundRef = t.ResolveFillRef(t.View.Background).DefID()
+	}
+	// Gradients/Patterns (E3-S3): pass the whole registry through,
+	// pre-resolved to SVG-emission-ready shape, so render/svg can emit
+	// one <linearGradient>/<radialGradient>/<pattern> def per entry —
+	// same "emit the whole registry regardless of reference" approach
+	// as Filters above.
+	if len(t.Gradients) > 0 {
+		out.Gradients = make(map[string]scene.Gradient, len(t.Gradients))
+		for k, v := range t.Gradients {
+			out.Gradients[k] = v.sceneDef()
+		}
+	}
+	if len(t.Patterns) > 0 {
+		out.Patterns = make(map[string]scene.Pattern, len(t.Patterns))
+		for k, v := range t.Patterns {
+			out.Patterns[k] = v.sceneDef()
+		}
 	}
 	return out
 }

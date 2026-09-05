@@ -104,6 +104,7 @@ func (r *Renderer) Render(doc *scene.SceneDoc, opts render.RenderOpts) ([]byte, 
 	// Style block + defs.
 	writeStyleBlock(w, theme)
 	writeFilterDefs(w, theme)
+	writeGradientPatternDefs(w, theme)
 
 	// Walk grid cells in row-major order. Each cell's Scene already
 	// carries pre-offset coordinates from EncodeComposite — the
@@ -298,15 +299,15 @@ func renderScene(w *Writer, s scene.Scene, sceneTheme *scene.Theme) error {
 	w.CloseTagOpen()
 	w.Newline()
 
-	// View / background rect (E1-S2). Prism has no rendered view
-	// background today (theme.ViewStyle's Background/Stroke/Padding
-	// tokens are CSS-variable-only — see theme/css.go — and consumed
-	// by nothing yet); this element exists solely to carry the
-	// resolved View.Filter reference, so it is emitted only when one
-	// is set (never for the built-in themes, which all leave
-	// View.Filter empty). fill="none" keeps it invisible absent a
-	// theme-supplied background.
-	if sceneTheme != nil && sceneTheme.ViewFilter != "" {
+	// View / background rect (E1-S2, extended E3-S3). A literal-color
+	// theme.ViewStyle.Background is still CSS-variable-only (see
+	// theme/css.go) and consumed by nothing here; this element is
+	// emitted when either the resolved View.Filter is set (E1-S2) or
+	// Background resolved to a Theme.Gradients/Patterns url(#name)
+	// reference (E3-S3, ViewBackgroundRef) — never for the built-in
+	// themes, which leave both unset. fill="none" keeps it invisible
+	// absent a resolvable gradient/pattern background.
+	if sceneTheme != nil && (sceneTheme.ViewFilter != "" || sceneTheme.ViewBackgroundRef != "") {
 		w.Indent(4)
 		w.OpenTag("rect")
 		w.Attr("class", "prism-view")
@@ -314,7 +315,11 @@ func renderScene(w *Writer, s scene.Scene, sceneTheme *scene.Theme) error {
 		w.AttrFloat("y", s.Frame.Y)
 		w.AttrFloat("width", s.Frame.W)
 		w.AttrFloat("height", s.Frame.H)
-		w.Attr("fill", "none")
+		if sceneTheme.ViewBackgroundRef != "" {
+			w.Attr("fill", "url(#"+sceneTheme.ViewBackgroundRef+")")
+		} else {
+			w.Attr("fill", "none")
+		}
 		writeFilterAttr(w, sceneTheme.ViewFilter)
 		w.SelfClose()
 		w.Newline()

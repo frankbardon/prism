@@ -63,10 +63,14 @@ func writeStyleBlock(w *Writer, theme *scene.Theme) {
 // has already opened the tag; writeStyleAttrs appends fill, stroke,
 // stroke-width, opacity attributes (omitting unset / default values).
 func writeStyleAttrs(w *Writer, s scene.Style) {
-	if s.Fill != nil {
+	if s.FillRef != "" {
+		w.Attr("fill", "url(#"+s.FillRef+")")
+	} else if s.Fill != nil {
 		w.Attr("fill", s.Fill.CSS())
 	}
-	if s.Stroke != nil {
+	if s.StrokeRef != "" {
+		w.Attr("stroke", "url(#"+s.StrokeRef+")")
+	} else if s.Stroke != nil {
 		w.Attr("stroke", s.Stroke.CSS())
 	}
 	if s.StrokeWidth > 0 {
@@ -139,4 +143,160 @@ func writeFilterDefs(w *Writer, theme *scene.Theme) {
 	}
 	w.Raw("</defs>")
 	w.Newline()
+}
+
+// writeGradientPatternDefs emits one <linearGradient>/<radialGradient>
+// def per entry in theme.Gradients and one <pattern> def per entry in
+// theme.Patterns (E3-S3). By encode time both maps already carry
+// every entry the theme declared (theme.Theme.ToSceneTheme passes the
+// whole registry through, same convention as Filters/writeFilterDefs)
+// — Style.FillRef/StrokeRef and Theme.ViewBackgroundRef reference a
+// subset of these ids. Names are sorted independently within each
+// registry for deterministic golden bytes across runs. Emits nothing
+// when the theme carries neither.
+func writeGradientPatternDefs(w *Writer, theme *scene.Theme) {
+	if theme == nil || (len(theme.Gradients) == 0 && len(theme.Patterns) == 0) {
+		return
+	}
+	gradientNames := make([]string, 0, len(theme.Gradients))
+	for name := range theme.Gradients {
+		gradientNames = append(gradientNames, name)
+	}
+	sort.Strings(gradientNames)
+	patternNames := make([]string, 0, len(theme.Patterns))
+	for name := range theme.Patterns {
+		patternNames = append(patternNames, name)
+	}
+	sort.Strings(patternNames)
+
+	w.Raw("  <defs>")
+	for _, name := range gradientNames {
+		writeGradientDef(w, "prism-gradient-"+name, theme.Gradients[name])
+	}
+	for _, name := range patternNames {
+		writePatternDef(w, "prism-pattern-"+name, theme.Patterns[name])
+	}
+	w.Raw("</defs>")
+	w.Newline()
+}
+
+// writeGradientDef emits one <linearGradient>/<radialGradient id=id>
+// element with ordered <stop> children. g.Type == "radial" reads
+// X1/Y1/X2 as cx/cy/r (see scene.Gradient's doc comment); anything
+// else is treated as linear (x1/y1/x2/y2). Coordinates route through
+// AttrFloat (render.FormatFloat) for pinned precision per CLAUDE.md's
+// "Pinned coordinate precision" rule.
+func writeGradientDef(w *Writer, id string, g scene.Gradient) {
+	tag := "linearGradient"
+	if g.Type == "radial" {
+		tag = "radialGradient"
+	}
+	w.OpenTag(tag)
+	w.Attr("id", id)
+	if g.Type == "radial" {
+		w.AttrFloat("cx", g.X1)
+		w.AttrFloat("cy", g.Y1)
+		w.AttrFloat("r", g.X2)
+	} else {
+		w.AttrFloat("x1", g.X1)
+		w.AttrFloat("y1", g.Y1)
+		w.AttrFloat("x2", g.X2)
+		w.AttrFloat("y2", g.Y2)
+	}
+	w.CloseTagOpen()
+	for _, s := range g.Stops {
+		w.OpenTag("stop")
+		w.AttrFloat("offset", s.Offset)
+		w.Attr("stop-color", (&s.Color).CSS())
+		w.SelfClose()
+	}
+	w.EndTag(tag)
+}
+
+// writePatternDef emits one <pattern id=id> element, tile-sized by
+// p.Spacing (patternUnits="userSpaceOnUse" — Spacing/Size are literal
+// user-space pixels, not bounding-box fractions, since a pattern tile
+// should stay a fixed physical size regardless of the shape it
+// fills). Built-in catalogue types (theme.PatternTypes) render
+// generated content tuned by p.Color/p.Spacing/p.Size via the four
+// writeBuiltinPattern* helpers below; p.Type == "" (raw content)
+// emits p.Content verbatim inside the wrapper instead — same trust
+// tier as the theme.Filters/RawCSS escape hatches (developer-
+// authored, never sanitized).
+func writePatternDef(w *Writer, id string, p scene.Pattern) {
+	w.OpenTag("pattern")
+	w.Attr("id", id)
+	w.Attr("patternUnits", "userSpaceOnUse")
+	w.AttrFloat("width", p.Spacing)
+	w.AttrFloat("height", p.Spacing)
+	if p.Type == "diagonal-stripes" {
+		// Draw vertical stripes at native orientation, then rotate the
+		// whole tile 45deg so they read as diagonal.
+		w.Attr("patternTransform", "rotate(45)")
+	}
+	w.CloseTagOpen()
+	switch p.Type {
+	case "diagonal-stripes":
+		writeBuiltinPatternDiagonalStripes(w, p)
+	case "dots":
+		writeBuiltinPatternDots(w, p)
+	case "cross-hatch":
+		writeBuiltinPatternCrossHatch(w, p)
+	case "grid":
+		writeBuiltinPatternGrid(w, p)
+	default:
+		// Raw content — p.Type == "".
+		w.Raw(p.Content)
+	}
+	w.EndTag("pattern")
+}
+
+// writeBuiltinPatternDiagonalStripes draws one solid stripe of width
+// p.Size per tile (tile pitch p.Spacing); the enclosing <pattern>'s
+// patternTransform="rotate(45)" turns it diagonal.
+func writeBuiltinPatternDiagonalStripes(w *Writer, p scene.Pattern) {
+	w.OpenTag("rect")
+	w.AttrFloat("width", p.Size)
+	w.AttrFloat("height", p.Spacing)
+	w.Attr("fill", p.Color)
+	w.SelfClose()
+}
+
+// writeBuiltinPatternDots draws one centered dot of diameter p.Size
+// per tile.
+func writeBuiltinPatternDots(w *Writer, p scene.Pattern) {
+	w.OpenTag("circle")
+	w.AttrFloat("cx", p.Spacing/2)
+	w.AttrFloat("cy", p.Spacing/2)
+	w.AttrFloat("r", p.Size/2)
+	w.Attr("fill", p.Color)
+	w.SelfClose()
+}
+
+// writeBuiltinPatternCrossHatch draws an X across the tile (two
+// crossing diagonals), stroked at width p.Size.
+func writeBuiltinPatternCrossHatch(w *Writer, p scene.Pattern) {
+	w.OpenTag("path")
+	s := render.FormatFloat(p.Spacing)
+	w.OpenAttr("d")
+	w.Raw("M0,0L" + s + "," + s + "M" + s + ",0L0," + s)
+	w.CloseAttr()
+	w.Attr("fill", "none")
+	w.Attr("stroke", p.Color)
+	w.AttrFloat("stroke-width", p.Size)
+	w.SelfClose()
+}
+
+// writeBuiltinPatternGrid draws the top and left edges of the tile
+// (which tile into a full lattice), stroked at width p.Size.
+func writeBuiltinPatternGrid(w *Writer, p scene.Pattern) {
+	w.OpenTag("path")
+	s := render.FormatFloat(p.Spacing)
+	w.OpenAttr("d")
+	w.Raw("M" + s + ",0L0,0L0," + s)
+	w.CloseAttr()
+	w.Attr("fill", "none")
+	w.Attr("stroke", p.Color)
+	w.AttrFloat("stroke-width", p.Size)
+	w.SelfClose()
 }

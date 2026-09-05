@@ -41,6 +41,17 @@ func TestPrismSVGGoldensStable(t *testing.T) {
 		// letter-spacing/line-height (text_typography_tokens.json).
 		"point_typography_tokens.json",
 		"text_typography_tokens.json",
+		// E3-S3: gradient/pattern <defs> emission + fill="url(#...)"
+		// resolution — one fixture per required coverage case (linear
+		// gradient, radial gradient, each of the 4 built-in pattern
+		// types, and a raw-content pattern).
+		"bar_gradient_linear.json",
+		"bar_gradient_radial.json",
+		"bar_pattern_diagonal_stripes.json",
+		"bar_pattern_dots.json",
+		"bar_pattern_cross_hatch.json",
+		"bar_pattern_grid.json",
+		"bar_pattern_raw_content.json",
 	}
 	update := os.Getenv("UPDATE_GOLDENS") == "1"
 	for _, fix := range fixtures {
