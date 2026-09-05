@@ -1034,6 +1034,43 @@ func resolveThemeFull(opts EncodeOpts, override *spec.ThemeOverride) (*scene.The
 	return scn, merged, nil
 }
 
+// findCellThemeOverride returns the ThemeOverride matching (row, col)
+// in overrides, or nil when no entry addresses that cell. Overrides
+// are addressed by 0-based (Row, Column) grid position — the same
+// addressing facet/repeat assign to scene.SceneCell.Row/Col (see
+// spec.CellThemeOverride's doc comment). Last match wins when the
+// spec (unusually) lists more than one entry for the same cell, so
+// behaviour is deterministic and matches how a caller reading the
+// list top-to-bottom would expect a later entry to take precedence.
+func findCellThemeOverride(overrides []spec.CellThemeOverride, row, col int) *spec.ThemeOverride {
+	var found *spec.ThemeOverride
+	for i := range overrides {
+		if overrides[i].Row == row && overrides[i].Column == col {
+			found = &overrides[i].Theme
+		}
+	}
+	return found
+}
+
+// resolveCellTheme layers a per-cell ThemeOverride on top of the
+// chart's already-resolved base theme, using the exact same
+// theme.ApplyOverride + ToSceneTheme/CSSVariables path
+// resolveThemeFull uses for the spec-level `theme` override — this
+// is a new call site for that machinery, not a new merge. When
+// override is nil the base scene/full theme pair is returned
+// unchanged (no allocation, byte-identical output for cells with no
+// matching override).
+func resolveCellTheme(baseScene *scene.Theme, baseFull *theme.Theme, override *spec.ThemeOverride) (*scene.Theme, *theme.Theme) {
+	if override == nil {
+		return baseScene, baseFull
+	}
+	merged := theme.ApplyOverride(baseFull, override)
+	scn := merged.ToSceneTheme()
+	scn.Name = merged.Name
+	scn.CSS = merged.CSSVariables()
+	return scn, merged
+}
+
 // joinNames is the tiny comma-joiner used in error contexts.
 func joinNames(xs []string) string {
 	if len(xs) == 0 {

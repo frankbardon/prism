@@ -1,0 +1,27 @@
+{
+  "$schema": "urn:prism:schema:v1:spec",
+  "title": "Sales by region, per-cell theme override",
+  "data": {
+    "name": "samples",
+    "values": [
+      {"region": "NA", "sales": 120},
+      {"region": "EU", "sales": 95},
+      {"region": "APAC", "sales": 140}
+    ]
+  },
+  "facet": {
+    "column": {"field": "region", "type": "nominal"},
+    "cell_overrides": [
+      {"row": 0, "column": 0, "theme": {"marks": {"bar": {"fill": "#e11d48"}}}},
+      {"row": 0, "column": 1, "theme": {"marks": {"bar": {"fill": "#16a34a"}}}}
+    ]
+  },
+  "spec": {
+    "$schema": "urn:prism:schema:v1:spec",
+    "mark": "bar",
+    "encoding": {
+      "x": {"field": "region", "type": "nominal"},
+      "y": {"field": "sales", "type": "quantitative"}
+    }
+  }
+}

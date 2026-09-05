@@ -143,8 +143,15 @@ func encodeFacetComposite(s *spec.Spec, composite *plan.CompositeDAG, childTable
 			cellOpts.Height = cellH
 			cellOpts.OverrideXScale = xShared
 			cellOpts.OverrideYScale = yShared
-			cellOpts.Theme = sceneTheme
-			cellOpts.FullTheme = fullTheme
+			// E5-S2: layer this cell's sparse theme override (if any)
+			// on top of the chart's resolved base theme. Cross-layer
+			// scale resolution above (xShared/yShared) is computed
+			// once from the base theme-independent partition values
+			// and is untouched by this per-cell theme swap — the two
+			// concerns are orthogonal.
+			cellScene, cellFull := resolveCellTheme(sceneTheme, fullTheme, findCellThemeOverride(s.Facet.CellOverrides, ri, ci))
+			cellOpts.Theme = cellScene
+			cellOpts.FullTheme = cellFull
 
 			cellDoc, err := encodeFacetCell(child.Spec, partTbl, cellOpts)
 			if err != nil {

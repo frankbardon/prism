@@ -139,3 +139,47 @@ func TestPrismNestedFacet(t *testing.T) {
 		t.Errorf("prism-scene count = %d, want 4 (2 outer regions x 2 inner brands)", got)
 	}
 }
+
+// TestPrismFacetCellThemeOverride (E5-S2). facet_cell_theme_override.json
+// overrides bar fill on 2 of its 3 cells and leaves the third on the
+// base theme; renders 3 scenes and must match the committed golden.
+// Set UPDATE_GOLDENS=1 to regenerate.
+func TestPrismFacetCellThemeOverride(t *testing.T) {
+	out := renderCompositeP09(t, "facet_cell_theme_override.json")
+	if got := strings.Count(string(out), `<g class="prism-scene"`); got != 3 {
+		t.Errorf("prism-scene count = %d, want 3", got)
+	}
+	assertGoldenSVG(t, "facet_cell_theme_override.svg", out)
+}
+
+// TestPrismRepeatCellThemeOverride (E5-S2). repeat_cell_theme_override.json
+// mirrors the facet case for repeat: 2 of its 3 cells carry a line-
+// stroke override, the third uses the base theme.
+func TestPrismRepeatCellThemeOverride(t *testing.T) {
+	out := renderCompositeP09(t, "repeat_cell_theme_override.json")
+	if got := strings.Count(string(out), `<g class="prism-scene"`); got != 3 {
+		t.Errorf("prism-scene count = %d, want 3", got)
+	}
+	assertGoldenSVG(t, "repeat_cell_theme_override.svg", out)
+}
+
+// assertGoldenSVG diffs got against the committed golden under
+// testdata/svgs/<name>. Set UPDATE_GOLDENS=1 to (re)write it.
+func assertGoldenSVG(t *testing.T, name string, got []byte) {
+	t.Helper()
+	goldenPath := filepath.Join(repoRoot(t), "testdata", "svgs", name)
+	if os.Getenv("UPDATE_GOLDENS") == "1" {
+		if err := os.WriteFile(goldenPath, got, 0o644); err != nil {
+			t.Fatalf("write golden: %v", err)
+		}
+		t.Logf("wrote golden %s (%d bytes)", goldenPath, len(got))
+		return
+	}
+	want, err := os.ReadFile(goldenPath)
+	if err != nil {
+		t.Fatalf("read golden (%s): %v.\nRun `UPDATE_GOLDENS=1 go test ./render/svg/...` to create.", goldenPath, err)
+	}
+	if !bytes.Equal(want, got) {
+		t.Errorf("golden drift on %s (got %d bytes, want %d)", name, len(got), len(want))
+	}
+}

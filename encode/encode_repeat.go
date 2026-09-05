@@ -96,8 +96,18 @@ func encodeRepeatComposite(s *spec.Spec, composite *plan.CompositeDAG, childTabl
 		childOpts := opts
 		childOpts.Width = cellW
 		childOpts.Height = cellH
-		childOpts.Theme = sceneTheme
-		childOpts.FullTheme = fullTheme
+		// E5-S2: layer this cell's sparse theme override (if any) on
+		// top of the chart's resolved base theme. Repeat's
+		// row/column indices directly address CellOverrides (row =
+		// index into Repeat.Row, column = index into Repeat.Column;
+		// an empty axis collapses to index 0 — see spec.Repeat's doc
+		// comment), the same (row, col) this loop already assigns to
+		// scene.SceneCell below. This is orthogonal to the
+		// shared/independent scale resolution above: the per-cell
+		// theme swap never touches OverrideXScale/OverrideYScale.
+		cellScene, cellFull := resolveCellTheme(sceneTheme, fullTheme, findCellThemeOverride(s.Repeat.CellOverrides, row, col))
+		childOpts.Theme = cellScene
+		childOpts.FullTheme = cellFull
 		// No shared-scale override under independent defaults.
 		childOpts.OverrideXScale = nil
 		childOpts.OverrideYScale = nil
