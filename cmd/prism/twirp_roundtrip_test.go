@@ -133,6 +133,72 @@ func runRoundTripSuite(t *testing.T, client rpc.Prism, fixture string) {
 	}
 }
 
+// TestPrismTwirpPlotAutoDark is E4-S4's Twirp coverage: proves the
+// Plot RPC's render path doesn't special-case away auto-dark. The
+// fixture's spec-level `theme.dark_variant` names the built-in "dark"
+// theme (no `theme` field set on the request, so req.Theme is empty
+// and the base theme defaults to "light" — same automatic, no-new-
+// option resolution the CLI exercises in
+// cmd/prism/dark_variant_smoke_test.go). PrismServer.Plot routes
+// req.Theme straight into encode.EncodeOpts.ThemeName with no
+// intermediate resolution of its own, so this is a genuine end-to-end
+// check of that pass-through, not just of the encode/render layer
+// already covered by E4-S2/E4-S3's own tests.
+func TestPrismTwirpPlotAutoDark(t *testing.T) {
+	const fixture = `{
+      "$schema":"urn:prism:schema:v1:spec",
+      "data":{"values":[
+        {"category":"alpha","value":12},
+        {"category":"beta","value":27},
+        {"category":"gamma","value":19}
+      ]},
+      "mark":"bar",
+      "encoding":{
+        "x":{"field":"category","type":"nominal"},
+        "y":{"field":"value","type":"quantitative"},
+        "color":{"field":"category","type":"nominal"}
+      },
+      "theme": {"dark_variant": "dark"}
+    }`
+
+	impl := &rpc.PrismServer{Fs: afero.NewMemMapFs()}
+	mux := http.NewServeMux()
+	twirpHandler := rpc.NewPrismServer(impl, twirp.WithServerInterceptors(rpc.ErrorInterceptor))
+	mux.Handle(rpc.PrismPathPrefix, twirpHandler)
+	srv := httptest.NewServer(mux)
+	defer srv.Close()
+
+	client := rpc.NewPrismJSONClient(srv.URL, http.DefaultClient)
+	ctx := context.Background()
+
+	t.Run("Plot", func(t *testing.T) {
+		plot, err := client.Plot(ctx, &rpc.PlotRequest{Spec: fixture, Format: "svg", Width: 400, Height: 300})
+		if err != nil {
+			t.Fatalf("Plot: %v", err)
+		}
+		svg := string(plot.Bytes)
+		if !strings.Contains(svg, "@media (prefers-color-scheme: dark)") {
+			t.Errorf("Plot SVG missing dark media-query chrome block: %s", svg)
+		}
+		if !strings.Contains(svg, "--prism-resolved-") {
+			t.Errorf("Plot SVG missing --prism-resolved-N mark-color variable declarations: %s", svg)
+		}
+	})
+
+	t.Run("Scene", func(t *testing.T) {
+		scn, err := client.Scene(ctx, &rpc.SceneRequest{Spec: fixture, Width: 400, Height: 300})
+		if err != nil {
+			t.Fatalf("Scene: %v", err)
+		}
+		if !strings.Contains(scn.SceneJson, "@media (prefers-color-scheme: dark)") {
+			t.Errorf("Scene JSON missing dark media-query chrome block: %s", scn.SceneJson)
+		}
+		if !strings.Contains(scn.SceneJson, "--prism-resolved-") {
+			t.Errorf("Scene JSON missing --prism-resolved-N mark-color variable declarations: %s", scn.SceneJson)
+		}
+	})
+}
+
 // TestPrismTwirpRoundTripErrorMapping confirms the interceptor's
 // status codes surface through the generated client. PNG format
 // → twirp.Unimplemented per D085.
