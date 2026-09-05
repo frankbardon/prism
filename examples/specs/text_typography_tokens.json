@@ -1,0 +1,26 @@
+{
+  "$schema": "urn:prism:schema:v1:spec",
+  "title": "Score annotations (typography tokens)",
+  "data": {
+    "name": "scores",
+    "values": [
+      {"brand_id": "alpha", "score": 0.42},
+      {"brand_id": "beta",  "score": 0.71},
+      {"brand_id": "gamma", "score": 0.58}
+    ]
+  },
+  "mark": {"type": "text", "font_size": 14, "align": "left"},
+  "encoding": {
+    "x": {"field": "brand_id", "type": "nominal"},
+    "y": {"field": "score",    "type": "quantitative"}
+  },
+  "theme": {
+    "name": "light",
+    "marks": {
+      "text": {
+        "line_height": 1.5,
+        "letter_spacing": 1.2
+      }
+    }
+  }
+}

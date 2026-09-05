@@ -727,6 +727,14 @@ func applyThemeMarkStyle(style *scene.Style, ms *theme.MarkStyle) {
 	if ms.Opacity != nil {
 		style.Opacity = *ms.Opacity
 	}
+	if ms.LineHeight != nil {
+		v := *ms.LineHeight
+		style.LineHeight = &v
+	}
+	if ms.LetterSpacing != nil {
+		v := *ms.LetterSpacing
+		style.LetterSpacing = &v
+	}
 	if ms.Filter != "" {
 		style.Filter = ms.Filter
 	}

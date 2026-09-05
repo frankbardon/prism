@@ -129,9 +129,19 @@ prism plot bar.json --theme=colorblind > bar-cb.svg
 
 `line_height` and `letter_spacing` are optional pointer-typed typography
 tokens (same "absent means inherit" semantics as `font_size` and every
-other sparse numeric token). They are modeled and schema-validated as
-of this story; the SVG renderer wires the actual `line-height` /
-`letter-spacing` text-element output in a follow-up story.
+other sparse numeric token). The SVG renderer (and `render/html`, which
+delegates to it) applies `letter_spacing` as a `letter-spacing`
+presentation attribute and `line_height` as a `style="line-height:…"`
+declaration directly on the resolved title / axis-label / axis-title /
+legend-label / legend-title / text-mark `<text>` element — these are
+per-element, conditional attributes (nothing is emitted when a token
+is left unset), not the CSS-variable + fixed-class mechanism used for
+`font_size`/`font_weight`/color tokens. `line_height` only has a
+visible effect on multi-line text; Prism does not yet wrap title,
+axis-label, or text-mark content onto multiple lines, so today the
+property is present in the markup (ready for any future wrapping) but
+inert for every element except where content already spans multiple
+`<tspan>`s.
 
 | Block | Fields carrying the tokens |
 |---|---|
@@ -307,6 +317,12 @@ without re-rendering.
 The full set scales with the tokens the active theme defines —
 unset tokens omit the variable so renderers fall back to hard-coded
 defaults inside the CSS class declarations.
+
+`line_height` and `letter_spacing` (see [Typography tokens](#typography-tokens))
+are the one exception: they render as direct per-element attributes
+rather than `--prism-*` custom properties, so they are baked in at
+render time and are not runtime-overridable via DOM style assignment
+the way the tokens above are.
 
 ## Rendering backends
 

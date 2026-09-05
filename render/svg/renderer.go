@@ -183,12 +183,12 @@ func renderSharedAxes(w *Writer, g scene.SceneGrid, theme *scene.Theme) {
 	w.Newline()
 	if g.Shared.X != nil {
 		w.Indent(4)
-		renderAxis(w, *g.Shared.X, plot)
+		renderAxis(w, *g.Shared.X, plot, theme)
 		w.Newline()
 	}
 	if g.Shared.Y != nil {
 		w.Indent(4)
-		renderAxis(w, *g.Shared.Y, plot)
+		renderAxis(w, *g.Shared.Y, plot, theme)
 		w.Newline()
 	}
 	w.Indent(2)
@@ -330,6 +330,7 @@ func renderScene(w *Writer, s scene.Scene, sceneTheme *scene.Theme) error {
 		w.Attr("text-anchor", "middle")
 		if sceneTheme != nil {
 			writeFilterAttr(w, sceneTheme.TitleFilter)
+			writeTypographyAttrs(w, sceneTheme.TitleLineHeight, sceneTheme.TitleLetterSpacing)
 		}
 		w.CloseTagOpen()
 		w.Text(s.Title.Content)
@@ -349,7 +350,7 @@ func renderScene(w *Writer, s scene.Scene, sceneTheme *scene.Theme) error {
 		w.Newline()
 		for _, a := range s.Axes {
 			w.Indent(6)
-			renderAxis(w, a, s.Plot)
+			renderAxis(w, a, s.Plot, sceneTheme)
 			w.Newline()
 		}
 		w.Indent(4)
@@ -413,7 +414,7 @@ func renderScene(w *Writer, s scene.Scene, sceneTheme *scene.Theme) error {
 		if sceneTheme != nil {
 			legendFilter = sceneTheme.LegendFilter
 		}
-		renderLegends(w, s.Legends, legendFilter)
+		renderLegends(w, s.Legends, legendFilter, sceneTheme)
 		w.Newline()
 	}
 

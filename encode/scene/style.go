@@ -16,6 +16,14 @@ type Style struct {
 	FontFamily  string    `json:"font_family,omitempty"`
 	FontWeight  int       `json:"font_weight,omitempty"`
 	Cursor      string    `json:"cursor,omitempty"`
+	// LineHeight and LetterSpacing carry the resolved theme
+	// MarkStyle.LineHeight / LetterSpacing typography tokens (E2-S2)
+	// for text-mark glyphs. The renderer emits LetterSpacing as a
+	// `letter-spacing` presentation attribute and LineHeight as a
+	// `style="line-height:…"` declaration when non-nil; nil means
+	// unset (no attribute emitted).
+	LineHeight    *float64 `json:"line_height,omitempty"`
+	LetterSpacing *float64 `json:"letter_spacing,omitempty"`
 	// Filter names an entry in scene.Theme.Filters (mirrors
 	// theme.MarkStyle.Filter — resolved at encode time via
 	// theme.Theme.MarkDefault). The renderer emits

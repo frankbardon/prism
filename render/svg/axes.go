@@ -8,7 +8,12 @@ import "github.com/frankbardon/prism/encode/scene"
 // left/right render vertically. Minor ticks render shorter (3px) and
 // without labels; LabelHidden tick labels are skipped (the tick mark
 // itself stays).
-func renderAxis(w *Writer, a scene.Axis, plot scene.Rect) {
+//
+// theme carries the resolved scene.Theme (may be nil); its
+// AxisLabelLineHeight/AxisLabelLetterSpacing and
+// AxisTitleLineHeight/AxisTitleLetterSpacing tokens (E2-S2) apply to
+// tick labels and the axis title respectively.
+func renderAxis(w *Writer, a scene.Axis, plot scene.Rect, theme *scene.Theme) {
 	w.OpenTag("g")
 	w.Attr("class", "prism-axis prism-axis-"+string(a.Channel))
 	w.Attr("data-prism-axis-id", a.ID)
@@ -34,34 +39,42 @@ func renderAxis(w *Writer, a scene.Axis, plot scene.Rect) {
 	w.AttrFloat("y2", a.Domain.Y2)
 	w.SelfClose()
 
+	// Resolved typography tokens (E2-S2) — nil-safe extraction once,
+	// reused across every tick label / the axis title below.
+	var labelLH, labelLS, titleLH, titleLS *float64
+	if theme != nil {
+		labelLH, labelLS = theme.AxisLabelLineHeight, theme.AxisLabelLetterSpacing
+		titleLH, titleLS = theme.AxisTitleLineHeight, theme.AxisTitleLetterSpacing
+	}
+
 	// Ticks + labels.
 	switch a.Position {
 	case scene.AxisPositionBottom:
 		for _, t := range a.Ticks {
 			emitTickMark(w, t.Pixel, plot.Bottom(), 0, tickLen(t), true)
 			if t.Label != "" && !t.LabelHidden {
-				emitTickLabel(w, t.Label, t.Pixel, plot.Bottom()+18, "middle", a.LabelAngle)
+				emitTickLabel(w, t.Label, t.Pixel, plot.Bottom()+18, "middle", a.LabelAngle, labelLH, labelLS)
 			}
 		}
 	case scene.AxisPositionTop:
 		for _, t := range a.Ticks {
 			emitTickMark(w, t.Pixel, plot.Y, 0, -tickLen(t), true)
 			if t.Label != "" && !t.LabelHidden {
-				emitTickLabel(w, t.Label, t.Pixel, plot.Y-8, "middle", a.LabelAngle)
+				emitTickLabel(w, t.Label, t.Pixel, plot.Y-8, "middle", a.LabelAngle, labelLH, labelLS)
 			}
 		}
 	case scene.AxisPositionLeft:
 		for _, t := range a.Ticks {
 			emitTickMark(w, plot.X, t.Pixel, -tickLen(t), 0, false)
 			if t.Label != "" && !t.LabelHidden {
-				emitTickLabel(w, t.Label, plot.X-8, t.Pixel+4, "end", a.LabelAngle)
+				emitTickLabel(w, t.Label, plot.X-8, t.Pixel+4, "end", a.LabelAngle, labelLH, labelLS)
 			}
 		}
 	case scene.AxisPositionRight:
 		for _, t := range a.Ticks {
 			emitTickMark(w, plot.Right(), t.Pixel, tickLen(t), 0, false)
 			if t.Label != "" && !t.LabelHidden {
-				emitTickLabel(w, t.Label, plot.Right()+8, t.Pixel+4, "start", a.LabelAngle)
+				emitTickLabel(w, t.Label, plot.Right()+8, t.Pixel+4, "start", a.LabelAngle, labelLH, labelLS)
 			}
 		}
 	}
@@ -90,6 +103,7 @@ func renderAxis(w *Writer, a scene.Axis, plot scene.Rect) {
 			w.Attr("text-anchor", "middle")
 			w.Attr("transform", rotateAttr90(plot.Right()+30, plot.CenterY()))
 		}
+		writeTypographyAttrs(w, titleLH, titleLS)
 		w.CloseTagOpen()
 		w.Text(a.Title)
 		w.EndTag("text")
@@ -129,8 +143,10 @@ func emitTickMark(w *Writer, x, y, dx, dy float64, vertical bool) {
 }
 
 // emitTickLabel emits a tick label, optionally rotated around its
-// anchor point.
-func emitTickLabel(w *Writer, label string, x, y float64, anchor string, angle float64) {
+// anchor point. lineHeight/letterSpacing carry the resolved
+// AxisLabelLineHeight/AxisLabelLetterSpacing tokens (E2-S2, may be
+// nil).
+func emitTickLabel(w *Writer, label string, x, y float64, anchor string, angle float64, lineHeight, letterSpacing *float64) {
 	w.OpenTag("text")
 	w.Attr("class", "prism-axis-label")
 	w.AttrFloat("x", x)
@@ -139,6 +155,7 @@ func emitTickLabel(w *Writer, label string, x, y float64, anchor string, angle f
 	if angle != 0 {
 		w.Attr("transform", rotateAround(angle, x, y))
 	}
+	writeTypographyAttrs(w, lineHeight, letterSpacing)
 	w.CloseTagOpen()
 	w.Text(label)
 	w.EndTag("text")

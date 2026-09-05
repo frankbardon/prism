@@ -37,6 +37,32 @@ type Theme struct {
 	LegendFilter string `json:"legend_filter,omitempty"`
 	TitleFilter  string `json:"title_filter,omitempty"`
 	ViewFilter   string `json:"view_filter,omitempty"`
+	// AxisLabelLineHeight/AxisLabelLetterSpacing and
+	// AxisTitleLineHeight/AxisTitleLetterSpacing carry the resolved
+	// theme.AxisStyle line_height/letter_spacing tokens (E2-S2),
+	// LegendLabelLineHeight/LegendLabelLetterSpacing and
+	// LegendTitleLineHeight/LegendTitleLetterSpacing carry the
+	// theme.LegendStyle equivalents, and TitleLineHeight/
+	// TitleLetterSpacing carry theme.TitleStyle's. These structural
+	// blocks don't cascade to a per-element scene.Style the way
+	// Mark/Marks do (see scene.Style.LineHeight/LetterSpacing +
+	// encode.applyThemeMarkStyle), so the resolved values ride on
+	// scene.Theme instead — mirrors the AxisFilter/LegendFilter/
+	// TitleFilter pattern above. The renderer applies LetterSpacing
+	// as a `letter-spacing` presentation attribute and LineHeight as
+	// a `style="line-height:…"` declaration on the corresponding
+	// tick-label / axis-title / legend-label / legend-title / chart
+	// title <text> element when non-nil.
+	AxisLabelLineHeight      *float64 `json:"axis_label_line_height,omitempty"`
+	AxisLabelLetterSpacing   *float64 `json:"axis_label_letter_spacing,omitempty"`
+	AxisTitleLineHeight      *float64 `json:"axis_title_line_height,omitempty"`
+	AxisTitleLetterSpacing   *float64 `json:"axis_title_letter_spacing,omitempty"`
+	LegendLabelLineHeight    *float64 `json:"legend_label_line_height,omitempty"`
+	LegendLabelLetterSpacing *float64 `json:"legend_label_letter_spacing,omitempty"`
+	LegendTitleLineHeight    *float64 `json:"legend_title_line_height,omitempty"`
+	LegendTitleLetterSpacing *float64 `json:"legend_title_letter_spacing,omitempty"`
+	TitleLineHeight          *float64 `json:"title_line_height,omitempty"`
+	TitleLetterSpacing       *float64 `json:"title_letter_spacing,omitempty"`
 }
 
 // Default returns the hard-coded P05 theme:

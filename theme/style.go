@@ -21,8 +21,9 @@ type MarkStyle struct {
 	Baseline     string    `json:"baseline,omitempty"`
 	// LineHeight and LetterSpacing are text typography tokens for the
 	// text mark. Unset (nil) inherits the renderer's existing default
-	// (single-line, no extra tracking). Model + schema only in this
-	// story (E2-S1); rendering lands in E2-S2.
+	// (single-line, no extra tracking). Rendered via
+	// encode.applyThemeMarkStyle → scene.Style.LineHeight/
+	// LetterSpacing → render/svg's writeStyleAttrs (E2-S2).
 	LineHeight    *float64 `json:"line_height,omitempty"`
 	LetterSpacing *float64 `json:"letter_spacing,omitempty"`
 	// Filter names an entry in Theme.Filters — a raw SVG <filter>
@@ -172,8 +173,9 @@ type AxisStyle struct {
 	LabelFontWeight string    `json:"label_font_weight,omitempty"`
 	LabelPadding    *float64  `json:"label_padding,omitempty"`
 	// LabelLineHeight and LabelLetterSpacing are typography tokens for
-	// axis tick labels. Model + schema only in this story (E2-S1);
-	// rendering lands in E2-S2.
+	// axis tick labels. Rendered via theme.Theme.ToSceneTheme →
+	// scene.Theme.AxisLabelLineHeight/AxisLabelLetterSpacing →
+	// render/svg's emitTickLabel (E2-S2).
 	LabelLineHeight    *float64 `json:"label_line_height,omitempty"`
 	LabelLetterSpacing *float64 `json:"label_letter_spacing,omitempty"`
 	TitleColor         string   `json:"title_color,omitempty"`

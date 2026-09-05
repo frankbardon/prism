@@ -5,6 +5,7 @@ import (
 	"sort"
 
 	"github.com/frankbardon/prism/encode/scene"
+	"github.com/frankbardon/prism/render"
 )
 
 // writeStyleBlock emits the <style>...</style> block at the top of
@@ -74,7 +75,30 @@ func writeStyleAttrs(w *Writer, s scene.Style) {
 	if s.Opacity > 0 && s.Opacity < 1 {
 		w.AttrFloat("opacity", s.Opacity)
 	}
+	writeTypographyAttrs(w, s.LineHeight, s.LetterSpacing)
 	writeFilterAttr(w, s.Filter)
+}
+
+// writeTypographyAttrs applies the E2-S2 line-height / letter-spacing
+// typography tokens to a text-bearing element. letterSpacing emits as
+// the `letter-spacing` SVG presentation attribute (unitless numbers
+// are valid user-unit lengths, same convention as the existing
+// font-size attr). lineHeight has no SVG presentation-attribute
+// equivalent, so it emits as a `style="line-height:…"` CSS
+// declaration instead — a unitless multiplier, matching CSS
+// line-height semantics. Both are no-ops when nil (unset), which
+// keeps every existing element byte-identical until a theme actually
+// sets one of these tokens. Shared by writeStyleAttrs (mark/text-mark
+// glyphs) and the structural axis/legend/title text emitters, which
+// call it directly since those elements carry no scene.Style of
+// their own — see scene.Theme's AxisLabelLineHeight family.
+func writeTypographyAttrs(w *Writer, lineHeight, letterSpacing *float64) {
+	if letterSpacing != nil {
+		w.AttrFloat("letter-spacing", *letterSpacing)
+	}
+	if lineHeight != nil {
+		w.Attr("style", "line-height:"+render.FormatFloat(*lineHeight))
+	}
 }
 
 // writeFilterAttr emits filter="url(#prism-filter-<name>)" when name

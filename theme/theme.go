@@ -114,12 +114,22 @@ func (t *Theme) ToSceneTheme() *scene.Theme {
 	}
 	if t.Axis != nil {
 		out.AxisFilter = t.Axis.Filter
+		out.AxisLabelLineHeight = copyFloat(t.Axis.LabelLineHeight)
+		out.AxisLabelLetterSpacing = copyFloat(t.Axis.LabelLetterSpacing)
+		out.AxisTitleLineHeight = copyFloat(t.Axis.TitleLineHeight)
+		out.AxisTitleLetterSpacing = copyFloat(t.Axis.TitleLetterSpacing)
 	}
 	if t.Legend != nil {
 		out.LegendFilter = t.Legend.Filter
+		out.LegendLabelLineHeight = copyFloat(t.Legend.LabelLineHeight)
+		out.LegendLabelLetterSpacing = copyFloat(t.Legend.LabelLetterSpacing)
+		out.LegendTitleLineHeight = copyFloat(t.Legend.TitleLineHeight)
+		out.LegendTitleLetterSpacing = copyFloat(t.Legend.TitleLetterSpacing)
 	}
 	if t.Title != nil {
 		out.TitleFilter = t.Title.Filter
+		out.TitleLineHeight = copyFloat(t.Title.LineHeight)
+		out.TitleLetterSpacing = copyFloat(t.Title.LetterSpacing)
 	}
 	if t.View != nil {
 		out.ViewFilter = t.View.Filter

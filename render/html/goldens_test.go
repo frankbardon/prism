@@ -28,6 +28,11 @@ import (
 func TestPrismHTMLGoldensStable(t *testing.T) {
 	fixtures := []string{
 		"bar_basic.json",
+		// E2-S2: confirms render/html inherits the line-height /
+		// letter-spacing typography-token wiring from render/svg's
+		// shared emitters (the html backend delegates to svg.Render
+		// verbatim — no independent theme logic of its own).
+		"point_typography_tokens.json",
 	}
 	update := os.Getenv("UPDATE_GOLDENS") == "1"
 	for _, fix := range fixtures {

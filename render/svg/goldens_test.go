@@ -35,6 +35,12 @@ func TestPrismSVGGoldensStable(t *testing.T) {
 		// filter="url(#...)" attrs) and raw_css passthrough.
 		"bar_mark_filter.json",
 		"bar_raw_css.json",
+		// E2-S2: line-height / letter-spacing typography tokens —
+		// axis label/title + legend label/title + chart title
+		// (point_typography_tokens.json) and per-mark text-glyph
+		// letter-spacing/line-height (text_typography_tokens.json).
+		"point_typography_tokens.json",
+		"text_typography_tokens.json",
 	}
 	update := os.Getenv("UPDATE_GOLDENS") == "1"
 	for _, fix := range fixtures {
