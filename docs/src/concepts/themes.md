@@ -482,3 +482,5 @@ format itself being unavailable — the SVG backend rejects a top-level
 - [bar_high_contrast](../gallery/themes/bar_high_contrast.prism.json)
 - [bar_colorblind](../gallery/themes/bar_colorblind.prism.json)
 - [bar_filter](../gallery/themes/bar_filter.prism.json) — drop-shadow filter on the mark
+- [bar_gradient](../gallery/themes/bar_gradient.prism.json) — `url(#name)` linear gradient fill on a bar mark
+- [bar_pattern](../gallery/themes/bar_pattern.prism.json) — `url(#name)` built-in `diagonal-stripes` pattern fill on a bar mark

@@ -1,6 +1,6 @@
 # Prism Gallery
 
-95 fixture specs across 16 categories. Each entry pairs a `*.prism.json`
+98 fixture specs across 16 categories. Each entry pairs a `*.prism.json`
 spec with a rendered `*.svg`. Browse the source to learn the spec
 shapes; open the SVGs to see what they render. The `table/` fixtures
 are one exception — a top-level `table` mark renders only through
@@ -214,6 +214,8 @@ below is identical; only the rendering theme differs.
 | [bar_high_contrast](themes/bar_high_contrast.prism.json) | <img src="themes/bar_high_contrast.svg" width="240"> |
 | [bar_colorblind](themes/bar_colorblind.prism.json) | <img src="themes/bar_colorblind.svg" width="240"> |
 | [bar_filter](themes/bar_filter.prism.json) | <img src="themes/bar_filter.svg" width="240"> |
+| [bar_gradient](themes/bar_gradient.prism.json) | <img src="themes/bar_gradient.svg" width="240"> |
+| [bar_pattern](themes/bar_pattern.prism.json) | <img src="themes/bar_pattern.svg" width="240"> |
 
 ## Animation
 
