@@ -218,6 +218,7 @@ below is identical; only the rendering theme differs.
 | [bar_gradient](themes/bar_gradient.prism.json) | <img src="themes/bar_gradient.svg" width="240"> |
 | [bar_pattern](themes/bar_pattern.prism.json) | <img src="themes/bar_pattern.svg" width="240"> |
 | [bar_dark_variant](themes/bar_dark_variant.prism.json) | <img src="themes/bar_dark_variant.svg" width="240"> |
+| [bar_category_styles](themes/bar_category_styles.prism.json) | <img src="themes/bar_category_styles.svg" width="240"> |
 
 `bar_dark_variant` is different from the row above it: its spec sets
 `theme: {"dark_variant": "dark"}` instead of picking a theme with
@@ -237,6 +238,14 @@ is currently in), so verify the effect one of two ways:
   element, plus `fill="var(--prism-resolved-N)"` on the `<rect>`
   elements — those are the doubled CSS custom properties described in
   the docs.
+
+`bar_category_styles` demonstrates `theme.category_styles`: the theme
+maps each `quarter` value to its own `MarkStyle` (`Q1`/`Q2`/`Q3`/`Q4`
+each get a distinct `fill`), and every bar picks up its category's
+color automatically — no spec-level `condition` block at all. See
+[Category styles](../concepts/themes.md#category-styles) for the
+field→value→style shape and how a spec-level `condition` on the same
+field/value would win if one were present.
 
 ## Animation
 

@@ -663,3 +663,4 @@ format itself being unavailable — the SVG backend rejects a top-level
 - [bar_gradient](../gallery/themes/bar_gradient.prism.json) — `url(#name)` linear gradient fill on a bar mark
 - [bar_pattern](../gallery/themes/bar_pattern.prism.json) — `url(#name)` built-in `diagonal-stripes` pattern fill on a bar mark
 - [bar_dark_variant](../gallery/themes/bar_dark_variant.prism.json) — `theme: {"dark_variant": "dark"}`, doubled chrome + mark-color CSS in one SVG (see [Dark variant pairing](#dark-variant-pairing))
+- [bar_category_styles](../gallery/themes/bar_category_styles.prism.json) — `theme.category_styles` colors each bar by its `quarter` value, with no spec-level `condition` block (see [Category styles](#category-styles))
