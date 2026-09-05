@@ -342,15 +342,43 @@ backend does not implement this escape hatch.
 ```
 
 Setting `dark_variant` alone is the opt-in for automatic light/dark
-rendering — there is no separate flag. A theme that declares one is a
-signal to the renderer to embed **both** palettes in a single SVG
-output (the paired theme supplies the dark tokens) and switch between
-them at view time via `prefers-color-scheme` / a manual toggle,
-without a second `plot`/`render` call. **This story lands the model
-field and its validation only** — the dual-palette `<style>` chrome
-emission is E4-S2 and the mark-color re-plumb (so mark fills/strokes
-also swap, not just axis/legend/background chrome) is E4-S3; until
-those land, `dark_variant` is inert at render time.
+rendering — there is no separate flag. A theme that declares one
+signals the renderer to embed **both** palettes in a single SVG/HTML
+output and switch between them at view time via
+`prefers-color-scheme`, without a second `plot`/`render` call.
+
+**Chrome dark-swap (live):** `CSSVariables()` emits the base
+`:root{...}` block as before, then — only when `dark_variant`
+resolves — a second rule appended inside the same `<style>` element:
+
+```css
+@media (prefers-color-scheme: dark) {
+  :root {
+    --prism-color-axis: #9ca3af;
+    --prism-axis-domain-color: #9ca3af;
+    /* ...legend/title/view/selection-state tokens... */
+  }
+}
+```
+
+This covers every token that already resolved through `var()`
+end-to-end before this feature existed: axis strokes/ticks, grid
+lines, title text, legend text, view background/stroke, and
+`.prism-selected`/`.prism-deselected` opacity — computed by running
+the same `theme/css.go` emission helpers against the paired theme.
+The fixed class selectors (`.prism-axis-domain`, `.prism-grid-line`,
+…) are not duplicated inside the media query — they already read
+through `var()`, so only the custom-property *values* need to swap.
+When `dark_variant` is unset (or names a theme that fails to
+resolve), no media query is emitted and output is byte-identical to a
+theme with no `dark_variant` at all.
+
+**Mark colors remain out of scope** — per-mark fills/strokes are
+baked hex literals resolved once at encode time
+(`scene.Style.Fill`/`Stroke`), not `var()` references, so they do not
+swap under the media query yet. The mark-color re-plumb (resolving
+the scale against both paired themes and emitting each unique color
+as its own light/dark-aware CSS var) is E4-S3.
 
 **Validation:** a non-empty `dark_variant` must name a theme already
 present in the registry — checked at the same fail-loud entry points
@@ -486,6 +514,13 @@ without re-rendering.
 The full set scales with the tokens the active theme defines —
 unset tokens omit the variable so renderers fall back to hard-coded
 defaults inside the CSS class declarations.
+
+When the active theme sets `dark_variant` (see
+[Dark variant pairing](#dark-variant-pairing)), the chrome-related
+subset of these variables (axis/grid/legend/title/view/selection-state
+— not the `--prism-mark-*` family) is emitted a second time, inside
+an `@media (prefers-color-scheme: dark) { :root { ... } }` rule
+appended after the base block in the same `<style>` element.
 
 `line_height` and `letter_spacing` (see [Typography tokens](#typography-tokens))
 are the one exception: they render as direct per-element attributes

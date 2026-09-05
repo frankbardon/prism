@@ -48,6 +48,21 @@ func (t *Theme) CSSVariables() string {
 	writeRootVars(&b, t)
 	b.WriteString("}")
 	writeClassSelectors(&b)
+	// Auto light/dark chrome swap (E4-S2): when DarkVariant names a
+	// registered theme, append a second :root rule guarded by
+	// prefers-color-scheme carrying that theme's chrome values (axis,
+	// grid, title, legend, selection state, view) — the tokens that
+	// already flow through var() end-to-end per
+	// research/css-var-coverage.md. Mark colors are intentionally
+	// excluded: they're baked hex literals resolved once at encode
+	// time with no stable per-instance token yet (E4-S3). Absent
+	// DarkVariant (or an unresolved name), this is a strict no-op —
+	// output stays byte-identical to pre-E4-S2 behavior.
+	if dv, ok := resolveDarkVariant(t); ok {
+		b.WriteString("@media (prefers-color-scheme: dark){:root{")
+		writeDarkChromeVars(&b, dv)
+		b.WriteString("}}")
+	}
 	// RawCSS escape hatch (E1-S2): appended verbatim after the
 	// generated variable manifest + fixed class selectors, still
 	// inside the same <style> block. Same trust model as Filters —
@@ -59,8 +74,52 @@ func (t *Theme) CSSVariables() string {
 	return b.String()
 }
 
+// resolveDarkVariant looks up t.DarkVariant in the package registry.
+// Returns (nil, false) when DarkVariant is unset or names a theme
+// that isn't registered — the latter should not happen for a theme
+// that passed Validate (see checkDarkVariantRef), but CSSVariables
+// degrades gracefully rather than panicking on a hand-built *Theme
+// that skipped validation.
+func resolveDarkVariant(t *Theme) (*Theme, bool) {
+	if t == nil || t.DarkVariant == "" {
+		return nil, false
+	}
+	dv, ok := registry[t.DarkVariant]
+	if !ok {
+		return nil, false
+	}
+	return dv, true
+}
+
 func writeRootVars(b *strings.Builder, t *Theme) {
-	// Legacy flat tokens (preserved for back-compat with prism.mjs).
+	writeLegacyFlatVars(b, t)
+
+	// v2 nested tokens.
+	writeAxisVars(b, t.Axis)
+	writeLegendVars(b, t.Legend)
+	writeTitleVars(b, t.Title)
+	writeViewVars(b, t.View)
+	writeMarkVars(b, "mark", t.Mark)
+	// Marks rendered in sorted-name order so the CSS bytes are
+	// deterministic across runs.
+	if t.Marks != nil {
+		names := make([]string, 0, len(t.Marks))
+		for k := range t.Marks {
+			names = append(names, k)
+		}
+		sort.Strings(names)
+		for _, name := range names {
+			writeMarkVars(b, "mark-"+name, t.Marks[name])
+		}
+	}
+	writeStateVars(b, t.States)
+}
+
+// writeLegacyFlatVars emits the pre-v2 flat color/font tokens
+// (preserved for back-compat with prism.mjs). Factored out of
+// writeRootVars so the dark-variant chrome block (writeDarkChromeVars)
+// can reuse it without duplicating the field list.
+func writeLegacyFlatVars(b *strings.Builder, t *Theme) {
 	if t.AxisColor != "" {
 		fmt.Fprintf(b, "--prism-color-axis:%s;", t.AxisColor)
 	}
@@ -88,25 +147,19 @@ func writeRootVars(b *strings.Builder, t *Theme) {
 	if t.FontSizeAxisTitle != 0 {
 		fmt.Fprintf(b, "--prism-font-size-axis-title:%gpx;", t.FontSizeAxisTitle)
 	}
+}
 
-	// v2 nested tokens.
+// writeDarkChromeVars emits the DarkVariant theme's chrome tokens —
+// everything writeRootVars produces except mark defaults (out of
+// scope for E4-S2; see the CSSVariables doc comment above). Reuses
+// the exact same per-block helpers as the base :root emission so a
+// dark-mode viewer sees the identical chrome shape, just re-themed.
+func writeDarkChromeVars(b *strings.Builder, t *Theme) {
+	writeLegacyFlatVars(b, t)
 	writeAxisVars(b, t.Axis)
 	writeLegendVars(b, t.Legend)
 	writeTitleVars(b, t.Title)
 	writeViewVars(b, t.View)
-	writeMarkVars(b, "mark", t.Mark)
-	// Marks rendered in sorted-name order so the CSS bytes are
-	// deterministic across runs.
-	if t.Marks != nil {
-		names := make([]string, 0, len(t.Marks))
-		for k := range t.Marks {
-			names = append(names, k)
-		}
-		sort.Strings(names)
-		for _, name := range names {
-			writeMarkVars(b, "mark-"+name, t.Marks[name])
-		}
-	}
 	writeStateVars(b, t.States)
 }
 
