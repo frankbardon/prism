@@ -1,13 +1,13 @@
 # Prism Gallery
 
-94 fixture specs across 14 categories. Each entry pairs a `*.prism.json`
+95 fixture specs across 15 categories. Each entry pairs a `*.prism.json`
 spec with a rendered `*.svg`. Browse the source to learn the spec
 shapes; open the SVGs to see what they render. The `table/` fixtures
 are the one exception — a top-level `table` mark renders only through
 the `html` backend, so those entries link to a rendered `*.html` file
 instead of an `<img>` preview.
 
-For live interactive rendering in a browser, see [`index.html`](index.html).
+For live interactive rendering in a browser, see [`live.html`](live.html).
 
 ## Basic marks
 

@@ -291,7 +291,7 @@ binary size is unaffected — animation lives entirely in plain JS.
   snapping.
 - The [`gallery/animation/`](../gallery/index.md#animation) entries
   ship spec + initial-frame SVG; live `<prism-chart>` cards on the
-  gallery [`index.html`](../gallery/index.html) demonstrate the tween
+  gallery [live demo](../gallery/live.html) demonstrate the tween
   when the scene-doc swaps.
 
 ## Cross-implementation parity
