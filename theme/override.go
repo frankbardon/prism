@@ -107,6 +107,8 @@ func copyMarkStyle(s *spec.MarkStyle) *MarkStyle {
 	out.CornerRadius = copyFloat(s.CornerRadius)
 	out.Size = copyFloat(s.Size)
 	out.FontSize = copyFloat(s.FontSize)
+	out.LineHeight = copyFloat(s.LineHeight)
+	out.LetterSpacing = copyFloat(s.LetterSpacing)
 	if s.StrokeDash != nil {
 		out.StrokeDash = append([]float64(nil), s.StrokeDash...)
 	}
@@ -135,8 +137,12 @@ func copyAxisStyle(s *spec.AxisStyle) *AxisStyle {
 	out.GridOpacity = copyFloat(s.GridOpacity)
 	out.LabelFontSize = copyFloat(s.LabelFontSize)
 	out.LabelPadding = copyFloat(s.LabelPadding)
+	out.LabelLineHeight = copyFloat(s.LabelLineHeight)
+	out.LabelLetterSpacing = copyFloat(s.LabelLetterSpacing)
 	out.TitleFontSize = copyFloat(s.TitleFontSize)
 	out.TitlePadding = copyFloat(s.TitlePadding)
+	out.TitleLineHeight = copyFloat(s.TitleLineHeight)
+	out.TitleLetterSpacing = copyFloat(s.TitleLetterSpacing)
 	if s.GridDash != nil {
 		out.GridDash = append([]float64(nil), s.GridDash...)
 	}
@@ -160,7 +166,11 @@ func copyLegendStyle(s *spec.LegendStyle) *LegendStyle {
 	out.SymbolSize = copyFloat(s.SymbolSize)
 	out.SymbolStrokeWidth = copyFloat(s.SymbolStrokeWidth)
 	out.LabelFontSize = copyFloat(s.LabelFontSize)
+	out.LabelLineHeight = copyFloat(s.LabelLineHeight)
+	out.LabelLetterSpacing = copyFloat(s.LabelLetterSpacing)
 	out.TitleFontSize = copyFloat(s.TitleFontSize)
+	out.TitleLineHeight = copyFloat(s.TitleLineHeight)
+	out.TitleLetterSpacing = copyFloat(s.TitleLetterSpacing)
 	out.RowPadding = copyFloat(s.RowPadding)
 	out.ColumnPadding = copyFloat(s.ColumnPadding)
 	return out
@@ -179,6 +189,8 @@ func copyTitleStyle(s *spec.TitleStyle) *TitleStyle {
 	}
 	out.FontSize = copyFloat(s.FontSize)
 	out.Padding = copyFloat(s.Padding)
+	out.LineHeight = copyFloat(s.LineHeight)
+	out.LetterSpacing = copyFloat(s.LetterSpacing)
 	return out
 }
 

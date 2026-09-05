@@ -223,6 +223,14 @@ func mergeAxis(base, override *AxisStyle) *AxisStyle {
 		v := *override.LabelPadding
 		out.LabelPadding = &v
 	}
+	if override.LabelLineHeight != nil {
+		v := *override.LabelLineHeight
+		out.LabelLineHeight = &v
+	}
+	if override.LabelLetterSpacing != nil {
+		v := *override.LabelLetterSpacing
+		out.LabelLetterSpacing = &v
+	}
 	if override.TitleColor != "" {
 		out.TitleColor = override.TitleColor
 	}
@@ -236,6 +244,14 @@ func mergeAxis(base, override *AxisStyle) *AxisStyle {
 	if override.TitlePadding != nil {
 		v := *override.TitlePadding
 		out.TitlePadding = &v
+	}
+	if override.TitleLineHeight != nil {
+		v := *override.TitleLineHeight
+		out.TitleLineHeight = &v
+	}
+	if override.TitleLetterSpacing != nil {
+		v := *override.TitleLetterSpacing
+		out.TitleLetterSpacing = &v
 	}
 	if override.Filter != "" {
 		out.Filter = override.Filter
@@ -284,6 +300,14 @@ func mergeLegend(base, override *LegendStyle) *LegendStyle {
 		v := *override.LabelFontSize
 		out.LabelFontSize = &v
 	}
+	if override.LabelLineHeight != nil {
+		v := *override.LabelLineHeight
+		out.LabelLineHeight = &v
+	}
+	if override.LabelLetterSpacing != nil {
+		v := *override.LabelLetterSpacing
+		out.LabelLetterSpacing = &v
+	}
 	if override.TitleColor != "" {
 		out.TitleColor = override.TitleColor
 	}
@@ -293,6 +317,14 @@ func mergeLegend(base, override *LegendStyle) *LegendStyle {
 	}
 	if override.TitleFontWeight != "" {
 		out.TitleFontWeight = override.TitleFontWeight
+	}
+	if override.TitleLineHeight != nil {
+		v := *override.TitleLineHeight
+		out.TitleLineHeight = &v
+	}
+	if override.TitleLetterSpacing != nil {
+		v := *override.TitleLetterSpacing
+		out.TitleLetterSpacing = &v
 	}
 	if override.RowPadding != nil {
 		v := *override.RowPadding
@@ -339,6 +371,14 @@ func mergeTitle(base, override *TitleStyle) *TitleStyle {
 	if override.Padding != nil {
 		v := *override.Padding
 		out.Padding = &v
+	}
+	if override.LineHeight != nil {
+		v := *override.LineHeight
+		out.LineHeight = &v
+	}
+	if override.LetterSpacing != nil {
+		v := *override.LetterSpacing
+		out.LetterSpacing = &v
 	}
 	if override.Filter != "" {
 		out.Filter = override.Filter

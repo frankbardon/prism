@@ -47,14 +47,20 @@ prism plot bar.json --theme=colorblind > bar-cb.svg
     "grid_color":    "#e5e7eb",
     "label_color":   "#111827",
     "label_font_size": 11,
+    "label_line_height": 1.2,
+    "label_letter_spacing": 0.1,
     "title_color":   "#111827",
     "title_font_size": 12,
-    "title_padding": 8
+    "title_padding": 8,
+    "title_line_height": 1.2,
+    "title_letter_spacing": 0.1
   },
 
   "legend": {
     "label_color":      "#111827",
+    "label_line_height": 1.2,
     "title_font_weight":"600",
+    "title_line_height": 1.2,
     "symbol_size":      64,
     "padding":          8
   },
@@ -63,7 +69,9 @@ prism plot bar.json --theme=colorblind > bar-cb.svg
     "color":      "#111827",
     "font_size":  16,
     "font_weight":"600",
-    "anchor":     "start"
+    "anchor":     "start",
+    "line_height":    1.25,
+    "letter_spacing": 0.2
   },
 
   "view": {
@@ -116,6 +124,35 @@ prism plot bar.json --theme=colorblind > bar-cb.svg
 | `states`   | State overlays (selected, deselected, hover, focus). Materialise as `.prism-<state>` CSS classes. |
 | `filters`  | Named registry of raw SVG `<filter>` inner-content bodies. `mark`/`marks.<type>`/`style.<name>`/`axis`/`legend`/`title`/`view` each carry a `filter` field naming an entry here. |
 | `raw_css`  | Raw CSS string appended verbatim to the emitted `<style>` block. |
+
+### Typography tokens
+
+`line_height` and `letter_spacing` are optional pointer-typed typography
+tokens (same "absent means inherit" semantics as `font_size` and every
+other sparse numeric token). They are modeled and schema-validated as
+of this story; the SVG renderer wires the actual `line-height` /
+`letter-spacing` text-element output in a follow-up story.
+
+| Block | Fields carrying the tokens |
+|---|---|
+| `title` (`TitleStyle`) | `line_height`, `letter_spacing` — applies to the chart title text. |
+| `axis` (`AxisStyle`) | `label_line_height`/`label_letter_spacing` (tick labels) and `title_line_height`/`title_letter_spacing` (axis title), mirroring the existing `label_font_size`/`title_font_size` split. |
+| `legend` (`LegendStyle`) | `label_line_height`/`label_letter_spacing` (entry labels) and `title_line_height`/`title_letter_spacing` (legend title), mirroring the existing `label_font_size`/`title_font_size` split. |
+| `mark`/`marks.text`/`style.<name>` (`MarkStyle`) | `line_height`, `letter_spacing` — applies to `text`-mark content. |
+
+```json
+{
+  "mark": { "font_size": 12, "line_height": 1.3, "letter_spacing": 0.2 },
+  "axis": {
+    "label_font_size": 11, "label_line_height": 1.2, "label_letter_spacing": 0.1,
+    "title_font_size": 12, "title_line_height": 1.2, "title_letter_spacing": 0.1
+  }
+}
+```
+
+No `@font-face` / font-loading support is implied or added by these
+tokens — Prism only sets the CSS typography properties on already
+font-resolved text elements.
 
 ### Raw CSS and filter escape hatch
 

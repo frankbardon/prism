@@ -81,6 +81,8 @@
         "font_style":   {"type": "string", "enum": ["normal", "italic", "oblique"]},
         "align":        {"type": "string", "enum": ["left", "center", "right"]},
         "baseline":     {"type": "string", "enum": ["alphabetic", "top", "middle", "bottom"]},
+        "line_height":    {"type": "number", "minimum": 0, "description": "Line height for multi-line text mark content."},
+        "letter_spacing": {"type": "number", "description": "Letter spacing (tracking) applied to text mark content."},
         "filter":       {"type": "string", "description": "Name of an entry in the theme's top-level 'filters' map."}
       }
     },
@@ -103,10 +105,14 @@
         "label_font_size":    {"type": "number", "minimum": 0},
         "label_font_weight":  {"type": ["string", "number"]},
         "label_padding":      {"type": "number", "minimum": 0},
+        "label_line_height":    {"type": "number", "minimum": 0, "description": "Line height for axis tick label text."},
+        "label_letter_spacing": {"type": "number", "description": "Letter spacing (tracking) for axis tick label text."},
         "title_color":        {"$ref": "shared.schema.json#/$defs/color"},
         "title_font_size":    {"type": "number", "minimum": 0},
         "title_font_weight":  {"type": ["string", "number"]},
         "title_padding":      {"type": "number", "minimum": 0},
+        "title_line_height":    {"type": "number", "minimum": 0, "description": "Line height for the axis title text."},
+        "title_letter_spacing": {"type": "number", "description": "Letter spacing (tracking) for the axis title text."},
         "filter":             {"type": "string", "description": "Name of an entry in the theme's top-level 'filters' map."}
       }
     },
@@ -123,9 +129,13 @@
         "symbol_stroke_width": {"type": "number", "minimum": 0},
         "label_color":         {"$ref": "shared.schema.json#/$defs/color"},
         "label_font_size":     {"type": "number", "minimum": 0},
+        "label_line_height":    {"type": "number", "minimum": 0, "description": "Line height for legend entry label text."},
+        "label_letter_spacing": {"type": "number", "description": "Letter spacing (tracking) for legend entry label text."},
         "title_color":         {"$ref": "shared.schema.json#/$defs/color"},
         "title_font_size":     {"type": "number", "minimum": 0},
         "title_font_weight":   {"type": ["string", "number"]},
+        "title_line_height":    {"type": "number", "minimum": 0, "description": "Line height for the legend title text."},
+        "title_letter_spacing": {"type": "number", "description": "Letter spacing (tracking) for the legend title text."},
         "row_padding":         {"type": "number", "minimum": 0},
         "column_padding":      {"type": "number", "minimum": 0},
         "filter":              {"type": "string", "description": "Name of an entry in the theme's top-level 'filters' map."}
@@ -142,6 +152,8 @@
         "align":       {"type": "string", "enum": ["left", "center", "right"]},
         "anchor":      {"type": "string", "enum": ["start", "middle", "end"]},
         "padding":     {"type": "number", "minimum": 0},
+        "line_height":    {"type": "number", "minimum": 0, "description": "Line height for multi-line chart title text."},
+        "letter_spacing": {"type": "number", "description": "Letter spacing (tracking) for the chart title text."},
         "filter":      {"type": "string", "description": "Name of an entry in the theme's top-level 'filters' map."}
       }
     },
