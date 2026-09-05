@@ -191,6 +191,56 @@ serve` Twirp endpoint from P14) and gets back the resolved Scene
 IR. WASM still does the final SVG render; the network round-trip
 only covers compile.
 
+## Auto light/dark in the browser
+
+A spec's `theme.dark_variant` (see [Dark variant
+pairing](themes.md#dark-variant-pairing)) needs no browser-specific
+wiring — no new `<prism-chart>` attribute, no `prism.mjs` export, no
+`compile-server` option. Set it directly in the spec JSON exactly as
+you would for the CLI:
+
+```html
+<prism-chart spec='{
+  "$schema": "urn:prism:schema:v1:spec",
+  "data": {"values": [{"category": "alpha", "value": 12}]},
+  "mark": "bar",
+  "encoding": {
+    "x": {"field": "category", "type": "nominal"},
+    "y": {"field": "value", "type": "quantitative"}
+  },
+  "theme": {"dark_variant": "dark"}
+}'></prism-chart>
+```
+
+Every code path the element can take — client-side WASM compile,
+`compile-server` offload, or a pre-rendered `src="/scenes/…json"`
+scene fetched and mounted with zero compile — reaches the same
+`encode.Encode` call under the hood, so all three carry the doubled
+`<style>` block described in [CSS variables
+emitted](themes.md#css-variables-emitted) without special-casing.
+
+Because the mechanism is a plain `@media (prefers-color-scheme:
+dark)` rule embedded in the SVG/HTML payload itself (not something
+`prism.mjs` or the shadow DOM applies separately), a live
+`<prism-chart>` mounted on a real page repaints immediately when the
+visitor flips their OS or browser color-scheme setting — the browser
+re-evaluates the media query on its own. No `SceneHandle.update()`
+call, no animator tween, no re-render round trip: this is a
+lighter-weight mechanism than the [animation](#animation) system
+below, which exists for a different problem (data changing between
+successive scenes, not the viewer's color-scheme preference).
+
+**Theme names must resolve client-side too.** `dark_variant` (and
+`theme.name`/the render-time `themeName` argument to
+`prism.render`/`prism.renderHTML`) are looked up by name against the
+themes compiled into the running `prism.wasm` binary. The WASM entry
+exposes no `theme.LoadFile`/`LoadBytes`-equivalent export — there is
+no way to register a custom theme JSON document from JS at runtime —
+so a spec embedded in a page can only pair with one of the five
+built-ins (`light`, `dark`, `print`, `high_contrast`, `colorblind`)
+unless the host ships a custom-built `prism.wasm` with additional
+`theme.Register` calls compiled in.
+
 ## Compile-only mode
 
 Callers (particularly programmatic ones constructing specs from

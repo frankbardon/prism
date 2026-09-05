@@ -216,6 +216,26 @@ below is identical; only the rendering theme differs.
 | [bar_filter](themes/bar_filter.prism.json) | <img src="themes/bar_filter.svg" width="240"> |
 | [bar_gradient](themes/bar_gradient.prism.json) | <img src="themes/bar_gradient.svg" width="240"> |
 | [bar_pattern](themes/bar_pattern.prism.json) | <img src="themes/bar_pattern.svg" width="240"> |
+| [bar_dark_variant](themes/bar_dark_variant.prism.json) | <img src="themes/bar_dark_variant.svg" width="240"> |
+
+`bar_dark_variant` is different from the row above it: its spec sets
+`theme: {"dark_variant": "dark"}` instead of picking a theme with
+`--theme`, so the **one** rendered SVG embeds both the light and dark
+palettes and switches between them via `@media
+(prefers-color-scheme: dark)` — see [Dark variant
+pairing](../concepts/themes.md#dark-variant-pairing). The static
+preview above can only show the light rendering (the one your browser
+is currently in), so verify the effect one of two ways:
+
+- Toggle your OS or browser dark-mode setting while viewing the
+  `<img>` above (or open [the raw SVG](themes/bar_dark_variant.svg)
+  directly) — the axes, grid, legend, and bar colors all swap without
+  a re-render.
+- View source on `themes/bar_dark_variant.svg` and look for the
+  `@media (prefers-color-scheme: dark)` block inside the `<style>`
+  element, plus `fill="var(--prism-resolved-N)"` on the `<rect>`
+  elements — those are the doubled CSS custom properties described in
+  the docs.
 
 ## Animation
 
