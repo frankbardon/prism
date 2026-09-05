@@ -23,6 +23,9 @@ func (t *Theme) Validate() error {
 	if t == nil {
 		return nil
 	}
+	if err := t.checkDarkVariantRef(); err != nil {
+		return err
+	}
 	if err := t.checkFilterRef("mark", markStyleFilter(t.Mark)); err != nil {
 		return err
 	}
@@ -172,6 +175,31 @@ func patternDefIssue(p PatternDef) string {
 		return fmt.Sprintf("size must be positive, got %v", *p.Size)
 	}
 	return ""
+}
+
+// checkDarkVariantRef returns PRISM_THEME_DARK_VARIANT_UNKNOWN when
+// t.DarkVariant is non-empty and does not name a theme already
+// present in the package-level registry. Called from Validate, so it
+// covers both Register (registry holds every theme registered before
+// this one in the current process) and LoadFile/LoadBytes (registry
+// holds every built-in plus every theme Register'd so far). This is
+// the same fail-loud posture as checkFilterRef/checkFillRef — an
+// unresolved DarkVariant name is a hard error, not a silent no-op.
+func (t *Theme) checkDarkVariantRef() error {
+	if t.DarkVariant == "" {
+		return nil
+	}
+	if _, ok := registry[t.DarkVariant]; ok {
+		return nil
+	}
+	return prismerrors.New(
+		"PRISM_THEME_DARK_VARIANT_UNKNOWN",
+		fmt.Sprintf("theme.dark_variant references unregistered theme %q.", t.DarkVariant),
+		map[string]any{
+			"DarkVariant": t.DarkVariant,
+			"Available":   Names(),
+		},
+	)
 }
 
 func sortedGradientNames(m map[string]GradientDef) []string {

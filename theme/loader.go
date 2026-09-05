@@ -58,6 +58,9 @@ func Merge(base, override *Theme) *Theme {
 	if override.Name != "" {
 		out.Name = override.Name
 	}
+	if override.DarkVariant != "" {
+		out.DarkVariant = override.DarkVariant
+	}
 	if override.AxisColor != "" {
 		out.AxisColor = override.AxisColor
 	}

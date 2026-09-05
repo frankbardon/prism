@@ -993,6 +993,15 @@ var Codes = map[string]CodeMetadata{
 		},
 		SeeAlso: []string{"PRISM_THEME_GRADIENT_INVALID"},
 	},
+	"PRISM_THEME_DARK_VARIANT_UNKNOWN": {
+		Code:    "PRISM_THEME_DARK_VARIANT_UNKNOWN",
+		Message: `theme.dark_variant references unregistered theme {{.DarkVariant}}.`,
+		Fixups: []string{
+			`Register the counterpart theme (theme.Register, or a LoadFile/LoadBytes call rooted at "base") before pairing it as "dark_variant", or fix the typo.`,
+			`Themes currently registered: {{.Available}}.`,
+		},
+		SeeAlso: []string{"PRISM_THEME_FILTER_UNKNOWN"},
+	},
 }
 
 // CodesSorted returns the catalog keys in ascending order.

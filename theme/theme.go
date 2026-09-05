@@ -24,6 +24,19 @@ type Theme struct {
 	Name string `json:"name,omitempty"`
 	Base string `json:"base,omitempty"` // optional registered base theme
 
+	// DarkVariant names a registered counterpart theme used for
+	// automatic light/dark rendering (E4). Setting it alone is the
+	// opt-in — there is no separate flag. A non-empty value must name
+	// a theme already present in the registry (or registered earlier
+	// in the same init-time load batch — see theme/registry.go);
+	// an unresolved name fails loudly with
+	// PRISM_THEME_DARK_VARIANT_UNKNOWN at Register/LoadFile/LoadBytes
+	// time, the same fail-loud posture as Filter/url(#name)
+	// references (theme/validate.go). Model + validation only in this
+	// story — the dual-palette chrome emission lands in E4-S2 and the
+	// mark-color re-plumb in E4-S3.
+	DarkVariant string `json:"dark_variant,omitempty"`
+
 	// Legacy flat palette (pre-v2).
 	AxisColor       string `json:"axis_color,omitempty"`
 	GridColor       string `json:"grid_color,omitempty"`

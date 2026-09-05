@@ -11,6 +11,9 @@ func ApplyOverride(base *Theme, o *spec.ThemeOverride) *Theme {
 		return base.Clone()
 	}
 	override := &Theme{}
+	if o.DarkVariant != "" {
+		override.DarkVariant = o.DarkVariant
+	}
 	// Legacy flat fields seed the equivalent flat theme fields so
 	// pre-v2 specs keep working.
 	if o.Background != "" {

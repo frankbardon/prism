@@ -45,14 +45,18 @@ type ResolveChannelMap struct {
 // Scheme, Padding) remain for back-compat with v1 specs; they seed
 // the nested blocks via theme.ApplyOverride.
 type ThemeOverride struct {
-	Name       string   `json:"name,omitempty"`
-	Background string   `json:"background,omitempty"`
-	Font       string   `json:"font,omitempty"`
-	FontSize   float64  `json:"font_size,omitempty"`
-	Color      string   `json:"color,omitempty"`
-	Palette    []string `json:"palette,omitempty"`
-	Scheme     string   `json:"scheme,omitempty"`
-	Padding    *Padding `json:"padding,omitempty"`
+	Name string `json:"name,omitempty"`
+	// DarkVariant mirrors theme.Theme.DarkVariant — names a
+	// registered counterpart theme for automatic light/dark
+	// rendering (E4). Model + validation only in this story.
+	DarkVariant string   `json:"dark_variant,omitempty"`
+	Background  string   `json:"background,omitempty"`
+	Font        string   `json:"font,omitempty"`
+	FontSize    float64  `json:"font_size,omitempty"`
+	Color       string   `json:"color,omitempty"`
+	Palette     []string `json:"palette,omitempty"`
+	Scheme      string   `json:"scheme,omitempty"`
+	Padding     *Padding `json:"padding,omitempty"`
 
 	// v2 nested blocks. Each is a pointer so JSON merges sparsely.
 	Mark    *MarkStyle             `json:"mark,omitempty"`

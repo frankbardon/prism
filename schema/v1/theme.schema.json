@@ -10,6 +10,10 @@
       "additionalProperties": false,
       "properties": {
         "name":       {"type": "string", "description": "Name of a registered theme to inherit from (light, dark, print, high_contrast, colorblind)."},
+        "dark_variant": {
+          "type": "string",
+          "description": "Name of a registered theme that serves as this theme's dark-mode counterpart. Setting this alone triggers automatic light/dark rendering (dual embedded palettes in one SVG) — no separate opt-in flag. Must name a theme already registered (or registered earlier in the same load batch); an unresolved name fails theme load with PRISM_THEME_DARK_VARIANT_UNKNOWN."
+        },
         "background": {"$ref": "shared.schema.json#/$defs/color", "description": "Chart background color (legacy alias for view.background)."},
         "font":       {"type": "string", "description": "Default font family (legacy)."},
         "font_size":  {"type": "number", "minimum": 0, "description": "Default font size in pixels (legacy)."},

@@ -150,6 +150,7 @@ prism plot bar.json --theme=colorblind > bar-cb.svg
 | `raw_css`  | Raw CSS string appended verbatim to the emitted `<style>` block. |
 | `gradients` | Named registry of linear/radial gradient definitions, referenced via `url(#name)` fills (see [Gradients and patterns](#gradients-and-patterns)). |
 | `patterns`  | Named registry of pattern fills — built-in catalogue or raw-SVG content — referenced via `url(#name)` fills (see [Gradients and patterns](#gradients-and-patterns)). |
+| `dark_variant` | Name of a registered counterpart theme for automatic light/dark rendering (see [Dark variant pairing](#dark-variant-pairing)). |
 
 ### Typography tokens
 
@@ -327,6 +328,46 @@ on the corresponding element — the mark itself, or (only when
 rect sized to the chart frame. `render/html/` inherits this
 automatically, the same as the filter escape hatch. The Canvas
 backend does not implement this escape hatch.
+
+### Dark variant pairing
+
+`dark_variant` names a registered counterpart theme:
+
+```json
+{
+  "name": "brand_light",
+  "base": "light",
+  "dark_variant": "brand_dark"
+}
+```
+
+Setting `dark_variant` alone is the opt-in for automatic light/dark
+rendering — there is no separate flag. A theme that declares one is a
+signal to the renderer to embed **both** palettes in a single SVG
+output (the paired theme supplies the dark tokens) and switch between
+them at view time via `prefers-color-scheme` / a manual toggle,
+without a second `plot`/`render` call. **This story lands the model
+field and its validation only** — the dual-palette `<style>` chrome
+emission is E4-S2 and the mark-color re-plumb (so mark fills/strokes
+also swap, not just axis/legend/background chrome) is E4-S3; until
+those land, `dark_variant` is inert at render time.
+
+**Validation:** a non-empty `dark_variant` must name a theme already
+present in the registry — checked at the same fail-loud entry points
+as the filter/gradient/pattern escape hatches (`Register`,
+`LoadFile`/`LoadBytes`). An unresolved name fails with
+`PRISM_THEME_DARK_VARIANT_UNKNOWN` rather than silently rendering
+without a dark counterpart. Because validation checks the registry
+*as of registration time*, pairing only works in one direction per
+`Register` call: the counterpart named by `dark_variant` must already
+be registered (built-in themes register in a fixed order at package
+`init()` — see `theme/registry.go`). None of Prism's built-in themes
+(`light`, `dark`, `print`, `high_contrast`, `colorblind`) set
+`dark_variant` on each other in this story; a future story that wants
+to pair built-ins together needs either a two-pass registration (register
+all themes first, then a second pass that only sets `dark_variant` and
+re-validates) or an explicit `PairThemes(a, b string) error` helper —
+not yet implemented.
 
 ## Color schemes
 
