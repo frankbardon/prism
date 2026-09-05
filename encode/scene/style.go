@@ -16,6 +16,12 @@ type Style struct {
 	FontFamily  string    `json:"font_family,omitempty"`
 	FontWeight  int       `json:"font_weight,omitempty"`
 	Cursor      string    `json:"cursor,omitempty"`
+	// Filter names an entry in scene.Theme.Filters (mirrors
+	// theme.MarkStyle.Filter — resolved at encode time via
+	// theme.Theme.MarkDefault). The renderer emits
+	// filter="url(#prism-filter-<name>)" on the mark element when
+	// set. Empty means no filter.
+	Filter string `json:"filter,omitempty"`
 }
 
 // Color is an 8-bit RGBA color. Gradient / pattern fills go through

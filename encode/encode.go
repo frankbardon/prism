@@ -727,6 +727,9 @@ func applyThemeMarkStyle(style *scene.Style, ms *theme.MarkStyle) {
 	if ms.Opacity != nil {
 		style.Opacity = *ms.Opacity
 	}
+	if ms.Filter != "" {
+		style.Filter = ms.Filter
+	}
 }
 
 // applyMarkDef folds spec.MarkDef overrides into a style. P05

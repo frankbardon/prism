@@ -2,6 +2,7 @@ package svg
 
 import (
 	"fmt"
+	"sort"
 
 	"github.com/frankbardon/prism/encode/scene"
 )
@@ -73,4 +74,45 @@ func writeStyleAttrs(w *Writer, s scene.Style) {
 	if s.Opacity > 0 && s.Opacity < 1 {
 		w.AttrFloat("opacity", s.Opacity)
 	}
+	writeFilterAttr(w, s.Filter)
+}
+
+// writeFilterAttr emits filter="url(#prism-filter-<name>)" when name
+// is non-empty. Shared by mark elements (writeStyleAttrs) and the
+// structural axis/legend/title/view elements (renderer.go), keeping
+// the id-naming convention (E1-S2 / prism-filter-<name>) in one
+// place.
+func writeFilterAttr(w *Writer, name string) {
+	if name == "" {
+		return
+	}
+	w.Attr("filter", "url(#prism-filter-"+name+")")
+}
+
+// writeFilterDefs emits one <filter id="prism-filter-<name>"> element
+// per entry in theme.Filters, wrapping the raw body verbatim (the
+// theme package validates every Filter reference resolves at load
+// time — see theme/validate.go — so by encode time this map already
+// contains every name any style block could reference). Names are
+// sorted for deterministic golden bytes across runs. Emits nothing
+// when the theme carries no filters.
+func writeFilterDefs(w *Writer, theme *scene.Theme) {
+	if theme == nil || len(theme.Filters) == 0 {
+		return
+	}
+	names := make([]string, 0, len(theme.Filters))
+	for name := range theme.Filters {
+		names = append(names, name)
+	}
+	sort.Strings(names)
+	w.Raw("  <defs>")
+	for _, name := range names {
+		w.OpenTag("filter")
+		w.Attr("id", "prism-filter-"+name)
+		w.CloseTagOpen()
+		w.Raw(theme.Filters[name])
+		w.EndTag("filter")
+	}
+	w.Raw("</defs>")
+	w.Newline()
 }

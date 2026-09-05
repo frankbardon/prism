@@ -31,6 +31,10 @@ func TestPrismSVGGoldensStable(t *testing.T) {
 		"area_basic.json",
 		"point_scatter.json",
 		"rule_basic.json",
+		// E1-S2: theme filter escape hatch (raw <filter> defs +
+		// filter="url(#...)" attrs) and raw_css passthrough.
+		"bar_mark_filter.json",
+		"bar_raw_css.json",
 	}
 	update := os.Getenv("UPDATE_GOLDENS") == "1"
 	for _, fix := range fixtures {

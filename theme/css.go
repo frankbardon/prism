@@ -48,6 +48,13 @@ func (t *Theme) CSSVariables() string {
 	writeRootVars(&b, t)
 	b.WriteString("}")
 	writeClassSelectors(&b)
+	// RawCSS escape hatch (E1-S2): appended verbatim after the
+	// generated variable manifest + fixed class selectors, still
+	// inside the same <style> block. Same trust model as Filters —
+	// developer-authored theme JSON, not sanitized.
+	if t.RawCSS != "" {
+		b.WriteString(t.RawCSS)
+	}
 	b.WriteString("</style>")
 	return b.String()
 }

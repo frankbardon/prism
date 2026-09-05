@@ -138,10 +138,20 @@ theme files in a multi-tenant service) through `theme.LoadFile` /
 `theme.LoadBytes` / a spec's inline `theme.raw_css` / `theme.filters`
 override.
 
-This story ships the model and load-time validation only; the actual
-SVG `<filter>` element and `filter=""` attribute emission, and the
-`raw_css` append into the generated `<style>` block, land in a
-follow-up story.
+**Rendering:** the SVG backend emits one `<filter id="prism-filter-<name>">`
+element per entry in `filters`, wrapping the raw body verbatim inside
+a single top-level `<defs>` block. Any style block whose resolved
+`filter` names an entry gets `filter="url(#prism-filter-<name>)"` on
+the corresponding element — the mark itself, the `<g class="prism-axes">`
+wrapper, the `<g class="prism-legends">` wrapper, the title `<text>`,
+and (only when `view.filter` is set) a `<rect class="prism-view">`
+background rect sized to the chart frame. `raw_css` is appended
+verbatim inside the `<style>` block, after the generated
+`:root{--prism-*}` variable manifest and fixed class selectors.
+`render/html/` inherits both automatically — it wraps `render/svg`'s
+own emitters and splices the resulting bytes verbatim, so no separate
+glue was needed. The Canvas backend does not implement this escape
+hatch.
 
 ## Color schemes
 

@@ -9,13 +9,16 @@ import (
 // renderLegends emits one <g class="prism-legend"> per Scene.Legend.
 // Symbol entries get a 12×12 swatch + label; gradient entries get a
 // 12×120 rect filled via url(#gradient-id) with axis labels along
-// the side.
-func renderLegends(w *Writer, legends []scene.Legend) {
+// the side. filterName, when non-empty, is the resolved
+// theme.Legend.Filter reference (E1-S2) — applied to the outer
+// prism-legends wrapper via filter="url(#prism-filter-<name>)".
+func renderLegends(w *Writer, legends []scene.Legend, filterName string) {
 	if len(legends) == 0 {
 		return
 	}
 	w.OpenTag("g")
 	w.Attr("class", "prism-legends")
+	writeFilterAttr(w, filterName)
 	w.CloseTagOpen()
 	for _, lg := range legends {
 		renderLegend(w, lg)

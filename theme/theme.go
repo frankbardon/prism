@@ -101,6 +101,29 @@ func (t *Theme) ToSceneTheme() *scene.Theme {
 	if c, err := scene.ColorFromHex(t.TextColor); err == nil {
 		out.ColorText = c
 	}
+	// Filter escape hatch (E1-S2): pass the raw filter-body registry
+	// through verbatim, plus the resolved per-block Filter reference
+	// for the four structural style blocks that don't cascade to a
+	// per-element scene.Style (Mark/Marks do, via
+	// encode.applyThemeMarkStyle → scene.Style.Filter instead).
+	if len(t.Filters) > 0 {
+		out.Filters = make(map[string]string, len(t.Filters))
+		for k, v := range t.Filters {
+			out.Filters[k] = v
+		}
+	}
+	if t.Axis != nil {
+		out.AxisFilter = t.Axis.Filter
+	}
+	if t.Legend != nil {
+		out.LegendFilter = t.Legend.Filter
+	}
+	if t.Title != nil {
+		out.TitleFilter = t.Title.Filter
+	}
+	if t.View != nil {
+		out.ViewFilter = t.View.Filter
+	}
 	return out
 }
 

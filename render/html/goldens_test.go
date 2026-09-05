@@ -84,6 +84,43 @@ func TestPrismHTMLIsWellFormedDoc(t *testing.T) {
 	}
 }
 
+// TestPrismHTMLInheritsThemeFilters is a structural (non-golden)
+// check for E1-S2: the html backend delegates the whole non-table,
+// non-custom doc straight to svg.New().Render and splices the bytes
+// verbatim (see render/html/renderer.go), so it must inherit the
+// same <filter> defs, filter="url(#...)" mark attrs, and raw_css
+// passthrough the svg backend emits — with no separate glue code.
+// Verified by test rather than visual inspection per the story's
+// acceptance criteria.
+func TestPrismHTMLInheritsThemeFilters(t *testing.T) {
+	t.Run("mark filter", func(t *testing.T) {
+		got, err := renderFixture(t, "bar_mark_filter.json")
+		if err != nil {
+			t.Fatalf("render: %v", err)
+		}
+		s := string(got)
+		for _, want := range []string{
+			`<filter id="prism-filter-drop-shadow">`,
+			`filter="url(#prism-filter-drop-shadow)"`,
+		} {
+			if !strings.Contains(s, want) {
+				t.Errorf("output missing %q:\n%s", want, truncate(got, 1200))
+			}
+		}
+	})
+
+	t.Run("raw_css", func(t *testing.T) {
+		got, err := renderFixture(t, "bar_raw_css.json")
+		if err != nil {
+			t.Fatalf("render: %v", err)
+		}
+		s := string(got)
+		if !strings.Contains(s, ".prism-title{letter-spacing:0.5px;}") {
+			t.Errorf("output missing raw_css passthrough:\n%s", truncate(got, 1200))
+		}
+	})
+}
+
 func renderFixture(t *testing.T, name string) ([]byte, error) {
 	t.Helper()
 	path := filepath.Join(repoRoot(t), "examples", "specs", name)

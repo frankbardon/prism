@@ -103,6 +103,7 @@ func (r *Renderer) Render(doc *scene.SceneDoc, opts render.RenderOpts) ([]byte, 
 
 	// Style block + defs.
 	writeStyleBlock(w, theme)
+	writeFilterDefs(w, theme)
 
 	// Walk grid cells in row-major order. Each cell's Scene already
 	// carries pre-offset coordinates from EncodeComposite — the
@@ -116,7 +117,7 @@ func (r *Renderer) Render(doc *scene.SceneDoc, opts render.RenderOpts) ([]byte, 
 	// Shared axes (D051): emit once at the grid edge, outside any
 	// cell. Skipped when nil; common for 1×1 grids (per-cell axes
 	// suffice with one cell).
-	renderSharedAxes(w, doc.Grid)
+	renderSharedAxes(w, doc.Grid, theme)
 
 	// Facet headers (P09 / T09.07): grid-edge row + column labels.
 	// Repeat does NOT emit headers (the substituted field name is
@@ -158,7 +159,7 @@ func outerFrame(g scene.SceneGrid) scene.Rect {
 // the cell loop. Each axis is wrapped in its own prism-axes group so
 // the structural class is consistent with per-cell axes, but with an
 // extra data-shared="true" attribute for diagnostic + test scraping.
-func renderSharedAxes(w *Writer, g scene.SceneGrid) {
+func renderSharedAxes(w *Writer, g scene.SceneGrid, theme *scene.Theme) {
 	if g.Shared.X == nil && g.Shared.Y == nil {
 		return
 	}
@@ -175,6 +176,9 @@ func renderSharedAxes(w *Writer, g scene.SceneGrid) {
 	w.OpenTag("g")
 	w.Attr("class", "prism-axes")
 	w.Attr("data-shared", "true")
+	if theme != nil {
+		writeFilterAttr(w, theme.AxisFilter)
+	}
 	w.CloseTagOpen()
 	w.Newline()
 	if g.Shared.X != nil {
@@ -294,6 +298,28 @@ func renderScene(w *Writer, s scene.Scene, sceneTheme *scene.Theme) error {
 	w.CloseTagOpen()
 	w.Newline()
 
+	// View / background rect (E1-S2). Prism has no rendered view
+	// background today (theme.ViewStyle's Background/Stroke/Padding
+	// tokens are CSS-variable-only — see theme/css.go — and consumed
+	// by nothing yet); this element exists solely to carry the
+	// resolved View.Filter reference, so it is emitted only when one
+	// is set (never for the built-in themes, which all leave
+	// View.Filter empty). fill="none" keeps it invisible absent a
+	// theme-supplied background.
+	if sceneTheme != nil && sceneTheme.ViewFilter != "" {
+		w.Indent(4)
+		w.OpenTag("rect")
+		w.Attr("class", "prism-view")
+		w.AttrFloat("x", s.Frame.X)
+		w.AttrFloat("y", s.Frame.Y)
+		w.AttrFloat("width", s.Frame.W)
+		w.AttrFloat("height", s.Frame.H)
+		w.Attr("fill", "none")
+		writeFilterAttr(w, sceneTheme.ViewFilter)
+		w.SelfClose()
+		w.Newline()
+	}
+
 	// Title.
 	if s.Title != nil {
 		w.Indent(4)
@@ -302,6 +328,9 @@ func renderScene(w *Writer, s scene.Scene, sceneTheme *scene.Theme) error {
 		w.AttrFloat("x", s.Title.X)
 		w.AttrFloat("y", s.Title.Y)
 		w.Attr("text-anchor", "middle")
+		if sceneTheme != nil {
+			writeFilterAttr(w, sceneTheme.TitleFilter)
+		}
 		w.CloseTagOpen()
 		w.Text(s.Title.Content)
 		w.EndTag("text")
@@ -313,6 +342,9 @@ func renderScene(w *Writer, s scene.Scene, sceneTheme *scene.Theme) error {
 		w.Indent(4)
 		w.OpenTag("g")
 		w.Attr("class", "prism-axes")
+		if sceneTheme != nil {
+			writeFilterAttr(w, sceneTheme.AxisFilter)
+		}
 		w.CloseTagOpen()
 		w.Newline()
 		for _, a := range s.Axes {
@@ -377,7 +409,11 @@ func renderScene(w *Writer, s scene.Scene, sceneTheme *scene.Theme) error {
 	// Legends group.
 	if len(s.Legends) > 0 {
 		w.Indent(4)
-		renderLegends(w, s.Legends)
+		legendFilter := ""
+		if sceneTheme != nil {
+			legendFilter = sceneTheme.LegendFilter
+		}
+		renderLegends(w, s.Legends, legendFilter)
 		w.Newline()
 	}
 
