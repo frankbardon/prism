@@ -73,8 +73,19 @@
           "type": "object",
           "additionalProperties": {"$ref": "#/$defs/pattern_def"},
           "description": "Named registry of pattern fills — either a built-in catalogue entry (diagonal-stripes, dots, cross-hatch, grid) or a raw-SVG 'content' body. Same url(#name) resolution/emission as 'gradients'."
+        },
+        "category_styles": {
+          "type": "object",
+          "additionalProperties": {"$ref": "#/$defs/category_style_values"},
+          "description": "Theme-level data-driven style map: outer key is a field name, inner key is a stringified field value, leaf is a full mark_style applied automatically wherever that field is encoded on a mark channel — without a spec-level 'condition' block. Nested field -> value -> style shape (not a flat 'field=value' string key), consistent with Prism's no-expression-language stance. A spec's own 'condition' targeting the same field/value wins over a matching entry here. Model only today — encoder application and the condition-precedence resolution land in a follow-up story."
         }
       }
+    },
+
+    "category_style_values": {
+      "type": "object",
+      "additionalProperties": {"$ref": "#/$defs/mark_style"},
+      "description": "Field-value -> MarkStyle map for one field name entry in 'category_styles'. Keys are the stringified data values that should receive the given style."
     },
 
     "mark_style": {

@@ -171,6 +171,9 @@ func Merge(base, override *Theme) *Theme {
 			out.Patterns[k] = v.Clone()
 		}
 	}
+	if override.CategoryStyles != nil {
+		out.CategoryStyles = mergeCategoryStyles(out.CategoryStyles, override.CategoryStyles)
+	}
 	return out
 }
 

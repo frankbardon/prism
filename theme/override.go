@@ -99,6 +99,9 @@ func ApplyOverride(base *Theme, o *spec.ThemeOverride) *Theme {
 			override.Patterns[k] = copyPatternDef(v)
 		}
 	}
+	if o.CategoryStyles != nil {
+		override.CategoryStyles = copyCategoryStyles(o.CategoryStyles)
+	}
 	return Merge(base, override)
 }
 
@@ -279,6 +282,25 @@ func copyPatternDef(p spec.PatternDef) PatternDef {
 	out := PatternDef{Type: p.Type, Color: p.Color, Content: p.Content}
 	out.Spacing = copyFloat(p.Spacing)
 	out.Size = copyFloat(p.Size)
+	return out
+}
+
+func copyCategoryStyles(m map[string]map[string]*spec.MarkStyle) map[string]map[string]*MarkStyle {
+	if m == nil {
+		return nil
+	}
+	out := make(map[string]map[string]*MarkStyle, len(m))
+	for field, values := range m {
+		if values == nil {
+			out[field] = nil
+			continue
+		}
+		inner := make(map[string]*MarkStyle, len(values))
+		for value, style := range values {
+			inner[value] = copyMarkStyle(style)
+		}
+		out[field] = inner
+	}
 	return out
 }
 

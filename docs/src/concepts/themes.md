@@ -128,6 +128,14 @@ prism plot bar.json --theme=colorblind > bar-cb.svg
   "patterns": {
     "hatch": { "type": "cross-hatch", "color": "#6b7280", "spacing": 6, "size": 1 },
     "custom_dots": { "content": "<circle cx=\"2\" cy=\"2\" r=\"1\" fill=\"#4c78a8\"/>" }
+  },
+
+  "category_styles": {
+    "Origin": {
+      "USA":    { "fill": "#4c78a8" },
+      "Europe": { "fill": "#f58518" },
+      "Japan":  { "fill": "#e45756" }
+    }
   }
 }
 ```
@@ -151,6 +159,7 @@ prism plot bar.json --theme=colorblind > bar-cb.svg
 | `gradients` | Named registry of linear/radial gradient definitions, referenced via `url(#name)` fills (see [Gradients and patterns](#gradients-and-patterns)). |
 | `patterns`  | Named registry of pattern fills — built-in catalogue or raw-SVG content — referenced via `url(#name)` fills (see [Gradients and patterns](#gradients-and-patterns)). |
 | `dark_variant` | Name of a registered counterpart theme for automatic light/dark rendering (see [Dark variant pairing](#dark-variant-pairing)). |
+| `category_styles` | Field name → field value → `MarkStyle` map for theme-level data-driven styling (see [Category styles](#category-styles)). |
 
 ### Typography tokens
 
@@ -328,6 +337,57 @@ on the corresponding element — the mark itself, or (only when
 rect sized to the chart frame. `render/html/` inherits this
 automatically, the same as the filter escape hatch. The Canvas
 backend does not implement this escape hatch.
+
+### Category styles
+
+`category_styles` is a theme-level, reusable data-driven style map so
+a chart author doesn't have to repeat the same per-value styling as a
+spec-level [`condition`](encoding.md) block in every spec that
+encodes a given field. The shape is a nested map — outer key is a
+field name, inner key is the field's *stringified* value, leaf is a
+full `MarkStyle` (not just a color, unlike [`range`](#theme-structure),
+which is color-only and keyed by scale role rather than an actual data
+value):
+
+```json
+{
+  "category_styles": {
+    "Origin": {
+      "USA":    { "fill": "#4c78a8" },
+      "Europe": { "fill": "#f58518" },
+      "Japan":  { "fill": "#e45756" }
+    },
+    "Status": {
+      "at_risk": { "fill": "#e45756", "stroke": "#7f1d1d", "stroke_width": 2 }
+    }
+  }
+}
+```
+
+A nested `field → value → style` map is used instead of a flat
+`"field=value"` string key deliberately — it avoids inventing a
+mini string grammar to parse, consistent with the project's
+no-expression-language stance (`filter`/`calculate`/condition `test`
+are all structured JSON built-ins; see
+[Spec format](spec.md#transforms)).
+
+**Precedence (a spec's own condition wins):** once a chart encodes a
+field that has a matching `category_styles` entry, the intended
+behavior is for the theme-level style to apply automatically as a
+default layer, with any spec-level `condition` on the same
+channel — targeting the same field/value — winning over it if both
+apply (explicit beats theme default). This mirrors the general
+cascade order elsewhere in `theme/` (a more specific block always
+outranks a more general one for any field it sets).
+
+**Status: model only.** This story lands the `theme.Theme.CategoryStyles`
+field, its spec-level `theme` override mirror
+(`spec.ThemeOverride.CategoryStyles`), Clone/Merge support, and JSON
+Schema shape. The encoder does not yet consult `category_styles` when
+rendering, and the condition-precedence rule above is not yet
+enforced — declaring the block has no visible effect on rendered
+output until a follow-up story wires the encoder to read it (mirroring
+how `spec.Condition` is evaluated in `encode/encode_condition.go`).
 
 ### Dark variant pairing
 

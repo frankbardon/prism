@@ -120,4 +120,13 @@ type ThemeOverride struct {
 	// <linearGradient>/<radialGradient>/<pattern> def.
 	Gradients map[string]GradientDef `json:"gradients,omitempty"`
 	Patterns  map[string]PatternDef  `json:"patterns,omitempty"`
+
+	// CategoryStyles mirrors theme.Theme.CategoryStyles — a theme-level
+	// data-driven style map keyed field name → field value (stringified)
+	// → MarkStyle, applied automatically wherever that field is encoded
+	// on a mark channel. A spec's own `condition` block targeting the
+	// same field/value wins over a matching entry here. Model only in
+	// this story — encoder application and the condition-precedence
+	// resolution land in a follow-up story.
+	CategoryStyles map[string]map[string]*MarkStyle `json:"category_styles,omitempty"`
 }

@@ -103,6 +103,27 @@ type Theme struct {
 	// as Filters/RawCSS). See Gradients for the resolution/emission
 	// timeline.
 	Patterns map[string]PatternDef `json:"patterns,omitempty"`
+
+	// CategoryStyles is a theme-level data-driven style map: outer key
+	// is a field name, inner key is a stringified field value, leaf is
+	// a full MarkStyle applied automatically to marks whose bound
+	// field/value matches an entry — without requiring a spec-level
+	// `condition` block for the common case. Deliberately richer than
+	// Range (which is color-only, keyed by scale role rather than an
+	// actual data value): a category style can set any MarkStyle
+	// token, not just a fill color.
+	//
+	// A nested field→value→style map is used instead of a flat
+	// "field=value" string key to stay consistent with the project's
+	// no-expression-language stance (see spec/predicate.go,
+	// spec/calc_expr.go) — no string grammar to parse.
+	//
+	// Precedence (enforced once the encoder consults this map): a
+	// spec's own `spec.Condition` targeting the same field/value wins
+	// over the matching CategoryStyles entry (explicit beats theme
+	// default). Model only in this story — encoder application and
+	// the condition-precedence resolution land in a follow-up story.
+	CategoryStyles map[string]map[string]*MarkStyle `json:"category_styles,omitempty"`
 }
 
 // ToSceneTheme converts a Theme into the wire-stable scene.Theme
@@ -263,6 +284,7 @@ func (t *Theme) Clone() *Theme {
 			out.Patterns[k] = v.Clone()
 		}
 	}
+	out.CategoryStyles = cloneCategoryStyles(t.CategoryStyles)
 	return &out
 }
 
