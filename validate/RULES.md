@@ -25,7 +25,7 @@ rules assume well-formed structure.
 | Numeric ranges (opacity 0..1, dimension ≥ 0) | Shape | JSON Schema `minimum`/`maximum`. |
 | Pattern (snake_case dataset names) | Shape | JSON Schema `pattern`. |
 | `oneOf` between composition keys | Shape | JSON Schema top-level `oneOf`. |
-| `PRISM_SPEC_001` field exists | Semantic | Needs dataset schema-shim lookup. |
+| `PRISM_SPEC_001` field exists | Semantic | Needs dataset schema-shim lookup. A `join` transform widens the checked field set with the right-hand (`with`) dataset's own fields (looked up the same way, by name) for `inner`/`left`/`outer` joins — `anti` keeps only the left schema. |
 | `PRISM_SPEC_002` agg / field type compat | Semantic | Needs dataset schema-shim lookup. |
 | `PRISM_SPEC_003` channel valid for mark | Semantic | Cross-field; per-mark allowlist table. |
 | `PRISM_SPEC_004` selection ref resolves | Semantic | Cross-field check inside the spec. |

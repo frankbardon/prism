@@ -29,7 +29,7 @@ func (FieldExists) Check(s *spec.Spec, schemas validate.SchemaLookup) []*errors.
 		return nil
 	}
 
-	transformOutputs := collectTransformOutputs(s.Transform)
+	transformOutputs := collectTransformOutputs(s.Transform, schemas)
 
 	var out []*errors.AppError
 	for channel, field := range encodingFields(s.Encoding) {
@@ -145,9 +145,11 @@ func encodingFields(enc *spec.Encoding) map[string]string {
 	return out
 }
 
-// collectTransformOutputs returns the set of "as" names declared by any
-// transform in the chain (these effectively introduce new field names).
-func collectTransformOutputs(ts []spec.Transform) map[string]bool {
+// collectTransformOutputs returns the set of field names introduced by
+// any transform in the chain — either an explicit "as" alias, or (for
+// join) the right-hand dataset's own fields, which become available on
+// the joined output under their original names.
+func collectTransformOutputs(ts []spec.Transform, schemas validate.SchemaLookup) map[string]bool {
 	out := map[string]bool{}
 	for _, t := range ts {
 		switch {
@@ -165,6 +167,20 @@ func collectTransformOutputs(ts []spec.Transform) map[string]bool {
 			for _, w := range t.Window.Window {
 				if w.As != "" {
 					out[w.As] = true
+				}
+			}
+		case t.Join != nil:
+			// inner/left/outer joins project every left column plus
+			// every right column (join keys deduplicated by name) —
+			// so any field declared on the right-hand ("with") dataset
+			// becomes a legitimate reference downstream of the join.
+			// An anti join keeps only the left schema, so its right
+			// side never contributes new fields.
+			if t.Join.With != "" && t.Join.Join != "anti" {
+				if rightSchema, ok := schemas.Schema(t.Join.With); ok {
+					for _, f := range rightSchema.FieldNames() {
+						out[f] = true
+					}
 				}
 			}
 		case t.Pivot != nil:

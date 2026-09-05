@@ -40,7 +40,7 @@ func (ConditionTestParses) Check(s *spec.Spec, schemas validate.SchemaLookup) []
 			return
 		}
 		_, schema, known := datasetForSpec(sub, schemas)
-		outputs := collectTransformOutputs(sub.Transform)
+		outputs := collectTransformOutputs(sub.Transform, schemas)
 		for _, cc := range channelConditionsAt(prefix, sub) {
 			for i, entry := range cc.Cond.Entries() {
 				if entry.Test == nil {

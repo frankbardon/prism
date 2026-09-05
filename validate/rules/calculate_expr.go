@@ -35,7 +35,7 @@ func (CalculateExpr) Check(s *spec.Spec, schemas validate.SchemaLookup) []*error
 		return nil
 	}
 	_, schema, known := datasetForSpec(s, schemas)
-	outputs := collectTransformOutputs(s.Transform)
+	outputs := collectTransformOutputs(s.Transform, schemas)
 
 	var out []*errors.AppError
 	for i, t := range s.Transform {
