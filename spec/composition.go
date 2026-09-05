@@ -4,6 +4,14 @@ package spec
 type Facet struct {
 	Row    *FacetChannel `json:"row,omitempty"`
 	Column *FacetChannel `json:"column,omitempty"`
+	// CellOverrides applies sparse per-cell theme overrides, addressed
+	// by 0-based (row, column) grid position — the same addressing
+	// encode/encode_facet.go assigns to scene.SceneCell.Row/Col.
+	// Position is keyed to the resulting grid slot, NOT to the data
+	// value that landed in it (re-sorting or filtering the faceted
+	// field can shift which value occupies a given cell). Model only
+	// here — applying it during encoding is E5-S2.
+	CellOverrides []CellThemeOverride `json:"cell_overrides,omitempty"`
 }
 
 // Repeat lists field names to repeat over.
@@ -11,6 +19,28 @@ type Repeat struct {
 	Row    []string `json:"row,omitempty"`
 	Column []string `json:"column,omitempty"`
 	Layer  []string `json:"layer,omitempty"`
+	// CellOverrides applies sparse per-cell theme overrides, addressed
+	// by 0-based (row, column) grid position — the same addressing
+	// encode/encode_repeat.go assigns to scene.SceneCell.Row/Col (row
+	// = index into Row, column = index into Column; an axis with an
+	// empty field list collapses to a single implicit slot at index
+	// 0, mirroring the encoder's single-row/single-column scaffold).
+	// Model only here — applying it during encoding is E5-S2.
+	CellOverrides []CellThemeOverride `json:"cell_overrides,omitempty"`
+}
+
+// CellThemeOverride is a sparse theme override scoped to a single
+// cell of a facet/repeat grid. Row/Column are 0-based indices into
+// the resulting grid — the same (Row, Col) addressing scene.SceneCell
+// carries (encode/scene/grid.go) — not the data value that produced
+// the cell. Theme reuses the existing spec-level sparse override
+// shape (ThemeOverride) and the same merge semantics as the
+// spec-level `theme` override, just scoped to one grid cell instead
+// of the whole chart.
+type CellThemeOverride struct {
+	Row    int           `json:"row"`
+	Column int           `json:"column"`
+	Theme  ThemeOverride `json:"theme"`
 }
 
 // Resolve maps per-channel modes for scale/axis/legend resolution.
