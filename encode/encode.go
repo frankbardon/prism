@@ -676,11 +676,17 @@ func hardcodedDefaultStyle(markType string) scene.Style {
 	switch markType {
 	case "line", "rule", "sparkline":
 		return scene.Style{Stroke: defaultFill, StrokeWidth: 1.5}
-	case "network":
+	case "network", "tree", "dendrogram":
 		// network draws both scene.MarkLine edges and scene.MarkPoint /
 		// scene.MarkRect nodes from this single Style (encode/marks/network.go
 		// reuses in.Style for both), so it needs Fill (nodes) AND Stroke
 		// (edges) — unlike line/rule/sparkline, which are Stroke-only.
+		// tree/dendrogram share the same reuse pattern (encode/marks/tree.go
+		// builds link edges as scene.MarkPath and nodes as scene.MarkPoint /
+		// scene.MarkRect from one in.Style), but render/svg's renderPath
+		// (unlike renderLine) does not hardcode fill="none" — tree.go clears
+		// Fill on its own copy of the Style before building the link mark so
+		// the shared Fill here only ever paints the node geoms.
 		return scene.Style{Fill: defaultFill, Stroke: defaultFill, StrokeWidth: 1}
 	case "area":
 		return scene.Style{Fill: defaultFill, Opacity: 0.7}

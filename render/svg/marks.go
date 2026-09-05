@@ -356,6 +356,21 @@ func renderPath(w *Writer, m scene.Mark) {
 	writeDatumAttr(w, m)
 	writeKeyAttr(w, m)
 	w.Attr("d", g.D)
+	if m.Style.Fill == nil {
+		// Unlike <polyline> (renderLine hardcodes fill="none" on every
+		// line it emits), a bare <path> with no fill attribute falls
+		// back to the SVG default fill (black), auto-closing the `d=`
+		// shape for fill purposes even when it was authored as an open
+		// line (e.g. tree/dendrogram link edges). A nil Style.Fill here
+		// means the encode-time cascade resolved to "no fill" — honour
+		// that explicitly instead of letting it read as "unset."
+		// Marks that legitimately want a filled path (the "path" mark,
+		// funnel segments) always carry a non-nil Fill by this point,
+		// so this is unaffected for them. sankey's link paths already
+		// set Fill: nil intentionally (see encode/marks/sankey.go's own
+		// "fill = none" comment) — they pick up this same fix too.
+		w.Attr("fill", "none")
+	}
 	writeStyleAttrs(w, m.Style)
 	if hasTooltip(m) {
 		w.CloseTagOpen()
