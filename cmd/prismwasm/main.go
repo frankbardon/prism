@@ -8,9 +8,10 @@
 //
 // JS callers marshal everything across the bridge as JSON strings:
 //
-//	const sceneJSON = prism.execute(specJSON, datasetsJSON);
-//	const svgString = prism.render(sceneJSON, "light");
-//	const ok        = prism.validate(specJSON);
+//	const sceneJSON  = prism.execute(specJSON, datasetsJSON);
+//	const svgString  = prism.render(sceneJSON, "light");
+//	const htmlString = prism.renderHTML(sceneJSON, "light");
+//	const ok         = prism.validate(specJSON);
 //
 // Every exported function returns either a string (success) or an
 // `{ok:false, error:{Code, Message, Fixups, SeeAlso, Context}}`
@@ -35,6 +36,7 @@ import (
 	"github.com/frankbardon/prism/plan"
 	"github.com/frankbardon/prism/plan/build"
 	"github.com/frankbardon/prism/render"
+	"github.com/frankbardon/prism/render/html"
 	"github.com/frankbardon/prism/render/svg"
 	"github.com/frankbardon/prism/resolve"
 	"github.com/frankbardon/prism/schema"
@@ -60,6 +62,7 @@ func main() {
 	api.Set("applyPatch", js.FuncOf(applyPatchFunc))
 	api.Set("diffSpecs", js.FuncOf(diffSpecsFunc))
 	api.Set("render", js.FuncOf(renderFunc))
+	api.Set("renderHTML", js.FuncOf(renderHTMLFunc))
 	api.Set("errorsLookup", js.FuncOf(errorsLookupFunc))
 	api.Set("schemaBundle", js.FuncOf(schemaBundleFunc))
 	api.Set("geo", buildGeoAPI())
@@ -553,6 +556,47 @@ func doRender(sceneJSON, themeName string) (string, error) {
 			map[string]any{"URL": "(inline)", "Status": 0, "Reason": err.Error()})
 	}
 	body, err := svg.New().Render(&doc, render.RenderOpts{Format: "svg"})
+	if err != nil {
+		return "", err
+	}
+	_ = themeName // theme name belongs in the encode stage; render
+	// honours whatever the SceneDoc already carries.
+	return string(body), nil
+}
+
+// renderHTMLFunc shape: prism.renderHTML(sceneJSON, themeName?) → HTML
+// document string, rendered through render/html instead of render/svg
+// (renderFunc's backend). Mirrors renderFunc's argument shape and
+// error-envelope behavior exactly — the HTML backend is what makes the
+// `table` mark and the `custom` mark's HTMLCustomRenderer path
+// renderable in the browser; every other mark falls back to the same
+// SVG emitters wrapped in a standalone HTML document (see
+// render/html/renderer.go). The themeName overrides the SceneDoc.Theme
+// name; empty or omitted uses the SceneDoc's resolved theme.
+func renderHTMLFunc(_ js.Value, args []js.Value) any {
+	if len(args) < 1 || args[0].IsUndefined() {
+		return errEnvelope("PRISM_WASM_001", "renderHTML(sceneJSON, themeName?): missing sceneJSON argument")
+	}
+	sceneJSON := args[0].String()
+	themeName := ""
+	if len(args) >= 2 && args[1].Type() == js.TypeString {
+		themeName = args[1].String()
+	}
+	out, err := doRenderHTML(sceneJSON, themeName)
+	if err != nil {
+		return errFromError(err)
+	}
+	return out
+}
+
+func doRenderHTML(sceneJSON, themeName string) (string, error) {
+	var doc scene.SceneDoc
+	if err := json.Unmarshal([]byte(sceneJSON), &doc); err != nil {
+		return "", prismerrors.New("PRISM_WASM_001",
+			fmt.Sprintf("renderHTML: invalid SceneDoc JSON: %v.", err),
+			map[string]any{"URL": "(inline)", "Status": 0, "Reason": err.Error()})
+	}
+	body, err := html.New().Render(&doc, render.RenderOpts{Format: "html"})
 	if err != nil {
 		return "", err
 	}
