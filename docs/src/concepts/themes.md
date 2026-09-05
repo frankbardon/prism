@@ -372,22 +372,30 @@ are all structured JSON built-ins; see
 [Spec format](spec.md#transforms)).
 
 **Precedence (a spec's own condition wins):** once a chart encodes a
-field that has a matching `category_styles` entry, the intended
-behavior is for the theme-level style to apply automatically as a
-default layer, with any spec-level `condition` on the same
-channel — targeting the same field/value — winning over it if both
-apply (explicit beats theme default). This mirrors the general
-cascade order elsewhere in `theme/` (a more specific block always
-outranks a more general one for any field it sets).
+field that has a matching `category_styles` entry, the theme-level
+style applies automatically as a default layer, with any spec-level
+`condition` on the same channel — targeting the same field/value — 
+winning over it if both apply (explicit beats theme default). This
+mirrors the general cascade order elsewhere in `theme/` (a more
+specific block always outranks a more general one for any field it
+sets).
 
-**Status: model only.** This story lands the `theme.Theme.CategoryStyles`
-field, its spec-level `theme` override mirror
-(`spec.ThemeOverride.CategoryStyles`), Clone/Merge support, and JSON
-Schema shape. The encoder does not yet consult `category_styles` when
-rendering, and the condition-precedence rule above is not yet
-enforced — declaring the block has no visible effect on rendered
-output until a follow-up story wires the encoder to read it (mirroring
-how `spec.Condition` is evaluated in `encode/encode_condition.go`).
+**Applied at encode time.** For every channel bound to a field
+(`encode.categoryStyleFieldsAt` walks the same channel set
+`encode/encode_condition.go` does — position channels plus
+color/fill/stroke/opacity/size/shape), the encoder looks up each
+datum's value for that field in `category_styles[field]` and, on a
+match, merges the resolved `MarkStyle` onto the mark's already
+-resolved style via `theme.MergeMarkStyle` (`encode/encode_category_styles.go`,
+function `applyCategoryStyles`). Only the fields the theme author set
+on that entry move — an entry that sets only `stroke` leaves whatever
+fill the mark already had untouched. Data whose field value has no
+matching entry renders with the base/default style, unchanged.
+`applyCategoryStyles` always runs immediately before
+`encode.applyConditions` in the pipeline, so a spec-level `condition`
+targeting the same field/value is applied afterward and overwrites
+whichever attrs it resolves — giving the condition precedence exactly
+as designed.
 
 ### Dark variant pairing
 

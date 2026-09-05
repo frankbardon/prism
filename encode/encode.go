@@ -432,6 +432,7 @@ func Encode(s *spec.Spec, tables map[plan.NodeID]*table.Table, tipID plan.NodeID
 			tooltips := marks.BuildTooltips(tbl, enc.Tooltip, tbl.NumRows())
 			marks.AttachTooltips(hr.Marks, tooltips)
 		}
+		applyCategoryStyles(enc, tbl, fullTheme, hr.Marks)
 		if err := applyConditions(enc, tbl, hr.Marks); err != nil {
 			return nil, err
 		}
@@ -457,6 +458,7 @@ func Encode(s *spec.Spec, tables map[plan.NodeID]*table.Table, tipID plan.NodeID
 		warnings = append(warnings, *markWarn)
 	}
 
+	applyCategoryStyles(enc, tbl, fullTheme, markList)
 	if err := applyConditions(enc, tbl, markList); err != nil {
 		return nil, err
 	}

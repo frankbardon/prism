@@ -118,11 +118,12 @@ type Theme struct {
 	// no-expression-language stance (see spec/predicate.go,
 	// spec/calc_expr.go) — no string grammar to parse.
 	//
-	// Precedence (enforced once the encoder consults this map): a
-	// spec's own `spec.Condition` targeting the same field/value wins
-	// over the matching CategoryStyles entry (explicit beats theme
-	// default). Model only in this story — encoder application and
-	// the condition-precedence resolution land in a follow-up story.
+	// Precedence: a spec's own `spec.Condition` targeting the same
+	// field/value wins over the matching CategoryStyles entry
+	// (explicit beats theme default). Applied at encode time by
+	// encode.applyCategoryStyles, which runs before
+	// encode.applyConditions so a later-applied condition naturally
+	// overwrites whichever attrs it targets (encode/encode_category_styles.go).
 	CategoryStyles map[string]map[string]*MarkStyle `json:"category_styles,omitempty"`
 }
 
