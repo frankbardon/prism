@@ -129,6 +129,200 @@ renderer and listing every currently-registered name. Re-registering
 the same name replaces the prior renderer; `custommark.Register` is
 safe for concurrent use.
 
+## Worked examples: quote and stat cards
+
+Two more complete examples, in the same style as `badge` above,
+showing `custom` used for the shape of thing it's most often reached
+for in practice: an HTML dashboard card. Both are `HTMLCustomRenderer`
+only — a pull-quote or a metric tile is inherently HTML-shaped
+(`<blockquote>`/`<footer>`, a bordered `<div>` with a large number)
+with no natural non-browser SVG equivalent, unlike `badge`, which
+intentionally implements both interfaces to demonstrate the dual-method
+contract below. Rendered output for both lives in the gallery under
+[Gallery › Custom marks](../gallery/index.md#custom-marks).
+
+### Quote card
+
+Renders the first row's `quote` field as a pull-quote, with `author`
+(and an optional `role`) as the attribution line:
+
+```go
+package main
+
+import (
+	"fmt"
+	"html"
+
+	"github.com/frankbardon/prism"
+	"github.com/frankbardon/prism/encode/scene"
+	"github.com/frankbardon/prism/table"
+	"github.com/frankbardon/prism/theme"
+)
+
+// quoteCard renders row 0's "quote"/"author"/"role" fields as a
+// pull-quote block. It implements HTMLCustomRenderer only.
+type quoteCard struct{}
+
+func (quoteCard) RenderHTML(rows []table.Row, box scene.Box, tokens *theme.Theme) (string, error) {
+	if len(rows) == 0 {
+		return "", nil
+	}
+	quote, _ := rows[0]["quote"].(string)
+	author, _ := rows[0]["author"].(string)
+	role, _ := rows[0]["role"].(string)
+
+	// Every interpolated field is row data, so every interpolated
+	// field gets escaped — same rule as badge's RenderSVG above.
+	safeQuote := html.EscapeString(quote)
+	attribution := html.EscapeString(author)
+	if role != "" {
+		attribution = fmt.Sprintf("%s, %s", html.EscapeString(author), html.EscapeString(role))
+	}
+
+	return fmt.Sprintf(
+		`<blockquote style="margin:0;max-width:%.0fpx;padding:20px 24px;`+
+			`border-left:4px solid %s;background:%s;font:italic 16px/1.5 %s;color:%s">`+
+			`<p style="margin:0 0 12px 0">&#8220;%s&#8221;</p>`+
+			`<footer style="font-style:normal;font-weight:600;font-size:13px;color:%s">&mdash; %s</footer>`+
+			`</blockquote>`,
+		box.W, tokens.AxisColor, tokens.GridColor, tokens.FontSans, tokens.TextColor,
+		safeQuote, tokens.AxisColor, attribution,
+	), nil
+}
+
+func main() {
+	if err := prism.RegisterCustomMark("quote-card", quoteCard{}); err != nil {
+		panic(err)
+	}
+}
+```
+
+```json
+{
+  "$schema": "urn:prism:schema:v1:spec",
+  "data": {
+    "values": [{
+      "quote": "Design is not just what it looks like and feels like. Design is how it works.",
+      "author": "Steve Jobs",
+      "role": "Co-founder, Apple & NeXT"
+    }]
+  },
+  "mark": {"type": "custom", "renderer": "quote-card"},
+  "encoding": {}
+}
+```
+
+Note the literal `&` in `"role"` above: it comes through the output as
+`Apple &amp; NeXT`, not a raw `&` — proof the renderer escapes row
+data rather than trusting it. See
+[`render/html/gallery_custom_cards_test.go`](https://github.com/frankbardon/prism/blob/main/render/html/gallery_custom_cards_test.go)
+for the exact tested implementation (with thousands-separator/delta
+helpers factored out) and its escaping-proof unit tests.
+
+### Stat card
+
+Renders the first row as a dashboard-style single-metric tile: a
+`label`, a large `value`, and an optional `delta` (a signed percent —
+sign picks the up/down arrow and color):
+
+```go
+package main
+
+import (
+	"fmt"
+	"html"
+	"strconv"
+
+	"github.com/frankbardon/prism"
+	"github.com/frankbardon/prism/encode/scene"
+	"github.com/frankbardon/prism/table"
+	"github.com/frankbardon/prism/theme"
+)
+
+// statCard renders row 0's "label"/"value"/"delta" fields as a
+// metric tile. It implements HTMLCustomRenderer only.
+type statCard struct{}
+
+func (statCard) RenderHTML(rows []table.Row, box scene.Box, tokens *theme.Theme) (string, error) {
+	if len(rows) == 0 {
+		return "", nil
+	}
+	label, _ := rows[0]["label"].(string)
+	safeLabel := html.EscapeString(label)
+
+	value := ""
+	switch v := rows[0]["value"].(type) {
+	case string:
+		value = v
+	case float64:
+		value = strconv.FormatFloat(v, 'f', -1, 64)
+	}
+	safeValue := html.EscapeString(value)
+
+	var deltaHTML string
+	if d, ok := rows[0]["delta"].(float64); ok {
+		arrow, color := "▲", "#16a34a"
+		if d < 0 {
+			arrow, color = "▼", "#dc2626"
+		}
+		deltaHTML = fmt.Sprintf(
+			`<div style="margin-top:6px;font-size:13px;font-weight:600;color:%s">%s %s</div>`,
+			color, arrow, html.EscapeString(fmt.Sprintf("%.1f%%", d)),
+		)
+	}
+
+	return fmt.Sprintf(
+		`<div style="max-width:%.0fpx;padding:16px 20px;border:1px solid %s;border-radius:8px;`+
+			`font-family:%s">`+
+			`<div style="font-size:12px;text-transform:uppercase;letter-spacing:.05em;color:%s">%s</div>`+
+			`<div style="margin-top:4px;font-size:28px;font-weight:700;color:%s">%s</div>%s`+
+			`</div>`,
+		box.W, tokens.GridColor, tokens.FontSans,
+		tokens.AxisColor, safeLabel, tokens.TextColor, safeValue, deltaHTML,
+	), nil
+}
+
+func main() {
+	if err := prism.RegisterCustomMark("stat-card", statCard{}); err != nil {
+		panic(err)
+	}
+}
+```
+
+```json
+{
+  "$schema": "urn:prism:schema:v1:spec",
+  "data": {
+    "values": [{"label": "Monthly Active Users", "value": 128400, "delta": 4.2}]
+  },
+  "mark": {"type": "custom", "renderer": "stat-card"},
+  "encoding": {}
+}
+```
+
+Note there's no `"unit"`/currency formatting here — `value` is
+rendered as-is (a real integration would pre-format it, e.g. `"128.4K"`,
+before it ever reaches the row; recall Prism has
+[no expression language](../concepts/spec.md), so any such formatting
+is the caller's job upstream, same as everywhere else in Prism).
+
+### Why no gallery `*.prism.json` for these two
+
+Every other gallery category pairs a `*.prism.json` spec with output
+the shared `prism` CLI binary produced (`prism plot`/`--format html`).
+That binary has no renderer registered under `quote-card` or
+`stat-card` — registration is the Go-level `custommark.Register` call
+shown above, made by a specific process before it renders, not
+something a bare JSON spec can trigger. Shipping a `*.prism.json` next
+to these two `.html` files would misleadingly imply
+`prism plot custom-marks/quote_card.prism.json` works out of the box;
+it doesn't, and can't, without a caller-supplied binary that first
+calls `RegisterCustomMark`. The two JSON blocks above are the specs
+that produced the committed gallery HTML — copy one verbatim, register
+the matching renderer under the name it references, and
+`prism.RenderPlan` (or the equivalent CLI flow in your own binary)
+produces the same output.
+
 ### Test isolation
 
 The registry is process-global mutable state — an intentional deviation
@@ -246,3 +440,6 @@ PRISM_RENDER_CUSTOM_MARK_NOT_FOUND`.
   — how `svg` vs `html` are selected.
 - [Browser / WASM](../concepts/browser.md) — the wider WASM bridge
   `prism.registerCustomMark` is part of.
+- [Gallery › Custom marks](../gallery/index.md#custom-marks) — the
+  rendered quote-card and stat-card fixtures from the worked examples
+  above.

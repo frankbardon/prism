@@ -1,11 +1,13 @@
 # Prism Gallery
 
-95 fixture specs across 15 categories. Each entry pairs a `*.prism.json`
+95 fixture specs across 16 categories. Each entry pairs a `*.prism.json`
 spec with a rendered `*.svg`. Browse the source to learn the spec
 shapes; open the SVGs to see what they render. The `table/` fixtures
-are the one exception — a top-level `table` mark renders only through
+are one exception — a top-level `table` mark renders only through
 the `html` backend, so those entries link to a rendered `*.html` file
-instead of an `<img>` preview.
+instead of an `<img>` preview. The [Custom marks](#custom-marks)
+section is the other exception, and has no `*.prism.json` at all — see
+that section for why.
 
 For live interactive rendering in a browser, see [`live.html`](live.html).
 
@@ -86,6 +88,27 @@ Table](../concepts/marks.md#table).
 |---|---|
 | [table_accounts](table/table_accounts.prism.json) | [table_accounts.html](table/table_accounts.html) — plain columns, paginated (`page_size: 5` over 7 rows) |
 | [table_revenue_trend](table/table_revenue_trend.prism.json) | [table_revenue_trend.html](table/table_revenue_trend.html) — a `sparkline` sub-mark column |
+
+## Custom marks
+
+A `custom` mark (`mark: {"type": "custom", "renderer": "…"}`) resolves
+its `renderer` name against a Go-level registry (`custommark.Register`)
+at render time — a mechanism only a caller-supplied binary can
+exercise, not the shared `prism` CLI, which has nothing registered
+under any name. That means these two fixtures have **no**
+`*.prism.json` companion (unlike every other category on this page,
+`table/` included): a spec referencing `quote-card` or `stat-card`
+cannot be plotted by `prism plot` as committed. See [Cookbook › Custom
+marks: Why no gallery `*.prism.json` for these
+two](../cookbook/custom-marks.md#why-no-gallery-prismjson-for-these-two)
+for the full explanation, the exact spec JSON that produced each file
+below, and the registered `HTMLCustomRenderer` implementation's full
+source.
+
+| Example | Preview |
+|---|---|
+| Quote card ([worked example](../cookbook/custom-marks.md#quote-card)) | [quote_card.html](custom-marks/quote_card.html) — pull-quote + attribution |
+| Stat card ([worked example](../cookbook/custom-marks.md#stat-card)) | [stat_card.html](custom-marks/stat_card.html) — metric tile with a label, value, and up/down delta |
 
 ## Composition (layer / concat / facet / repeat)
 
