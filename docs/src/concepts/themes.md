@@ -104,7 +104,31 @@ prism plot bar.json --theme=colorblind > bar-cb.svg
     "soft_shadow": "<feDropShadow dx=\"0\" dy=\"2\" stdDeviation=\"2\" flood-opacity=\"0.3\"/>"
   },
 
-  "raw_css": ".prism-mark-bar:hover { filter: brightness(1.1); }"
+  "raw_css": ".prism-mark-bar:hover { filter: brightness(1.1); }",
+
+  "gradients": {
+    "brand_fade": {
+      "type": "linear",
+      "angle": 90,
+      "stops": [
+        { "offset": 0,   "color": "#4c78a8" },
+        { "offset": 1,   "color": "#f58518" }
+      ]
+    },
+    "spot_glow": {
+      "type": "radial",
+      "cx": 0.5, "cy": 0.5, "radius": 0.75,
+      "stops": [
+        { "offset": 0, "color": "#ffffff" },
+        { "offset": 1, "color": "#4c78a8" }
+      ]
+    }
+  },
+
+  "patterns": {
+    "hatch": { "type": "cross-hatch", "color": "#6b7280", "spacing": 6, "size": 1 },
+    "custom_dots": { "content": "<circle cx=\"2\" cy=\"2\" r=\"1\" fill=\"#4c78a8\"/>" }
+  }
 }
 ```
 
@@ -124,6 +148,8 @@ prism plot bar.json --theme=colorblind > bar-cb.svg
 | `states`   | State overlays (selected, deselected, hover, focus). Materialise as `.prism-<state>` CSS classes. |
 | `filters`  | Named registry of raw SVG `<filter>` inner-content bodies. `mark`/`marks.<type>`/`style.<name>`/`axis`/`legend`/`title`/`view` each carry a `filter` field naming an entry here. |
 | `raw_css`  | Raw CSS string appended verbatim to the emitted `<style>` block. |
+| `gradients` | Named registry of linear/radial gradient definitions (model + validation only — see [Gradients and patterns](#gradients-and-patterns)). |
+| `patterns`  | Named registry of pattern fills — built-in catalogue or raw-SVG content (model + validation only — see [Gradients and patterns](#gradients-and-patterns)). |
 
 ### Typography tokens
 
@@ -199,6 +225,69 @@ verbatim inside the `<style>` block, after the generated
 own emitters and splices the resulting bytes verbatim, so no separate
 glue was needed. The Canvas backend does not implement this escape
 hatch.
+
+### Gradients and patterns
+
+`gradients` and `patterns` declare named fill definitions on the
+theme. **This is model-and-validation-only today**: nothing yet
+resolves a `mark.fill`/`stroke`/`view.background` value of
+`url(#name)` against these registries, and no SVG
+`<linearGradient>`/`<radialGradient>`/`<pattern>` markup is emitted.
+That wiring lands in later work; for now the maps exist so themes can
+declare and validate their fills up front, and a subsequent story can
+add the `url(#name)` resolution and rendering without another theme
+shape change.
+
+A `GradientDef` is either `"linear"` (oriented by `angle`, in
+degrees, 0 = left-to-right, clockwise) or `"radial"` (centered at
+`cx`/`cy` — fractions of the shape's bounding box, default 0.5 each —
+with a `radius` fraction). Every gradient needs at least two `stops`,
+each an `{ "offset": 0-1, "color": "..." }` pair:
+
+```json
+{
+  "gradients": {
+    "brand_fade": {
+      "type": "linear",
+      "angle": 90,
+      "stops": [
+        { "offset": 0, "color": "#4c78a8" },
+        { "offset": 1, "color": "#f58518" }
+      ]
+    }
+  }
+}
+```
+
+A `PatternDef` is either a built-in catalogue entry — `type` set to
+one of `diagonal-stripes`, `dots`, `cross-hatch`, `grid`, tuned via
+`color`, `spacing`, and `size` — or a bespoke pattern supplied as raw
+SVG through `content` (the inner markup of an eventual `<pattern>`
+element). Exactly one of `type` or `content` must be set:
+
+```json
+{
+  "patterns": {
+    "hatch":       { "type": "cross-hatch", "color": "#6b7280", "spacing": 6, "size": 1 },
+    "custom_dots": { "content": "<circle cx=\"2\" cy=\"2\" r=\"1\" fill=\"#4c78a8\"/>" }
+  }
+}
+```
+
+**Validation:** both maps are checked structurally at theme load
+(`Register`, `LoadFile`/`LoadBytes`), the same fail-loud entry points
+as the filter escape hatch. A gradient with an unrecognized `type`,
+fewer than 2 `stops`, an out-of-range `offset`, or an empty stop
+`color` fails with `PRISM_THEME_GRADIENT_INVALID`. A pattern that sets
+both `type` and `content` (or neither), names a `type` outside the
+built-in catalogue, or sets a non-positive `spacing`/`size` fails with
+`PRISM_THEME_PATTERN_INVALID`. There is no dangling-reference check
+yet — nothing references a gradient/pattern by name until the
+`url(#name)` resolution wiring lands.
+
+**Trust boundary:** `content` on a `PatternDef` is the same trust
+tier as `filters`/`raw_css` — developer-authored SVG that Prism does
+not sanitize. Never route untrusted theme JSON through it.
 
 ## Color schemes
 

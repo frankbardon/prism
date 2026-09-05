@@ -77,6 +77,19 @@ type Theme struct {
 	// <style> block (E1-S2 wires the emission). Same trust model as
 	// Filters — developer-authored, not sanitized.
 	RawCSS string `json:"raw_css,omitempty"`
+
+	// Gradients is a named registry of linear/radial gradient
+	// definitions. Style blocks will reference an entry via
+	// url(#name) once Fill/Stroke/Background resolution wires it up
+	// (E3-S2); actual <linearGradient>/<radialGradient> SVG emission
+	// lands in E3-S3. Model + validation only in this story.
+	Gradients map[string]GradientDef `json:"gradients,omitempty"`
+	// Patterns is a named registry of pattern fills — either a
+	// built-in catalogue entry (see PatternTypes) tuned via
+	// Color/Spacing/Size, or a raw-SVG Content body (same trust tier
+	// as Filters/RawCSS). See Gradients for the resolution/emission
+	// timeline.
+	Patterns map[string]PatternDef `json:"patterns,omitempty"`
 }
 
 // ToSceneTheme converts a Theme into the wire-stable scene.Theme
@@ -205,6 +218,18 @@ func (t *Theme) Clone() *Theme {
 		out.Filters = make(map[string]string, len(t.Filters))
 		for k, v := range t.Filters {
 			out.Filters[k] = v
+		}
+	}
+	if t.Gradients != nil {
+		out.Gradients = make(map[string]GradientDef, len(t.Gradients))
+		for k, v := range t.Gradients {
+			out.Gradients[k] = v.Clone()
+		}
+	}
+	if t.Patterns != nil {
+		out.Patterns = make(map[string]PatternDef, len(t.Patterns))
+		for k, v := range t.Patterns {
+			out.Patterns[k] = v.Clone()
 		}
 	}
 	return &out

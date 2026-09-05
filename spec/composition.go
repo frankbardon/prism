@@ -75,4 +75,13 @@ type ThemeOverride struct {
 	// through here.
 	Filters map[string]string `json:"filters,omitempty"`
 	RawCSS  string            `json:"raw_css,omitempty"`
+
+	// Gradients mirrors theme.Theme.Gradients — a named registry of
+	// linear/radial gradient definitions. Patterns mirrors
+	// theme.Theme.Patterns — a named registry of pattern fills (built-
+	// in catalogue or raw-SVG Content, same trust tier as Filters/
+	// RawCSS). url(#name) resolution against Fill/Stroke/Background
+	// lands in E3-S2; SVG emission lands in E3-S3.
+	Gradients map[string]GradientDef `json:"gradients,omitempty"`
+	Patterns  map[string]PatternDef  `json:"patterns,omitempty"`
 }

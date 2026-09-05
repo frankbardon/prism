@@ -968,6 +968,22 @@ var Codes = map[string]CodeMetadata{
 		},
 		SeeAlso: []string{"PRISM_SPEC_030", "PRISM_SPEC_031"},
 	},
+	"PRISM_THEME_GRADIENT_INVALID": {
+		Code:    "PRISM_THEME_GRADIENT_INVALID",
+		Message: `theme.gradients.{{.Name}} is invalid: {{.Reason}}.`,
+		Fixups: []string{
+			`Gradients must set "type" to "linear" or "radial" and declare at least 2 "stops", each with an "offset" in [0, 1] and a non-empty "color".`,
+		},
+		SeeAlso: []string{"PRISM_THEME_PATTERN_INVALID"},
+	},
+	"PRISM_THEME_PATTERN_INVALID": {
+		Code:    "PRISM_THEME_PATTERN_INVALID",
+		Message: `theme.patterns.{{.Name}} is invalid: {{.Reason}}.`,
+		Fixups: []string{
+			`Patterns must set either "type" to one of the built-in catalogue names (diagonal-stripes, dots, cross-hatch, grid) or "content" for a raw SVG pattern body — not both, and not neither.`,
+		},
+		SeeAlso: []string{"PRISM_THEME_GRADIENT_INVALID"},
+	},
 }
 
 // CodesSorted returns the catalog keys in ascending order.

@@ -152,6 +152,22 @@ func Merge(base, override *Theme) *Theme {
 	if override.RawCSS != "" {
 		out.RawCSS = override.RawCSS
 	}
+	if override.Gradients != nil {
+		if out.Gradients == nil {
+			out.Gradients = make(map[string]GradientDef, len(override.Gradients))
+		}
+		for k, v := range override.Gradients {
+			out.Gradients[k] = v.Clone()
+		}
+	}
+	if override.Patterns != nil {
+		if out.Patterns == nil {
+			out.Patterns = make(map[string]PatternDef, len(override.Patterns))
+		}
+		for k, v := range override.Patterns {
+			out.Patterns[k] = v.Clone()
+		}
+	}
 	return out
 }
 

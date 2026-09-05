@@ -56,7 +56,112 @@ func (t *Theme) Validate() error {
 			return err
 		}
 	}
+	if err := t.validateGradients(); err != nil {
+		return err
+	}
+	if err := t.validatePatterns(); err != nil {
+		return err
+	}
 	return nil
+}
+
+// validateGradients checks structural sanity of every entry in
+// t.Gradients. There is no cross-reference to check yet — Fill/
+// Stroke/Background resolution against url(#name) lands in E3-S2, at
+// which point an unresolved reference gets its own fail-loud check
+// mirroring checkFilterRef.
+func (t *Theme) validateGradients() error {
+	for _, name := range sortedGradientNames(t.Gradients) {
+		if reason := gradientDefIssue(t.Gradients[name]); reason != "" {
+			return prismerrors.New(
+				"PRISM_THEME_GRADIENT_INVALID",
+				fmt.Sprintf("theme.gradients.%s is invalid: %s.", name, reason),
+				map[string]any{"Name": name, "Reason": reason},
+			)
+		}
+	}
+	return nil
+}
+
+// gradientDefIssue returns a non-empty reason string when g fails a
+// structural sanity check, or "" when it is well-formed.
+func gradientDefIssue(g GradientDef) string {
+	switch g.Type {
+	case "linear", "radial":
+	default:
+		return fmt.Sprintf("type must be \"linear\" or \"radial\", got %q", g.Type)
+	}
+	if len(g.Stops) < 2 {
+		return fmt.Sprintf("must declare at least 2 stops, got %d", len(g.Stops))
+	}
+	for i, s := range g.Stops {
+		if s.Offset < 0 || s.Offset > 1 {
+			return fmt.Sprintf("stops[%d].offset %v is out of range [0, 1]", i, s.Offset)
+		}
+		if s.Color == "" {
+			return fmt.Sprintf("stops[%d].color is empty", i)
+		}
+	}
+	if g.Type == "radial" && g.Radius != nil && *g.Radius <= 0 {
+		return fmt.Sprintf("radius must be positive, got %v", *g.Radius)
+	}
+	return ""
+}
+
+// validatePatterns checks structural sanity of every entry in
+// t.Patterns. There is no cross-reference to check yet — see
+// validateGradients.
+func (t *Theme) validatePatterns() error {
+	for _, name := range sortedPatternNames(t.Patterns) {
+		if reason := patternDefIssue(t.Patterns[name]); reason != "" {
+			return prismerrors.New(
+				"PRISM_THEME_PATTERN_INVALID",
+				fmt.Sprintf("theme.patterns.%s is invalid: %s.", name, reason),
+				map[string]any{"Name": name, "Reason": reason},
+			)
+		}
+	}
+	return nil
+}
+
+// patternDefIssue returns a non-empty reason string when p fails a
+// structural sanity check, or "" when it is well-formed.
+func patternDefIssue(p PatternDef) string {
+	hasType := p.Type != ""
+	hasContent := p.Content != ""
+	switch {
+	case hasType && hasContent:
+		return `set either "type" or "content", not both`
+	case !hasType && !hasContent:
+		return `must set either "type" (built-in catalogue name) or "content" (raw SVG)`
+	case hasType && !IsBuiltinPatternType(p.Type):
+		return fmt.Sprintf("type %q is not a built-in pattern (want one of %v)", p.Type, PatternTypes)
+	}
+	if p.Spacing != nil && *p.Spacing <= 0 {
+		return fmt.Sprintf("spacing must be positive, got %v", *p.Spacing)
+	}
+	if p.Size != nil && *p.Size <= 0 {
+		return fmt.Sprintf("size must be positive, got %v", *p.Size)
+	}
+	return ""
+}
+
+func sortedGradientNames(m map[string]GradientDef) []string {
+	out := make([]string, 0, len(m))
+	for k := range m {
+		out = append(out, k)
+	}
+	sort.Strings(out)
+	return out
+}
+
+func sortedPatternNames(m map[string]PatternDef) []string {
+	out := make([]string, 0, len(m))
+	for k := range m {
+		out = append(out, k)
+	}
+	sort.Strings(out)
+	return out
 }
 
 // checkFilterRef returns PRISM_THEME_FILTER_UNKNOWN when filter is

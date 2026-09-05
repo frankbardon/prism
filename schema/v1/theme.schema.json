@@ -59,6 +59,16 @@
         "raw_css": {
           "type": "string",
           "description": "Raw CSS appended verbatim after the generated --prism-* variable declarations in the emitted <style> block. Same trust model as 'filters' — developer-authored, not sanitized."
+        },
+        "gradients": {
+          "type": "object",
+          "additionalProperties": {"$ref": "#/$defs/gradient_def"},
+          "description": "Named registry of linear/radial gradient definitions. Style blocks will reference an entry via url(#name) once Fill/Stroke/Background resolution is wired (E3-S2); SVG <linearGradient>/<radialGradient> emission lands in E3-S3."
+        },
+        "patterns": {
+          "type": "object",
+          "additionalProperties": {"$ref": "#/$defs/pattern_def"},
+          "description": "Named registry of pattern fills — either a built-in catalogue entry (diagonal-stripes, dots, cross-hatch, grid) or a raw-SVG 'content' body. Same resolution/emission timeline as 'gradients'."
         }
       }
     },
@@ -205,6 +215,75 @@
           "type": "array",
           "items": {"$ref": "shared.schema.json#/$defs/color"},
           "description": "Inline color list (wins over scheme when both set)."
+        }
+      }
+    },
+
+    "gradient_def": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["type", "stops"],
+      "properties": {
+        "type": {
+          "type": "string",
+          "enum": ["linear", "radial"],
+          "description": "Gradient shape. 'linear' uses angle; 'radial' uses cx/cy/radius."
+        },
+        "angle": {
+          "type": "number",
+          "description": "Linear gradient orientation in degrees (0 = left-to-right, clockwise). Ignored for radial."
+        },
+        "cx": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1,
+          "description": "Radial gradient center x, as a fraction of the shape's bounding box. Ignored for linear."
+        },
+        "cy": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1,
+          "description": "Radial gradient center y, as a fraction of the shape's bounding box. Ignored for linear."
+        },
+        "radius": {
+          "type": "number",
+          "exclusiveMinimum": 0,
+          "description": "Radial gradient radius, as a fraction of the shape's bounding box. Ignored for linear."
+        },
+        "stops": {
+          "type": "array",
+          "minItems": 2,
+          "items": {"$ref": "#/$defs/gradient_stop"},
+          "description": "Color stops ordered by offset. At least 2 required."
+        }
+      }
+    },
+
+    "gradient_stop": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["offset", "color"],
+      "properties": {
+        "offset": {"type": "number", "minimum": 0, "maximum": 1},
+        "color":  {"$ref": "shared.schema.json#/$defs/color"}
+      }
+    },
+
+    "pattern_def": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "type": {
+          "type": "string",
+          "enum": ["diagonal-stripes", "dots", "cross-hatch", "grid"],
+          "description": "Built-in pattern catalogue name. Omit when 'content' supplies a raw SVG pattern body instead — exactly one of 'type' or 'content' must be set."
+        },
+        "color":   {"$ref": "shared.schema.json#/$defs/color", "description": "Pattern foreground color (built-in catalogue types only)."},
+        "spacing": {"type": "number", "exclusiveMinimum": 0, "description": "Spacing between repeated pattern elements (built-in catalogue types only)."},
+        "size":    {"type": "number", "exclusiveMinimum": 0, "description": "Size of each pattern element, e.g. dot radius or stripe width (built-in catalogue types only)."},
+        "content": {
+          "type": "string",
+          "description": "Raw SVG <pattern> inner-content body for a bespoke pattern. Same trust tier as the theme's top-level 'filters'/'raw_css' — developer-authored, never sanitized. Exactly one of 'type' or 'content' must be set."
         }
       }
     }

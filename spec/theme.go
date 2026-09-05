@@ -124,3 +124,28 @@ type RangeSlot struct {
 	Scheme string   `json:"scheme,omitempty"`
 	Colors []string `json:"colors,omitempty"`
 }
+
+// GradientDef mirrors theme.GradientDef.
+type GradientDef struct {
+	Type   string         `json:"type"`
+	Angle  *float64       `json:"angle,omitempty"`
+	CX     *float64       `json:"cx,omitempty"`
+	CY     *float64       `json:"cy,omitempty"`
+	Radius *float64       `json:"radius,omitempty"`
+	Stops  []GradientStop `json:"stops,omitempty"`
+}
+
+// GradientStop mirrors theme.GradientStop.
+type GradientStop struct {
+	Offset float64 `json:"offset"`
+	Color  string  `json:"color"`
+}
+
+// PatternDef mirrors theme.PatternDef.
+type PatternDef struct {
+	Type    string   `json:"type,omitempty"`
+	Color   string   `json:"color,omitempty"`
+	Spacing *float64 `json:"spacing,omitempty"`
+	Size    *float64 `json:"size,omitempty"`
+	Content string   `json:"content,omitempty"`
+}

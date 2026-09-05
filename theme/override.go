@@ -84,6 +84,18 @@ func ApplyOverride(base *Theme, o *spec.ThemeOverride) *Theme {
 	if o.RawCSS != "" {
 		override.RawCSS = o.RawCSS
 	}
+	if o.Gradients != nil {
+		override.Gradients = make(map[string]GradientDef, len(o.Gradients))
+		for k, v := range o.Gradients {
+			override.Gradients[k] = copyGradientDef(v)
+		}
+	}
+	if o.Patterns != nil {
+		override.Patterns = make(map[string]PatternDef, len(o.Patterns))
+		for k, v := range o.Patterns {
+			override.Patterns[k] = copyPatternDef(v)
+		}
+	}
 	return Merge(base, override)
 }
 
@@ -242,6 +254,28 @@ func copyRangeSlot(s *spec.RangeSlot) *RangeSlot {
 	if s.Colors != nil {
 		out.Colors = append([]string(nil), s.Colors...)
 	}
+	return out
+}
+
+func copyGradientDef(g spec.GradientDef) GradientDef {
+	out := GradientDef{Type: g.Type}
+	out.Angle = copyFloat(g.Angle)
+	out.CX = copyFloat(g.CX)
+	out.CY = copyFloat(g.CY)
+	out.Radius = copyFloat(g.Radius)
+	if g.Stops != nil {
+		out.Stops = make([]GradientStop, len(g.Stops))
+		for i, s := range g.Stops {
+			out.Stops[i] = GradientStop{Offset: s.Offset, Color: s.Color}
+		}
+	}
+	return out
+}
+
+func copyPatternDef(p spec.PatternDef) PatternDef {
+	out := PatternDef{Type: p.Type, Color: p.Color, Content: p.Content}
+	out.Spacing = copyFloat(p.Spacing)
+	out.Size = copyFloat(p.Size)
 	return out
 }
 
