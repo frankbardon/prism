@@ -108,7 +108,7 @@ type Theme struct {
 	// is a field name, inner key is a stringified field value, leaf is
 	// a full MarkStyle applied automatically to marks whose bound
 	// field/value matches an entry — without requiring a spec-level
-	// `condition` block for the common case. Deliberately richer than
+	// `condition` block for the common case. Intentionally richer than
 	// Range (which is color-only, keyed by scale role rather than an
 	// actual data value): a category style can set any MarkStyle
 	// token, not just a fill color.

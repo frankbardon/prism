@@ -365,7 +365,7 @@ value):
 ```
 
 A nested `field → value → style` map is used instead of a flat
-`"field=value"` string key deliberately — it avoids inventing a
+`"field=value"` string key on purpose — it avoids inventing a
 mini string grammar to parse, consistent with the project's
 no-expression-language stance (`filter`/`calculate`/condition `test`
 are all structured JSON built-ins; see
