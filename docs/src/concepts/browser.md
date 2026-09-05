@@ -118,6 +118,64 @@ marks cookbook](../cookbook/custom-marks.md) for the callback shape
 and — importantly — the security contract around escaping and script
 execution.
 
+### Render backends: SVG vs HTML
+
+The WASM module exposes both host render backends. `prism.render(sceneJSON,
+themeName?)` renders through the canonical SVG backend (`render/svg`) and
+returns an `<svg>...</svg>` string — this is what `<prism-chart>` calls by
+default. `prism.renderHTML(sceneJSON, themeName?)` renders the same
+`SceneDoc` through the HTML backend (`render/html`) instead, returning a
+complete standalone HTML document string:
+
+```js
+const sceneJSON  = globalThis.prism.execute(specJSON, datasetsJSON);
+const svgString  = globalThis.prism.render(sceneJSON);
+const htmlString = globalThis.prism.renderHTML(sceneJSON);
+```
+
+Both accept the same arguments and return the same `{ok:false, error}`
+envelope shape on failure. Most marks render identically either way (the
+HTML backend just wraps the same SVG emitters in a document shell), but two
+mark shapes have no SVG geometry of their own and are reachable **only**
+through `prism.renderHTML`:
+
+- The `table` mark, which renders as a semantic `<table>` (see
+  [`marks.md`](marks.md)).
+- A `mark: {type: "custom", ...}` reference whose registered renderer
+  implements `HTMLCustomRenderer` (its output lands verbatim in the
+  document, including any `<script>` tag) rather than `SVGCustomRenderer`
+  — see the [Custom marks cookbook](../cookbook/custom-marks.md). Before
+  this bridge existed, `HTMLCustomRenderer` marks could only be rendered
+  server-side (`prism plot --format html`) or via a Twirp round trip; they
+  are now live-renderable in the browser like any other mark.
+
+### `<prism-table>`
+
+`<prism-table>` is the live counterpart to the server/CLI-only table
+path (`prism plot --format html`): it resolves a scene the same two
+ways `<prism-chart>` does — a `src` attribute fetched via
+`PrismResolver.fetchJSON`, or a `spec` attribute (inline JSON or a
+URL) compiled via `executeSpec` — then renders it through
+`prism.renderHTML` instead of `prism.render`, since the `table` mark
+has no SVG geometry of its own:
+
+```html
+<prism-table src="/scenes/accounts_table.json"></prism-table>
+<prism-table spec='{"$schema":"urn:prism:schema:v1:spec",...}'></prism-table>
+```
+
+Its `observedAttributes` are `src`, `spec`, and `theme` (row
+sort/pagination/selection are all handled client-side by
+`prism-table.mjs`'s `installTableHandlers`, so there's no attribute
+for them). On every render it mounts the returned HTML document's
+content into its shadow root and calls `installTableHandlers(this.
+shadowRoot)`, so column-header sort, Prev/Next pagination, and
+row-click selection (a `prism:select` CustomEvent, mirroring
+`<prism-chart>`'s selection events) work immediately with no further
+wiring. See [`prism-table.mjs`](marks.md#table) for the full
+`data-prism-*` attribute contract `render/html`'s table renderer
+emits and this element's sort/pagination logic reads.
+
 ### Server compile (opt-in)
 
 Hosts that prefer to offload the compile stage to a trusted backend
@@ -291,7 +349,7 @@ binary size is unaffected — animation lives entirely in plain JS.
   snapping.
 - The [`gallery/animation/`](../gallery/index.md#animation) entries
   ship spec + initial-frame SVG; live `<prism-chart>` cards on the
-  gallery [`index.html`](../gallery/index.html) demonstrate the tween
+  gallery [live demo](../gallery/live.html) demonstrate the tween
   when the scene-doc swaps.
 
 ## Cross-implementation parity

@@ -32,7 +32,7 @@ func (FilterPredicate) Check(s *spec.Spec, schemas validate.SchemaLookup) []*err
 		return nil
 	}
 	_, schema, known := datasetForSpec(s, schemas)
-	outputs := collectTransformOutputs(s.Transform)
+	outputs := collectTransformOutputs(s.Transform, schemas)
 
 	var out []*errors.AppError
 	for i, t := range s.Transform {

@@ -140,6 +140,17 @@ func encodeTree(in Inputs) ([]scene.Mark, error) {
 
 	out := make([]scene.Mark, 0, len(pos)+len(g.Edges))
 
+	// Links carry Style.Stroke (for the line itself) but must NOT
+	// inherit in.Style's Fill: in.Style is shared with the node marks
+	// below (Point/Rect, which do need Fill), the same one-Style-two-
+	// geometries reuse network.go uses. render/svg's renderPath —
+	// unlike renderLine — does not hardcode fill="none" on every
+	// element it emits, so a non-nil Fill here would paint the link's
+	// open multi-segment `d=` path as a solid filled blob rather than
+	// a thin stroked line. Clear it on a local copy; renderPath treats
+	// a nil Style.Fill as an explicit "no fill" (mirroring renderLine).
+	linkStyle := in.Style
+	linkStyle.Fill = nil
 	// Edges first so nodes render on top.
 	for _, e := range g.Edges {
 		from, fromOK := pixelByID[e.From]
@@ -147,7 +158,7 @@ func encodeTree(in Inputs) ([]scene.Mark, error) {
 		if !fromOK || !toOK {
 			continue
 		}
-		mark := scene.Mark{Type: scene.MarkPath, Style: in.Style}
+		mark := scene.Mark{Type: scene.MarkPath, Style: linkStyle}
 		mark.Path = &scene.PathGeom{D: treeLinkPath(linkShape, from[0], from[1], to[0], to[1], orient)}
 		out = append(out, mark)
 	}

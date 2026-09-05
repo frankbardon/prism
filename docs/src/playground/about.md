@@ -40,9 +40,9 @@ your browser via WASM. No server, no install.
   live source, materialize it upstream and inline the rows (`prism
   plot` / `prism serve` accept the same inline specs locally).
 - **Selection events.** Pointer hit-testing is part of the
-  `<prism-chart>` web component (see the [Gallery](../gallery/index.html)).
-  The playground mounts the raw SVG so it stays a focused
-  spec-to-SVG editor; selection wiring lands in v2.
+  `<prism-chart>` web component (see the [gallery live
+  demo](../gallery/live.html)). The playground mounts the raw SVG so
+  it stays a focused spec-to-SVG editor; selection wiring lands in v2.
 
 ## Where the bytes come from
 

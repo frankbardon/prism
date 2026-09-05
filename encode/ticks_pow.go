@@ -29,7 +29,7 @@ func PowTicks(s *PowScale, count int) []scene.Tick {
 		out = append(out, scene.Tick{
 			Value: orig,
 			Pixel: pix,
-			Label: formatTick(orig, ""),
+			Label: formatTick(roundSigFigs(orig, 4), ""),
 		})
 	}
 	return out

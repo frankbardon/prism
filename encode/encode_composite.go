@@ -158,6 +158,17 @@ func encodeLayerComposite(s *spec.Spec, composite *plan.CompositeDAG, childTable
 	var sceneLayers []scene.SceneLayer
 	var perCellAxes []scene.Axis
 	var legends []scene.Legend
+	// legendStackOffset accumulates, per anchor Position, how much
+	// vertical space prior legends at that same anchor already claimed
+	// in this scene. Each layer resolves its own color legend
+	// independently (cross-layer legend sharing is a future feature —
+	// see the comment at the BuildSymbolLegend call below), so without
+	// this every legend at the same default position anchors to the
+	// identical plot corner and fully overlaps the last (P16 gallery
+	// sweep finding: layer_independent_color.svg rendered two
+	// "prism-legend-color" groups at identical x/y).
+	legendStackOffset := map[scene.LegendPosition]float64{}
+	const legendStackGap = 8.0
 	seenIndependentX := false
 	seenIndependentY := false
 	for _, lc := range live {
@@ -262,6 +273,18 @@ func encodeLayerComposite(s *spec.Spec, composite *plan.CompositeDAG, childTable
 					Position:   scene.LegendTopRight,
 				}, layout.Plot)
 				if legend != nil {
+					if off := legendStackOffset[legend.Position]; off != 0 {
+						switch legend.Position {
+						case scene.LegendBottomLeft, scene.LegendBottomRight, scene.LegendBottom:
+							// Bottom-anchored legends grow upward off the
+							// plot's bottom edge, so later legends stack
+							// above (not through) earlier ones.
+							legend.Frame.Y -= off
+						default:
+							legend.Frame.Y += off
+						}
+					}
+					legendStackOffset[legend.Position] += legend.Frame.H + legendStackGap
 					legends = append(legends, *legend)
 				}
 			}

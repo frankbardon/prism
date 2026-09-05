@@ -278,6 +278,9 @@ func Encode(s *spec.Spec, tables map[plan.NodeID]*table.Table, tipID plan.NodeID
 	if s.Mark != nil && s.Mark.Def != nil {
 		applyMarkDef(s.Mark.Def, &style)
 	}
+	if err := applyMarkChannelBaseValues(&style, enc); err != nil {
+		return nil, err
+	}
 
 	// For polar marks (arc/pie/donut), the theta channel field flows
 	// in via marks.Channel.X.Field — the arc encoder builds its own
@@ -289,15 +292,16 @@ func Encode(s *spec.Spec, tables map[plan.NodeID]*table.Table, tipID plan.NodeID
 	}
 
 	markInputs := marks.Inputs{
-		Table:    tbl,
-		X:        markX,
-		Y:        markY,
-		Color:    colorChannel,
-		Opacity:  opacityChannel,
-		Layout:   layout.Plot,
-		Style:    style,
-		Tooltip:  enc.Tooltip,
-		KeyField: keyFieldFromEncoding(enc),
+		Table:      tbl,
+		X:          markX,
+		Y:          markY,
+		Color:      colorChannel,
+		Opacity:    opacityChannel,
+		Layout:     layout.Plot,
+		Style:      style,
+		LabelStyle: defaultMarkStyle(fullTheme, "text"),
+		Tooltip:    enc.Tooltip,
+		KeyField:   keyFieldFromEncoding(enc),
 	}
 	if s.Mark != nil {
 		markInputs.Mark = s.Mark.Def
@@ -674,8 +678,20 @@ func defaultMarkStyle(t *theme.Theme, markType string) scene.Style {
 func hardcodedDefaultStyle(markType string) scene.Style {
 	defaultFill, _ := scene.ColorFromHex("#3b82f6")
 	switch markType {
-	case "line", "rule":
+	case "line", "rule", "sparkline", "tick":
 		return scene.Style{Stroke: defaultFill, StrokeWidth: 1.5}
+	case "network", "tree", "dendrogram":
+		// network draws both scene.MarkLine edges and scene.MarkPoint /
+		// scene.MarkRect nodes from this single Style (encode/marks/network.go
+		// reuses in.Style for both), so it needs Fill (nodes) AND Stroke
+		// (edges) — unlike line/rule/sparkline, which are Stroke-only.
+		// tree/dendrogram share the same reuse pattern (encode/marks/tree.go
+		// builds link edges as scene.MarkPath and nodes as scene.MarkPoint /
+		// scene.MarkRect from one in.Style), but render/svg's renderPath
+		// (unlike renderLine) does not hardcode fill="none" — tree.go clears
+		// Fill on its own copy of the Style before building the link mark so
+		// the shared Fill here only ever paints the node geoms.
+		return scene.Style{Fill: defaultFill, Stroke: defaultFill, StrokeWidth: 1}
 	case "area":
 		return scene.Style{Fill: defaultFill, Opacity: 0.7}
 	case "geoshape":

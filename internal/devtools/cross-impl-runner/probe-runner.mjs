@@ -30,6 +30,15 @@
 //       is printed to stdout. Exits non-zero if validate returned a
 //       non-envelope or an ok result.
 //
+//   probe-runner.mjs pipeline-html <wasm> <exec> <specPath> [sidecarPath]
+//       identical to `pipeline` below, except the final stage calls
+//       globalThis.prism.renderHTML(scene) instead of
+//       globalThis.prism.render(scene), printing the resulting HTML
+//       document string to stdout. Proves the E4-S1 html.New() bridge
+//       renders end-to-end through the TinyGo wasm module (e.g. the
+//       `table` mark's <table> markup, which render/svg cannot emit at
+//       all).
+//
 //   probe-runner.mjs pipeline <wasm> <exec> <specPath> [sidecarPath]
 //       loads the wasm and drives the FULL pipeline over the exported
 //       globalThis.prism surface: validate(spec) → plan(spec, datasets)
@@ -61,7 +70,7 @@ import { readFile } from "node:fs/promises";
 
 const [, , mode, wasmPath, execPath, arg, arg2] = process.argv;
 if (!mode || !wasmPath || !execPath || !arg) {
-  console.error("usage: probe-runner.mjs <render|global|pipeline|custommark> <wasm> <exec> <scenePath|globalName|specPath> [resolverDataPath|rendererName]");
+  console.error("usage: probe-runner.mjs <render|global|pipeline|pipeline-html|custommark> <wasm> <exec> <scenePath|globalName|specPath> [resolverDataPath|rendererName]");
   process.exit(2);
 }
 
@@ -135,16 +144,18 @@ if (mode === "render") {
   }
   process.stdout.write(res.endsWith("\n") ? res : res + "\n");
   process.exit(0);
-} else if (mode === "pipeline") {
+} else if (mode === "pipeline" || mode === "pipeline-html") {
+  const renderExportName = mode === "pipeline-html" ? "renderHTML" : "render";
+
   await waitFor(
     () =>
       globalThis.prism &&
       typeof globalThis.prism.validate === "function" &&
       typeof globalThis.prism.plan === "function" &&
       typeof globalThis.prism.execute === "function" &&
-      typeof globalThis.prism.render === "function" &&
+      typeof globalThis.prism[renderExportName] === "function" &&
       typeof globalThis.prism.setDataResolver === "function",
-    "globalThis.prism pipeline exports",
+    `globalThis.prism pipeline exports (${renderExportName})`,
   );
 
   const specText = await readFile(arg, "utf-8");
@@ -181,13 +192,13 @@ if (mode === "render") {
     process.exit(4);
   }
 
-  const svg = globalThis.prism.render(sceneJSON);
-  if (isErrorEnvelope(svg)) {
-    console.error("probe-runner: prism.render returned an error envelope:", svg);
+  const rendered = globalThis.prism[renderExportName](sceneJSON);
+  if (isErrorEnvelope(rendered)) {
+    console.error(`probe-runner: prism.${renderExportName} returned an error envelope:`, rendered);
     process.exit(4);
   }
 
-  process.stdout.write(svg.endsWith("\n") ? svg : svg + "\n");
+  process.stdout.write(rendered.endsWith("\n") ? rendered : rendered + "\n");
   process.exit(0);
 } else if (mode === "custommark") {
   const rendererName = arg2;

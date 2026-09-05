@@ -1,12 +1,13 @@
 // prism-element.mjs — <prism-chart> + <prism-dataset> +
-// <prism-coordinator> custom elements.
+// <prism-coordinator> + <prism-table> custom elements.
 //
-// Auto-registers all three elements on import. Host page mounts via:
+// Auto-registers all four elements on import. Host page mounts via:
 //
 //   <script type="module" src="/static/vendor/prism/prism-element.mjs"></script>
 //
 //   <prism-dataset name="current" src="/data/q1.pulse"></prism-dataset>
 //   <prism-chart id="overview" src="/scenes/brand_score.json"></prism-chart>
+//   <prism-table src="/scenes/accounts_table.json"></prism-table>
 //
 //   <prism-coordinator>
 //     <prism-chart id="a" src="/scenes/overview.json"></prism-chart>
@@ -14,15 +15,18 @@
 //   </prism-coordinator>
 //
 // Charts use shadow DOM (mode: "open") so CSS variables from the
-// host page propagate into the SVG `<style>` block (D073).
+// host page propagate into the SVG `<style>` block (D073). <prism-table>
+// follows the same shadow-DOM pattern (see the PrismTable class below,
+// near the end of the file, alongside its own doc comment).
 
-import { render, executeSpec } from "./prism.mjs";
+import { render, executeSpec, ensureWasmReady } from "./prism.mjs";
 import { PrismResolver } from "./prism-resolver.mjs";
 import {
   listen,
   setSelection,
   getAllSelections,
 } from "./prism-selection.mjs";
+import { installTableHandlers } from "./prism-table.mjs";
 
 // ---------------------------------------------------------------- //
 // URL-hash state helpers (D079)
@@ -438,6 +442,176 @@ class PrismCoordinator extends HTMLElement {
 }
 
 // ---------------------------------------------------------------- //
+// <prism-table> (E4-S2)
+// ---------------------------------------------------------------- //
+//
+// Live counterpart to the server/CLI-only table path
+// (`prism plot --format html`, `render/html`'s renderTableMarkup):
+// resolves a sceneDoc the same two ways <prism-chart> does (`src` →
+// PrismResolver.fetchJSON; `spec` → inline JSON or a URL, compiled via
+// executeSpec), then renders it through the HTML backend
+// (`globalThis.prism.renderHTML`, see docs/src/concepts/browser.md's
+// "Render backends: SVG vs HTML" section) instead of the SVG backend
+// <prism-chart> uses — the `table` mark has no SVG geometry of its
+// own. The returned string is a complete standalone HTML document
+// (doctype + html/head/body); parsing it via a throwaway wrapper's
+// innerHTML and moving its children into the shadow root keeps the
+// `<style>` tag's table CSS (border-collapse, header cursor, page
+// controls, `.prism-selected` row highlight — see
+// render/html/renderer.go's renderTableDoc) working, and lands the
+// `[data-prism-table-root]` wrapper `installTableHandlers` expects to
+// find (see prism-table.mjs's own doc comment for the full
+// data-prism-* attribute contract render/html/renderer.go emits).
+//
+// There is no persistent SceneHandle-like object here (renderHTML is
+// a synchronous string-in/string-out bridge, not a live DOM handle) —
+// installTableHandlers' own listener bookkeeping (a WeakMap keyed by
+// the `[data-prism-table-root]` wrapper element, see prism-table.mjs)
+// is released for garbage collection once that wrapper is replaced or
+// the shadow root it lives in is discarded, so disconnectedCallback
+// has nothing to explicitly tear down beyond bumping the render token
+// so an in-flight render doesn't mount after the element is gone.
+class PrismTable extends HTMLElement {
+  static get observedAttributes() {
+    return ["src", "spec", "theme"];
+  }
+
+  constructor() {
+    super();
+    this._renderToken = 0;
+  }
+
+  connectedCallback() {
+    if (!this.shadowRoot) this.attachShadow({ mode: "open" });
+    this._render();
+  }
+
+  attributeChangedCallback(name, oldVal, newVal) {
+    if (oldVal === newVal) return;
+    if (this.shadowRoot) this._render();
+  }
+
+  disconnectedCallback() {
+    // Invalidate any in-flight _render() so it can't mount into a
+    // detached shadow root after the element leaves the document.
+    this._renderToken++;
+  }
+
+  async _render() {
+    const token = ++this._renderToken;
+    const src = this.getAttribute("src");
+    const spec = this.getAttribute("spec");
+    const themeAttr = this.getAttribute("theme");
+
+    let sceneDoc = null;
+    if (src) {
+      try {
+        sceneDoc = await PrismResolver.fetchJSON(src);
+      } catch (err) {
+        this._renderError(`Failed to load scene from ${src}: ${err.message}`);
+        return;
+      }
+    } else if (spec) {
+      // Same two shapes <prism-chart> accepts: an inline JSON literal
+      // or a URL pointing at a `.prism.json` file.
+      let parsed;
+      const trimmed = spec.trim();
+      if (trimmed.startsWith("{")) {
+        try { parsed = JSON.parse(trimmed); }
+        catch (err) {
+          this._renderError(`Spec attribute is not valid JSON: ${err.message}`);
+          return;
+        }
+      } else {
+        try { parsed = await PrismResolver.fetchJSON(trimmed); }
+        catch (err) {
+          this._renderError(`Failed to load spec from ${trimmed}: ${err.message}`);
+          return;
+        }
+      }
+      try {
+        const datasets = PrismResolver.snapshot();
+        const opts = {};
+        if (themeAttr) opts.theme = themeAttr;
+        sceneDoc = await executeSpec(parsed, datasets, opts);
+      } catch (err) {
+        const code = err.prismCode ? `${err.prismCode}: ` : "";
+        this._renderError(`Spec compile failed: ${code}${err.message}`);
+        return;
+      }
+    } else {
+      this._renderError("No `src` or `spec` attribute provided.");
+      return;
+    }
+
+    if (token !== this._renderToken || !this.isConnected) return;
+
+    let htmlString;
+    try {
+      await ensureWasmReady();
+      htmlString = globalThis.prism.renderHTML(JSON.stringify(sceneDoc), themeAttr || undefined);
+      _throwIfHTMLErrorEnvelope(htmlString, "prism-table");
+    } catch (err) {
+      this._renderError(`Render failed: ${err.message}`);
+      return;
+    }
+
+    if (token !== this._renderToken || !this.isConnected) return;
+
+    const doc = this.ownerDocument || document;
+    const wrapper = doc.createElement("div");
+    wrapper.innerHTML = htmlString;
+
+    while (this.shadowRoot.firstChild) {
+      this.shadowRoot.removeChild(this.shadowRoot.firstChild);
+    }
+    while (wrapper.firstChild) {
+      this.shadowRoot.appendChild(wrapper.firstChild);
+    }
+
+    try { installTableHandlers(this.shadowRoot); } catch { /* defensive */ }
+  }
+
+  _renderError(message) {
+    if (!this.shadowRoot) return;
+    while (this.shadowRoot.firstChild) {
+      this.shadowRoot.removeChild(this.shadowRoot.firstChild);
+    }
+    const div = (this.ownerDocument || document).createElement("div");
+    div.setAttribute("class", "prism-table-error");
+    div.setAttribute("role", "alert");
+    div.style.cssText = "font-family: monospace; font-size: 12px; color: #b91c1c; padding: 8px; border: 1px solid #fecaca; background: #fef2f2;";
+    div.textContent = `prism-table: ${message}`;
+    this.shadowRoot.appendChild(div);
+  }
+}
+
+// _throwIfHTMLErrorEnvelope mirrors prism.mjs's private
+// _throwIfErrorEnvelope helper (not exported — renderHTML has no
+// prism.mjs-level wrapper the way render()/executeSpec() do, so this
+// module calls the raw `globalThis.prism.renderHTML` bridge directly
+// and must sniff its error-envelope shape itself). The WASM bridge
+// returns either the HTML document string or a JSON `{"ok":false,...}`
+// envelope; sniff the literal prefix rather than parsing every
+// document body just to check.
+function _throwIfHTMLErrorEnvelope(payload, where) {
+  if (typeof payload !== "string") return;
+  if (!payload.startsWith(`{"ok":false`)) return;
+  let parsed;
+  try { parsed = JSON.parse(payload); } catch { return; }
+  if (parsed && parsed.ok === false) {
+    const err = parsed.error || parsed;
+    const code = err.code || err.Code || "PRISM_WASM_001";
+    const msg = err.message || err.Message || "WASM bridge error";
+    const fixups = err.fixups || err.Fixups || [];
+    const composed = new Error(`${where}: ${code}: ${msg}`);
+    composed.prismCode = code;
+    composed.prismFixups = fixups;
+    throw composed;
+  }
+}
+
+// ---------------------------------------------------------------- //
 // Registration — idempotent. Re-importing the module does nothing.
 // ---------------------------------------------------------------- //
 
@@ -451,6 +625,9 @@ if (typeof customElements !== "undefined") {
   if (!customElements.get("prism-coordinator")) {
     customElements.define("prism-coordinator", PrismCoordinator);
   }
+  if (!customElements.get("prism-table")) {
+    customElements.define("prism-table", PrismTable);
+  }
 }
 
-export { PrismChart, PrismDataset, PrismCoordinator };
+export { PrismChart, PrismDataset, PrismCoordinator, PrismTable };

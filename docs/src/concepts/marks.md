@@ -341,11 +341,19 @@ numeric series rather than by its `<svg>` markup), client-side
 pagination (slices the already-rendered rows using `page_size`; no
 extra network/WASM round trip), and row-click selection (dispatches
 the same structured `prism:select` event other marks emit, keyed off
-the `data-prism-datum-row` attribute every `<tr>` carries). This path
-is independent of the `<prism-chart>`/WASM pipeline — a table mark
-never renders through `prism.wasm`'s SVG-only bridge — so a host page
-that serves/mounts `html`-backend output imports `prism-table.mjs`
-directly rather than through `prism-element.mjs`.
+the `data-prism-datum-row` attribute every `<tr>` carries). A host page
+that serves/mounts server- or CLI-produced `html`-backend output
+(`prism plot --format html`) imports `prism-table.mjs` directly and
+calls `installTableHandlers(root)` itself, independent of the
+`<prism-chart>`/WASM pipeline.
+
+`<prism-table>` (E4-S2, registered in `prism-element.mjs` alongside
+`<prism-chart>`) is the live-in-browser counterpart: it renders a
+`spec`/`src` through `prism.renderHTML` (the WASM HTML backend bridge
+— see [Browser: Render backends](browser.md#render-backends-svg-vs-html))
+and calls `installTableHandlers` on the mounted result automatically,
+so a `table` mark is now live-renderable in the browser exactly like
+any other mark, just through the HTML backend instead of the SVG one.
 
 ## Worked examples
 
