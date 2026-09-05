@@ -149,6 +149,33 @@ through `prism.renderHTML`:
   server-side (`prism plot --format html`) or via a Twirp round trip; they
   are now live-renderable in the browser like any other mark.
 
+### `<prism-table>`
+
+`<prism-table>` is the live counterpart to the server/CLI-only table
+path (`prism plot --format html`): it resolves a scene the same two
+ways `<prism-chart>` does — a `src` attribute fetched via
+`PrismResolver.fetchJSON`, or a `spec` attribute (inline JSON or a
+URL) compiled via `executeSpec` — then renders it through
+`prism.renderHTML` instead of `prism.render`, since the `table` mark
+has no SVG geometry of its own:
+
+```html
+<prism-table src="/scenes/accounts_table.json"></prism-table>
+<prism-table spec='{"$schema":"urn:prism:schema:v1:spec",...}'></prism-table>
+```
+
+Its `observedAttributes` are `src`, `spec`, and `theme` (row
+sort/pagination/selection are all handled client-side by
+`prism-table.mjs`'s `installTableHandlers`, so there's no attribute
+for them). On every render it mounts the returned HTML document's
+content into its shadow root and calls `installTableHandlers(this.
+shadowRoot)`, so column-header sort, Prev/Next pagination, and
+row-click selection (a `prism:select` CustomEvent, mirroring
+`<prism-chart>`'s selection events) work immediately with no further
+wiring. See [`prism-table.mjs`](marks.md#table) for the full
+`data-prism-*` attribute contract `render/html`'s table renderer
+emits and this element's sort/pagination logic reads.
+
 ### Server compile (opt-in)
 
 Hosts that prefer to offload the compile stage to a trusted backend
