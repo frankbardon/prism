@@ -300,3 +300,4 @@ format itself being unavailable — the SVG backend rejects a top-level
 - [bar_print](../gallery/themes/bar_print.prism.json)
 - [bar_high_contrast](../gallery/themes/bar_high_contrast.prism.json)
 - [bar_colorblind](../gallery/themes/bar_colorblind.prism.json)
+- [bar_filter](../gallery/themes/bar_filter.prism.json) — drop-shadow filter on the mark

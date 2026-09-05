@@ -213,6 +213,7 @@ below is identical; only the rendering theme differs.
 | [bar_print](themes/bar_print.prism.json) | <img src="themes/bar_print.svg" width="240"> |
 | [bar_high_contrast](themes/bar_high_contrast.prism.json) | <img src="themes/bar_high_contrast.svg" width="240"> |
 | [bar_colorblind](themes/bar_colorblind.prism.json) | <img src="themes/bar_colorblind.svg" width="240"> |
+| [bar_filter](themes/bar_filter.prism.json) | <img src="themes/bar_filter.svg" width="240"> |
 
 ## Animation
 
