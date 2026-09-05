@@ -968,6 +968,15 @@ var Codes = map[string]CodeMetadata{
 		},
 		SeeAlso: []string{"PRISM_SPEC_030", "PRISM_SPEC_031"},
 	},
+	"PRISM_THEME_FILL_REF_UNKNOWN": {
+		Code:    "PRISM_THEME_FILL_REF_UNKNOWN",
+		Message: `theme.{{.Block}}.{{.Field}} references undefined url(#{{.Name}}).`,
+		Fixups: []string{
+			`Add a "{{.Name}}" entry under the theme's top-level "gradients" or "patterns" map, or fix the typo in "{{.Block}}.{{.Field}}".`,
+			`Gradients currently registered: {{.AvailableGradients}}. Patterns currently registered: {{.AvailablePatterns}}.`,
+		},
+		SeeAlso: []string{"PRISM_THEME_GRADIENT_INVALID", "PRISM_THEME_PATTERN_INVALID", "PRISM_THEME_FILTER_UNKNOWN"},
+	},
 	"PRISM_THEME_GRADIENT_INVALID": {
 		Code:    "PRISM_THEME_GRADIENT_INVALID",
 		Message: `theme.gradients.{{.Name}} is invalid: {{.Reason}}.`,

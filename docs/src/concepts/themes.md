@@ -229,14 +229,18 @@ hatch.
 ### Gradients and patterns
 
 `gradients` and `patterns` declare named fill definitions on the
-theme. **This is model-and-validation-only today**: nothing yet
-resolves a `mark.fill`/`stroke`/`view.background` value of
-`url(#name)` against these registries, and no SVG
-`<linearGradient>`/`<radialGradient>`/`<pattern>` markup is emitted.
-That wiring lands in later work; for now the maps exist so themes can
-declare and validate their fills up front, and a subsequent story can
-add the `url(#name)` resolution and rendering without another theme
-shape change.
+theme. A `mark.fill`/`stroke` or `view.background` value written as
+`url(#name)` — the same convention native SVG `fill`/`stroke` use —
+resolves against these registries: `theme.gradients` is checked
+first, then `theme.patterns`. Any other value (a hex color, a CSS
+color keyword, `"transparent"`, …) is unaffected and keeps resolving
+as a plain literal color exactly as before. **SVG emission is still
+pending**: no `<linearGradient>`/`<radialGradient>`/`<pattern>` markup
+is written yet, so a resolved reference doesn't yet change rendered
+output — that lands in a later story. For now, resolution and
+validation are wired up so a `url(#name)` value that doesn't name a
+registered gradient or pattern fails loud instead of silently
+rendering nothing.
 
 A `GradientDef` is either `"linear"` (oriented by `angle`, in
 degrees, 0 = left-to-right, clockwise) or `"radial"` (centered at
@@ -281,9 +285,12 @@ fewer than 2 `stops`, an out-of-range `offset`, or an empty stop
 `color` fails with `PRISM_THEME_GRADIENT_INVALID`. A pattern that sets
 both `type` and `content` (or neither), names a `type` outside the
 built-in catalogue, or sets a non-positive `spacing`/`size` fails with
-`PRISM_THEME_PATTERN_INVALID`. There is no dangling-reference check
-yet — nothing references a gradient/pattern by name until the
-`url(#name)` resolution wiring lands.
+`PRISM_THEME_PATTERN_INVALID`. On top of that, every `fill`/`stroke`
+on `mark`, `marks.<type>`, and `style.<name>`, plus `background` on
+`view`, is checked for the `url(#name)` form; a reference that names
+neither a `gradients` nor a `patterns` entry fails with
+`PRISM_THEME_FILL_REF_UNKNOWN` (mirroring `PRISM_THEME_FILTER_UNKNOWN`
+for the filter escape hatch).
 
 **Trust boundary:** `content` on a `PatternDef` is the same trust
 tier as `filters`/`raw_css` — developer-authored SVG that Prism does
