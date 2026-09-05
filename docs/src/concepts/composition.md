@@ -140,5 +140,6 @@ raises `PRISM_PLAN_005`.
 - [vconcat_metrics](../gallery/composition/vconcat_metrics.prism.json) — 3-row stack.
 - [facet_by_region](../gallery/composition/facet_by_region.prism.json) — 3×3 grid.
 - [facet_nested](../gallery/composition/facet_nested.prism.json) — recursion proof.
+- [facet_cell_theme_override](../gallery/composition/facet_cell_theme_override.prism.json) — 1×3 region facet with two cells recolored via `cell_overrides`.
 - [repeat_metrics](../gallery/composition/repeat_metrics.prism.json) — 1×4 over 4 metrics.
 - [dashboard](../gallery/composition/dashboard.prism.json) — 4-cell vconcat showcasing mixed marks.

@@ -125,6 +125,7 @@ source.
 | [facet_by_region](composition/facet_by_region.prism.json) | <img src="composition/facet_by_region.svg" width="240"> |
 | [facet_nested](composition/facet_nested.prism.json) | <img src="composition/facet_nested.svg" width="240"> |
 | [facet_per_cell_y](composition/facet_per_cell_y.prism.json) | <img src="composition/facet_per_cell_y.svg" width="240"> |
+| [facet_cell_theme_override](composition/facet_cell_theme_override.prism.json) | <img src="composition/facet_cell_theme_override.svg" width="240"> |
 | [repeat_metrics](composition/repeat_metrics.prism.json) | <img src="composition/repeat_metrics.svg" width="240"> |
 | [dashboard](composition/dashboard.prism.json) | <img src="composition/dashboard.svg" width="240"> |
 
