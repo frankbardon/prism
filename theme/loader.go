@@ -19,20 +19,30 @@ func LoadFile(path string) (*Theme, error) {
 }
 
 // LoadBytes parses a theme JSON blob. Same merge semantics as
-// LoadFile.
+// LoadFile. A Filter reference (on any style block) that does not
+// resolve to a key in the resulting theme's Filters fails loudly with
+// PRISM_THEME_FILTER_UNKNOWN — an intentional departure from
+// RangeSlot.Resolve's silent-fallback behavior; see theme/validate.go.
 func LoadBytes(body []byte) (*Theme, error) {
 	var t Theme
 	if err := json.Unmarshal(body, &t); err != nil {
 		return nil, fmt.Errorf("theme.LoadBytes: %w", err)
 	}
 	if t.Base == "" {
+		if err := t.Validate(); err != nil {
+			return nil, err
+		}
 		return &t, nil
 	}
 	base, ok := Get(t.Base)
 	if !ok {
 		return nil, fmt.Errorf("theme.LoadBytes: base theme %q is not registered", t.Base)
 	}
-	return Merge(base, &t), nil
+	merged := Merge(base, &t)
+	if err := merged.Validate(); err != nil {
+		return nil, err
+	}
+	return merged, nil
 }
 
 // Merge returns a new Theme that combines base with the non-zero
@@ -131,6 +141,17 @@ func Merge(base, override *Theme) *Theme {
 			out.Style[k] = MergeMarkStyle(out.Style[k], v)
 		}
 	}
+	if override.Filters != nil {
+		if out.Filters == nil {
+			out.Filters = make(map[string]string, len(override.Filters))
+		}
+		for k, v := range override.Filters {
+			out.Filters[k] = v
+		}
+	}
+	if override.RawCSS != "" {
+		out.RawCSS = override.RawCSS
+	}
 	return out
 }
 
@@ -216,6 +237,9 @@ func mergeAxis(base, override *AxisStyle) *AxisStyle {
 		v := *override.TitlePadding
 		out.TitlePadding = &v
 	}
+	if override.Filter != "" {
+		out.Filter = override.Filter
+	}
 	return &out
 }
 
@@ -278,6 +302,9 @@ func mergeLegend(base, override *LegendStyle) *LegendStyle {
 		v := *override.ColumnPadding
 		out.ColumnPadding = &v
 	}
+	if override.Filter != "" {
+		out.Filter = override.Filter
+	}
 	return &out
 }
 
@@ -313,6 +340,9 @@ func mergeTitle(base, override *TitleStyle) *TitleStyle {
 		v := *override.Padding
 		out.Padding = &v
 	}
+	if override.Filter != "" {
+		out.Filter = override.Filter
+	}
 	return &out
 }
 
@@ -345,6 +375,9 @@ func mergeView(base, override *ViewStyle) *ViewStyle {
 	if override.CornerRadius != nil {
 		v := *override.CornerRadius
 		out.CornerRadius = &v
+	}
+	if override.Filter != "" {
+		out.Filter = override.Filter
 	}
 	return &out
 }

@@ -50,6 +50,15 @@
           "type": "object",
           "additionalProperties": {"$ref": "#/$defs/state_style"},
           "description": "State overlays (selected, deselected, hover, focus)."
+        },
+        "filters": {
+          "type": "object",
+          "additionalProperties": {"type": "string"},
+          "description": "Named registry of raw SVG <filter> inner-content bodies (e.g. a feGaussianBlur/feDropShadow chain), keyed by a theme-author-chosen name. Style blocks reference an entry via their own 'filter' property; a reference that does not resolve fails theme load with PRISM_THEME_FILTER_UNKNOWN. Escape hatch: this content is developer-authored and trusted the same as the rest of the theme/spec JSON — never route untrusted content through it."
+        },
+        "raw_css": {
+          "type": "string",
+          "description": "Raw CSS appended verbatim after the generated --prism-* variable declarations in the emitted <style> block. Same trust model as 'filters' — developer-authored, not sanitized."
         }
       }
     },
@@ -71,7 +80,8 @@
         "font_weight":  {"type": ["string", "number"]},
         "font_style":   {"type": "string", "enum": ["normal", "italic", "oblique"]},
         "align":        {"type": "string", "enum": ["left", "center", "right"]},
-        "baseline":     {"type": "string", "enum": ["alphabetic", "top", "middle", "bottom"]}
+        "baseline":     {"type": "string", "enum": ["alphabetic", "top", "middle", "bottom"]},
+        "filter":       {"type": "string", "description": "Name of an entry in the theme's top-level 'filters' map."}
       }
     },
 
@@ -96,7 +106,8 @@
         "title_color":        {"$ref": "shared.schema.json#/$defs/color"},
         "title_font_size":    {"type": "number", "minimum": 0},
         "title_font_weight":  {"type": ["string", "number"]},
-        "title_padding":      {"type": "number", "minimum": 0}
+        "title_padding":      {"type": "number", "minimum": 0},
+        "filter":             {"type": "string", "description": "Name of an entry in the theme's top-level 'filters' map."}
       }
     },
 
@@ -116,7 +127,8 @@
         "title_font_size":     {"type": "number", "minimum": 0},
         "title_font_weight":   {"type": ["string", "number"]},
         "row_padding":         {"type": "number", "minimum": 0},
-        "column_padding":      {"type": "number", "minimum": 0}
+        "column_padding":      {"type": "number", "minimum": 0},
+        "filter":              {"type": "string", "description": "Name of an entry in the theme's top-level 'filters' map."}
       }
     },
 
@@ -129,7 +141,8 @@
         "font_weight": {"type": ["string", "number"]},
         "align":       {"type": "string", "enum": ["left", "center", "right"]},
         "anchor":      {"type": "string", "enum": ["start", "middle", "end"]},
-        "padding":     {"type": "number", "minimum": 0}
+        "padding":     {"type": "number", "minimum": 0},
+        "filter":      {"type": "string", "description": "Name of an entry in the theme's top-level 'filters' map."}
       }
     },
 
@@ -141,7 +154,8 @@
         "stroke":       {"$ref": "shared.schema.json#/$defs/color"},
         "stroke_width": {"type": "number", "minimum": 0},
         "padding":      {"type": "number", "minimum": 0},
-        "corner_radius":{"type": "number", "minimum": 0}
+        "corner_radius":{"type": "number", "minimum": 0},
+        "filter":       {"type": "string", "description": "Name of an entry in the theme's top-level 'filters' map."}
       }
     },
 

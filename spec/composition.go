@@ -65,4 +65,14 @@ type ThemeOverride struct {
 	States  map[string]*StateStyle `json:"states,omitempty"`
 	Schemes map[string][]string    `json:"schemes,omitempty"`
 	Style   map[string]*MarkStyle  `json:"style,omitempty"`
+
+	// Filters mirrors theme.Theme.Filters — a named registry of raw
+	// SVG <filter> inner-content bodies. Style blocks above reference
+	// an entry via their Filter field. RawCSS mirrors theme.Theme.RawCSS
+	// — raw CSS appended verbatim to the emitted <style> block. Both
+	// are an escape hatch: this JSON is developer-authored and trusted
+	// the same as the rest of the spec — never route untrusted content
+	// through here.
+	Filters map[string]string `json:"filters,omitempty"`
+	RawCSS  string            `json:"raw_css,omitempty"`
 }

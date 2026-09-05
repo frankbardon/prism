@@ -959,6 +959,15 @@ var Codes = map[string]CodeMetadata{
 		},
 		SeeAlso: []string{"PRISM_SPEC_040"},
 	},
+	"PRISM_THEME_FILTER_UNKNOWN": {
+		Code:    "PRISM_THEME_FILTER_UNKNOWN",
+		Message: `theme.{{.Block}}.filter references undefined filter {{.Filter}}.`,
+		Fixups: []string{
+			`Add a "{{.Filter}}": "<svg filter-primitive body>" entry under the theme's top-level "filters" map, or fix the typo in "{{.Block}}.filter".`,
+			`Filters currently registered on this theme: {{.Available}}.`,
+		},
+		SeeAlso: []string{"PRISM_SPEC_030", "PRISM_SPEC_031"},
+	},
 }
 
 // CodesSorted returns the catalog keys in ascending order.

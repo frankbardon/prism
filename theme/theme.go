@@ -60,6 +60,23 @@ type Theme struct {
 	// Marks reference an entry via "style" attr; renderers apply the
 	// MarkStyle as an additional cascade layer.
 	Style map[string]*MarkStyle `json:"style,omitempty"`
+
+	// Filters is a named registry of raw SVG <filter> inner-content
+	// bodies (e.g. a feGaussianBlur/feDropShadow chain), keyed by a
+	// theme-author-chosen name. Style blocks (Mark/Marks/Style entries,
+	// Axis, Legend, Title, View) reference an entry via their Filter
+	// field. This is an escape hatch — theme JSON is developer-
+	// authored and trusted the same as spec JSON; never route
+	// untrusted/attacker-influenced theme JSON through this (see
+	// docs/src/concepts/themes.md). Model + validation only in this
+	// story; the SVG <filter> element / filter="" attribute emission
+	// lands in E1-S2.
+	Filters map[string]string `json:"filters,omitempty"`
+	// RawCSS is a raw CSS string appended verbatim after the
+	// generated `--prism-*` variable declarations in the emitted
+	// <style> block (E1-S2 wires the emission). Same trust model as
+	// Filters — developer-authored, not sanitized.
+	RawCSS string `json:"raw_css,omitempty"`
 }
 
 // ToSceneTheme converts a Theme into the wire-stable scene.Theme
@@ -149,6 +166,12 @@ func (t *Theme) Clone() *Theme {
 		out.Style = make(map[string]*MarkStyle, len(t.Style))
 		for k, v := range t.Style {
 			out.Style[k] = v.Clone()
+		}
+	}
+	if t.Filters != nil {
+		out.Filters = make(map[string]string, len(t.Filters))
+		for k, v := range t.Filters {
+			out.Filters[k] = v
 		}
 	}
 	return &out

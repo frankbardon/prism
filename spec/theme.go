@@ -19,6 +19,9 @@ type MarkStyle struct {
 	FontStyle    string    `json:"font_style,omitempty"`
 	Align        string    `json:"align,omitempty"`
 	Baseline     string    `json:"baseline,omitempty"`
+	// Filter names an entry in theme.Theme.Filters. See
+	// theme.MarkStyle.Filter.
+	Filter string `json:"filter,omitempty"`
 }
 
 // AxisStyle mirrors theme.AxisStyle.
@@ -41,6 +44,7 @@ type AxisStyle struct {
 	TitleFontSize   *float64  `json:"title_font_size,omitempty"`
 	TitleFontWeight string    `json:"title_font_weight,omitempty"`
 	TitlePadding    *float64  `json:"title_padding,omitempty"`
+	Filter          string    `json:"filter,omitempty"`
 }
 
 // LegendStyle mirrors theme.LegendStyle.
@@ -58,6 +62,7 @@ type LegendStyle struct {
 	TitleFontWeight   string   `json:"title_font_weight,omitempty"`
 	RowPadding        *float64 `json:"row_padding,omitempty"`
 	ColumnPadding     *float64 `json:"column_padding,omitempty"`
+	Filter            string   `json:"filter,omitempty"`
 }
 
 // TitleStyle mirrors theme.TitleStyle.
@@ -68,6 +73,7 @@ type TitleStyle struct {
 	Align      string   `json:"align,omitempty"`
 	Anchor     string   `json:"anchor,omitempty"`
 	Padding    *float64 `json:"padding,omitempty"`
+	Filter     string   `json:"filter,omitempty"`
 }
 
 // ViewStyle mirrors theme.ViewStyle.
@@ -77,6 +83,7 @@ type ViewStyle struct {
 	StrokeWidth  *float64 `json:"stroke_width,omitempty"`
 	Padding      *float64 `json:"padding,omitempty"`
 	CornerRadius *float64 `json:"corner_radius,omitempty"`
+	Filter       string   `json:"filter,omitempty"`
 }
 
 // StateStyle mirrors theme.StateStyle.

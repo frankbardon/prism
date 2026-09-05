@@ -90,7 +90,13 @@ prism plot bar.json --theme=colorblind > bar-cb.svg
   "states": {
     "selected":   { "opacity": 1 },
     "deselected": { "opacity": 0.3 }
-  }
+  },
+
+  "filters": {
+    "soft_shadow": "<feDropShadow dx=\"0\" dy=\"2\" stdDeviation=\"2\" flood-opacity=\"0.3\"/>"
+  },
+
+  "raw_css": ".prism-mark-bar:hover { filter: brightness(1.1); }"
 }
 ```
 
@@ -108,6 +114,34 @@ prism plot bar.json --theme=colorblind > bar-cb.svg
 | `schemes`  | Per-theme custom named-scheme registry. Entries shadow the global catalogue. |
 | `style`    | Named-style registry — marks reference an entry via their `style` attr. |
 | `states`   | State overlays (selected, deselected, hover, focus). Materialise as `.prism-<state>` CSS classes. |
+| `filters`  | Named registry of raw SVG `<filter>` inner-content bodies. `mark`/`marks.<type>`/`style.<name>`/`axis`/`legend`/`title`/`view` each carry a `filter` field naming an entry here. |
+| `raw_css`  | Raw CSS string appended verbatim to the emitted `<style>` block. |
+
+### Raw CSS and filter escape hatch
+
+`filters` and `raw_css`, plus the `filter` field on `mark` / `marks.<type>`
+/ `style.<name>` / `axis` / `legend` / `title` / `view`, are an escape
+hatch for visual effects Prism's typed tokens don't model directly
+(drop shadows, blurs, hover states beyond `states`, arbitrary
+selectors). A `filter` value must name a key present in the theme's
+`filters` map — an unresolved reference **fails loudly** at theme load
+(`PRISM_THEME_FILTER_UNKNOWN`) rather than silently rendering without
+the effect, an intentional departure from `range.*`'s scheme-name
+fallback behavior.
+
+**Trust boundary:** theme JSON — including `raw_css` and every
+`filters` body — is developer-authored and trusted the same as spec
+JSON is today. Prism does not sanitize or sandbox this content before
+it lands in the rendered `<style>`/`<filter>` markup. Never route
+untrusted or attacker-influenced theme JSON (e.g. end-user-supplied
+theme files in a multi-tenant service) through `theme.LoadFile` /
+`theme.LoadBytes` / a spec's inline `theme.raw_css` / `theme.filters`
+override.
+
+This story ships the model and load-time validation only; the actual
+SVG `<filter>` element and `filter=""` attribute emission, and the
+`raw_css` append into the generated `<style>` block, land in a
+follow-up story.
 
 ## Color schemes
 

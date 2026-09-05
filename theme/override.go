@@ -75,6 +75,15 @@ func ApplyOverride(base *Theme, o *spec.ThemeOverride) *Theme {
 			override.Style[k] = copyMarkStyle(v)
 		}
 	}
+	if o.Filters != nil {
+		override.Filters = make(map[string]string, len(o.Filters))
+		for k, v := range o.Filters {
+			override.Filters[k] = v
+		}
+	}
+	if o.RawCSS != "" {
+		override.RawCSS = o.RawCSS
+	}
 	return Merge(base, override)
 }
 
@@ -90,6 +99,7 @@ func copyMarkStyle(s *spec.MarkStyle) *MarkStyle {
 		FontStyle:  s.FontStyle,
 		Align:      s.Align,
 		Baseline:   s.Baseline,
+		Filter:     s.Filter,
 	}
 	out.StrokeWidth = copyFloat(s.StrokeWidth)
 	out.Opacity = copyFloat(s.Opacity)
@@ -115,6 +125,7 @@ func copyAxisStyle(s *spec.AxisStyle) *AxisStyle {
 		LabelFontWeight: s.LabelFontWeight,
 		TitleColor:      s.TitleColor,
 		TitleFontWeight: s.TitleFontWeight,
+		Filter:          s.Filter,
 	}
 	out.DomainWidth = copyFloat(s.DomainWidth)
 	out.TickWidth = copyFloat(s.TickWidth)
@@ -142,6 +153,7 @@ func copyLegendStyle(s *spec.LegendStyle) *LegendStyle {
 		LabelColor:      s.LabelColor,
 		TitleColor:      s.TitleColor,
 		TitleFontWeight: s.TitleFontWeight,
+		Filter:          s.Filter,
 	}
 	out.StrokeWidth = copyFloat(s.StrokeWidth)
 	out.Padding = copyFloat(s.Padding)
@@ -163,6 +175,7 @@ func copyTitleStyle(s *spec.TitleStyle) *TitleStyle {
 		FontWeight: s.FontWeight,
 		Align:      s.Align,
 		Anchor:     s.Anchor,
+		Filter:     s.Filter,
 	}
 	out.FontSize = copyFloat(s.FontSize)
 	out.Padding = copyFloat(s.Padding)
@@ -176,6 +189,7 @@ func copyViewStyle(s *spec.ViewStyle) *ViewStyle {
 	out := &ViewStyle{
 		Background: s.Background,
 		Stroke:     s.Stroke,
+		Filter:     s.Filter,
 	}
 	out.StrokeWidth = copyFloat(s.StrokeWidth)
 	out.Padding = copyFloat(s.Padding)

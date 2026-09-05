@@ -19,6 +19,13 @@ type MarkStyle struct {
 	FontStyle    string    `json:"font_style,omitempty"`
 	Align        string    `json:"align,omitempty"`
 	Baseline     string    `json:"baseline,omitempty"`
+	// Filter names an entry in Theme.Filters — a raw SVG <filter>
+	// inner-content body applied to marks styled by this block. A
+	// name that does not resolve fails loudly at theme load
+	// (PRISM_THEME_FILTER_UNKNOWN) rather than silently no-op'ing;
+	// see theme/validate.go. Rendering wires the actual <filter>
+	// element / filter="" attribute in a later story (E1-S2).
+	Filter string `json:"filter,omitempty"`
 }
 
 // Clone deep-copies the MarkStyle.
@@ -118,6 +125,9 @@ func MergeMarkStyle(base, override *MarkStyle) *MarkStyle {
 	if override.Baseline != "" {
 		out.Baseline = override.Baseline
 	}
+	if override.Filter != "" {
+		out.Filter = override.Filter
+	}
 	return out
 }
 
@@ -143,6 +153,8 @@ type AxisStyle struct {
 	TitleFontSize   *float64  `json:"title_font_size,omitempty"`
 	TitleFontWeight string    `json:"title_font_weight,omitempty"`
 	TitlePadding    *float64  `json:"title_padding,omitempty"`
+	// Filter names an entry in Theme.Filters. See MarkStyle.Filter.
+	Filter string `json:"filter,omitempty"`
 }
 
 // LegendStyle holds legend tokens.
@@ -160,6 +172,8 @@ type LegendStyle struct {
 	TitleFontWeight   string   `json:"title_font_weight,omitempty"`
 	RowPadding        *float64 `json:"row_padding,omitempty"`
 	ColumnPadding     *float64 `json:"column_padding,omitempty"`
+	// Filter names an entry in Theme.Filters. See MarkStyle.Filter.
+	Filter string `json:"filter,omitempty"`
 }
 
 // TitleStyle holds title block tokens.
@@ -170,6 +184,8 @@ type TitleStyle struct {
 	Align      string   `json:"align,omitempty"`
 	Anchor     string   `json:"anchor,omitempty"`
 	Padding    *float64 `json:"padding,omitempty"`
+	// Filter names an entry in Theme.Filters. See MarkStyle.Filter.
+	Filter string `json:"filter,omitempty"`
 }
 
 // ViewStyle holds chart-rect tokens: outer background, plot rect
@@ -180,6 +196,8 @@ type ViewStyle struct {
 	StrokeWidth  *float64 `json:"stroke_width,omitempty"`
 	Padding      *float64 `json:"padding,omitempty"`
 	CornerRadius *float64 `json:"corner_radius,omitempty"`
+	// Filter names an entry in Theme.Filters. See MarkStyle.Filter.
+	Filter string `json:"filter,omitempty"`
 }
 
 // StateStyle holds per-state visual overlays (selected, deselected,
