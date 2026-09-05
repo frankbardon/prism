@@ -47,6 +47,17 @@ type ColorChannel struct {
 	Categories        []string
 	Palette           []*scene.Color
 	SequentialPalette []*scene.Color
+	// DarkPalette / DarkSequentialPalette (E4-S3) mirror Palette /
+	// SequentialPalette but resolved against the active theme's
+	// DarkVariant counterpart, using the exact same category / stop
+	// ordering (same field, same scheme cascade, different theme).
+	// Populated by encode.go only when Inputs.ColorRegistry is
+	// non-nil (auto-dark active); nil/empty otherwise. Mark encoders
+	// index them positionally alongside Palette/SequentialPalette so
+	// each resolved color gets registered as a light+dark pair
+	// (ColorRegistry.Resolve) instead of baked as a literal hex.
+	DarkPalette           []*scene.Color
+	DarkSequentialPalette []*scene.Color
 }
 
 // OpacityChannel is a field-driven per-mark opacity binding. The
@@ -122,6 +133,14 @@ type Inputs struct {
 	// the label picks up the theme's text fill and stays legible
 	// across dark/print/high-contrast themes.
 	LabelStyle scene.Style
+	// ColorRegistry (E4-S3) accumulates light/dark resolved mark-color
+	// pairs for the "auto light/dark in one SVG" feature. nil — the
+	// default, and the entire state whenever the active theme has no
+	// DarkVariant — means "bake the literal palette/theme color",
+	// exactly the pre-E4-S3 behavior; every mark encoder that resolves
+	// a scale-driven or static theme color must treat nil this way.
+	// See ColorVarRegistry and ColorChannel.DarkPalette.
+	ColorRegistry *ColorVarRegistry
 }
 
 // Encode dispatches markType to its per-mark helper. Returns the

@@ -373,12 +373,40 @@ When `dark_variant` is unset (or names a theme that fails to
 resolve), no media query is emitted and output is byte-identical to a
 theme with no `dark_variant` at all.
 
-**Mark colors remain out of scope** — per-mark fills/strokes are
-baked hex literals resolved once at encode time
-(`scene.Style.Fill`/`Stroke`), not `var()` references, so they do not
-swap under the media query yet. The mark-color re-plumb (resolving
-the scale against both paired themes and emitting each unique color
-as its own light/dark-aware CSS var) is E4-S3.
+**Mark colors dark-swap too (E4-S3).** When `dark_variant` resolves,
+`encode/encode.go` resolves every mark color — both scale-driven
+(categorical/sequential palette lookups in `encode/palette.go`) and
+static per-mark-type theme colors (`theme.MarkStyle.Fill`/`Stroke` via
+`applyThemeMarkStyle`) — against **both** the active theme and its
+`dark_variant` counterpart. Each distinct `(light, dark)` pair
+encountered gets a stable variable name in first-encounter order:
+`--prism-resolved-0`, `--prism-resolved-1`, … (same input spec + theme
+pairing → same names every render, so golden fixtures stay stable).
+Both values land in the `<style>` block — light under the base
+`:root{...}`, dark under the `@media` rule above — and the mark
+element emits `fill="var(--prism-resolved-N)"` /
+`stroke="var(--prism-resolved-N)"` instead of a baked hex literal:
+
+```css
+:root { --prism-resolved-0: #4c78a8; }
+@media (prefers-color-scheme: dark) {
+  :root { --prism-resolved-0: #4269d0; }
+}
+```
+
+```xml
+<rect class="prism-mark-bar" fill="var(--prism-resolved-0)" .../>
+```
+
+This is carried on the scene IR by `scene.Style.FillVar`/`StrokeVar`
+(a CSS custom-property name, additive alongside the existing
+`Fill`/`Stroke`/`FillRef`/`StrokeRef` fields — same "optional ref wins
+over the baked value" precedent as the gradient/pattern `FillRef`).
+`render/html/` inherits this automatically, same as every other
+`render/svg` emission. When `dark_variant` is unset, none of this
+runs: every mark keeps baking a literal hex exactly as before E4-S3.
+Legend swatches are not yet re-plumbed onto resolved vars — they still
+bake the light-theme hex, a known gap for a future story.
 
 **Validation:** a non-empty `dark_variant` must name a theme already
 present in the registry — checked at the same fail-loud entry points
@@ -518,9 +546,15 @@ defaults inside the CSS class declarations.
 When the active theme sets `dark_variant` (see
 [Dark variant pairing](#dark-variant-pairing)), the chrome-related
 subset of these variables (axis/grid/legend/title/view/selection-state
-— not the `--prism-mark-*` family) is emitted a second time, inside
-an `@media (prefers-color-scheme: dark) { :root { ... } }` rule
-appended after the base block in the same `<style>` element.
+— not the static `--prism-mark-*` defaults family) is emitted a second
+time, inside an `@media (prefers-color-scheme: dark) { :root { ... } }`
+rule appended after the base block in the same `<style>` element.
+Resolved per-instance mark colors ride a separate
+`--prism-resolved-N` family (E4-S3, see
+[Dark variant pairing](#dark-variant-pairing)) that IS doubled the
+same way — light value in the base block, dark value in the media
+rule — since those are the actual colors marks paint with once
+auto-dark is active.
 
 `line_height` and `letter_spacing` (see [Typography tokens](#typography-tokens))
 are the one exception: they render as direct per-element attributes

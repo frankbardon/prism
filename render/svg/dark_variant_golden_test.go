@@ -50,6 +50,17 @@ func init() {
 // @media (prefers-color-scheme: dark) { :root{...} } rule carrying
 // the counterpart's chrome values — and the golden captures that
 // doubled content byte-for-byte. Set UPDATE_GOLDENS=1 to regenerate.
+//
+// E4-S3 extended this same fixture: bar_basic.json's bars have no
+// color-channel encoding, so their fill comes from the static
+// per-mark-type theme color (theme.Marks["bar"].Fill) — which now
+// also resolves against both light/dark and emits
+// fill="var(--prism-resolved-N)" instead of a baked hex once
+// DarkVariant is active (see resolveDarkPairedColor /
+// applyThemeMarkStyle in encode/encode.go). This golden's byte
+// content grew a --prism-resolved-0/1 declaration pair accordingly;
+// see dark_variant_marks_golden_test.go for the dedicated categorical
+// scale-driven-color coverage E4-S3 added.
 func TestPrismSVGGolden_DarkVariantChromeSwap(t *testing.T) {
 	got, err := renderFixtureWithTheme(t, "bar_basic.json", e4s2LightWithVariantName)
 	if err != nil {

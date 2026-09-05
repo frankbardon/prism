@@ -65,11 +65,18 @@ func writeStyleBlock(w *Writer, theme *scene.Theme) {
 func writeStyleAttrs(w *Writer, s scene.Style) {
 	if s.FillRef != "" {
 		w.Attr("fill", "url(#"+s.FillRef+")")
+	} else if s.FillVar != "" {
+		// Auto-dark resolved color (E4-S3): both light and dark hex
+		// values are registered under this custom property in the
+		// <style> block (theme.CSSVariables) — see scene.Style.FillVar.
+		w.Attr("fill", "var(--"+s.FillVar+")")
 	} else if s.Fill != nil {
 		w.Attr("fill", s.Fill.CSS())
 	}
 	if s.StrokeRef != "" {
 		w.Attr("stroke", "url(#"+s.StrokeRef+")")
+	} else if s.StrokeVar != "" {
+		w.Attr("stroke", "var(--"+s.StrokeVar+")")
 	} else if s.Stroke != nil {
 		w.Attr("stroke", s.Stroke.CSS())
 	}

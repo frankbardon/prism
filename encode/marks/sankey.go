@@ -90,9 +90,9 @@ func encodeSankey(in Inputs) ([]scene.Mark, error) {
 	for _, n := range layout.Nodes {
 		style := in.Style
 		if in.Color != nil {
-			c := lookupCategoryColor(n.ID, in.Color.Categories, in.Color.Palette)
-			if c != nil {
+			if c, v := resolveCategoryColor(in, n.ID); c != nil || v != "" {
 				style.Fill = c
+				style.FillVar = v
 			}
 		}
 		out = append(out, scene.Mark{
@@ -114,10 +114,10 @@ func encodeSankey(in Inputs) ([]scene.Mark, error) {
 		// Links inherit source node's color when color is bound on
 		// the source field.
 		if in.Color != nil {
-			c := lookupCategoryColor(l.Source, in.Color.Categories, in.Color.Palette)
-			if c != nil {
+			if c, v := resolveCategoryColor(in, l.Source); c != nil || v != "" {
 				// Use stroke colour for the link path; fill = none.
 				style.Stroke = c
+				style.StrokeVar = v
 				style.Fill = nil
 				style.StrokeWidth = l.Width
 				style.Opacity = 0.4

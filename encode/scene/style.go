@@ -19,8 +19,22 @@ type Style struct {
 	// fill="url(#<FillRef>)" / stroke="url(#<StrokeRef>)" instead of
 	// the literal-color CSS() attr. Empty means unset (the common
 	// case): the renderer falls back to Fill/Stroke.
-	FillRef     string    `json:"fill_ref,omitempty"`
-	StrokeRef   string    `json:"stroke_ref,omitempty"`
+	FillRef   string `json:"fill_ref,omitempty"`
+	StrokeRef string `json:"stroke_ref,omitempty"`
+	// FillVar/StrokeVar carry a CSS custom-property name (no leading
+	// "--", e.g. "prism-resolved-0") when the active theme's
+	// DarkVariant (E4-S3) requires this mark's color to repaint under
+	// @media (prefers-color-scheme: dark) in the same SVG — see
+	// theme.Theme.CSSVariables and encode/marks.ColorVarRegistry. When
+	// set, Fill/Stroke above are left nil (same precedence idea as
+	// FillRef/StrokeRef) and the renderer emits
+	// fill="var(--<FillVar>)" / stroke="var(--<StrokeVar>)" instead of
+	// the literal-color CSS() attr. Empty means unset — the entire
+	// state when the active theme has no DarkVariant — and the
+	// renderer falls back to FillRef/Fill (or StrokeRef/Stroke)
+	// exactly as before E4-S3.
+	FillVar     string    `json:"fill_var,omitempty"`
+	StrokeVar   string    `json:"stroke_var,omitempty"`
 	StrokeWidth float64   `json:"stroke_width,omitempty"`
 	StrokeDash  []float64 `json:"stroke_dash,omitempty"`
 	Opacity     float64   `json:"opacity,omitempty"`

@@ -91,6 +91,24 @@ func Encode(s *spec.Spec, tables map[plan.NodeID]*table.Table, tipID plan.NodeID
 	if err != nil {
 		return nil, err
 	}
+	// E4-S3 auto-dark mark colors: this Encode call "owns" the theme
+	// (opts.Theme == nil — a genuine top-of-tree resolve, not a
+	// composite-cell reuse of an already-resolved *scene.Theme). Only
+	// the owner is allowed to create the registry and, at the end of
+	// this function, regenerate sceneTheme.CSS to include the
+	// resolved-var declarations — composite cells (opts.Theme != nil)
+	// keep colorReg/darkTheme nil and every mark color call site below
+	// falls back to the pre-E4-S3 baked-hex path unchanged. See
+	// finalizeAutoDarkCSS.
+	isThemeOwner := opts.Theme == nil
+	var colorReg *marks.ColorVarRegistry
+	var darkTheme *theme.Theme
+	if isThemeOwner && fullTheme != nil && fullTheme.DarkVariant != "" {
+		if dv, ok := theme.Get(fullTheme.DarkVariant); ok {
+			darkTheme = dv
+			colorReg = marks.NewColorVarRegistry()
+		}
+	}
 
 	tbl, ok := tables[tipID]
 	if !ok || tbl == nil {
@@ -264,6 +282,10 @@ func Encode(s *spec.Spec, tables map[plan.NodeID]*table.Table, tipID plan.NodeID
 			Palette:           ResolveCategoricalPalette(fullTheme, schemeNameOf(enc.Color)),
 			SequentialPalette: ResolveSequentialPalette(fullTheme, schemeNameOf(enc.Color)),
 		}
+		if darkTheme != nil {
+			colorChannel.DarkPalette = ResolveCategoricalPalette(darkTheme, schemeNameOf(enc.Color))
+			colorChannel.DarkSequentialPalette = ResolveSequentialPalette(darkTheme, schemeNameOf(enc.Color))
+		}
 	}
 
 	// Field-driven opacity channel (per-cell opacity from a numeric
@@ -274,7 +296,7 @@ func Encode(s *spec.Spec, tables map[plan.NodeID]*table.Table, tipID plan.NodeID
 	}
 
 	// Mark-level style overrides.
-	style := defaultMarkStyle(fullTheme, markType)
+	style := defaultMarkStyleAuto(fullTheme, darkTheme, colorReg, markType)
 	if s.Mark != nil && s.Mark.Def != nil {
 		applyMarkDef(s.Mark.Def, &style)
 	}
@@ -292,16 +314,17 @@ func Encode(s *spec.Spec, tables map[plan.NodeID]*table.Table, tipID plan.NodeID
 	}
 
 	markInputs := marks.Inputs{
-		Table:      tbl,
-		X:          markX,
-		Y:          markY,
-		Color:      colorChannel,
-		Opacity:    opacityChannel,
-		Layout:     layout.Plot,
-		Style:      style,
-		LabelStyle: defaultMarkStyle(fullTheme, "text"),
-		Tooltip:    enc.Tooltip,
-		KeyField:   keyFieldFromEncoding(enc),
+		Table:         tbl,
+		X:             markX,
+		Y:             markY,
+		Color:         colorChannel,
+		Opacity:       opacityChannel,
+		Layout:        layout.Plot,
+		Style:         style,
+		LabelStyle:    defaultMarkStyleAuto(fullTheme, darkTheme, colorReg, "text"),
+		Tooltip:       enc.Tooltip,
+		KeyField:      keyFieldFromEncoding(enc),
+		ColorRegistry: colorReg,
 	}
 	if s.Mark != nil {
 		markInputs.Mark = s.Mark.Def
@@ -387,6 +410,9 @@ func Encode(s *spec.Spec, tables map[plan.NodeID]*table.Table, tipID plan.NodeID
 					Categories: cats,
 					Palette:    ResolveCategoricalPalette(fullTheme, ""),
 				}
+				if darkTheme != nil {
+					markInputs.Color.DarkPalette = ResolveCategoricalPalette(darkTheme, "")
+				}
 				// Update local colorChannel ref so legend builder picks it up later.
 				colorChannel = markInputs.Color
 			}
@@ -419,6 +445,7 @@ func Encode(s *spec.Spec, tables map[plan.NodeID]*table.Table, tipID plan.NodeID
 			}
 			axes = append(axes, BuildAxisWithOpts(hr.YScale, scene.ChannelY, scene.AxisPositionLeft, layout.Plot, DefaultAxisOpts(yTitle)))
 		}
+		finalizeAutoDarkCSS(sceneTheme, fullTheme, colorReg, isThemeOwner)
 		return buildSceneDoc(s, layout, axes, hr.Marks, markType, colorChannel, enc, sceneTheme, warnings, hasTitle), nil
 	}
 
@@ -481,6 +508,7 @@ func Encode(s *spec.Spec, tables map[plan.NodeID]*table.Table, tipID plan.NodeID
 			Y:       20,
 		}
 	}
+	finalizeAutoDarkCSS(sceneTheme, fullTheme, colorReg, isThemeOwner)
 	doc := scene.NewDoc()
 	doc.Theme = sceneTheme
 	doc.Grid = scene.SceneGrid{
@@ -660,14 +688,36 @@ func fieldOf(ch *spec.PositionChannel) string {
 //
 // Theme values shadow the hardcoded fallback per field; spec.MarkDef
 // applies on top via applyMarkDef.
+//
+// Thin wrapper over defaultMarkStyleAuto with darkTheme/reg both nil —
+// the pre-E4-S3 behavior, and the one every caller outside this
+// file's own Encode() keeps using unchanged (composite/table paths
+// don't participate in auto-dark mark colors; see EncodeOpts.Theme's
+// doc comment on resolveThemeFull's ownership rule).
 func defaultMarkStyle(t *theme.Theme, markType string) scene.Style {
+	return defaultMarkStyleAuto(t, nil, nil, markType)
+}
+
+// defaultMarkStyleAuto is defaultMarkStyle's E4-S3 auto-dark-aware
+// sibling: when reg is non-nil (this Encode call owns theme
+// resolution and the active theme has a resolvable DarkVariant),
+// static per-mark-type theme colors are also resolved against
+// darkTheme and registered as a light/dark pair instead of baked.
+// darkTheme/reg both nil reproduces defaultMarkStyle exactly.
+func defaultMarkStyleAuto(t, darkTheme *theme.Theme, reg *marks.ColorVarRegistry, markType string) scene.Style {
 	style := hardcodedDefaultStyle(markType)
 	if t == nil {
 		return style
 	}
-	if ms := t.MarkDefault(markType); ms != nil {
-		applyThemeMarkStyle(&style, ms, t)
+	ms := t.MarkDefault(markType)
+	if ms == nil {
+		return style
 	}
+	var darkMS *theme.MarkStyle
+	if darkTheme != nil {
+		darkMS = darkTheme.MarkDefault(markType)
+	}
+	applyThemeMarkStyle(&style, ms, t, darkMS, reg)
 	return style
 }
 
@@ -713,13 +763,34 @@ func hardcodedDefaultStyle(markType string) scene.Style {
 // normally-loaded theme) degrade silently: the hardcoded fallback
 // held before this call, so the user gets a chart even if a theme
 // ships a malformed color.
-func applyThemeMarkStyle(style *scene.Style, ms *theme.MarkStyle, t *theme.Theme) {
+//
+// darkMS/reg (E4-S3) carry the DarkVariant counterpart's resolved
+// MarkStyle for the same markType and the live color-var registry.
+// Both nil reproduces the pre-E4-S3 behavior exactly (every call
+// site outside this file's own Encode() — see defaultMarkStyleAuto).
+// When both are set and ms.Fill/Stroke resolves to a plain hex color
+// (not a gradient/pattern url(#) ref — those are unaffected by
+// auto-dark, per the story's scope), the dark counterpart's same
+// field is resolved too and the pair is registered via reg.Resolve,
+// leaving Fill/Stroke nil and FillVar/StrokeVar set instead.
+func applyThemeMarkStyle(style *scene.Style, ms *theme.MarkStyle, t *theme.Theme, darkMS *theme.MarkStyle, reg *marks.ColorVarRegistry) {
 	if ms.Fill != "" {
 		if id := t.ResolveFillRef(ms.Fill).DefID(); id != "" {
 			style.FillRef = id
 			style.Fill = nil
+			style.FillVar = ""
 		} else if c, err := scene.ColorFromHex(ms.Fill); err == nil {
-			style.Fill = c
+			darkHex := ""
+			if darkMS != nil {
+				darkHex = darkMS.Fill
+			}
+			if v := resolveDarkPairedColor(reg, c, darkHex); v != "" {
+				style.Fill = nil
+				style.FillVar = v
+			} else {
+				style.Fill = c
+				style.FillVar = ""
+			}
 			style.FillRef = ""
 		}
 	}
@@ -727,8 +798,19 @@ func applyThemeMarkStyle(style *scene.Style, ms *theme.MarkStyle, t *theme.Theme
 		if id := t.ResolveFillRef(ms.Stroke).DefID(); id != "" {
 			style.StrokeRef = id
 			style.Stroke = nil
+			style.StrokeVar = ""
 		} else if c, err := scene.ColorFromHex(ms.Stroke); err == nil {
-			style.Stroke = c
+			darkHex := ""
+			if darkMS != nil {
+				darkHex = darkMS.Stroke
+			}
+			if v := resolveDarkPairedColor(reg, c, darkHex); v != "" {
+				style.Stroke = nil
+				style.StrokeVar = v
+			} else {
+				style.Stroke = c
+				style.StrokeVar = ""
+			}
 			style.StrokeRef = ""
 		}
 	}
@@ -752,6 +834,49 @@ func applyThemeMarkStyle(style *scene.Style, ms *theme.MarkStyle, t *theme.Theme
 	if ms.Filter != "" {
 		style.Filter = ms.Filter
 	}
+}
+
+// resolveDarkPairedColor returns the "prism-resolved-N" var name for
+// (light, darkHex) when reg is active (auto-dark) and darkHex parses
+// to a valid color; "" otherwise — the caller then falls back to
+// baking light as a literal hex, exactly the pre-E4-S3 behavior. This
+// is the static-theme-color counterpart to
+// encode/marks.resolveCategoryColor (which does the same job for
+// scale-driven palette colors); kept separate because this call site
+// works from a single already-parsed light *scene.Color plus a raw
+// dark hex string, not a palette index.
+func resolveDarkPairedColor(reg *marks.ColorVarRegistry, light *scene.Color, darkHex string) string {
+	if reg == nil || darkHex == "" {
+		return ""
+	}
+	dc, err := scene.ColorFromHex(darkHex)
+	if err != nil {
+		return ""
+	}
+	return reg.Resolve(light, dc)
+}
+
+// finalizeAutoDarkCSS regenerates sceneTheme.CSS from fullTheme,
+// folding in any resolved-color-var pairs colorReg accumulated while
+// this Encode call's marks were built (E4-S3). No-op unless isOwner
+// (this call resolved its own theme rather than reusing a composite
+// parent's — see Encode's isThemeOwner) and colorReg actually holds
+// at least one pair; every other call leaves sceneTheme.CSS exactly
+// as resolveThemeFull already set it (byte-identical to pre-E4-S3
+// output whenever the active theme has no DarkVariant).
+func finalizeAutoDarkCSS(sceneTheme *scene.Theme, fullTheme *theme.Theme, colorReg *marks.ColorVarRegistry, isOwner bool) {
+	if !isOwner || colorReg == nil || sceneTheme == nil || fullTheme == nil {
+		return
+	}
+	pairs := colorReg.Pairs()
+	if len(pairs) == 0 {
+		return
+	}
+	vars := make([]theme.ResolvedColorVar, len(pairs))
+	for i, p := range pairs {
+		vars[i] = theme.ResolvedColorVar{Name: p.Name, Light: p.Light, Dark: p.Dark}
+	}
+	sceneTheme.CSS = fullTheme.CSSVariables(vars...)
 }
 
 // applyMarkDef folds spec.MarkDef overrides into a style. P05

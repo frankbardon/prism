@@ -52,9 +52,9 @@ func encodePoint(in Inputs) ([]scene.Mark, error) {
 		style := in.Style
 		if in.Color != nil && i < len(colorValues) {
 			cat, _ := colorValues[i].(string)
-			c := lookupCategoryColor(cat, in.Color.Categories, in.Color.Palette)
-			if c != nil {
+			if c, v := resolveCategoryColor(in, cat); c != nil || v != "" {
 				style.Fill = c
+				style.FillVar = v
 			}
 		}
 		marks = append(marks, scene.Mark{
@@ -84,4 +84,26 @@ func lookupCategoryColor(category string, categories []string, palette []*scene.
 		}
 	}
 	return palette[0]
+}
+
+// resolveCategoryColor resolves cat's palette entry against in.Color
+// (callers only reach this when in.Color != nil), returning either a
+// baked *scene.Color (in.ColorRegistry == nil — the pre-E4-S3 path
+// every caller keeps by default) or a nil color plus a
+// "prism-resolved-N" var name (auto-dark active — see
+// scene.Style.FillVar/StrokeVar). Callers assign the pair to
+// Style.Fill/FillVar or Style.Stroke/StrokeVar depending on which
+// paint the mark uses. Returns (nil, "") when cat has no palette
+// match at all (mirrors lookupCategoryColor's nil case), so existing
+// `if c != nil` guards become `if c != nil || v != ""`.
+func resolveCategoryColor(in Inputs, cat string) (*scene.Color, string) {
+	c := lookupCategoryColor(cat, in.Color.Categories, in.Color.Palette)
+	if c == nil {
+		return nil, ""
+	}
+	if in.ColorRegistry == nil {
+		return c, ""
+	}
+	d := lookupCategoryColor(cat, in.Color.Categories, in.Color.DarkPalette)
+	return nil, in.ColorRegistry.Resolve(c, d)
 }
