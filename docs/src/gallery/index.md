@@ -17,6 +17,7 @@ For live interactive rendering in a browser, see [`index.html`](index.html).
 | [line_basic](basic-marks/line_basic.prism.json) | <img src="basic-marks/line_basic.svg" width="240"> |
 | [area_basic](basic-marks/area_basic.prism.json) | <img src="basic-marks/area_basic.svg" width="240"> |
 | [area_with_negatives](basic-marks/area_with_negatives.prism.json) | <img src="basic-marks/area_with_negatives.svg" width="240"> |
+| [multi_series_area](basic-marks/multi_series_area.prism.json) | <img src="basic-marks/multi_series_area.svg" width="240"> |
 | [point_scatter](basic-marks/point_scatter.prism.json) | <img src="basic-marks/point_scatter.svg" width="240"> |
 | [rule_basic](basic-marks/rule_basic.prism.json) | <img src="basic-marks/rule_basic.svg" width="240"> |
 | [text_basic](basic-marks/text_basic.prism.json) | <img src="basic-marks/text_basic.svg" width="240"> |

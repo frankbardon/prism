@@ -2,17 +2,30 @@ package marks
 
 import (
 	"fmt"
+	"sort"
 
 	"github.com/frankbardon/prism/encode/scene"
 )
 
-// encodeArea emits exactly one scene.Mark with AreaGeom whose Upper
-// is the row-by-row points and whose Lower is the y=0 baseline edge
-// (one point per Upper x, snapped to the pixel where the data value
-// is 0). The baseline is the scale's zero, so positive-only domains
-// fill down to the plot bottom and zero-crossing domains fill above
-// and below the mid-plot zero line. Stacked / streamgraph variants
-// land in P08.
+// encodeArea partitions rows by the bound color channel (Vega-Lite
+// semantics: color/detail on an area mark splits it into one ribbon
+// per distinct value — mirrors encodeLine) and emits one scene.Mark
+// per group, each carrying its own resolved fill color via
+// groupRowsByColor / lookupCategoryColor — the same palette
+// resolution the legend uses. Within each group, points are sorted by
+// resolved x pixel ascending so the ribbon traces left-to-right
+// rather than upstream row order.
+//
+// Each group's Upper is its row-by-row points and Lower is the y=0
+// baseline edge (one point per Upper x, snapped to the pixel where
+// the data value is 0). The baseline is the scale's zero, so
+// positive-only domains fill down to the plot bottom and
+// zero-crossing domains fill above and below the mid-plot zero line.
+// Stacked / streamgraph variants land in P08.
+//
+// When no color channel is bound, behavior is unchanged from before
+// grouping existed: a single scene.Mark ("area-0") carrying every
+// row's points in raw upstream order.
 func encodeArea(in Inputs) ([]scene.Mark, error) {
 	xs, err := readField(in.Table, in.X.Field)
 	if err != nil {
@@ -36,8 +49,8 @@ func encodeArea(in Inputs) ([]scene.Mark, error) {
 	if err != nil {
 		baseline = in.Layout.Bottom()
 	}
-	upper := make([][2]float64, 0, len(xs))
-	lower := make([][2]float64, 0, len(xs))
+	upperAll := make([][2]float64, len(xs))
+	lowerAll := make([][2]float64, len(xs))
 	for i := range xs {
 		x, err := in.X.Scale.Apply(xs[i])
 		if err != nil {
@@ -47,18 +60,44 @@ func encodeArea(in Inputs) ([]scene.Mark, error) {
 		if err != nil {
 			return nil, err
 		}
-		upper = append(upper, [2]float64{x, y})
-		lower = append(lower, [2]float64{x, baseline})
+		upperAll[i] = [2]float64{x, y}
+		lowerAll[i] = [2]float64{x, baseline}
 	}
-	mark := scene.Mark{
-		Type:  scene.MarkArea,
-		ID:    "area-0",
-		Style: in.Style,
-		Area: &scene.AreaGeom{
-			Upper: upper,
-			Lower: lower,
-			Curve: scene.CurveLinear,
-		},
+
+	grouped := in.Color != nil && in.Color.Field != ""
+	groups, err := groupRowsByColor(in, len(xs))
+	if err != nil {
+		return nil, err
 	}
-	return []scene.Mark{mark}, nil
+
+	marks := make([]scene.Mark, 0, len(groups))
+	for gi, g := range groups {
+		idxs := append([]int(nil), g.indices...)
+		if grouped {
+			sort.SliceStable(idxs, func(a, b int) bool {
+				return upperAll[idxs[a]][0] < upperAll[idxs[b]][0]
+			})
+		}
+		upper := make([][2]float64, len(idxs))
+		lower := make([][2]float64, len(idxs))
+		for j, idx := range idxs {
+			upper[j] = upperAll[idx]
+			lower[j] = lowerAll[idx]
+		}
+		style := in.Style
+		if g.color != nil {
+			style.Fill = g.color
+		}
+		marks = append(marks, scene.Mark{
+			Type:  scene.MarkArea,
+			ID:    fmt.Sprintf("area-%d", gi),
+			Style: style,
+			Area: &scene.AreaGeom{
+				Upper: upper,
+				Lower: lower,
+				Curve: scene.CurveLinear,
+			},
+		})
+	}
+	return marks, nil
 }
