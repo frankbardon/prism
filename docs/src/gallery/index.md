@@ -1,8 +1,11 @@
 # Prism Gallery
 
-90 fixture specs across 13 categories. Each entry pairs a `*.prism.json`
+94 fixture specs across 14 categories. Each entry pairs a `*.prism.json`
 spec with a rendered `*.svg`. Browse the source to learn the spec
-shapes; open the SVGs to see what they render.
+shapes; open the SVGs to see what they render. The `table/` fixtures
+are the one exception — a top-level `table` mark renders only through
+the `html` backend, so those entries link to a rendered `*.html` file
+instead of an `<img>` preview.
 
 For live interactive rendering in a browser, see [`index.html`](index.html).
 
@@ -70,6 +73,18 @@ For live interactive rendering in a browser, see [`index.html`](index.html).
 | [world_basic](geo/world_basic.prism.json) | <img src="geo/world_basic.svg" width="240"> |
 | [world_choropleth](geo/world_choropleth.prism.json) | <img src="geo/world_choropleth.svg" width="240"> |
 | [usa_states](geo/usa_states.prism.json) | <img src="geo/usa_states.svg" width="240"> |
+
+## Table
+
+The `table` mark renders as an interactive, paginated HTML `<table>` —
+not SVG geometry — so these fixtures link to a rendered `*.html` file
+rather than showing an `<img>` preview. See [Marks ›
+Table](../concepts/marks.md#table).
+
+| Spec | Preview |
+|---|---|
+| [table_accounts](table/table_accounts.prism.json) | [table_accounts.html](table/table_accounts.html) — plain columns, paginated (`page_size: 5` over 7 rows) |
+| [table_revenue_trend](table/table_revenue_trend.prism.json) | [table_revenue_trend.html](table/table_revenue_trend.html) — a `sparkline` sub-mark column |
 
 ## Composition (layer / concat / facet / repeat)
 

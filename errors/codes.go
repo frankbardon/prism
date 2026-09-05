@@ -351,6 +351,42 @@ var Codes = map[string]CodeMetadata{
 			`Drop --theme to fall back to the default (light).`,
 		},
 	},
+	"PRISM_RENDER_MARK_UNSUPPORTED": {
+		Code:    "PRISM_RENDER_MARK_UNSUPPORTED",
+		Message: `Mark type {{.Mark}} has no {{.Format}} geometry — render this scene via a different backend.`,
+		Fixups: []string{
+			`The table mark is DOM/CSS-driven (sort, paginate, row selection) and has no SVG geometry equivalent — request it via the html backend instead: --format html (CLI), format: "html" (RPC/MCP), or opts.Format = "html" (library RenderPlan).`,
+			`Non-table marks (bar, line, point, ...) render fine via svg; this error only fires for backend/mark combinations that cannot be represented.`,
+		},
+		SeeAlso: []string{"PRISM_RENDER_FORMAT_UNAVAILABLE"},
+	},
+	// PRISM_RENDER_CUSTOM_MARK_NOT_FOUND covers a `custom` mark (E2)
+	// whose spec-level mark.renderer name has no matching entry in the
+	// process-global custommark registry at render time — landed as a
+	// placeholder by E2-S2 (SVG backend) and finalized here (E2-S4):
+	// this is the domain-code home it belongs in (PRISM_RENDER_*,
+	// alongside the other render-time-only failures such as
+	// PRISM_RENDER_MARK_UNSUPPORTED), and both the SVG (render/svg/
+	// custom.go) and HTML (render/html/custom.go) backends raise it
+	// identically so a caller sees the same code regardless of which
+	// backend rendered the spec. It is also reused, defensively, for a
+	// registry entry that type-asserts to neither
+	// custommark.SVGCustomRenderer nor custommark.HTMLCustomRenderer —
+	// custommark.Register already rejects such a value at registration
+	// time, so that branch is unreachable through the public API and
+	// exists only as a belt-and-braces guard against a future registry
+	// bypass; see the "default" cases in render/svg/custom.go and
+	// render/html/custom.go and E2-S4's FOLLOWUPS for why no separate
+	// code was added for it.
+	"PRISM_RENDER_CUSTOM_MARK_NOT_FOUND": {
+		Code:    "PRISM_RENDER_CUSTOM_MARK_NOT_FOUND",
+		Message: `Custom mark renderer {{.Renderer}} is not registered (registered: {{.Available}}).`,
+		Fixups: []string{
+			`Call prism.RegisterCustomMark("{{.Renderer}}", ...) before compiling/rendering this spec.`,
+			`Check the spec's mark.renderer value for a typo against the name the renderer was registered under.`,
+			`A renderer must implement at least one of prism.SVGCustomRenderer or prism.HTMLCustomRenderer.`,
+		},
+	},
 	"PRISM_ENCODE_001": {
 		Code:    "PRISM_ENCODE_001",
 		Message: `Encode-time mismatch: field {{.Field}} not present in upstream table from source {{.Source}}.`,
@@ -805,7 +841,7 @@ var Codes = map[string]CodeMetadata{
 		Code:    "PRISM_SPEC_031",
 		Message: `Theme defines defaults for unknown mark type {{.Mark}} (at theme.marks.{{.Mark}}).`,
 		Fixups: []string{
-			`Mark type must match a registered mark: bar, line, area, point, rule, text, tick, rect, arc, pie, donut, histogram, heatmap, boxplot, violin, sankey, funnel, sparkline, image, path, geoshape, geopoint, tree, dendrogram, network.`,
+			`Mark type must match a registered mark: bar, line, area, point, rule, text, tick, rect, arc, pie, donut, histogram, heatmap, boxplot, violin, sankey, funnel, sparkline, image, path, geoshape, geopoint, tree, dendrogram, network, table.`,
 			`Typos like ` + "`bars`" + ` or ` + "`Bar`" + ` (with capital) fail this rule — mark names are lowercase, singular.`,
 		},
 	},
@@ -844,6 +880,15 @@ var Codes = map[string]CodeMetadata{
 			`Or keep the spec portable and defer the data to the host: use ` + "`{\"data\": {\"ref\": \"<id>\"}}`" + ` and supply a ` + "`resolve.DataResolver`" + ` (server / ` + "`prism.setDataResolver`" + ` in the browser) that returns the rows for that ref.`,
 		},
 		SeeAlso: []string{"PRISM_SPEC_009", "PRISM_RESOLVE_REF_UNRESOLVED"},
+	},
+	"PRISM_SPEC_040": {
+		Code:    "PRISM_SPEC_040",
+		Message: `Mark "table" requires at least one column in encoding.columns[].`,
+		Fixups: []string{
+			`A table mark declares its entire visual contract through encoding.columns[] rather than x/y position channels, e.g. ` + "`{mark: {type: \"table\"}, encoding: {columns: [{field: \"name\", type: \"nominal\"}, {field: \"trend\", type: \"quantitative\", mark: \"sparkline\"}]}}`" + `.`,
+			`Each column entry accepts the same bindings as any other channel (field, type, aggregate, format, title, …) plus an optional ` + "`mark`" + ` naming a sub-mark (e.g. ` + "`sparkline`" + `) to render that column's cells; omit ` + "`mark`" + ` to render formatted text.`,
+		},
+		SeeAlso: []string{"PRISM_SPEC_003"},
 	},
 	"PRISM_WARN_NETWORK_CYCLE": {
 		Code:    "PRISM_WARN_NETWORK_CYCLE",
@@ -904,6 +949,15 @@ var Codes = map[string]CodeMetadata{
 			`Set ` + "`animation.enter`" + ` and ` + "`animation.exit`" + ` to ` + "`none`" + ` to suppress the fade on first render.`,
 		},
 		SeeAlso: []string{"PRISM_SPEC_023"},
+	},
+	"PRISM_WARN_TABLE_CELL_UNPARSEABLE": {
+		Code:    "PRISM_WARN_TABLE_CELL_UNPARSEABLE",
+		Message: `Table row {{.Row}} column {{.Field}}: value could not be parsed as a numeric series for sub-mark {{.Mark}}.`,
+		Fixups: []string{
+			`A sub-mark column (e.g. "mark": "sparkline") expects each row's field value to be an array of numbers, or a JSON string encoding one.`,
+			`The cell renders with no embedded sub-mark for this row; other rows and columns are unaffected.`,
+		},
+		SeeAlso: []string{"PRISM_SPEC_040"},
 	},
 }
 

@@ -3,14 +3,28 @@ package scene
 // Scene is one chart with layered marks. Coordinates in Frame/Plot
 // are pre-resolved to pixel space.
 type Scene struct {
-	ID          string       `json:"id"`
-	Frame       Rect         `json:"frame"`
-	Plot        Rect         `json:"plot"`
-	Title       *TextElement `json:"title,omitempty"`
-	Subtitle    *TextElement `json:"subtitle,omitempty"`
-	Axes        []Axis       `json:"axes,omitempty"`
-	Legends     []Legend     `json:"legends,omitempty"`
-	Layers      []SceneLayer `json:"layers"`
+	ID       string       `json:"id"`
+	Frame    Rect         `json:"frame"`
+	Plot     Rect         `json:"plot"`
+	Title    *TextElement `json:"title,omitempty"`
+	Subtitle *TextElement `json:"subtitle,omitempty"`
+	Axes     []Axis       `json:"axes,omitempty"`
+	Legends  []Legend     `json:"legends,omitempty"`
+	Layers   []SceneLayer `json:"layers"`
+	// Table (E1) carries the resolved row/column IR for a table mark.
+	// nil for every other mark type. It hangs off Scene rather than
+	// living inside Layers/Mark because a table has no positioned
+	// geometry — Layers still carries a single zero-Marks SceneLayer
+	// tagged MarkTable so render/svg's checkMarkSupport guard keeps
+	// firing (see encode/scene/table.go).
+	Table *Table `json:"table,omitempty"`
+	// Custom (E2) carries the resolved renderer name / rows / box for
+	// a custom mark. nil for every other mark type. Like Table, it
+	// hangs off Scene rather than living inside Layers/Mark because a
+	// custom mark has no positioned geometry of its own — Layers
+	// still carries a single zero-Marks SceneLayer tagged MarkCustom
+	// (see encode/scene/custom.go).
+	Custom      *Custom      `json:"custom,omitempty"`
 	Annotations []Annotation `json:"annotations,omitempty"`
 	Selections  []Selection  `json:"selections,omitempty"`
 	Defs        *Defs        `json:"defs,omitempty"`

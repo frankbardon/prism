@@ -19,4 +19,9 @@ const (
 	// its upstream Source / sub-DAG produced no table (typically a
 	// partial-failure cascade per D006). The other layers still render.
 	WarnLayerSkipped = "PRISM_WARN_LAYER_SKIPPED"
+	// WarnTableCellUnparseable (E1) fires when a table column carries
+	// a sub-mark (e.g. "sparkline") but a given row's raw field value
+	// could not be parsed as a numeric series — the cell renders with
+	// no nested TableCell rather than failing the whole encode.
+	WarnTableCellUnparseable = "PRISM_WARN_TABLE_CELL_UNPARSEABLE"
 )

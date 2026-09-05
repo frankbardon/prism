@@ -205,6 +205,31 @@
         }
       }
     },
+    "table_column": {
+      "type": "object",
+      "description": "One column definition inside a table mark's columns[] array. Carries the same channel-binding fields as a mark_channel plus an optional sub-mark rendering the column's cells.",
+      "additionalProperties": false,
+      "properties": {
+        "field":     {"$ref": "shared.schema.json#/$defs/field_ref"},
+        "type":      {"$ref": "shared.schema.json#/$defs/measure_type"},
+        "aggregate": {"$ref": "transform.schema.json#/$defs/aggregate_op"},
+        "scale":     {"$ref": "scale.schema.json#/$defs/scale"},
+        "title":     {"type": "string"},
+        "format":    {"type": "string"},
+        "bin":       {"type": ["boolean", "object"]},
+        "sort":      {
+          "oneOf": [
+            {"type": "string"},
+            {"type": "array", "items": {"type": ["string", "number"]}},
+            {"type": "null"}
+          ]
+        },
+        "value":     {},
+        "condition": {"$ref": "encoding.schema.json#/$defs/condition"},
+        "key":       {"type": "boolean", "description": "Marks this channel as the join key used by client-side tween for object-constancy. At most one channel per encoding may set this."},
+        "mark":      {"type": "string", "minLength": 1, "description": "Sub-mark rendering this column's cells (e.g. \"sparkline\"). Omit to render the column as formatted text."}
+      }
+    },
     "encoding": {
       "type": "object",
       "description": "All channel bindings keyed by channel name.",
@@ -233,7 +258,12 @@
         "value":   {"$ref": "encoding.schema.json#/$defs/mark_channel", "description": "Sankey flow-magnitude channel."},
         "longitude": {"$ref": "encoding.schema.json#/$defs/mark_channel", "description": "Longitude channel (degrees) for geopoint marks."},
         "latitude":  {"$ref": "encoding.schema.json#/$defs/mark_channel", "description": "Latitude channel (degrees) for geopoint marks."},
-        "feature":   {"$ref": "encoding.schema.json#/$defs/mark_channel", "description": "Geodata feature-id channel for geoshape marks (e.g. \"USA\", \"US-CA\")."}
+        "feature":   {"$ref": "encoding.schema.json#/$defs/mark_channel", "description": "Geodata feature-id channel for geoshape marks (e.g. \"USA\", \"US-CA\")."},
+        "columns":   {
+          "type": "array",
+          "items": {"$ref": "encoding.schema.json#/$defs/table_column"},
+          "description": "Column definitions for a table mark. Required and non-empty when mark type is \"table\" (see PRISM_SPEC_040)."
+        }
       }
     }
   }

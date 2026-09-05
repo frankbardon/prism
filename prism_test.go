@@ -7,6 +7,7 @@ import (
 	"testing"
 
 	prism "github.com/frankbardon/prism"
+	"github.com/frankbardon/prism/render"
 )
 
 const inlineBarSpec = `{
@@ -109,5 +110,65 @@ func TestCompileJSONReportsDecodeError(t *testing.T) {
 	_, err := prism.CompileJSON(context.Background(), []byte(`{`), prism.CompileOptions{})
 	if err == nil {
 		t.Fatal("expected decode error")
+	}
+}
+
+// TestRenderPlanSVGAndHTML proves the library-level RenderPlan
+// dispatches to the same two backends the CLI/RPC surfaces select by
+// format string ("svg" | "html"), matching how those surfaces are
+// already selectable (E1-S1).
+func TestRenderPlanSVGAndHTML(t *testing.T) {
+	compiled, err := prism.CompileJSON(context.Background(), []byte(inlineBarSpec), prism.CompileOptions{})
+	if err != nil {
+		t.Fatalf("CompileJSON: %v", err)
+	}
+
+	svgBytes, mime, err := prism.RenderPlan(compiled, render.RenderOpts{Format: "svg"})
+	if err != nil {
+		t.Fatalf("RenderPlan(svg): %v", err)
+	}
+	if mime != "image/svg+xml" {
+		t.Errorf("svg MimeType = %q, want image/svg+xml", mime)
+	}
+	if !strings.HasPrefix(string(svgBytes), "<svg") {
+		t.Errorf("svg output does not start with <svg: %s", svgBytes[:min(50, len(svgBytes))])
+	}
+
+	htmlBytes, mime, err := prism.RenderPlan(compiled, render.RenderOpts{Format: "html"})
+	if err != nil {
+		t.Fatalf("RenderPlan(html): %v", err)
+	}
+	if mime != "text/html" {
+		t.Errorf("html MimeType = %q, want text/html", mime)
+	}
+	if !strings.HasPrefix(string(htmlBytes), "<!doctype html>") {
+		t.Errorf("html output does not start with <!doctype html>: %s", htmlBytes[:min(50, len(htmlBytes))])
+	}
+	if !strings.Contains(string(htmlBytes), "<svg") {
+		t.Errorf("html output missing embedded <svg")
+	}
+}
+
+// TestRenderPlanUnknownFormat asserts an unrecognised format returns
+// the same PRISM_RENDER_FORMAT_UNAVAILABLE envelope the CLI/RPC
+// surfaces emit for an unsupported --format/format value.
+func TestRenderPlanUnknownFormat(t *testing.T) {
+	compiled, err := prism.CompileJSON(context.Background(), []byte(inlineBarSpec), prism.CompileOptions{})
+	if err != nil {
+		t.Fatalf("CompileJSON: %v", err)
+	}
+	_, _, err = prism.RenderPlan(compiled, render.RenderOpts{Format: "bogus"})
+	if err == nil {
+		t.Fatal("expected error for unknown format")
+	}
+	if !strings.Contains(err.Error(), "PRISM_RENDER_FORMAT_UNAVAILABLE") {
+		t.Errorf("error = %v, want PRISM_RENDER_FORMAT_UNAVAILABLE", err)
+	}
+}
+
+// TestRenderPlanRejectsNilPlan guards the defensive nil check.
+func TestRenderPlanRejectsNilPlan(t *testing.T) {
+	if _, _, err := prism.RenderPlan(nil, render.RenderOpts{Format: "svg"}); err == nil {
+		t.Fatal("expected error for nil plan")
 	}
 }

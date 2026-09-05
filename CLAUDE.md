@@ -102,9 +102,10 @@ prism/
 │   ├── resolve/            # Cross-layer domain + scheme resolution
 │   └── format/             # d3-format subset
 ├── render/                 # Bytes
-│   ├── render.go           # Backend dispatch
+│   ├── render.go           # Renderer interface + RenderOpts (no factory — each caller switches on format)
 │   ├── precision.go        # Pinned 3-decimal coordinate quantisation
 │   ├── svg/                # Go SVG renderer (canonical)
+│   ├── html/               # Go HTML renderer — wraps svg's own emitters in an HTML document shell
 │   └── canvas/             # Vendored ESM web component bridge (see `static/`)
 ├── resolve/                # Data source resolution
 │   ├── default.go          # Inline-rows resolver (InlineResolver seam; no `.pulse` I/O)

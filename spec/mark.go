@@ -95,7 +95,32 @@ type MarkDef struct {
 	// ReferenceBand shades a horizontal normal-range band behind the
 	// spark, bounded by From/To in value-axis data space. Nil = no band.
 	ReferenceBand *ReferenceBand `json:"reference_band,omitempty"`
+
+	// PageSize (E1, table mark) caps the number of rows rendered per
+	// page. A table mark declares its column set via
+	// Encoding.Columns rather than mark-def fields; PageSize is the
+	// one mark-def input the table needs (paging is a rendering
+	// concern, not a channel binding). Nil = the default of 25 rows
+	// per page, applied at encode time (E1-S3). Must be >= 1 when
+	// set — validated alongside the table column-presence rule.
+	PageSize *int `json:"page_size,omitempty"`
+
+	// Renderer (E2, custom mark) names the registered CustomRenderer
+	// (prism.RegisterCustomMark) to invoke for a `custom` mark. Always
+	// a plain string key, never executable code — the spec JSON
+	// never carries a renderer's implementation, only the name it was
+	// registered under (preserving Prism's no-expression-language
+	// invariant). Resolved against the active Go or JS registry at
+	// encode/render time (E2-S2/E2-S3), not at decode time — an
+	// unregistered name is a runtime error at that later stage, not a
+	// decode-time one.
+	Renderer string `json:"renderer,omitempty"`
 }
+
+// TablePageSizeDefault is the number of rows rendered per page for a
+// table mark whose mark_def omits page_size. Documented in
+// docs/src/concepts/marks.md; keep both in sync.
+const TablePageSizeDefault = 25
 
 // ReferenceBand bounds the shaded normal-range band drawn behind a
 // spark mark (E4 adornments). From and To are data-space values on the

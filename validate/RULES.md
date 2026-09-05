@@ -45,6 +45,7 @@ rules assume well-formed structure.
 | `PRISM_SPEC_027` condition value-or-binding | Semantic | A condition entry must carry exactly one of `value` or `field`; a `selection`-form entry with neither inherits the channel's own field binding. |
 | `PRISM_SPEC_035` regression shape | Semantic | A `regression` transform must declare `target` + at least one predictor. It accepts derived input (may follow another transform, like crosstab), so there is no chain-position constraint. |
 | `PRISM_SPEC_036` bullet bands strictly ascending | Semantic | A `bullet` mark's `bands` are cumulative range bounds from zero, so each bound must be strictly greater than its predecessor. Fires per out-of-order pair. |
+| `PRISM_SPEC_040` table requires columns | Semantic | A `table` mark has no x/y — its `encoding.columns[]` is the entire visual contract, so it must be present and non-empty. |
 
 ## $ref resolution strategy
 

@@ -24,6 +24,7 @@
 - [Multi-source Join](cookbook/multi-source-join.md)
 - [Faceting](cookbook/faceting.md)
 - [Custom Themes](cookbook/custom-themes.md)
+- [Custom Marks](cookbook/custom-marks.md)
 - [MCP Agent Integration](cookbook/mcp-agent-integration.md)
 - [Embed in a Static Site](cookbook/embed-wasm.md)
 - [Selection Events](cookbook/selection-events.md)

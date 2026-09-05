@@ -19,6 +19,27 @@ const (
 	MarkPath     MarkType = "path"
 	MarkImage    MarkType = "image"
 	MarkGeoshape MarkType = "geoshape"
+
+	// MarkTable (E1) is the top-level layer mark for a table (E1-S2
+	// spec/schema/validate landed the spec-level "table" mark type;
+	// the Scene IR table node itself lands in E1-S3). It has no
+	// *Geom pointer on Mark and is never populated as a geometry
+	// value — checkMarkSupport (render/svg/mark_support.go) rejects
+	// it before the SVG backend attempts to walk marks for it, since
+	// a table renders as DOM/CSS markup, not SVG geometry.
+	MarkTable MarkType = "table"
+
+	// MarkCustom (E2) is the top-level layer mark for a custom mark: a
+	// registered CustomRenderer's freeform SVG/HTML fragment. Like
+	// MarkTable it has no *Geom pointer on Mark and is never
+	// populated as a geometry value — its content lives on
+	// Scene.Custom instead (see encode/scene/custom.go). Unlike
+	// MarkTable, the SVG backend DOES support this mark type directly
+	// (render/svg/mark_support.go's unsupportedMarks omits it): a
+	// custom mark either splices its SVGCustomRenderer fragment
+	// straight into the SVG tree, or falls back to a
+	// <foreignObject>-wrapped HTMLCustomRenderer fragment.
+	MarkCustom MarkType = "custom"
 )
 
 // Mark is the atomic visual primitive. Discriminated union: exactly

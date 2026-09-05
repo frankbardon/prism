@@ -18,6 +18,7 @@ import (
 	"github.com/frankbardon/prism/plan"
 	"github.com/frankbardon/prism/plan/build"
 	"github.com/frankbardon/prism/render"
+	"github.com/frankbardon/prism/render/html"
 	"github.com/frankbardon/prism/render/svg"
 	"github.com/frankbardon/prism/spec"
 	"github.com/frankbardon/prism/table"
@@ -26,20 +27,20 @@ import (
 // plotCommand returns the `prism plot` subcommand. Reads a spec from
 // stdin or a positional file path, builds the DAG, executes via the
 // in-memory backend, encodes to a SceneDoc, renders to bytes via the
-// selected format's Renderer (SVG only in P05), and writes to stdout
+// selected format's Renderer (SVG or HTML), and writes to stdout
 // or --out. Render warnings stream to stderr as `WARN PRISM_WARN_*`
 // lines so the user sees deferred-feature notices without blocking
 // the byte stream.
 func plotCommand() *cli.Command {
 	return &cli.Command{
 		Name:      "plot",
-		Usage:     "Compile a Prism spec and render it to SVG",
+		Usage:     "Compile a Prism spec and render it to SVG or HTML",
 		ArgsUsage: "[spec-file]",
 		Flags: []cli.Flag{
 			&cli.StringFlag{
 				Name:  "format",
 				Value: "svg",
-				Usage: "Output format: svg | png (V2) | canvas-json (browser-only via prism scene)",
+				Usage: "Output format: svg | html | png (V2) | canvas-json (browser-only via prism scene)",
 			},
 			&cli.FloatFlag{
 				Name:  "width",
@@ -85,7 +86,7 @@ func runPlot(ctx context.Context, cmd *cli.Command) error {
 	// Gate on unsupported formats early. PNG + canvas-json defer per
 	// .planning/STATE.md deferred items; the pdf renderer was removed.
 	switch format {
-	case "svg":
+	case "svg", "html":
 		// supported below
 	default:
 		return reportUnsupportedFormat(cmd, format)
@@ -147,6 +148,12 @@ func runPlot(ctx context.Context, cmd *cli.Command) error {
 	switch format {
 	case "svg":
 		bytes, err = svg.New().Render(doc, render.RenderOpts{
+			Format: format,
+			Width:  width,
+			Height: height,
+		})
+	case "html":
+		bytes, err = html.New().Render(doc, render.RenderOpts{
 			Format: format,
 			Width:  width,
 			Height: height,

@@ -14,7 +14,9 @@
         "sankey", "funnel", "sparkline", "sparkbar", "winloss", "sparkarea", "bullet",
         "image", "path",
         "geoshape", "geopoint",
-        "tree", "dendrogram", "network"
+        "tree", "dendrogram", "network",
+        "table",
+        "custom"
       ]
     },
     "mark": {
@@ -92,7 +94,9 @@
             "to":   {"type": "number", "description": "Upper bound of the shaded normal-range band in value-axis data space."}
           },
           "description": "Spark adornment: shade a horizontal normal-range band behind the spark, spanning the full plot width between from and to."
-        }
+        },
+        "page_size":     {"type": "integer", "minimum": 1, "description": "Rows per page for table marks. Defaults to 25 when unset."},
+        "renderer":      {"type": "string", "minLength": 1, "description": "Name of the CustomRenderer registered for a custom mark (prism.RegisterCustomMark). A plain string key, never executable code."}
       }
     }
   }

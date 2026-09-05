@@ -1,0 +1,22 @@
+{
+  "$schema": "urn:prism:schema:v1:spec",
+  "data": {
+    "values": [
+      {"name": "Acme", "region": "West", "revenue": 120000},
+      {"name": "Globex", "region": "East", "revenue": 80500},
+      {"name": "Initech", "region": "South", "revenue": 60250},
+      {"name": "Umbrella", "region": "North", "revenue": 204000},
+      {"name": "Soylent", "region": "West", "revenue": 41200},
+      {"name": "Stark Industries", "region": "East", "revenue": 315000},
+      {"name": "Wayne Enterprises", "region": "North", "revenue": 278400}
+    ]
+  },
+  "mark": {"type": "table", "page_size": 5},
+  "encoding": {
+    "columns": [
+      {"field": "name", "type": "nominal", "title": "Account"},
+      {"field": "region", "type": "nominal", "title": "Region"},
+      {"field": "revenue", "type": "quantitative", "title": "Revenue", "format": "$,.0f"}
+    ]
+  }
+}

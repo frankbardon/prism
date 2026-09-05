@@ -97,7 +97,12 @@ fixup suggestions. Add `--json` for machine-readable envelopes.
 ```
 prism plot my-chart.prism.json --format svg > chart.svg
 prism plot dashboard.json --format svg > dashboard.svg
+prism plot my-chart.prism.json --format html > chart.html
 ```
+
+`svg` (default) and `html` are both built in — `html` wraps the same
+SVG output in a standalone HTML document, so it picks up the same
+theme. See [Themes: Rendering backends](concepts/themes.md#rendering-backends).
 
 ## Themes
 

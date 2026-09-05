@@ -47,6 +47,8 @@ arcs, etc. Specify via top-level `mark` (shorthand string) or
 | `path` | Raw SVG path data — escape hatch. |
 | `geoshape` | Country / admin-1 polygons (choropleth). See [Geographic Marks](geo.md). |
 | `geopoint` | Lon/lat → point overlay. See [Geographic Marks](geo.md). |
+| `table` | Interactive, paginated data table. Columns replace x/y — see [Table](#table) below. |
+| `custom` | Escape hatch for a caller-registered renderer function. No position channels — see [Custom](#custom) below. |
 
 ### Spark adornments
 
@@ -219,19 +221,144 @@ For a data-driven polyline, prefer `line` with `x`/`y` encodings.
 Validate rules: `PRISM_SPEC_016` (image URL allowed), `PRISM_SPEC_017`
 (non-empty path `d`).
 
+### Table
+
+`table` is an interactive, paginated data table (E1). It has no
+position channels — `encoding.columns[]` is the entire visual
+contract, and each entry is a standard channel binding (`field`,
+`type`, `aggregate`, `title`, `format`, …) plus an optional `mark`
+naming a sub-mark that renders that column's cells (e.g. `sparkline`
+for an inline trend column) instead of formatted text.
+
+Mark-def options:
+
+- `page_size` — rows rendered per page. Defaults to `25` when unset
+  (`spec.TablePageSizeDefault`).
+
+Column fields (`encoding.columns[]`, one object per column):
+
+- `field`, `type`, `aggregate`, `scale`, `title`, `format`, `bin`,
+  `sort`, `value`, `condition` — same shape and meaning as any other
+  channel encoding.
+- `mark` — optional sub-mark rendering this column's cells (e.g.
+  `"sparkline"`). Omit to render the column as formatted text.
+
+```json
+{
+  "mark": {"type": "table", "page_size": 50},
+  "encoding": {
+    "columns": [
+      {"field": "name", "type": "nominal", "title": "Account"},
+      {"field": "revenue", "type": "quantitative", "aggregate": "sum", "format": "$,.0f"},
+      {"field": "trend", "type": "quantitative", "mark": "sparkline"}
+    ]
+  }
+}
+```
+
+Validate rule: `PRISM_SPEC_040` (`encoding.columns[]` required and
+non-empty). See [Renderer compatibility](#renderer-compatibility)
+below for the `svg` vs `html` backend split, and the [gallery `table/`
+entries](../gallery/index.md#table) for full worked examples
+(including a paginated plain-column table and a `sparkline`
+sub-mark column).
+
+### Custom
+
+`custom` (E2) is the escape hatch for a visualization none of the
+built-in marks express: a consuming application registers its own
+render function under a name (`prism.RegisterCustomMark(name,
+renderer)`), and a spec references that name instead of describing
+geometry. Like `table`, it has no position channels — the mark-def
+`renderer` field is the entire visual contract, and `encoding` may be
+left empty (`{}`).
+
+Mark-def field:
+
+- `renderer` (string, required) — the name a `CustomRenderer` was
+  registered under. Always a plain string key, never executable code
+  — the spec JSON never carries the implementation itself (this
+  preserves Prism's no-expression-language invariant). Resolved
+  against the active registry at render time, not decode time: an
+  unregistered name is a render-time error
+  (`PRISM_RENDER_CUSTOM_MARK_NOT_FOUND`), not a validate-time one.
+
+A registered renderer implements at least one of two Go interfaces
+(`prism.SVGCustomRenderer` / `prism.HTMLCustomRenderer` — thin
+re-exports of `github.com/frankbardon/prism/custommark`, the package
+that actually owns the registry), or is registered as a synchronous JS
+callback in the browser via `prism.registerCustomMark(name, fn)`. Both
+paths, the full SVG/HTML dual-method fallback matrix, and — most
+importantly — **the security contract (the renderer author owns
+escaping row data and owns all script execution, not Prism)** are
+covered in the [Custom marks cookbook
+entry](../cookbook/custom-marks.md).
+
+```json
+{
+  "mark": {"type": "custom", "renderer": "badge"},
+  "encoding": {}
+}
+```
+
+Errors: `PRISM_RENDER_CUSTOM_MARK_NOT_FOUND` (unregistered `renderer`
+name at render time, naming every currently-registered name in its
+details). See [Renderer compatibility](#renderer-compatibility) below
+— unlike `table`, `custom` renders through **both** backends, since a
+renderer can implement `RenderSVG`, `RenderHTML`, or both.
+
 ## Channel allowlists
 
 Not every channel is valid for every mark — `theta` only makes sense
 on `arc`, `source`/`target` only on `sankey`, etc. The validator
 catches mismatches with `PRISM_SPEC_003`.
 
+## Renderer compatibility
+
+Every mark listed above renders through both Go backends
+(`render/svg` and `render/html` — see [Themes: Rendering
+backends](themes.md#rendering-backends)); `render/html` reuses
+`render/svg`'s own emitters internally, so there is nothing
+mark-specific to opt into.
+
+The one exception is the `table` mark: it renders as DOM/CSS markup —
+sortable/paginated rows, row selection — with no SVG geometry
+equivalent. Requesting a top-level `table` mark via the `svg` backend
+fails with `PRISM_RENDER_MARK_UNSUPPORTED` naming the mark and
+backend, rather than silently emitting an empty `<svg>`; render it via
+the `html` backend instead. This restriction applies only to a
+`table` mark used directly — embedding a geometry-bearing mark (e.g.
+a `sparkline` column) inside a table's cells is unaffected and
+renders normally via either backend (the `html` backend re-invokes
+`render/svg`'s own emitters for that one cell's inline `<svg>`).
+
+The `html` backend's `<table>` markup is inert until wired up with
+`static/vendor/prism/prism-table.mjs` (E1-S5): `installTableHandlers(root)`
+attaches header-click sort (by each column's underlying field value —
+read from a `data-prism-sort-value` attribute stamped on every `<td>`,
+not the cell's rendered display, so a `sparkline` column sorts by its
+numeric series rather than by its `<svg>` markup), client-side
+pagination (slices the already-rendered rows using `page_size`; no
+extra network/WASM round trip), and row-click selection (dispatches
+the same structured `prism:select` event other marks emit, keyed off
+the `data-prism-datum-row` attribute every `<tr>` carries). This path
+is independent of the `<prism-chart>`/WASM pipeline — a table mark
+never renders through `prism.wasm`'s SVG-only bridge — so a host page
+that serves/mounts `html`-backend output imports `prism-table.mjs`
+directly rather than through `prism-element.mjs`.
+
 ## Worked examples
 
-Every mark above has a fixture in the [gallery](../gallery/index.md).
-Start with:
+Every mark above has a fixture in the [gallery](../gallery/index.md),
+with one exception: `custom` has no gallery fixture, since rendering
+one requires a registered `CustomRenderer` implementation (Go code),
+not just a JSON spec — see the [Custom marks
+cookbook](../cookbook/custom-marks.md) for worked, runnable examples
+instead. Start the gallery tour with:
 
 - [bar_basic](../gallery/basic-marks/bar_basic.prism.json)
 - [line_basic](../gallery/basic-marks/line_basic.prism.json)
 - [histogram](../gallery/composite-marks/histogram.prism.json)
 - [pie](../gallery/composite-marks/pie.prism.json)
 - [sankey_user_flow](../gallery/specialty-marks/sankey_user_flow.prism.json)
+- [table_revenue_trend](../gallery/table/table_revenue_trend.prism.json) (`html` backend; renders a `sparkline` sub-mark column)

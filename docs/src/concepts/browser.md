@@ -108,6 +108,16 @@ never fetches or decodes a `.pulse` file in the browser — the host
 materializes the rows and hands them to Prism. WASM then runs the full
 pipeline and mounts the resulting SVG.
 
+A `mark: {type: "custom", renderer: "..."}` reference resolves the
+same way against a registry — but a per-mark render function instead
+of a per-ref data source — via `prism.registerCustomMark(name, fn)`.
+This is the only way a `custom` mark works against the shared,
+prebuilt `prism.wasm` binary (there's no way to call a Go function to
+register into its compiled-in registry from JS). See the [Custom
+marks cookbook](../cookbook/custom-marks.md) for the callback shape
+and — importantly — the security contract around escaping and script
+execution.
+
 ### Server compile (opt-in)
 
 Hosts that prefer to offload the compile stage to a trusted backend

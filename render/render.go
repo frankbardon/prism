@@ -1,10 +1,18 @@
 // Package render carries the cross-renderer surface: the Renderer
 // interface every output backend satisfies, the RenderOpts shape, and
 // the RenderPrecision constant that pins float formatting across the
-// SVG (P05), PNG (P12), and canvas-JSON (P12) backends.
+// SVG (P05), HTML (E1-S1), PNG (P12), and canvas-JSON (P12) backends.
 //
-// Concrete renderers live in subpackages (render/svg/,
+// Concrete renderers live in subpackages (render/svg/, render/html/,
 // render/canvas/). They consume the same scene.SceneDoc shape.
+//
+// There is no factory/registry here selecting a concrete Renderer by
+// format string — render/svg and render/html both import this
+// package for Renderer/RenderOpts, so a reverse import would cycle.
+// Each caller (cmd/prism/cmd_plot.go, rpc/server.go, the library's
+// prism.RenderPlan) owns its own "svg" | "html" | ... switch against
+// the concrete render/svg.New() / render/html.New() constructors,
+// all returning PRISM_RENDER_FORMAT_UNAVAILABLE for anything else.
 package render
 
 import "github.com/frankbardon/prism/encode/scene"
@@ -26,7 +34,7 @@ type Renderer interface {
 // values are sensible: 0 dimensions = use the scene's natural
 // width/height; nil Theme = use the scene's Theme.
 type RenderOpts struct {
-	// Format is the requested output format ("svg" | "png" |
+	// Format is the requested output format ("svg" | "html" | "png" |
 	// "canvas-json"). The CLI rejects formats the runtime cannot
 	// produce with PRISM_RENDER_FORMAT_UNAVAILABLE.
 	Format string

@@ -1,9 +1,10 @@
-// js_port_surface_test.go enforces the P17 JS-port trim. After P17,
-// the vendored `static/vendor/prism/` directory carries exactly four
-// `.mjs` files + a README. JS-side reimplementations of Go pipeline
-// stages (scale/axis/ticks/palette/format) and the vendored D3
-// modules were deleted; the gate fails the build if any of them
-// reappear by accident.
+// js_port_surface_test.go enforces the P17 JS-port trim (plus any
+// intentionally documented additions since, e.g. prism-table.mjs in
+// E1-S5). JS-side reimplementations of Go pipeline stages
+// (scale/axis/ticks/palette/format) and the vendored D3 modules were
+// deleted at P17; the gate fails the build if any of them reappear by
+// accident, or if any new file lands under static/vendor/prism/
+// without updating the `want` allowlist below.
 package gates
 
 import (
@@ -49,6 +50,7 @@ func TestPrismJSPortSurfaceTrimmed(t *testing.T) {
 		"prism-element.mjs",
 		"prism-resolver.mjs",
 		"prism-selection.mjs",
+		"prism-table.mjs",
 		"prism.mjs",
 	}
 

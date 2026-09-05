@@ -1,0 +1,12 @@
+{
+  "$schema": "urn:prism:schema:v1:spec",
+  "title": "Custom mark resolved via the JS-side registry only",
+  "data": {
+    "values": [
+      {"x": 1, "label": "north"},
+      {"x": 2, "label": "south"}
+    ]
+  },
+  "mark": {"type": "custom", "renderer": "js-fallback-mark"},
+  "encoding": {}
+}
