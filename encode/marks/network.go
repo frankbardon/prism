@@ -91,6 +91,17 @@ func encodeNetwork(in Inputs) ([]scene.Mark, error) {
 
 	out := make([]scene.Mark, 0, len(pos)+g.EdgeCount())
 
+	// Edges carry Style.Stroke but must NOT inherit in.Style's Fill:
+	// in.Style is shared with the node marks below (Point/Rect, which
+	// do need Fill), the same one-Style-two-geometries reuse tree.go
+	// uses for its links/nodes. render/svg's renderLine already
+	// hardcodes fill="none" on every polyline it emits, so a non-nil
+	// Style.Fill here doesn't change what's painted — but it does
+	// produce a second, duplicate "fill" attribute on the emitted
+	// <polyline> (invalid SVG). Clear it on a local copy so the edge
+	// mark only ever carries Stroke.
+	edgeStyle := in.Style
+	edgeStyle.Fill = nil
 	// Edges as straight lines.
 	for _, e := range g.Edges {
 		from, fromOK := pixelByID[e.From]
@@ -98,7 +109,7 @@ func encodeNetwork(in Inputs) ([]scene.Mark, error) {
 		if !fromOK || !toOK {
 			continue
 		}
-		mark := scene.Mark{Type: scene.MarkLine, Style: in.Style}
+		mark := scene.Mark{Type: scene.MarkLine, Style: edgeStyle}
 		mark.Line = &scene.LineGeom{Points: [][2]float64{{from[0], from[1]}, {to[0], to[1]}}}
 		out = append(out, mark)
 	}

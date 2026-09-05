@@ -38,7 +38,7 @@ func printTheme() *Theme {
 			"point":      {Fill: "#000000", StrokeWidth: f(0), Size: f(36)},
 			"bar":        {Fill: "#555555", CornerRadius: f(0)},
 			"text":       {Fill: "#000000", FontSize: f(10)},
-			"tick":       {Stroke: "#000000", StrokeWidth: f(1)},
+			"tick":       {Stroke: "#000000", StrokeWidth: f(1), Fill: "transparent"},
 			"geoshape":   {Fill: "#e0e0e0", Stroke: "#000000", StrokeWidth: f(0.5)},
 			"geopoint":   {Fill: "#000000", StrokeWidth: f(0), Size: f(36)},
 			"arc":        {Stroke: "#ffffff", StrokeWidth: f(0.75)},

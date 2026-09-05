@@ -111,12 +111,17 @@ func encodeFunnel(in Inputs) ([]scene.Mark, error) {
 			Style: style,
 			Path:  &scene.PathGeom{D: d},
 		})
-		// Inline value label, centered on the trapezoid.
-		labelStyle := scene.Style{}
+		// Inline value label, centered on the trapezoid. Uses the
+		// theme's "text" default (in.LabelStyle), not in.Style (which
+		// resolves to "funnel" — the stage trapezoid's Fill/palette
+		// color, wrong for a label) or an empty Style (which drops
+		// the fill attribute entirely, leaving the label to whatever
+		// color the SVG default happens to be and breaking dark/
+		// print/high-contrast themes).
 		out = append(out, scene.Mark{
 			Type:  scene.MarkText,
 			ID:    fmt.Sprintf("funnel-label-%s", stageName),
-			Style: labelStyle,
+			Style: in.LabelStyle,
 			Text: &scene.TextGeom{
 				X:        cx,
 				Y:        (yTop + yBot) / 2,

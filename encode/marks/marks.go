@@ -113,6 +113,15 @@ type Inputs struct {
 	// match marks across scene swaps. Empty (default) leaves Mark.Key
 	// blank; the SVG renderer ignores Mark.Key either way.
 	KeyField string
+	// LabelStyle is the theme-resolved default Style for markType
+	// "text" (independent of Style, which resolves the *outer*
+	// spec-level markType). Composite encoders that emit their own
+	// scene.MarkText sub-marks alongside a differently-styled primary
+	// geometry (e.g. funnel's per-stage value label next to its
+	// trapezoid Path) use this instead of an empty scene.Style{} so
+	// the label picks up the theme's text fill and stays legible
+	// across dark/print/high-contrast themes.
+	LabelStyle scene.Style
 }
 
 // Encode dispatches markType to its per-mark helper. Returns the

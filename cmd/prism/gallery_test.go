@@ -61,22 +61,22 @@ func TestPrismGalleryFixtures(t *testing.T) {
 		t.Fatalf("gallery has %d fixtures; expected ≥50 per P16 PHASE.md", len(fixtures))
 	}
 
-	// Selection-only specs render axes-only SVG today (PRISM_WARN
-	// flagged). They still validate; we only assert validate exit and
-	// skip the SVG assertion. (The sparkline_inline* fixtures used to
-	// be skip-listed here too — they rendered blank because the theme
-	// gave "sparkline" a Fill-only default style with no Stroke, and
-	// the SVG renderer hardcodes fill="none" on every line polyline.
-	// Fixed in E1-S1 via a Stroke-carrying "sparkline" default in
-	// encode/encode.go + every built-in theme's MarkStyle map, so they
-	// now render and golden normally.)
-	plotSkip := map[string]bool{
-		"selections/selection_point.prism.json":    true,
-		"selections/selection_interval.prism.json": true,
-		"themes/bar_light.prism.json":              true,
-		"themes/bar_dark.prism.json":               true,
-		"themes/bar_print.prism.json":              true,
-	}
+	// plotSkip previously held selection_point/selection_interval
+	// (once genuinely axes-only, PRISM_WARN-flagged blank renders) and
+	// bar_light/bar_dark/bar_print (skip-listed alongside them for the
+	// same historical reason). The sparkline_inline* fixtures were
+	// unskipped in E1-S1 once the underlying theme-stroke-fallback bug
+	// was fixed; these five were never revisited even though the same
+	// fix (plus the render/svg attribute cleanup that shipped
+	// alongside it) also made them render correctly — confirmed during
+	// the E2-S1 gallery sweep, whose `prism plot` output for all five
+	// now differs from their long-stale committed goldens only in the
+	// renderer's SVG root-attribute shape (current: `overflow="hidden"`;
+	// old: explicit `width`/`height`) and real marks/colors that the
+	// stale goldens never picked up. Un-skipped here; empty map kept
+	// (rather than removed) so a genuinely axes-only future fixture has
+	// an obvious place to register.
+	plotSkip := map[string]bool{}
 
 	updateGoldens := os.Getenv("UPDATE_GOLDENS") == "1"
 

@@ -41,7 +41,7 @@ func highContrastTheme() *Theme {
 			"point":      {Fill: "#000000", Stroke: "#ffffff", StrokeWidth: f(1.5), Size: f(100)},
 			"bar":        {Fill: "#000000", Stroke: "#000000", StrokeWidth: f(0), CornerRadius: f(0)},
 			"text":       {Fill: "#000000", FontSize: f(13), FontWeight: "600"},
-			"tick":       {Stroke: "#000000", StrokeWidth: f(1.5)},
+			"tick":       {Stroke: "#000000", StrokeWidth: f(1.5), Fill: "transparent"},
 			"geoshape":   {Fill: "#ffffff", Stroke: "#000000", StrokeWidth: f(1)},
 			"geopoint":   {Fill: "#000000", Stroke: "#ffffff", StrokeWidth: f(1.5), Size: f(64)},
 			"arc":        {Stroke: "#ffffff", StrokeWidth: f(2)},

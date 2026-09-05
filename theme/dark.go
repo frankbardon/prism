@@ -40,7 +40,7 @@ func darkTheme() *Theme {
 			"point":      {Fill: primary, StrokeWidth: f(0), Size: f(64)},
 			"bar":        {Fill: primary, CornerRadius: f(0)},
 			"text":       {Fill: "#f3f4f6", FontSize: f(11)},
-			"tick":       {Stroke: primary, StrokeWidth: f(1)},
+			"tick":       {Stroke: primary, StrokeWidth: f(1), Fill: "transparent"},
 			"geoshape":   {Fill: "#334155", Stroke: "#0b1220", StrokeWidth: f(0.5)},
 			"geopoint":   {Fill: primary, StrokeWidth: f(0), Size: f(36)},
 			"arc":        {Stroke: "#0b1220", StrokeWidth: f(1)},

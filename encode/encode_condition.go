@@ -58,7 +58,7 @@ func applyConditionsToMark(m *scene.Mark, tbl *table.Table, ch conditionChannel,
 		case entry.Test != nil:
 			if entry.Test.EvalRow(env) {
 				if entry.Value != nil {
-					if err := applyStyleAttr(m, attr, entry.Value); err != nil {
+					if err := applyStyleAttr(&m.Style, attr, entry.Value); err != nil {
 						return prismerrors.New(
 							"PRISM_ENCODE_001",
 							fmt.Sprintf("Condition value on channel %s entry[%d] could not be applied: %v.", ch.Name, i, err),
@@ -230,32 +230,101 @@ func currentStyleValue(m *scene.Mark, attr string) any {
 	}
 }
 
-// applyStyleAttr writes value into m.Style at attr. Hex strings parse
+// applyStyleAttr writes value into style at attr. Hex strings parse
 // via scene.ColorFromHex; floats land on Opacity / StrokeWidth.
-func applyStyleAttr(m *scene.Mark, attr string, value any) error {
+func applyStyleAttr(style *scene.Style, attr string, value any) error {
 	switch attr {
 	case "fill":
 		c, err := coerceColor(value)
 		if err != nil {
 			return err
 		}
-		m.Style.Fill = c
+		style.Fill = c
 	case "stroke":
 		c, err := coerceColor(value)
 		if err != nil {
 			return err
 		}
-		m.Style.Stroke = c
+		style.Stroke = c
 	case "opacity":
 		f, err := coerceFloat(value)
 		if err != nil {
 			return err
 		}
-		m.Style.Opacity = f
+		style.Opacity = f
 	case "size":
 		// size doesn't have a direct Style slot (mark-specific). Skip
 		// gracefully — the static value would need per-geom plumbing.
 		return nil
+	}
+	return nil
+}
+
+// applyChannelBaseValue applies a mark-style channel's field-less
+// literal Value (schema: encoding.schema.json's mark_channel/
+// channel_base "value" property, "Constant literal value; alternative
+// to field for a constant encoding") into style. attr is the same
+// scene-IR attribute name conditionAttrFor maps the channel to
+// (fill/stroke/opacity).
+//
+// This is the "otherwise" fallback applyConditionsToMark's docstring
+// assumes is already resolved into Style before it runs. It wasn't:
+// a field-less color/fill/stroke/opacity channel was decoded off the
+// spec but never consumed by any per-mark encoder (colorChannel is
+// only built when Field != ""), so a channel combining a bare `value`
+// with a `condition` list rendered every non-matching row in the
+// mark-type theme default instead of the spec's declared base color
+// (P16 gallery sweep finding: conditions/test_predicate.svg and
+// conditions/brush_highlight.svg both showed the default `#4c78a8`
+// instead of their declared "#94a3b8"/"#cbd5e1" `value`). Applying it
+// unconditionally — not just when a condition is also present — keeps
+// the literal-value channel form correct standalone too, matching the
+// schema's stated semantics.
+//
+// Intentionally narrow: only the mark-style channels the condition
+// system already round-trips (color/fill/stroke/opacity). Position
+// channels (x/y/x2/y2) and size/shape's literal-value forms are a
+// larger, separate generalization (position values bypass scale
+// resolution entirely; size has no direct Style slot per
+// applyStyleAttr above) — out of scope here.
+func applyChannelBaseValue(style *scene.Style, common *spec.ChannelCommon, attr string) error {
+	if common == nil || common.Field != "" || common.Value == nil {
+		return nil
+	}
+	return applyStyleAttr(style, attr, common.Value)
+}
+
+// applyMarkChannelBaseValues resolves enc's color/fill/stroke/opacity
+// channels' field-less literal Value into style, in that order (color
+// and fill both target the "fill" attr; a spec setting both is
+// unusual but fill — the more specific channel — wins by running
+// last). Called once per mark/layer before marks.Encode, alongside
+// applyMarkDef, so a bare `{"value": "#hex"}` channel paints the mark
+// even with no field-driven colorChannel. See applyChannelBaseValue.
+func applyMarkChannelBaseValues(style *scene.Style, enc *spec.Encoding) error {
+	if enc == nil {
+		return nil
+	}
+	channels := []struct {
+		ch   *spec.MarkChannel
+		attr string
+	}{
+		{enc.Color, "fill"},
+		{enc.Fill, "fill"},
+		{enc.Stroke, "stroke"},
+		{enc.Opacity, "opacity"},
+	}
+	for _, c := range channels {
+		if c.ch == nil {
+			continue
+		}
+		if err := applyChannelBaseValue(style, &c.ch.ChannelCommon, c.attr); err != nil {
+			return prismerrors.New(
+				"PRISM_ENCODE_001",
+				fmt.Sprintf("Channel base value could not be applied: %v.", err),
+				map[string]any{"Field": "<value>", "Source": "<encoding>", "Reason": err.Error()},
+			)
+		}
 	}
 	return nil
 }

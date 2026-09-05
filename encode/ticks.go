@@ -149,6 +149,26 @@ func formatTick(v float64, format string) string {
 	return fmt.Sprintf(format, v)
 }
 
+// roundSigFigs rounds v to the given number of significant decimal
+// digits. NiceTicks-derived tick values are already "nice" decimals
+// in the space they were generated in, so they never need this — but
+// a tick generator that inverts through a nonlinear transform (e.g.
+// PowTicks, whose ticks are generated in pow-transformed space and
+// then inverted back via signedPow(t, 1/exp)) can land on an
+// irrational-looking value (sqrt(4000) = 63.245553203367585) that
+// would otherwise print at full float64 precision. Rounding only the
+// label — never the tick's Value/Pixel, which stay exact — keeps the
+// axis readable without perturbing tick position.
+func roundSigFigs(v float64, sig int) float64 {
+	if v == 0 || math.IsNaN(v) || math.IsInf(v, 0) {
+		return v
+	}
+	mag := math.Ceil(math.Log10(math.Abs(v)))
+	power := float64(sig) - mag
+	factor := math.Pow(10, power)
+	return math.Round(v*factor) / factor
+}
+
 // BandTicks places one tick per category at the band's center. Used
 // by axis tick placement so labels sit under (or beside) the band
 // middle rather than its left edge.

@@ -44,7 +44,7 @@ func colorblindTheme() *Theme {
 			"point":      {Fill: primary, StrokeWidth: f(0), Size: f(72)},
 			"bar":        {Fill: primary, CornerRadius: f(0)},
 			"text":       {Fill: "#111827", FontSize: f(11)},
-			"tick":       {Stroke: primary, StrokeWidth: f(1)},
+			"tick":       {Stroke: primary, StrokeWidth: f(1), Fill: "transparent"},
 			"geoshape":   {Fill: "#cbd5e1", Stroke: "#ffffff", StrokeWidth: f(0.5)},
 			"geopoint":   {Fill: primary, StrokeWidth: f(0), Size: f(36)},
 			"arc":        {Stroke: "#ffffff", StrokeWidth: f(1)},
