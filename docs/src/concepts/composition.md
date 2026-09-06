@@ -72,6 +72,56 @@ Partitions data by `region`, renders one cell per partition. Inner
 Each cell substitutes `{repeat: "row"}` with the field name for that
 cell. Pure substitution — no template expressions.
 
+## Per-cell theme overrides
+
+`facet` and `repeat` both accept an optional `cell_overrides` array —
+a sparse theme override scoped to one cell of the resulting grid,
+addressed by its **0-based `(row, column)` grid position**, not by
+the data value that landed in that cell. Each entry's `theme` block
+is the same sparse override shape used for a whole-chart `theme`
+override (`spec.ThemeOverride` — see [Themes](themes.md)); it merges
+over the chart's resolved theme for that one cell only.
+
+```json
+{
+  "facet": {
+    "column": {"field": "region"},
+    "cell_overrides": [
+      {"row": 0, "column": 1, "theme": {"marks": {"bar": {"fill": "#e15759"}}}}
+    ]
+  },
+  "spec": {
+    "$schema": "urn:prism:schema:v1:spec",
+    "mark": "bar",
+    "encoding": {...}
+  }
+}
+```
+
+Because addressing is positional, re-sorting or filtering the
+faceted/repeated field shifts which value occupies a given cell —
+the override always applies to whichever value currently lands in
+that grid slot, not to a named value. For `repeat`, `row`/`column`
+index into the `repeat.row`/`repeat.column` field lists (an axis
+left empty collapses to a single implicit slot at index `0`,
+mirroring the encoder's single-row/single-column scaffold); for
+`facet`, an axis with no `row`/`column` channel likewise collapses
+to a single implicit slot at index `0`.
+
+`encode/encode_facet.go` and `encode/encode_repeat.go` apply each
+cell's matching `CellThemeOverride.Theme` on top of the chart's
+resolved base theme via `theme.ApplyOverride` — the same merge
+machinery a whole-chart `theme` override uses — when materializing
+that cell's child scene; cells with no matching entry render with
+the base theme unchanged. Note the override targets the same
+per-mark-type slot (`marks.<type>`) a built-in theme uses for that
+mark: a built-in theme (e.g. `light`) typically sets an explicit
+`marks.bar.fill`, which wins over the generic top-level `mark.fill`
+fallback, so a per-cell fill override on a bar chart should target
+`marks.bar.fill` (as above) rather than `mark.fill`. This is
+orthogonal to `resolve.scale` below — a per-cell theme override never
+changes whether scales/axes are shared or independent across cells.
+
 ## Scale resolution
 
 `resolve.scale.{x,y,color,size}` controls cross-cell scale sharing:
@@ -90,5 +140,6 @@ raises `PRISM_PLAN_005`.
 - [vconcat_metrics](../gallery/composition/vconcat_metrics.prism.json) — 3-row stack.
 - [facet_by_region](../gallery/composition/facet_by_region.prism.json) — 3×3 grid.
 - [facet_nested](../gallery/composition/facet_nested.prism.json) — recursion proof.
+- [facet_cell_theme_override](../gallery/composition/facet_cell_theme_override.prism.json) — 1×3 region facet with two cells recolored via `cell_overrides`.
 - [repeat_metrics](../gallery/composition/repeat_metrics.prism.json) — 1×4 over 4 metrics.
 - [dashboard](../gallery/composition/dashboard.prism.json) — 4-cell vconcat showcasing mixed marks.

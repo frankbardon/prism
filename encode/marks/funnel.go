@@ -71,11 +71,13 @@ func encodeFunnel(in Inputs) ([]scene.Mark, error) {
 
 	// Color channel resolution (per-stage palette pick when color is bound).
 	stageColors := make([]*scene.Color, n)
+	stageVars := make([]string, n)
 	if in.Color != nil {
 		for i := 0; i < n; i++ {
 			cat, _ := stages[i].(string)
-			c := lookupCategoryColor(cat, in.Color.Categories, in.Color.Palette)
+			c, v := resolveCategoryColor(in, cat)
 			stageColors[i] = c
+			stageVars[i] = v
 		}
 	}
 
@@ -101,8 +103,9 @@ func encodeFunnel(in Inputs) ([]scene.Mark, error) {
 			fmtFloat(br[0]), fmtFloat(br[1]),
 			fmtFloat(bl[0]), fmtFloat(bl[1]))
 		style := in.Style
-		if stageColors[i] != nil {
+		if stageColors[i] != nil || stageVars[i] != "" {
 			style.Fill = stageColors[i]
+			style.FillVar = stageVars[i]
 		}
 		stageName := fmt.Sprintf("%v", stages[i])
 		out = append(out, scene.Mark{

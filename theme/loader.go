@@ -19,20 +19,30 @@ func LoadFile(path string) (*Theme, error) {
 }
 
 // LoadBytes parses a theme JSON blob. Same merge semantics as
-// LoadFile.
+// LoadFile. A Filter reference (on any style block) that does not
+// resolve to a key in the resulting theme's Filters fails loudly with
+// PRISM_THEME_FILTER_UNKNOWN — an intentional departure from
+// RangeSlot.Resolve's silent-fallback behavior; see theme/validate.go.
 func LoadBytes(body []byte) (*Theme, error) {
 	var t Theme
 	if err := json.Unmarshal(body, &t); err != nil {
 		return nil, fmt.Errorf("theme.LoadBytes: %w", err)
 	}
 	if t.Base == "" {
+		if err := t.Validate(); err != nil {
+			return nil, err
+		}
 		return &t, nil
 	}
 	base, ok := Get(t.Base)
 	if !ok {
 		return nil, fmt.Errorf("theme.LoadBytes: base theme %q is not registered", t.Base)
 	}
-	return Merge(base, &t), nil
+	merged := Merge(base, &t)
+	if err := merged.Validate(); err != nil {
+		return nil, err
+	}
+	return merged, nil
 }
 
 // Merge returns a new Theme that combines base with the non-zero
@@ -47,6 +57,9 @@ func Merge(base, override *Theme) *Theme {
 	}
 	if override.Name != "" {
 		out.Name = override.Name
+	}
+	if override.DarkVariant != "" {
+		out.DarkVariant = override.DarkVariant
 	}
 	if override.AxisColor != "" {
 		out.AxisColor = override.AxisColor
@@ -131,6 +144,36 @@ func Merge(base, override *Theme) *Theme {
 			out.Style[k] = MergeMarkStyle(out.Style[k], v)
 		}
 	}
+	if override.Filters != nil {
+		if out.Filters == nil {
+			out.Filters = make(map[string]string, len(override.Filters))
+		}
+		for k, v := range override.Filters {
+			out.Filters[k] = v
+		}
+	}
+	if override.RawCSS != "" {
+		out.RawCSS = override.RawCSS
+	}
+	if override.Gradients != nil {
+		if out.Gradients == nil {
+			out.Gradients = make(map[string]GradientDef, len(override.Gradients))
+		}
+		for k, v := range override.Gradients {
+			out.Gradients[k] = v.Clone()
+		}
+	}
+	if override.Patterns != nil {
+		if out.Patterns == nil {
+			out.Patterns = make(map[string]PatternDef, len(override.Patterns))
+		}
+		for k, v := range override.Patterns {
+			out.Patterns[k] = v.Clone()
+		}
+	}
+	if override.CategoryStyles != nil {
+		out.CategoryStyles = mergeCategoryStyles(out.CategoryStyles, override.CategoryStyles)
+	}
 	return out
 }
 
@@ -202,6 +245,14 @@ func mergeAxis(base, override *AxisStyle) *AxisStyle {
 		v := *override.LabelPadding
 		out.LabelPadding = &v
 	}
+	if override.LabelLineHeight != nil {
+		v := *override.LabelLineHeight
+		out.LabelLineHeight = &v
+	}
+	if override.LabelLetterSpacing != nil {
+		v := *override.LabelLetterSpacing
+		out.LabelLetterSpacing = &v
+	}
 	if override.TitleColor != "" {
 		out.TitleColor = override.TitleColor
 	}
@@ -215,6 +266,17 @@ func mergeAxis(base, override *AxisStyle) *AxisStyle {
 	if override.TitlePadding != nil {
 		v := *override.TitlePadding
 		out.TitlePadding = &v
+	}
+	if override.TitleLineHeight != nil {
+		v := *override.TitleLineHeight
+		out.TitleLineHeight = &v
+	}
+	if override.TitleLetterSpacing != nil {
+		v := *override.TitleLetterSpacing
+		out.TitleLetterSpacing = &v
+	}
+	if override.Filter != "" {
+		out.Filter = override.Filter
 	}
 	return &out
 }
@@ -260,6 +322,14 @@ func mergeLegend(base, override *LegendStyle) *LegendStyle {
 		v := *override.LabelFontSize
 		out.LabelFontSize = &v
 	}
+	if override.LabelLineHeight != nil {
+		v := *override.LabelLineHeight
+		out.LabelLineHeight = &v
+	}
+	if override.LabelLetterSpacing != nil {
+		v := *override.LabelLetterSpacing
+		out.LabelLetterSpacing = &v
+	}
 	if override.TitleColor != "" {
 		out.TitleColor = override.TitleColor
 	}
@@ -270,6 +340,14 @@ func mergeLegend(base, override *LegendStyle) *LegendStyle {
 	if override.TitleFontWeight != "" {
 		out.TitleFontWeight = override.TitleFontWeight
 	}
+	if override.TitleLineHeight != nil {
+		v := *override.TitleLineHeight
+		out.TitleLineHeight = &v
+	}
+	if override.TitleLetterSpacing != nil {
+		v := *override.TitleLetterSpacing
+		out.TitleLetterSpacing = &v
+	}
 	if override.RowPadding != nil {
 		v := *override.RowPadding
 		out.RowPadding = &v
@@ -277,6 +355,9 @@ func mergeLegend(base, override *LegendStyle) *LegendStyle {
 	if override.ColumnPadding != nil {
 		v := *override.ColumnPadding
 		out.ColumnPadding = &v
+	}
+	if override.Filter != "" {
+		out.Filter = override.Filter
 	}
 	return &out
 }
@@ -313,6 +394,17 @@ func mergeTitle(base, override *TitleStyle) *TitleStyle {
 		v := *override.Padding
 		out.Padding = &v
 	}
+	if override.LineHeight != nil {
+		v := *override.LineHeight
+		out.LineHeight = &v
+	}
+	if override.LetterSpacing != nil {
+		v := *override.LetterSpacing
+		out.LetterSpacing = &v
+	}
+	if override.Filter != "" {
+		out.Filter = override.Filter
+	}
 	return &out
 }
 
@@ -345,6 +437,9 @@ func mergeView(base, override *ViewStyle) *ViewStyle {
 	if override.CornerRadius != nil {
 		v := *override.CornerRadius
 		out.CornerRadius = &v
+	}
+	if override.Filter != "" {
+		out.Filter = override.Filter
 	}
 	return &out
 }

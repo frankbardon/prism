@@ -133,13 +133,26 @@ func encodeHeatmap(in Inputs) ([]scene.Mark, error) {
 		style := in.Style
 		if len(colorValues) > 0 {
 			var c *scene.Color
+			var v string
 			if in.Color != nil && len(in.Color.SequentialPalette) > 0 {
 				c = interpolateSequential(in.Color.SequentialPalette, colorValues[i], mn, mx)
+				// E4-S3: pair against the same interpolation position on
+				// the DarkVariant's sequential palette when auto-dark is
+				// active. A missing dark palette (DarkVariant unset, or
+				// this cell's scheme has no dark counterpart) leaves c
+				// as the baked light color — no var registered.
+				if in.ColorRegistry != nil && c != nil && len(in.Color.DarkSequentialPalette) > 0 {
+					if d := interpolateSequential(in.Color.DarkSequentialPalette, colorValues[i], mn, mx); d != nil {
+						v = in.ColorRegistry.Resolve(c, d)
+						c = nil
+					}
+				}
 			} else {
 				c = SequentialColor(colorValues[i], mn, mx)
 			}
-			if c != nil {
+			if c != nil || v != "" {
 				style.Fill = c
+				style.FillVar = v
 			}
 		}
 		if len(opacityValues) > 0 {

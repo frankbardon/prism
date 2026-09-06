@@ -1,6 +1,6 @@
 # Prism Gallery
 
-95 fixture specs across 16 categories. Each entry pairs a `*.prism.json`
+98 fixture specs across 16 categories. Each entry pairs a `*.prism.json`
 spec with a rendered `*.svg`. Browse the source to learn the spec
 shapes; open the SVGs to see what they render. The `table/` fixtures
 are one exception — a top-level `table` mark renders only through
@@ -125,6 +125,7 @@ source.
 | [facet_by_region](composition/facet_by_region.prism.json) | <img src="composition/facet_by_region.svg" width="240"> |
 | [facet_nested](composition/facet_nested.prism.json) | <img src="composition/facet_nested.svg" width="240"> |
 | [facet_per_cell_y](composition/facet_per_cell_y.prism.json) | <img src="composition/facet_per_cell_y.svg" width="240"> |
+| [facet_cell_theme_override](composition/facet_cell_theme_override.prism.json) | <img src="composition/facet_cell_theme_override.svg" width="240"> |
 | [repeat_metrics](composition/repeat_metrics.prism.json) | <img src="composition/repeat_metrics.svg" width="240"> |
 | [dashboard](composition/dashboard.prism.json) | <img src="composition/dashboard.svg" width="240"> |
 
@@ -213,6 +214,38 @@ below is identical; only the rendering theme differs.
 | [bar_print](themes/bar_print.prism.json) | <img src="themes/bar_print.svg" width="240"> |
 | [bar_high_contrast](themes/bar_high_contrast.prism.json) | <img src="themes/bar_high_contrast.svg" width="240"> |
 | [bar_colorblind](themes/bar_colorblind.prism.json) | <img src="themes/bar_colorblind.svg" width="240"> |
+| [bar_filter](themes/bar_filter.prism.json) | <img src="themes/bar_filter.svg" width="240"> |
+| [bar_gradient](themes/bar_gradient.prism.json) | <img src="themes/bar_gradient.svg" width="240"> |
+| [bar_pattern](themes/bar_pattern.prism.json) | <img src="themes/bar_pattern.svg" width="240"> |
+| [bar_dark_variant](themes/bar_dark_variant.prism.json) | <img src="themes/bar_dark_variant.svg" width="240"> |
+| [bar_category_styles](themes/bar_category_styles.prism.json) | <img src="themes/bar_category_styles.svg" width="240"> |
+
+`bar_dark_variant` is different from the row above it: its spec sets
+`theme: {"dark_variant": "dark"}` instead of picking a theme with
+`--theme`, so the **one** rendered SVG embeds both the light and dark
+palettes and switches between them via `@media
+(prefers-color-scheme: dark)` — see [Dark variant
+pairing](../concepts/themes.md#dark-variant-pairing). The static
+preview above can only show the light rendering (the one your browser
+is currently in), so verify the effect one of two ways:
+
+- Toggle your OS or browser dark-mode setting while viewing the
+  `<img>` above (or open [the raw SVG](themes/bar_dark_variant.svg)
+  directly) — the axes, grid, legend, and bar colors all swap without
+  a re-render.
+- View source on `themes/bar_dark_variant.svg` and look for the
+  `@media (prefers-color-scheme: dark)` block inside the `<style>`
+  element, plus `fill="var(--prism-resolved-N)"` on the `<rect>`
+  elements — those are the doubled CSS custom properties described in
+  the docs.
+
+`bar_category_styles` demonstrates `theme.category_styles`: the theme
+maps each `quarter` value to its own `MarkStyle` (`Q1`/`Q2`/`Q3`/`Q4`
+each get a distinct `fill`), and every bar picks up its category's
+color automatically — no spec-level `condition` block at all. See
+[Category styles](../concepts/themes.md#category-styles) for the
+field→value→style shape and how a spec-level `condition` on the same
+field/value would win if one were present.
 
 ## Animation
 

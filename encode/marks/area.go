@@ -85,8 +85,9 @@ func encodeArea(in Inputs) ([]scene.Mark, error) {
 			lower[j] = lowerAll[idx]
 		}
 		style := in.Style
-		if g.color != nil {
+		if g.color != nil || g.varName != "" {
 			style.Fill = g.color
+			style.FillVar = g.varName
 		}
 		marks = append(marks, scene.Mark{
 			Type:  scene.MarkArea,

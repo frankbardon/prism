@@ -8,18 +8,58 @@ import (
 // Style carries per-mark visual properties. Pointer-typed fields
 // preserve the unset / explicit-zero distinction.
 type Style struct {
-	Fill        *Color    `json:"fill,omitempty"`
-	Stroke      *Color    `json:"stroke,omitempty"`
+	Fill   *Color `json:"fill,omitempty"`
+	Stroke *Color `json:"stroke,omitempty"`
+	// FillRef/StrokeRef carry a def id ("prism-gradient-<name>" or
+	// "prism-pattern-<name>") when the theme resolved this Fill/Stroke
+	// to a Theme.Gradients/Patterns entry via theme.Theme.ResolveFillRef
+	// (a mark.fill/stroke value written as url(#name)) instead of a
+	// literal color — see encode.applyThemeMarkStyle. When set, Fill/
+	// Stroke above are left nil and the renderer emits
+	// fill="url(#<FillRef>)" / stroke="url(#<StrokeRef>)" instead of
+	// the literal-color CSS() attr. Empty means unset (the common
+	// case): the renderer falls back to Fill/Stroke.
+	FillRef   string `json:"fill_ref,omitempty"`
+	StrokeRef string `json:"stroke_ref,omitempty"`
+	// FillVar/StrokeVar carry a CSS custom-property name (no leading
+	// "--", e.g. "prism-resolved-0") when the active theme's
+	// DarkVariant (E4-S3) requires this mark's color to repaint under
+	// @media (prefers-color-scheme: dark) in the same SVG — see
+	// theme.Theme.CSSVariables and encode/marks.ColorVarRegistry. When
+	// set, Fill/Stroke above are left nil (same precedence idea as
+	// FillRef/StrokeRef) and the renderer emits
+	// fill="var(--<FillVar>)" / stroke="var(--<StrokeVar>)" instead of
+	// the literal-color CSS() attr. Empty means unset — the entire
+	// state when the active theme has no DarkVariant — and the
+	// renderer falls back to FillRef/Fill (or StrokeRef/Stroke)
+	// exactly as before E4-S3.
+	FillVar     string    `json:"fill_var,omitempty"`
+	StrokeVar   string    `json:"stroke_var,omitempty"`
 	StrokeWidth float64   `json:"stroke_width,omitempty"`
 	StrokeDash  []float64 `json:"stroke_dash,omitempty"`
 	Opacity     float64   `json:"opacity,omitempty"`
 	FontFamily  string    `json:"font_family,omitempty"`
 	FontWeight  int       `json:"font_weight,omitempty"`
 	Cursor      string    `json:"cursor,omitempty"`
+	// LineHeight and LetterSpacing carry the resolved theme
+	// MarkStyle.LineHeight / LetterSpacing typography tokens (E2-S2)
+	// for text-mark glyphs. The renderer emits LetterSpacing as a
+	// `letter-spacing` presentation attribute and LineHeight as a
+	// `style="line-height:…"` declaration when non-nil; nil means
+	// unset (no attribute emitted).
+	LineHeight    *float64 `json:"line_height,omitempty"`
+	LetterSpacing *float64 `json:"letter_spacing,omitempty"`
+	// Filter names an entry in scene.Theme.Filters (mirrors
+	// theme.MarkStyle.Filter — resolved at encode time via
+	// theme.Theme.MarkDefault). The renderer emits
+	// filter="url(#prism-filter-<name>)" on the mark element when
+	// set. Empty means no filter.
+	Filter string `json:"filter,omitempty"`
 }
 
 // Color is an 8-bit RGBA color. Gradient / pattern fills go through
-// scene-level Defs and a string ID reference (not modelled here).
+// Style.FillRef/StrokeRef and Theme.Gradients/Patterns instead of a
+// Color (see Style.FillRef).
 type Color struct {
 	R uint8 `json:"r"`
 	G uint8 `json:"g"`

@@ -24,6 +24,19 @@ type Theme struct {
 	Name string `json:"name,omitempty"`
 	Base string `json:"base,omitempty"` // optional registered base theme
 
+	// DarkVariant names a registered counterpart theme used for
+	// automatic light/dark rendering (E4). Setting it alone is the
+	// opt-in — there is no separate flag. A non-empty value must name
+	// a theme already present in the registry (or registered earlier
+	// in the same init-time load batch — see theme/registry.go);
+	// an unresolved name fails loudly with
+	// PRISM_THEME_DARK_VARIANT_UNKNOWN at Register/LoadFile/LoadBytes
+	// time, the same fail-loud posture as Filter/url(#name)
+	// references (theme/validate.go). Model + validation only in this
+	// story — the dual-palette chrome emission lands in E4-S2 and the
+	// mark-color re-plumb in E4-S3.
+	DarkVariant string `json:"dark_variant,omitempty"`
+
 	// Legacy flat palette (pre-v2).
 	AxisColor       string `json:"axis_color,omitempty"`
 	GridColor       string `json:"grid_color,omitempty"`
@@ -60,6 +73,58 @@ type Theme struct {
 	// Marks reference an entry via "style" attr; renderers apply the
 	// MarkStyle as an additional cascade layer.
 	Style map[string]*MarkStyle `json:"style,omitempty"`
+
+	// Filters is a named registry of raw SVG <filter> inner-content
+	// bodies (e.g. a feGaussianBlur/feDropShadow chain), keyed by a
+	// theme-author-chosen name. Style blocks (Mark/Marks/Style entries,
+	// Axis, Legend, Title, View) reference an entry via their Filter
+	// field. This is an escape hatch — theme JSON is developer-
+	// authored and trusted the same as spec JSON; never route
+	// untrusted/attacker-influenced theme JSON through this (see
+	// docs/src/concepts/themes.md). Model + validation only in this
+	// story; the SVG <filter> element / filter="" attribute emission
+	// lands in E1-S2.
+	Filters map[string]string `json:"filters,omitempty"`
+	// RawCSS is a raw CSS string appended verbatim after the
+	// generated `--prism-*` variable declarations in the emitted
+	// <style> block (E1-S2 wires the emission). Same trust model as
+	// Filters — developer-authored, not sanitized.
+	RawCSS string `json:"raw_css,omitempty"`
+
+	// Gradients is a named registry of linear/radial gradient
+	// definitions. Style blocks will reference an entry via
+	// url(#name) once Fill/Stroke/Background resolution wires it up
+	// (E3-S2); actual <linearGradient>/<radialGradient> SVG emission
+	// lands in E3-S3. Model + validation only in this story.
+	Gradients map[string]GradientDef `json:"gradients,omitempty"`
+	// Patterns is a named registry of pattern fills — either a
+	// built-in catalogue entry (see PatternTypes) tuned via
+	// Color/Spacing/Size, or a raw-SVG Content body (same trust tier
+	// as Filters/RawCSS). See Gradients for the resolution/emission
+	// timeline.
+	Patterns map[string]PatternDef `json:"patterns,omitempty"`
+
+	// CategoryStyles is a theme-level data-driven style map: outer key
+	// is a field name, inner key is a stringified field value, leaf is
+	// a full MarkStyle applied automatically to marks whose bound
+	// field/value matches an entry — without requiring a spec-level
+	// `condition` block for the common case. Intentionally richer than
+	// Range (which is color-only, keyed by scale role rather than an
+	// actual data value): a category style can set any MarkStyle
+	// token, not just a fill color.
+	//
+	// A nested field→value→style map is used instead of a flat
+	// "field=value" string key to stay consistent with the project's
+	// no-expression-language stance (see spec/predicate.go,
+	// spec/calc_expr.go) — no string grammar to parse.
+	//
+	// Precedence: a spec's own `spec.Condition` targeting the same
+	// field/value wins over the matching CategoryStyles entry
+	// (explicit beats theme default). Applied at encode time by
+	// encode.applyCategoryStyles, which runs before
+	// encode.applyConditions so a later-applied condition naturally
+	// overwrites whichever attrs it targets (encode/encode_category_styles.go).
+	CategoryStyles map[string]map[string]*MarkStyle `json:"category_styles,omitempty"`
 }
 
 // ToSceneTheme converts a Theme into the wire-stable scene.Theme
@@ -83,6 +148,57 @@ func (t *Theme) ToSceneTheme() *scene.Theme {
 	}
 	if c, err := scene.ColorFromHex(t.TextColor); err == nil {
 		out.ColorText = c
+	}
+	// Filter escape hatch (E1-S2): pass the raw filter-body registry
+	// through verbatim, plus the resolved per-block Filter reference
+	// for the four structural style blocks that don't cascade to a
+	// per-element scene.Style (Mark/Marks do, via
+	// encode.applyThemeMarkStyle → scene.Style.Filter instead).
+	if len(t.Filters) > 0 {
+		out.Filters = make(map[string]string, len(t.Filters))
+		for k, v := range t.Filters {
+			out.Filters[k] = v
+		}
+	}
+	if t.Axis != nil {
+		out.AxisFilter = t.Axis.Filter
+		out.AxisLabelLineHeight = copyFloat(t.Axis.LabelLineHeight)
+		out.AxisLabelLetterSpacing = copyFloat(t.Axis.LabelLetterSpacing)
+		out.AxisTitleLineHeight = copyFloat(t.Axis.TitleLineHeight)
+		out.AxisTitleLetterSpacing = copyFloat(t.Axis.TitleLetterSpacing)
+	}
+	if t.Legend != nil {
+		out.LegendFilter = t.Legend.Filter
+		out.LegendLabelLineHeight = copyFloat(t.Legend.LabelLineHeight)
+		out.LegendLabelLetterSpacing = copyFloat(t.Legend.LabelLetterSpacing)
+		out.LegendTitleLineHeight = copyFloat(t.Legend.TitleLineHeight)
+		out.LegendTitleLetterSpacing = copyFloat(t.Legend.TitleLetterSpacing)
+	}
+	if t.Title != nil {
+		out.TitleFilter = t.Title.Filter
+		out.TitleLineHeight = copyFloat(t.Title.LineHeight)
+		out.TitleLetterSpacing = copyFloat(t.Title.LetterSpacing)
+	}
+	if t.View != nil {
+		out.ViewFilter = t.View.Filter
+		out.ViewBackgroundRef = t.ResolveFillRef(t.View.Background).DefID()
+	}
+	// Gradients/Patterns (E3-S3): pass the whole registry through,
+	// pre-resolved to SVG-emission-ready shape, so render/svg can emit
+	// one <linearGradient>/<radialGradient>/<pattern> def per entry —
+	// same "emit the whole registry regardless of reference" approach
+	// as Filters above.
+	if len(t.Gradients) > 0 {
+		out.Gradients = make(map[string]scene.Gradient, len(t.Gradients))
+		for k, v := range t.Gradients {
+			out.Gradients[k] = v.sceneDef()
+		}
+	}
+	if len(t.Patterns) > 0 {
+		out.Patterns = make(map[string]scene.Pattern, len(t.Patterns))
+		for k, v := range t.Patterns {
+			out.Patterns[k] = v.sceneDef()
+		}
 	}
 	return out
 }
@@ -151,6 +267,25 @@ func (t *Theme) Clone() *Theme {
 			out.Style[k] = v.Clone()
 		}
 	}
+	if t.Filters != nil {
+		out.Filters = make(map[string]string, len(t.Filters))
+		for k, v := range t.Filters {
+			out.Filters[k] = v
+		}
+	}
+	if t.Gradients != nil {
+		out.Gradients = make(map[string]GradientDef, len(t.Gradients))
+		for k, v := range t.Gradients {
+			out.Gradients[k] = v.Clone()
+		}
+	}
+	if t.Patterns != nil {
+		out.Patterns = make(map[string]PatternDef, len(t.Patterns))
+		for k, v := range t.Patterns {
+			out.Patterns[k] = v.Clone()
+		}
+	}
+	out.CategoryStyles = cloneCategoryStyles(t.CategoryStyles)
 	return &out
 }
 

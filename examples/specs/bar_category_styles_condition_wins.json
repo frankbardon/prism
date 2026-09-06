@@ -1,0 +1,33 @@
+{
+  "$schema": "urn:prism:schema:v1:spec",
+  "title": "Brand score (theme category_styles overridden by spec condition)",
+  "data": {
+    "name": "brand_scores",
+    "values": [
+      {"brand_id": "alpha", "score": 0.42},
+      {"brand_id": "beta",  "score": 0.71},
+      {"brand_id": "gamma", "score": 0.58}
+    ]
+  },
+  "mark": "bar",
+  "encoding": {
+    "x": {"field": "brand_id", "type": "nominal"},
+    "y": {"field": "score",    "type": "quantitative"},
+    "color": {
+      "condition": [
+        {"test": {"op": "eq", "field": "brand_id", "value": "beta"}, "value": "#e45756"}
+      ],
+      "value": "#cbd5e1"
+    }
+  },
+  "theme": {
+    "name": "light",
+    "category_styles": {
+      "brand_id": {
+        "alpha": {"fill": "#4c78a8"},
+        "beta":  {"fill": "#f58518"},
+        "gamma": {"fill": "#54a24b"}
+      }
+    }
+  }
+}

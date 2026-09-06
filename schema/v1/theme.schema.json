@@ -10,6 +10,10 @@
       "additionalProperties": false,
       "properties": {
         "name":       {"type": "string", "description": "Name of a registered theme to inherit from (light, dark, print, high_contrast, colorblind)."},
+        "dark_variant": {
+          "type": "string",
+          "description": "Name of a registered theme that serves as this theme's dark-mode counterpart. Setting this alone triggers automatic light/dark rendering (dual embedded palettes in one SVG) — no separate opt-in flag. Must name a theme already registered (or registered earlier in the same load batch); an unresolved name fails theme load with PRISM_THEME_DARK_VARIANT_UNKNOWN."
+        },
         "background": {"$ref": "shared.schema.json#/$defs/color", "description": "Chart background color (legacy alias for view.background)."},
         "font":       {"type": "string", "description": "Default font family (legacy)."},
         "font_size":  {"type": "number", "minimum": 0, "description": "Default font size in pixels (legacy)."},
@@ -50,8 +54,38 @@
           "type": "object",
           "additionalProperties": {"$ref": "#/$defs/state_style"},
           "description": "State overlays (selected, deselected, hover, focus)."
+        },
+        "filters": {
+          "type": "object",
+          "additionalProperties": {"type": "string"},
+          "description": "Named registry of raw SVG <filter> inner-content bodies (e.g. a feGaussianBlur/feDropShadow chain), keyed by a theme-author-chosen name. Style blocks reference an entry via their own 'filter' property; a reference that does not resolve fails theme load with PRISM_THEME_FILTER_UNKNOWN. Escape hatch: this content is developer-authored and trusted the same as the rest of the theme/spec JSON — never route untrusted content through it."
+        },
+        "raw_css": {
+          "type": "string",
+          "description": "Raw CSS appended verbatim after the generated --prism-* variable declarations in the emitted <style> block. Same trust model as 'filters' — developer-authored, not sanitized."
+        },
+        "gradients": {
+          "type": "object",
+          "additionalProperties": {"$ref": "#/$defs/gradient_def"},
+          "description": "Named registry of linear/radial gradient definitions. Style blocks reference an entry via a fill/stroke/background value written as url(#name); the SVG renderer emits a matching <linearGradient>/<radialGradient> def."
+        },
+        "patterns": {
+          "type": "object",
+          "additionalProperties": {"$ref": "#/$defs/pattern_def"},
+          "description": "Named registry of pattern fills — either a built-in catalogue entry (diagonal-stripes, dots, cross-hatch, grid) or a raw-SVG 'content' body. Same url(#name) resolution/emission as 'gradients'."
+        },
+        "category_styles": {
+          "type": "object",
+          "additionalProperties": {"$ref": "#/$defs/category_style_values"},
+          "description": "Theme-level data-driven style map: outer key is a field name, inner key is a stringified field value, leaf is a full mark_style applied automatically wherever that field is encoded on a mark channel — without a spec-level 'condition' block. Nested field -> value -> style shape (not a flat 'field=value' string key), consistent with Prism's no-expression-language stance. A spec's own 'condition' targeting the same field/value wins over a matching entry here. Model only today — encoder application and the condition-precedence resolution land in a follow-up story."
         }
       }
+    },
+
+    "category_style_values": {
+      "type": "object",
+      "additionalProperties": {"$ref": "#/$defs/mark_style"},
+      "description": "Field-value -> MarkStyle map for one field name entry in 'category_styles'. Keys are the stringified data values that should receive the given style."
     },
 
     "mark_style": {
@@ -71,7 +105,10 @@
         "font_weight":  {"type": ["string", "number"]},
         "font_style":   {"type": "string", "enum": ["normal", "italic", "oblique"]},
         "align":        {"type": "string", "enum": ["left", "center", "right"]},
-        "baseline":     {"type": "string", "enum": ["alphabetic", "top", "middle", "bottom"]}
+        "baseline":     {"type": "string", "enum": ["alphabetic", "top", "middle", "bottom"]},
+        "line_height":    {"type": "number", "minimum": 0, "description": "Line height for multi-line text mark content."},
+        "letter_spacing": {"type": "number", "description": "Letter spacing (tracking) applied to text mark content."},
+        "filter":       {"type": "string", "description": "Name of an entry in the theme's top-level 'filters' map."}
       }
     },
 
@@ -93,10 +130,15 @@
         "label_font_size":    {"type": "number", "minimum": 0},
         "label_font_weight":  {"type": ["string", "number"]},
         "label_padding":      {"type": "number", "minimum": 0},
+        "label_line_height":    {"type": "number", "minimum": 0, "description": "Line height for axis tick label text."},
+        "label_letter_spacing": {"type": "number", "description": "Letter spacing (tracking) for axis tick label text."},
         "title_color":        {"$ref": "shared.schema.json#/$defs/color"},
         "title_font_size":    {"type": "number", "minimum": 0},
         "title_font_weight":  {"type": ["string", "number"]},
-        "title_padding":      {"type": "number", "minimum": 0}
+        "title_padding":      {"type": "number", "minimum": 0},
+        "title_line_height":    {"type": "number", "minimum": 0, "description": "Line height for the axis title text."},
+        "title_letter_spacing": {"type": "number", "description": "Letter spacing (tracking) for the axis title text."},
+        "filter":             {"type": "string", "description": "Name of an entry in the theme's top-level 'filters' map."}
       }
     },
 
@@ -112,11 +154,16 @@
         "symbol_stroke_width": {"type": "number", "minimum": 0},
         "label_color":         {"$ref": "shared.schema.json#/$defs/color"},
         "label_font_size":     {"type": "number", "minimum": 0},
+        "label_line_height":    {"type": "number", "minimum": 0, "description": "Line height for legend entry label text."},
+        "label_letter_spacing": {"type": "number", "description": "Letter spacing (tracking) for legend entry label text."},
         "title_color":         {"$ref": "shared.schema.json#/$defs/color"},
         "title_font_size":     {"type": "number", "minimum": 0},
         "title_font_weight":   {"type": ["string", "number"]},
+        "title_line_height":    {"type": "number", "minimum": 0, "description": "Line height for the legend title text."},
+        "title_letter_spacing": {"type": "number", "description": "Letter spacing (tracking) for the legend title text."},
         "row_padding":         {"type": "number", "minimum": 0},
-        "column_padding":      {"type": "number", "minimum": 0}
+        "column_padding":      {"type": "number", "minimum": 0},
+        "filter":              {"type": "string", "description": "Name of an entry in the theme's top-level 'filters' map."}
       }
     },
 
@@ -129,7 +176,10 @@
         "font_weight": {"type": ["string", "number"]},
         "align":       {"type": "string", "enum": ["left", "center", "right"]},
         "anchor":      {"type": "string", "enum": ["start", "middle", "end"]},
-        "padding":     {"type": "number", "minimum": 0}
+        "padding":     {"type": "number", "minimum": 0},
+        "line_height":    {"type": "number", "minimum": 0, "description": "Line height for multi-line chart title text."},
+        "letter_spacing": {"type": "number", "description": "Letter spacing (tracking) for the chart title text."},
+        "filter":      {"type": "string", "description": "Name of an entry in the theme's top-level 'filters' map."}
       }
     },
 
@@ -141,7 +191,8 @@
         "stroke":       {"$ref": "shared.schema.json#/$defs/color"},
         "stroke_width": {"type": "number", "minimum": 0},
         "padding":      {"type": "number", "minimum": 0},
-        "corner_radius":{"type": "number", "minimum": 0}
+        "corner_radius":{"type": "number", "minimum": 0},
+        "filter":       {"type": "string", "description": "Name of an entry in the theme's top-level 'filters' map."}
       }
     },
 
@@ -179,6 +230,75 @@
           "type": "array",
           "items": {"$ref": "shared.schema.json#/$defs/color"},
           "description": "Inline color list (wins over scheme when both set)."
+        }
+      }
+    },
+
+    "gradient_def": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["type", "stops"],
+      "properties": {
+        "type": {
+          "type": "string",
+          "enum": ["linear", "radial"],
+          "description": "Gradient shape. 'linear' uses angle; 'radial' uses cx/cy/radius."
+        },
+        "angle": {
+          "type": "number",
+          "description": "Linear gradient orientation in degrees (0 = left-to-right, clockwise). Ignored for radial."
+        },
+        "cx": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1,
+          "description": "Radial gradient center x, as a fraction of the shape's bounding box. Ignored for linear."
+        },
+        "cy": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1,
+          "description": "Radial gradient center y, as a fraction of the shape's bounding box. Ignored for linear."
+        },
+        "radius": {
+          "type": "number",
+          "exclusiveMinimum": 0,
+          "description": "Radial gradient radius, as a fraction of the shape's bounding box. Ignored for linear."
+        },
+        "stops": {
+          "type": "array",
+          "minItems": 2,
+          "items": {"$ref": "#/$defs/gradient_stop"},
+          "description": "Color stops ordered by offset. At least 2 required."
+        }
+      }
+    },
+
+    "gradient_stop": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["offset", "color"],
+      "properties": {
+        "offset": {"type": "number", "minimum": 0, "maximum": 1},
+        "color":  {"$ref": "shared.schema.json#/$defs/color"}
+      }
+    },
+
+    "pattern_def": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "type": {
+          "type": "string",
+          "enum": ["diagonal-stripes", "dots", "cross-hatch", "grid"],
+          "description": "Built-in pattern catalogue name. Omit when 'content' supplies a raw SVG pattern body instead — exactly one of 'type' or 'content' must be set."
+        },
+        "color":   {"$ref": "shared.schema.json#/$defs/color", "description": "Pattern foreground color (built-in catalogue types only)."},
+        "spacing": {"type": "number", "exclusiveMinimum": 0, "description": "Spacing between repeated pattern elements (built-in catalogue types only)."},
+        "size":    {"type": "number", "exclusiveMinimum": 0, "description": "Size of each pattern element, e.g. dot radius or stripe width (built-in catalogue types only)."},
+        "content": {
+          "type": "string",
+          "description": "Raw SVG <pattern> inner-content body for a bespoke pattern. Same trust tier as the theme's top-level 'filters'/'raw_css' — developer-authored, never sanitized. Exactly one of 'type' or 'content' must be set."
         }
       }
     }

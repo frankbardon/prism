@@ -11,6 +11,9 @@ func ApplyOverride(base *Theme, o *spec.ThemeOverride) *Theme {
 		return base.Clone()
 	}
 	override := &Theme{}
+	if o.DarkVariant != "" {
+		override.DarkVariant = o.DarkVariant
+	}
 	// Legacy flat fields seed the equivalent flat theme fields so
 	// pre-v2 specs keep working.
 	if o.Background != "" {
@@ -75,6 +78,30 @@ func ApplyOverride(base *Theme, o *spec.ThemeOverride) *Theme {
 			override.Style[k] = copyMarkStyle(v)
 		}
 	}
+	if o.Filters != nil {
+		override.Filters = make(map[string]string, len(o.Filters))
+		for k, v := range o.Filters {
+			override.Filters[k] = v
+		}
+	}
+	if o.RawCSS != "" {
+		override.RawCSS = o.RawCSS
+	}
+	if o.Gradients != nil {
+		override.Gradients = make(map[string]GradientDef, len(o.Gradients))
+		for k, v := range o.Gradients {
+			override.Gradients[k] = copyGradientDef(v)
+		}
+	}
+	if o.Patterns != nil {
+		override.Patterns = make(map[string]PatternDef, len(o.Patterns))
+		for k, v := range o.Patterns {
+			override.Patterns[k] = copyPatternDef(v)
+		}
+	}
+	if o.CategoryStyles != nil {
+		override.CategoryStyles = copyCategoryStyles(o.CategoryStyles)
+	}
 	return Merge(base, override)
 }
 
@@ -90,6 +117,7 @@ func copyMarkStyle(s *spec.MarkStyle) *MarkStyle {
 		FontStyle:  s.FontStyle,
 		Align:      s.Align,
 		Baseline:   s.Baseline,
+		Filter:     s.Filter,
 	}
 	out.StrokeWidth = copyFloat(s.StrokeWidth)
 	out.Opacity = copyFloat(s.Opacity)
@@ -97,6 +125,8 @@ func copyMarkStyle(s *spec.MarkStyle) *MarkStyle {
 	out.CornerRadius = copyFloat(s.CornerRadius)
 	out.Size = copyFloat(s.Size)
 	out.FontSize = copyFloat(s.FontSize)
+	out.LineHeight = copyFloat(s.LineHeight)
+	out.LetterSpacing = copyFloat(s.LetterSpacing)
 	if s.StrokeDash != nil {
 		out.StrokeDash = append([]float64(nil), s.StrokeDash...)
 	}
@@ -115,6 +145,7 @@ func copyAxisStyle(s *spec.AxisStyle) *AxisStyle {
 		LabelFontWeight: s.LabelFontWeight,
 		TitleColor:      s.TitleColor,
 		TitleFontWeight: s.TitleFontWeight,
+		Filter:          s.Filter,
 	}
 	out.DomainWidth = copyFloat(s.DomainWidth)
 	out.TickWidth = copyFloat(s.TickWidth)
@@ -124,8 +155,12 @@ func copyAxisStyle(s *spec.AxisStyle) *AxisStyle {
 	out.GridOpacity = copyFloat(s.GridOpacity)
 	out.LabelFontSize = copyFloat(s.LabelFontSize)
 	out.LabelPadding = copyFloat(s.LabelPadding)
+	out.LabelLineHeight = copyFloat(s.LabelLineHeight)
+	out.LabelLetterSpacing = copyFloat(s.LabelLetterSpacing)
 	out.TitleFontSize = copyFloat(s.TitleFontSize)
 	out.TitlePadding = copyFloat(s.TitlePadding)
+	out.TitleLineHeight = copyFloat(s.TitleLineHeight)
+	out.TitleLetterSpacing = copyFloat(s.TitleLetterSpacing)
 	if s.GridDash != nil {
 		out.GridDash = append([]float64(nil), s.GridDash...)
 	}
@@ -142,13 +177,18 @@ func copyLegendStyle(s *spec.LegendStyle) *LegendStyle {
 		LabelColor:      s.LabelColor,
 		TitleColor:      s.TitleColor,
 		TitleFontWeight: s.TitleFontWeight,
+		Filter:          s.Filter,
 	}
 	out.StrokeWidth = copyFloat(s.StrokeWidth)
 	out.Padding = copyFloat(s.Padding)
 	out.SymbolSize = copyFloat(s.SymbolSize)
 	out.SymbolStrokeWidth = copyFloat(s.SymbolStrokeWidth)
 	out.LabelFontSize = copyFloat(s.LabelFontSize)
+	out.LabelLineHeight = copyFloat(s.LabelLineHeight)
+	out.LabelLetterSpacing = copyFloat(s.LabelLetterSpacing)
 	out.TitleFontSize = copyFloat(s.TitleFontSize)
+	out.TitleLineHeight = copyFloat(s.TitleLineHeight)
+	out.TitleLetterSpacing = copyFloat(s.TitleLetterSpacing)
 	out.RowPadding = copyFloat(s.RowPadding)
 	out.ColumnPadding = copyFloat(s.ColumnPadding)
 	return out
@@ -163,9 +203,12 @@ func copyTitleStyle(s *spec.TitleStyle) *TitleStyle {
 		FontWeight: s.FontWeight,
 		Align:      s.Align,
 		Anchor:     s.Anchor,
+		Filter:     s.Filter,
 	}
 	out.FontSize = copyFloat(s.FontSize)
 	out.Padding = copyFloat(s.Padding)
+	out.LineHeight = copyFloat(s.LineHeight)
+	out.LetterSpacing = copyFloat(s.LetterSpacing)
 	return out
 }
 
@@ -176,6 +219,7 @@ func copyViewStyle(s *spec.ViewStyle) *ViewStyle {
 	out := &ViewStyle{
 		Background: s.Background,
 		Stroke:     s.Stroke,
+		Filter:     s.Filter,
 	}
 	out.StrokeWidth = copyFloat(s.StrokeWidth)
 	out.Padding = copyFloat(s.Padding)
@@ -215,6 +259,47 @@ func copyRangeSlot(s *spec.RangeSlot) *RangeSlot {
 	out := &RangeSlot{Scheme: s.Scheme}
 	if s.Colors != nil {
 		out.Colors = append([]string(nil), s.Colors...)
+	}
+	return out
+}
+
+func copyGradientDef(g spec.GradientDef) GradientDef {
+	out := GradientDef{Type: g.Type}
+	out.Angle = copyFloat(g.Angle)
+	out.CX = copyFloat(g.CX)
+	out.CY = copyFloat(g.CY)
+	out.Radius = copyFloat(g.Radius)
+	if g.Stops != nil {
+		out.Stops = make([]GradientStop, len(g.Stops))
+		for i, s := range g.Stops {
+			out.Stops[i] = GradientStop{Offset: s.Offset, Color: s.Color}
+		}
+	}
+	return out
+}
+
+func copyPatternDef(p spec.PatternDef) PatternDef {
+	out := PatternDef{Type: p.Type, Color: p.Color, Content: p.Content}
+	out.Spacing = copyFloat(p.Spacing)
+	out.Size = copyFloat(p.Size)
+	return out
+}
+
+func copyCategoryStyles(m map[string]map[string]*spec.MarkStyle) map[string]map[string]*MarkStyle {
+	if m == nil {
+		return nil
+	}
+	out := make(map[string]map[string]*MarkStyle, len(m))
+	for field, values := range m {
+		if values == nil {
+			out[field] = nil
+			continue
+		}
+		inner := make(map[string]*MarkStyle, len(values))
+		for value, style := range values {
+			inner[value] = copyMarkStyle(style)
+		}
+		out[field] = inner
 	}
 	return out
 }

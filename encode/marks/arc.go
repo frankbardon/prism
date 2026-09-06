@@ -139,9 +139,9 @@ func encodeArc(in Inputs, mode string) ([]scene.Mark, error) {
 		style := in.Style
 		if in.Color != nil && i < len(colorValues) {
 			cat, _ := colorValues[i].(string)
-			c := lookupCategoryColor(cat, in.Color.Categories, in.Color.Palette)
-			if c != nil {
+			if c, v := resolveCategoryColor(in, cat); c != nil || v != "" {
 				style.Fill = c
+				style.FillVar = v
 			}
 		}
 		out = append(out, scene.Mark{

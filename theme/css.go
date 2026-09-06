@@ -37,8 +37,26 @@ import (
 //   - --prism-selected-*    selection state
 //   - --prism-deselected-*  selection state
 //
-// The class set is fixed; theme values populate via var().
-func (t *Theme) CSSVariables() string {
+// ResolvedColorVar is one entry in the E4-S3 mark-color auto-dark
+// registry: a stable "prism-resolved-N" name (assigned by
+// encode/marks.ColorVarRegistry, no leading "--") plus the light/dark
+// CSS color strings the encoder resolved a scale-driven or static
+// theme mark color to. CSSVariables emits Name's Light value under
+// the base :root block and, when a DarkVariant chrome block is also
+// emitted (see the CSSVariables doc comment), its Dark value under
+// the paired @media (prefers-color-scheme: dark) block.
+type ResolvedColorVar struct {
+	Name  string
+	Light string
+	Dark  string
+}
+
+// The class set is fixed; theme values populate via var(). resolved
+// carries the E4-S3 mark-color auto-dark registry — empty (the
+// default for every call site that predates E4-S3, and the entire
+// state whenever the active theme has no DarkVariant) leaves the
+// output byte-identical to the pre-E4-S3 shape.
+func (t *Theme) CSSVariables(resolved ...ResolvedColorVar) string {
 	if t == nil {
 		return ""
 	}
@@ -46,14 +64,88 @@ func (t *Theme) CSSVariables() string {
 	b.WriteString("<style>")
 	b.WriteString(":root{")
 	writeRootVars(&b, t)
+	writeResolvedVars(&b, resolved, false)
 	b.WriteString("}")
 	writeClassSelectors(&b)
+	// Auto light/dark chrome swap (E4-S2): when DarkVariant names a
+	// registered theme, append a second :root rule guarded by
+	// prefers-color-scheme carrying that theme's chrome values (axis,
+	// grid, title, legend, selection state, view) — the tokens that
+	// already flow through var() end-to-end per
+	// research/css-var-coverage.md. Mark colors used to be excluded
+	// here (baked hex literals with no stable per-instance token); E4-S3
+	// closes that gap by having encode.go resolve scale-driven and
+	// static per-mark-type colors against both the base theme and
+	// DarkVariant, then pass each distinct pair in as a
+	// ResolvedColorVar — that's what writeResolvedVars(resolved, ...)
+	// emits into both this block and the base :root block above.
+	// Absent DarkVariant (or an unresolved name), this whole block is a
+	// strict no-op — output stays byte-identical to pre-E4-S2 behavior
+	// (resolved is always empty in that case too, since encode.go only
+	// ever populates it when DarkVariant resolves).
+	if dv, ok := resolveDarkVariant(t); ok {
+		b.WriteString("@media (prefers-color-scheme: dark){:root{")
+		writeDarkChromeVars(&b, dv)
+		writeResolvedVars(&b, resolved, true)
+		b.WriteString("}}")
+	}
+	// RawCSS escape hatch (E1-S2): appended verbatim after the
+	// generated variable manifest + fixed class selectors, still
+	// inside the same <style> block. Same trust model as Filters —
+	// developer-authored theme JSON, not sanitized.
+	if t.RawCSS != "" {
+		b.WriteString(t.RawCSS)
+	}
 	b.WriteString("</style>")
 	return b.String()
 }
 
+// resolveDarkVariant looks up t.DarkVariant in the package registry.
+// Returns (nil, false) when DarkVariant is unset or names a theme
+// that isn't registered — the latter should not happen for a theme
+// that passed Validate (see checkDarkVariantRef), but CSSVariables
+// degrades gracefully rather than panicking on a hand-built *Theme
+// that skipped validation.
+func resolveDarkVariant(t *Theme) (*Theme, bool) {
+	if t == nil || t.DarkVariant == "" {
+		return nil, false
+	}
+	dv, ok := registry[t.DarkVariant]
+	if !ok {
+		return nil, false
+	}
+	return dv, true
+}
+
 func writeRootVars(b *strings.Builder, t *Theme) {
-	// Legacy flat tokens (preserved for back-compat with prism.mjs).
+	writeLegacyFlatVars(b, t)
+
+	// v2 nested tokens.
+	writeAxisVars(b, t.Axis)
+	writeLegendVars(b, t.Legend)
+	writeTitleVars(b, t.Title)
+	writeViewVars(b, t.View)
+	writeMarkVars(b, "mark", t.Mark)
+	// Marks rendered in sorted-name order so the CSS bytes are
+	// deterministic across runs.
+	if t.Marks != nil {
+		names := make([]string, 0, len(t.Marks))
+		for k := range t.Marks {
+			names = append(names, k)
+		}
+		sort.Strings(names)
+		for _, name := range names {
+			writeMarkVars(b, "mark-"+name, t.Marks[name])
+		}
+	}
+	writeStateVars(b, t.States)
+}
+
+// writeLegacyFlatVars emits the pre-v2 flat color/font tokens
+// (preserved for back-compat with prism.mjs). Factored out of
+// writeRootVars so the dark-variant chrome block (writeDarkChromeVars)
+// can reuse it without duplicating the field list.
+func writeLegacyFlatVars(b *strings.Builder, t *Theme) {
 	if t.AxisColor != "" {
 		fmt.Fprintf(b, "--prism-color-axis:%s;", t.AxisColor)
 	}
@@ -81,26 +173,40 @@ func writeRootVars(b *strings.Builder, t *Theme) {
 	if t.FontSizeAxisTitle != 0 {
 		fmt.Fprintf(b, "--prism-font-size-axis-title:%gpx;", t.FontSizeAxisTitle)
 	}
+}
 
-	// v2 nested tokens.
+// writeDarkChromeVars emits the DarkVariant theme's chrome tokens —
+// everything writeRootVars produces except mark defaults (out of
+// scope for E4-S2; see the CSSVariables doc comment above). Reuses
+// the exact same per-block helpers as the base :root emission so a
+// dark-mode viewer sees the identical chrome shape, just re-themed.
+func writeDarkChromeVars(b *strings.Builder, t *Theme) {
+	writeLegacyFlatVars(b, t)
 	writeAxisVars(b, t.Axis)
 	writeLegendVars(b, t.Legend)
 	writeTitleVars(b, t.Title)
 	writeViewVars(b, t.View)
-	writeMarkVars(b, "mark", t.Mark)
-	// Marks rendered in sorted-name order so the CSS bytes are
-	// deterministic across runs.
-	if t.Marks != nil {
-		names := make([]string, 0, len(t.Marks))
-		for k := range t.Marks {
-			names = append(names, k)
-		}
-		sort.Strings(names)
-		for _, name := range names {
-			writeMarkVars(b, "mark-"+name, t.Marks[name])
-		}
-	}
 	writeStateVars(b, t.States)
+}
+
+// writeResolvedVars emits one custom-property declaration per E4-S3
+// resolved-color-var entry — the Light value when dark is false, the
+// Dark value when dark is true. Entries with an empty value for the
+// requested side are skipped (defensive; encode.go never registers a
+// pair with an empty hex). A nil/empty resolved slice (every call
+// site before E4-S3, and any theme with no DarkVariant) emits
+// nothing, keeping CSS output byte-identical to pre-E4-S3 behavior.
+func writeResolvedVars(b *strings.Builder, resolved []ResolvedColorVar, dark bool) {
+	for _, rv := range resolved {
+		v := rv.Light
+		if dark {
+			v = rv.Dark
+		}
+		if v == "" || rv.Name == "" {
+			continue
+		}
+		fmt.Fprintf(b, "--%s:%s;", rv.Name, v)
+	}
 }
 
 func writeAxisVars(b *strings.Builder, a *AxisStyle) {

@@ -78,8 +78,9 @@ func encodeBar(in Inputs) ([]scene.Mark, error) {
 		if len(colorVals) > 0 {
 			cat, ok := colorVals[i].(string)
 			if ok {
-				if c := lookupCategoryColor(cat, in.Color.Categories, in.Color.Palette); c != nil {
+				if c, v := resolveCategoryColor(in, cat); c != nil || v != "" {
 					style.Fill = c
+					style.FillVar = v
 				}
 			}
 		}

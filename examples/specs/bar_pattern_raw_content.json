@@ -1,0 +1,45 @@
+{
+  "$schema": "urn:prism:schema:v1:spec",
+  "title": "Brand score (bar with raw-content pattern fill)",
+  "data": {
+    "name": "brand_scores",
+    "values": [
+      {
+        "brand_id": "alpha",
+        "score": 0.42
+      },
+      {
+        "brand_id": "beta",
+        "score": 0.71
+      },
+      {
+        "brand_id": "gamma",
+        "score": 0.58
+      }
+    ]
+  },
+  "mark": "bar",
+  "encoding": {
+    "x": {
+      "field": "brand_id",
+      "type": "nominal"
+    },
+    "y": {
+      "field": "score",
+      "type": "quantitative"
+    }
+  },
+  "theme": {
+    "name": "light",
+    "patterns": {
+      "custom_dots": {
+        "content": "<circle cx=\"4\" cy=\"4\" r=\"2\" fill=\"#e45756\"/>"
+      }
+    },
+    "marks": {
+      "bar": {
+        "fill": "url(#custom_dots)"
+      }
+    }
+  }
+}

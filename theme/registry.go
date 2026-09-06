@@ -7,13 +7,22 @@ var registry = map[string]*Theme{}
 
 // Register adds (or replaces) a theme under name. Safe to call from
 // any package's init() block.
-func Register(name string, t *Theme) {
+//
+// Returns PRISM_THEME_FILTER_UNKNOWN (and leaves the registry
+// unchanged) when t declares a style-block Filter reference that does
+// not resolve to a key in t.Filters — an intentional departure from
+// RangeSlot.Resolve's silent-fallback behavior; see theme/validate.go.
+func Register(name string, t *Theme) error {
 	if t == nil {
-		return
+		return nil
+	}
+	if err := t.Validate(); err != nil {
+		return err
 	}
 	cp := t.Clone()
 	cp.Name = name
 	registry[name] = cp
+	return nil
 }
 
 // Get returns the named theme + true; (nil, false) when missing.
@@ -47,9 +56,18 @@ func Names() []string {
 }
 
 func init() {
-	Register("light", lightTheme())
-	Register("dark", darkTheme())
-	Register("print", printTheme())
-	Register("high_contrast", highContrastTheme())
-	Register("colorblind", colorblindTheme())
+	mustRegister("light", lightTheme())
+	mustRegister("dark", darkTheme())
+	mustRegister("print", printTheme())
+	mustRegister("high_contrast", highContrastTheme())
+	mustRegister("colorblind", colorblindTheme())
+}
+
+// mustRegister panics on a Register error — appropriate at init time
+// for the built-in themes, which are compile-time-authored and never
+// expected to fail validation.
+func mustRegister(name string, t *Theme) {
+	if err := Register(name, t); err != nil {
+		panic("theme: " + name + ": " + err.Error())
+	}
 }

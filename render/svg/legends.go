@@ -9,25 +9,39 @@ import (
 // renderLegends emits one <g class="prism-legend"> per Scene.Legend.
 // Symbol entries get a 12×12 swatch + label; gradient entries get a
 // 12×120 rect filled via url(#gradient-id) with axis labels along
-// the side.
-func renderLegends(w *Writer, legends []scene.Legend) {
+// the side. filterName, when non-empty, is the resolved
+// theme.Legend.Filter reference (E1-S2) — applied to the outer
+// prism-legends wrapper via filter="url(#prism-filter-<name>)".
+// theme (may be nil) additionally carries the resolved
+// LegendLabelLineHeight/LegendLabelLetterSpacing and
+// LegendTitleLineHeight/LegendTitleLetterSpacing tokens (E2-S2).
+func renderLegends(w *Writer, legends []scene.Legend, filterName string, theme *scene.Theme) {
 	if len(legends) == 0 {
 		return
 	}
 	w.OpenTag("g")
 	w.Attr("class", "prism-legends")
+	writeFilterAttr(w, filterName)
 	w.CloseTagOpen()
 	for _, lg := range legends {
-		renderLegend(w, lg)
+		renderLegend(w, lg, theme)
 	}
 	w.EndTag("g")
 }
 
-func renderLegend(w *Writer, lg scene.Legend) {
+func renderLegend(w *Writer, lg scene.Legend, theme *scene.Theme) {
 	w.OpenTag("g")
 	w.Attr("class", "prism-legend prism-legend-"+string(lg.Channel))
 	w.Attr("data-prism-legend-id", lg.ID)
 	w.CloseTagOpen()
+
+	// Resolved typography tokens (E2-S2) — nil-safe extraction once,
+	// reused across the title + every entry label below.
+	var labelLH, labelLS, titleLH, titleLS *float64
+	if theme != nil {
+		labelLH, labelLS = theme.LegendLabelLineHeight, theme.LegendLabelLetterSpacing
+		titleLH, titleLS = theme.LegendTitleLineHeight, theme.LegendTitleLetterSpacing
+	}
 
 	// Title (if any) above entries.
 	const titleH = 14.0
@@ -36,6 +50,7 @@ func renderLegend(w *Writer, lg scene.Legend) {
 		w.Attr("class", "prism-legend-title")
 		w.AttrFloat("x", lg.Frame.X+4)
 		w.AttrFloat("y", lg.Frame.Y+titleH)
+		writeTypographyAttrs(w, titleLH, titleLS)
 		w.CloseTagOpen()
 		w.Text(lg.Title)
 		w.EndTag("text")
@@ -65,6 +80,7 @@ func renderLegend(w *Writer, lg scene.Legend) {
 			w.Attr("class", "prism-legend-label")
 			w.AttrFloat("x", lg.Frame.X+22)
 			w.AttrFloat("y", y+10)
+			writeTypographyAttrs(w, labelLH, labelLS)
 			w.CloseTagOpen()
 			w.Text(entry.Label)
 			w.EndTag("text")
@@ -82,6 +98,7 @@ func renderLegend(w *Writer, lg scene.Legend) {
 			w.Attr("class", "prism-legend-label")
 			w.AttrFloat("x", lg.Frame.X+22)
 			w.AttrFloat("y", y+10)
+			writeTypographyAttrs(w, labelLH, labelLS)
 			w.CloseTagOpen()
 			w.Text(entry.Label)
 			w.EndTag("text")
@@ -100,6 +117,7 @@ func renderLegend(w *Writer, lg scene.Legend) {
 			w.Attr("class", "prism-legend-label")
 			w.AttrFloat("x", lg.Frame.X+22)
 			w.AttrFloat("y", y+10)
+			writeTypographyAttrs(w, labelLH, labelLS)
 			w.CloseTagOpen()
 			w.Text(entry.Label)
 			w.EndTag("text")

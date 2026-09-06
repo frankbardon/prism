@@ -10,6 +10,11 @@ type colorGroup struct {
 	category string
 	indices  []int
 	color    *scene.Color
+	// varName (E4-S3) carries the "prism-resolved-N" var name when
+	// in.ColorRegistry is active — the auto-dark counterpart to color
+	// (see resolveCategoryColor). Empty means color (if non-nil) is a
+	// baked literal, the pre-E4-S3 path.
+	varName string
 }
 
 // groupRowsByColor partitions n upstream rows into per-category
@@ -67,10 +72,12 @@ func groupRowsByColor(in Inputs, n int) ([]colorGroup, error) {
 
 	groups := make([]colorGroup, 0, len(order))
 	for _, cat := range order {
+		c, v := resolveCategoryColor(in, cat)
 		groups = append(groups, colorGroup{
 			category: cat,
 			indices:  byCat[cat],
-			color:    lookupCategoryColor(cat, in.Color.Categories, in.Color.Palette),
+			color:    c,
+			varName:  v,
 		})
 	}
 	return groups, nil

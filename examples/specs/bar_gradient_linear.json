@@ -1,0 +1,56 @@
+{
+  "$schema": "urn:prism:schema:v1:spec",
+  "title": "Brand score (bar with linear gradient fill)",
+  "data": {
+    "name": "brand_scores",
+    "values": [
+      {
+        "brand_id": "alpha",
+        "score": 0.42
+      },
+      {
+        "brand_id": "beta",
+        "score": 0.71
+      },
+      {
+        "brand_id": "gamma",
+        "score": 0.58
+      }
+    ]
+  },
+  "mark": "bar",
+  "encoding": {
+    "x": {
+      "field": "brand_id",
+      "type": "nominal"
+    },
+    "y": {
+      "field": "score",
+      "type": "quantitative"
+    }
+  },
+  "theme": {
+    "name": "light",
+    "gradients": {
+      "brand_fade": {
+        "type": "linear",
+        "angle": 45,
+        "stops": [
+          {
+            "offset": 0,
+            "color": "#4c78a8"
+          },
+          {
+            "offset": 1,
+            "color": "#f58518"
+          }
+        ]
+      }
+    },
+    "marks": {
+      "bar": {
+        "fill": "url(#brand_fade)"
+      }
+    }
+  }
+}

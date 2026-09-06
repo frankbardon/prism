@@ -38,7 +38,8 @@
       "additionalProperties": false,
       "properties": {
         "row":    {"$ref": "encoding.schema.json#/$defs/facet_channel", "description": "Row facet channel."},
-        "column": {"$ref": "encoding.schema.json#/$defs/facet_channel", "description": "Column facet channel."}
+        "column": {"$ref": "encoding.schema.json#/$defs/facet_channel", "description": "Column facet channel."},
+        "cell_overrides": {"$ref": "composition.schema.json#/$defs/cell_overrides", "description": "Sparse per-cell theme overrides, addressed by 0-based grid position."}
       }
     },
     "repeat": {
@@ -60,7 +61,24 @@
           "type": "array",
           "items": {"$ref": "shared.schema.json#/$defs/field_ref"},
           "description": "Fields to repeat as overlaid layers."
-        }
+        },
+        "cell_overrides": {"$ref": "composition.schema.json#/$defs/cell_overrides", "description": "Sparse per-cell theme overrides, addressed by 0-based grid position."}
+      }
+    },
+    "cell_overrides": {
+      "type": "array",
+      "description": "Sparse per-cell theme overrides for a facet/repeat grid, addressed by 0-based (row, column) grid position rather than by the data value that landed in the cell.",
+      "items": {"$ref": "composition.schema.json#/$defs/cell_theme_override"}
+    },
+    "cell_theme_override": {
+      "type": "object",
+      "description": "One cell's sparse theme override, addressed by 0-based grid position.",
+      "additionalProperties": false,
+      "required": ["row", "column", "theme"],
+      "properties": {
+        "row":    {"type": "integer", "minimum": 0, "description": "0-based row index into the facet/repeat grid."},
+        "column": {"type": "integer", "minimum": 0, "description": "0-based column index into the facet/repeat grid."},
+        "theme":  {"$ref": "theme.schema.json#/$defs/theme_override", "description": "Sparse theme override merged over the chart's resolved theme for this cell only."}
       }
     }
   }

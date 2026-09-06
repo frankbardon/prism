@@ -19,6 +19,20 @@ type MarkStyle struct {
 	FontStyle    string    `json:"font_style,omitempty"`
 	Align        string    `json:"align,omitempty"`
 	Baseline     string    `json:"baseline,omitempty"`
+	// LineHeight and LetterSpacing are text typography tokens for the
+	// text mark. Unset (nil) inherits the renderer's existing default
+	// (single-line, no extra tracking). Rendered via
+	// encode.applyThemeMarkStyle → scene.Style.LineHeight/
+	// LetterSpacing → render/svg's writeStyleAttrs (E2-S2).
+	LineHeight    *float64 `json:"line_height,omitempty"`
+	LetterSpacing *float64 `json:"letter_spacing,omitempty"`
+	// Filter names an entry in Theme.Filters — a raw SVG <filter>
+	// inner-content body applied to marks styled by this block. A
+	// name that does not resolve fails loudly at theme load
+	// (PRISM_THEME_FILTER_UNKNOWN) rather than silently no-op'ing;
+	// see theme/validate.go. Rendering wires the actual <filter>
+	// element / filter="" attribute in a later story (E1-S2).
+	Filter string `json:"filter,omitempty"`
 }
 
 // Clone deep-copies the MarkStyle.
@@ -53,6 +67,14 @@ func (m *MarkStyle) Clone() *MarkStyle {
 	if m.FontSize != nil {
 		v := *m.FontSize
 		out.FontSize = &v
+	}
+	if m.LineHeight != nil {
+		v := *m.LineHeight
+		out.LineHeight = &v
+	}
+	if m.LetterSpacing != nil {
+		v := *m.LetterSpacing
+		out.LetterSpacing = &v
 	}
 	return &out
 }
@@ -118,6 +140,17 @@ func MergeMarkStyle(base, override *MarkStyle) *MarkStyle {
 	if override.Baseline != "" {
 		out.Baseline = override.Baseline
 	}
+	if override.LineHeight != nil {
+		v := *override.LineHeight
+		out.LineHeight = &v
+	}
+	if override.LetterSpacing != nil {
+		v := *override.LetterSpacing
+		out.LetterSpacing = &v
+	}
+	if override.Filter != "" {
+		out.Filter = override.Filter
+	}
 	return out
 }
 
@@ -139,10 +172,22 @@ type AxisStyle struct {
 	LabelFontSize   *float64  `json:"label_font_size,omitempty"`
 	LabelFontWeight string    `json:"label_font_weight,omitempty"`
 	LabelPadding    *float64  `json:"label_padding,omitempty"`
-	TitleColor      string    `json:"title_color,omitempty"`
-	TitleFontSize   *float64  `json:"title_font_size,omitempty"`
-	TitleFontWeight string    `json:"title_font_weight,omitempty"`
-	TitlePadding    *float64  `json:"title_padding,omitempty"`
+	// LabelLineHeight and LabelLetterSpacing are typography tokens for
+	// axis tick labels. Rendered via theme.Theme.ToSceneTheme →
+	// scene.Theme.AxisLabelLineHeight/AxisLabelLetterSpacing →
+	// render/svg's emitTickLabel (E2-S2).
+	LabelLineHeight    *float64 `json:"label_line_height,omitempty"`
+	LabelLetterSpacing *float64 `json:"label_letter_spacing,omitempty"`
+	TitleColor         string   `json:"title_color,omitempty"`
+	TitleFontSize      *float64 `json:"title_font_size,omitempty"`
+	TitleFontWeight    string   `json:"title_font_weight,omitempty"`
+	TitlePadding       *float64 `json:"title_padding,omitempty"`
+	// TitleLineHeight and TitleLetterSpacing are typography tokens for
+	// the axis title text. See LabelLineHeight.
+	TitleLineHeight    *float64 `json:"title_line_height,omitempty"`
+	TitleLetterSpacing *float64 `json:"title_letter_spacing,omitempty"`
+	// Filter names an entry in Theme.Filters. See MarkStyle.Filter.
+	Filter string `json:"filter,omitempty"`
 }
 
 // LegendStyle holds legend tokens.
@@ -155,11 +200,21 @@ type LegendStyle struct {
 	SymbolStrokeWidth *float64 `json:"symbol_stroke_width,omitempty"`
 	LabelColor        string   `json:"label_color,omitempty"`
 	LabelFontSize     *float64 `json:"label_font_size,omitempty"`
-	TitleColor        string   `json:"title_color,omitempty"`
-	TitleFontSize     *float64 `json:"title_font_size,omitempty"`
-	TitleFontWeight   string   `json:"title_font_weight,omitempty"`
-	RowPadding        *float64 `json:"row_padding,omitempty"`
-	ColumnPadding     *float64 `json:"column_padding,omitempty"`
+	// LabelLineHeight and LabelLetterSpacing are typography tokens for
+	// legend entry labels. See AxisStyle.LabelLineHeight.
+	LabelLineHeight    *float64 `json:"label_line_height,omitempty"`
+	LabelLetterSpacing *float64 `json:"label_letter_spacing,omitempty"`
+	TitleColor         string   `json:"title_color,omitempty"`
+	TitleFontSize      *float64 `json:"title_font_size,omitempty"`
+	TitleFontWeight    string   `json:"title_font_weight,omitempty"`
+	// TitleLineHeight and TitleLetterSpacing are typography tokens for
+	// the legend title text. See AxisStyle.TitleLineHeight.
+	TitleLineHeight    *float64 `json:"title_line_height,omitempty"`
+	TitleLetterSpacing *float64 `json:"title_letter_spacing,omitempty"`
+	RowPadding         *float64 `json:"row_padding,omitempty"`
+	ColumnPadding      *float64 `json:"column_padding,omitempty"`
+	// Filter names an entry in Theme.Filters. See MarkStyle.Filter.
+	Filter string `json:"filter,omitempty"`
 }
 
 // TitleStyle holds title block tokens.
@@ -170,6 +225,12 @@ type TitleStyle struct {
 	Align      string   `json:"align,omitempty"`
 	Anchor     string   `json:"anchor,omitempty"`
 	Padding    *float64 `json:"padding,omitempty"`
+	// LineHeight and LetterSpacing are typography tokens for the chart
+	// title text. See MarkStyle.LineHeight.
+	LineHeight    *float64 `json:"line_height,omitempty"`
+	LetterSpacing *float64 `json:"letter_spacing,omitempty"`
+	// Filter names an entry in Theme.Filters. See MarkStyle.Filter.
+	Filter string `json:"filter,omitempty"`
 }
 
 // ViewStyle holds chart-rect tokens: outer background, plot rect
@@ -180,6 +241,8 @@ type ViewStyle struct {
 	StrokeWidth  *float64 `json:"stroke_width,omitempty"`
 	Padding      *float64 `json:"padding,omitempty"`
 	CornerRadius *float64 `json:"corner_radius,omitempty"`
+	// Filter names an entry in Theme.Filters. See MarkStyle.Filter.
+	Filter string `json:"filter,omitempty"`
 }
 
 // StateStyle holds per-state visual overlays (selected, deselected,

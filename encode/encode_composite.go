@@ -595,7 +595,7 @@ func encodeConcatComposite(s *spec.Spec, composite *plan.CompositeDAG, childTabl
 	if outerH == 0 {
 		outerH = 600
 	}
-	sceneTheme, _, err := resolveThemeFull(opts, s.Theme)
+	sceneTheme, fullTheme, err := resolveThemeFull(opts, s.Theme)
 	if err != nil {
 		return nil, err
 	}
@@ -628,6 +628,23 @@ func encodeConcatComposite(s *spec.Spec, composite *plan.CompositeDAG, childTabl
 		childOpts := opts
 		childOpts.Width = cellW
 		childOpts.Height = cellH
+		// Share the outer document's already-resolved theme (matching
+		// the facet/repeat composite path) rather than letting each
+		// child re-resolve its own from scratch: resolveThemeFull's
+		// opts.Theme != nil branch reuses the pointer verbatim, so a
+		// child's mutations to sceneTheme.CSS (E4-S3's
+		// finalizeAutoDarkCSS, gated on opts.Theme == nil / isThemeOwner)
+		// are skipped here by design — the OUTER document's <style>
+		// block (built once, above) is the one that actually reaches
+		// the rendered output, since childDoc.Theme is discarded below
+		// and only childDoc.Grid.Cells[0].Scene is kept. Sharing avoids
+		// silently dropping resolved-color-var declarations a child
+		// would otherwise register into a Theme that never gets
+		// emitted. Concat cells therefore keep baked-hex mark colors
+		// under an active DarkVariant for now (same scope boundary as
+		// facet/repeat); see FOLLOWUPS.
+		childOpts.Theme = sceneTheme
+		childOpts.FullTheme = fullTheme
 
 		// Each concat child is a flat chart (D050 forbids nested
 		// composition in v1); call Encode directly.

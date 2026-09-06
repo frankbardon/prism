@@ -103,6 +103,8 @@ func (r *Renderer) Render(doc *scene.SceneDoc, opts render.RenderOpts) ([]byte, 
 
 	// Style block + defs.
 	writeStyleBlock(w, theme)
+	writeFilterDefs(w, theme)
+	writeGradientPatternDefs(w, theme)
 
 	// Walk grid cells in row-major order. Each cell's Scene already
 	// carries pre-offset coordinates from EncodeComposite — the
@@ -116,7 +118,7 @@ func (r *Renderer) Render(doc *scene.SceneDoc, opts render.RenderOpts) ([]byte, 
 	// Shared axes (D051): emit once at the grid edge, outside any
 	// cell. Skipped when nil; common for 1×1 grids (per-cell axes
 	// suffice with one cell).
-	renderSharedAxes(w, doc.Grid)
+	renderSharedAxes(w, doc.Grid, theme)
 
 	// Facet headers (P09 / T09.07): grid-edge row + column labels.
 	// Repeat does NOT emit headers (the substituted field name is
@@ -158,7 +160,7 @@ func outerFrame(g scene.SceneGrid) scene.Rect {
 // the cell loop. Each axis is wrapped in its own prism-axes group so
 // the structural class is consistent with per-cell axes, but with an
 // extra data-shared="true" attribute for diagnostic + test scraping.
-func renderSharedAxes(w *Writer, g scene.SceneGrid) {
+func renderSharedAxes(w *Writer, g scene.SceneGrid, theme *scene.Theme) {
 	if g.Shared.X == nil && g.Shared.Y == nil {
 		return
 	}
@@ -175,16 +177,19 @@ func renderSharedAxes(w *Writer, g scene.SceneGrid) {
 	w.OpenTag("g")
 	w.Attr("class", "prism-axes")
 	w.Attr("data-shared", "true")
+	if theme != nil {
+		writeFilterAttr(w, theme.AxisFilter)
+	}
 	w.CloseTagOpen()
 	w.Newline()
 	if g.Shared.X != nil {
 		w.Indent(4)
-		renderAxis(w, *g.Shared.X, plot)
+		renderAxis(w, *g.Shared.X, plot, theme)
 		w.Newline()
 	}
 	if g.Shared.Y != nil {
 		w.Indent(4)
-		renderAxis(w, *g.Shared.Y, plot)
+		renderAxis(w, *g.Shared.Y, plot, theme)
 		w.Newline()
 	}
 	w.Indent(2)
@@ -294,6 +299,32 @@ func renderScene(w *Writer, s scene.Scene, sceneTheme *scene.Theme) error {
 	w.CloseTagOpen()
 	w.Newline()
 
+	// View / background rect (E1-S2, extended E3-S3). A literal-color
+	// theme.ViewStyle.Background is still CSS-variable-only (see
+	// theme/css.go) and consumed by nothing here; this element is
+	// emitted when either the resolved View.Filter is set (E1-S2) or
+	// Background resolved to a Theme.Gradients/Patterns url(#name)
+	// reference (E3-S3, ViewBackgroundRef) — never for the built-in
+	// themes, which leave both unset. fill="none" keeps it invisible
+	// absent a resolvable gradient/pattern background.
+	if sceneTheme != nil && (sceneTheme.ViewFilter != "" || sceneTheme.ViewBackgroundRef != "") {
+		w.Indent(4)
+		w.OpenTag("rect")
+		w.Attr("class", "prism-view")
+		w.AttrFloat("x", s.Frame.X)
+		w.AttrFloat("y", s.Frame.Y)
+		w.AttrFloat("width", s.Frame.W)
+		w.AttrFloat("height", s.Frame.H)
+		if sceneTheme.ViewBackgroundRef != "" {
+			w.Attr("fill", "url(#"+sceneTheme.ViewBackgroundRef+")")
+		} else {
+			w.Attr("fill", "none")
+		}
+		writeFilterAttr(w, sceneTheme.ViewFilter)
+		w.SelfClose()
+		w.Newline()
+	}
+
 	// Title.
 	if s.Title != nil {
 		w.Indent(4)
@@ -302,6 +333,10 @@ func renderScene(w *Writer, s scene.Scene, sceneTheme *scene.Theme) error {
 		w.AttrFloat("x", s.Title.X)
 		w.AttrFloat("y", s.Title.Y)
 		w.Attr("text-anchor", "middle")
+		if sceneTheme != nil {
+			writeFilterAttr(w, sceneTheme.TitleFilter)
+			writeTypographyAttrs(w, sceneTheme.TitleLineHeight, sceneTheme.TitleLetterSpacing)
+		}
 		w.CloseTagOpen()
 		w.Text(s.Title.Content)
 		w.EndTag("text")
@@ -313,11 +348,14 @@ func renderScene(w *Writer, s scene.Scene, sceneTheme *scene.Theme) error {
 		w.Indent(4)
 		w.OpenTag("g")
 		w.Attr("class", "prism-axes")
+		if sceneTheme != nil {
+			writeFilterAttr(w, sceneTheme.AxisFilter)
+		}
 		w.CloseTagOpen()
 		w.Newline()
 		for _, a := range s.Axes {
 			w.Indent(6)
-			renderAxis(w, a, s.Plot)
+			renderAxis(w, a, s.Plot, sceneTheme)
 			w.Newline()
 		}
 		w.Indent(4)
@@ -377,7 +415,11 @@ func renderScene(w *Writer, s scene.Scene, sceneTheme *scene.Theme) error {
 	// Legends group.
 	if len(s.Legends) > 0 {
 		w.Indent(4)
-		renderLegends(w, s.Legends)
+		legendFilter := ""
+		if sceneTheme != nil {
+			legendFilter = sceneTheme.LegendFilter
+		}
+		renderLegends(w, s.Legends, legendFilter, sceneTheme)
 		w.Newline()
 	}
 

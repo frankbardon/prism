@@ -31,6 +31,33 @@ func TestPrismSVGGoldensStable(t *testing.T) {
 		"area_basic.json",
 		"point_scatter.json",
 		"rule_basic.json",
+		// E1-S2: theme filter escape hatch (raw <filter> defs +
+		// filter="url(#...)" attrs) and raw_css passthrough.
+		"bar_mark_filter.json",
+		"bar_raw_css.json",
+		// E2-S2: line-height / letter-spacing typography tokens —
+		// axis label/title + legend label/title + chart title
+		// (point_typography_tokens.json) and per-mark text-glyph
+		// letter-spacing/line-height (text_typography_tokens.json).
+		"point_typography_tokens.json",
+		"text_typography_tokens.json",
+		// E3-S3: gradient/pattern <defs> emission + fill="url(#...)"
+		// resolution — one fixture per required coverage case (linear
+		// gradient, radial gradient, each of the 4 built-in pattern
+		// types, and a raw-content pattern).
+		"bar_gradient_linear.json",
+		"bar_gradient_radial.json",
+		"bar_pattern_diagonal_stripes.json",
+		"bar_pattern_dots.json",
+		"bar_pattern_cross_hatch.json",
+		"bar_pattern_grid.json",
+		"bar_pattern_raw_content.json",
+		// E6-S2: theme.CategoryStyles applied at encode time — a chart
+		// using category_styles alone, and one where a conflicting
+		// spec.Condition on the same field/value wins over the theme
+		// -level entry.
+		"bar_category_styles.json",
+		"bar_category_styles_condition_wins.json",
 	}
 	update := os.Getenv("UPDATE_GOLDENS") == "1"
 	for _, fix := range fixtures {

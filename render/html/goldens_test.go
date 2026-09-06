@@ -28,6 +28,14 @@ import (
 func TestPrismHTMLGoldensStable(t *testing.T) {
 	fixtures := []string{
 		"bar_basic.json",
+		// E2-S2: confirms render/html inherits the line-height /
+		// letter-spacing typography-token wiring from render/svg's
+		// shared emitters (the html backend delegates to svg.Render
+		// verbatim — no independent theme logic of its own).
+		"point_typography_tokens.json",
+		// E3-S3: confirms render/html inherits the gradient/pattern
+		// <defs> emission + fill="url(#...)" resolution the same way.
+		"bar_gradient_linear.json",
 	}
 	update := os.Getenv("UPDATE_GOLDENS") == "1"
 	for _, fix := range fixtures {
@@ -82,6 +90,84 @@ func TestPrismHTMLIsWellFormedDoc(t *testing.T) {
 			t.Errorf("output missing %q:\n%s", want, truncate(got, 800))
 		}
 	}
+}
+
+// TestPrismHTMLInheritsThemeFilters is a structural (non-golden)
+// check for E1-S2: the html backend delegates the whole non-table,
+// non-custom doc straight to svg.New().Render and splices the bytes
+// verbatim (see render/html/renderer.go), so it must inherit the
+// same <filter> defs, filter="url(#...)" mark attrs, and raw_css
+// passthrough the svg backend emits — with no separate glue code.
+// Verified by test rather than visual inspection per the story's
+// acceptance criteria.
+func TestPrismHTMLInheritsThemeFilters(t *testing.T) {
+	t.Run("mark filter", func(t *testing.T) {
+		got, err := renderFixture(t, "bar_mark_filter.json")
+		if err != nil {
+			t.Fatalf("render: %v", err)
+		}
+		s := string(got)
+		for _, want := range []string{
+			`<filter id="prism-filter-drop-shadow">`,
+			`filter="url(#prism-filter-drop-shadow)"`,
+		} {
+			if !strings.Contains(s, want) {
+				t.Errorf("output missing %q:\n%s", want, truncate(got, 1200))
+			}
+		}
+	})
+
+	t.Run("raw_css", func(t *testing.T) {
+		got, err := renderFixture(t, "bar_raw_css.json")
+		if err != nil {
+			t.Fatalf("render: %v", err)
+		}
+		s := string(got)
+		if !strings.Contains(s, ".prism-title{letter-spacing:0.5px;}") {
+			t.Errorf("output missing raw_css passthrough:\n%s", truncate(got, 1200))
+		}
+	})
+}
+
+// TestPrismHTMLInheritsGradientPatternDefs is the E3-S3 structural
+// (non-golden) counterpart to TestPrismHTMLInheritsThemeFilters: the
+// html backend has no independent theme logic (it delegates the whole
+// non-table, non-custom doc to svg.New().Render verbatim), so it must
+// inherit the same <linearGradient>/<pattern> defs and
+// fill="url(#...)" mark attrs the svg backend emits.
+func TestPrismHTMLInheritsGradientPatternDefs(t *testing.T) {
+	t.Run("linear gradient", func(t *testing.T) {
+		got, err := renderFixture(t, "bar_gradient_linear.json")
+		if err != nil {
+			t.Fatalf("render: %v", err)
+		}
+		s := string(got)
+		for _, want := range []string{
+			`<linearGradient id="prism-gradient-brand_fade"`,
+			`fill="url(#prism-gradient-brand_fade)"`,
+		} {
+			if !strings.Contains(s, want) {
+				t.Errorf("output missing %q:\n%s", want, truncate(got, 1200))
+			}
+		}
+	})
+
+	t.Run("raw-content pattern", func(t *testing.T) {
+		got, err := renderFixture(t, "bar_pattern_raw_content.json")
+		if err != nil {
+			t.Fatalf("render: %v", err)
+		}
+		s := string(got)
+		for _, want := range []string{
+			`<pattern id="prism-pattern-custom_dots"`,
+			`fill="url(#prism-pattern-custom_dots)"`,
+			`<circle cx="4" cy="4" r="2" fill="#e45756"/>`,
+		} {
+			if !strings.Contains(s, want) {
+				t.Errorf("output missing %q:\n%s", want, truncate(got, 1200))
+			}
+		}
+	})
 }
 
 func renderFixture(t *testing.T, name string) ([]byte, error) {

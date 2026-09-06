@@ -71,8 +71,9 @@ func encodeLine(in Inputs) ([]scene.Mark, error) {
 			groupPts[j] = pts[idx]
 		}
 		style := in.Style
-		if g.color != nil {
+		if g.color != nil || g.varName != "" {
 			style.Stroke = g.color
+			style.StrokeVar = g.varName
 		}
 		marks = append(marks, scene.Mark{
 			Type:  scene.MarkLine,
