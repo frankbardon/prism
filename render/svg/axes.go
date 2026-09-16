@@ -30,14 +30,17 @@ func renderAxis(w *Writer, a scene.Axis, plot scene.Rect, theme *scene.Theme) {
 		w.SelfClose()
 	}
 
-	// Domain line.
-	w.OpenTag("line")
-	w.Attr("class", "prism-axis-domain")
-	w.AttrFloat("x1", a.Domain.X1)
-	w.AttrFloat("y1", a.Domain.Y1)
-	w.AttrFloat("x2", a.Domain.X2)
-	w.AttrFloat("y2", a.Domain.Y2)
-	w.SelfClose()
+	// Domain line — suppressed by `axis.domain: false` (E3-S2). The
+	// grid lines above and the tick marks below are independent of it.
+	if !a.HideDomain {
+		w.OpenTag("line")
+		w.Attr("class", "prism-axis-domain")
+		w.AttrFloat("x1", a.Domain.X1)
+		w.AttrFloat("y1", a.Domain.Y1)
+		w.AttrFloat("x2", a.Domain.X2)
+		w.AttrFloat("y2", a.Domain.Y2)
+		w.SelfClose()
+	}
 
 	// Resolved typography tokens (E2-S2) — nil-safe extraction once,
 	// reused across every tick label / the axis title below.
@@ -47,34 +50,52 @@ func renderAxis(w *Writer, a scene.Axis, plot scene.Rect, theme *scene.Theme) {
 		titleLH, titleLS = theme.AxisTitleLineHeight, theme.AxisTitleLetterSpacing
 	}
 
-	// Ticks + labels.
+	// Tick length and label gap (E3-S2). Precedence, highest first:
+	// the axis's own spec value, then the theme's
+	// --prism-axis-tick-size / --prism-axis-label-padding token, then
+	// the built-in metric. With both unset these reproduce the
+	// historical 5 px tick and 18/8/8/8 px label offsets exactly.
+	size := resolveAxisMetric(a.TickSize, themeTickSize(theme), defaultTickSize)
+	pad := resolveAxisMetric(a.LabelPadding, themeLabelPadding(theme), defaultLabelPadding)
+
+	// Ticks + labels. `axis.ticks: false` drops the marks, `axis.labels:
+	// false` drops the text; the two are independent of each other and
+	// of the domain line above.
 	switch a.Position {
 	case scene.AxisPositionBottom:
 		for _, t := range a.Ticks {
-			emitTickMark(w, t.Pixel, plot.Bottom(), 0, tickLen(t), true)
-			if t.Label != "" && !t.LabelHidden {
-				emitTickLabel(w, t.Label, t.Pixel, plot.Bottom()+18, "middle", a.LabelAngle, labelLH, labelLS)
+			if !a.HideTicks {
+				emitTickMark(w, t.Pixel, plot.Bottom(), 0, tickLen(t, size), true)
+			}
+			if t.Label != "" && !t.LabelHidden && !a.HideLabels {
+				emitTickLabel(w, t.Label, t.Pixel, plot.Bottom()+baselineDropBottom+pad, "middle", a.LabelAngle, labelLH, labelLS)
 			}
 		}
 	case scene.AxisPositionTop:
 		for _, t := range a.Ticks {
-			emitTickMark(w, t.Pixel, plot.Y, 0, -tickLen(t), true)
-			if t.Label != "" && !t.LabelHidden {
-				emitTickLabel(w, t.Label, t.Pixel, plot.Y-8, "middle", a.LabelAngle, labelLH, labelLS)
+			if !a.HideTicks {
+				emitTickMark(w, t.Pixel, plot.Y, 0, -tickLen(t, size), true)
+			}
+			if t.Label != "" && !t.LabelHidden && !a.HideLabels {
+				emitTickLabel(w, t.Label, t.Pixel, plot.Y-baselineDropOther-pad, "middle", a.LabelAngle, labelLH, labelLS)
 			}
 		}
 	case scene.AxisPositionLeft:
 		for _, t := range a.Ticks {
-			emitTickMark(w, plot.X, t.Pixel, -tickLen(t), 0, false)
-			if t.Label != "" && !t.LabelHidden {
-				emitTickLabel(w, t.Label, plot.X-8, t.Pixel+4, "end", a.LabelAngle, labelLH, labelLS)
+			if !a.HideTicks {
+				emitTickMark(w, plot.X, t.Pixel, -tickLen(t, size), 0, false)
+			}
+			if t.Label != "" && !t.LabelHidden && !a.HideLabels {
+				emitTickLabel(w, t.Label, plot.X-baselineDropOther-pad, t.Pixel+4, "end", a.LabelAngle, labelLH, labelLS)
 			}
 		}
 	case scene.AxisPositionRight:
 		for _, t := range a.Ticks {
-			emitTickMark(w, plot.Right(), t.Pixel, tickLen(t), 0, false)
-			if t.Label != "" && !t.LabelHidden {
-				emitTickLabel(w, t.Label, plot.Right()+8, t.Pixel+4, "start", a.LabelAngle, labelLH, labelLS)
+			if !a.HideTicks {
+				emitTickMark(w, plot.Right(), t.Pixel, tickLen(t, size), 0, false)
+			}
+			if t.Label != "" && !t.LabelHidden && !a.HideLabels {
+				emitTickLabel(w, t.Label, plot.Right()+baselineDropOther+pad, t.Pixel+4, "start", a.LabelAngle, labelLH, labelLS)
 			}
 		}
 	}
@@ -112,13 +133,66 @@ func renderAxis(w *Writer, a scene.Axis, plot scene.Rect, theme *scene.Theme) {
 	w.EndTag("g")
 }
 
-// tickLen returns the pixel length of the tick mark. Minor ticks are
-// half the length of majors.
-func tickLen(t scene.Tick) float64 {
-	if t.Minor {
-		return 3
+// Built-in axis metrics — the values that apply when neither the
+// axis's spec block nor the theme states one.
+const (
+	// defaultTickSize is a major tick mark's length in pixels.
+	defaultTickSize = 5.0
+	// minorTickRatio shortens a minor tick relative to a major one.
+	// 0.6 of the 5 px default is the historical 3 px.
+	minorTickRatio = 0.6
+	// defaultLabelPadding is the gap between the axis line and its
+	// tick labels, matching theme/css.go's
+	// --prism-axis-label-padding:4px.
+	defaultLabelPadding = 4.0
+	// baselineDropBottom / baselineDropOther are the fixed text
+	// allowances a tick label needs on top of the padding: a label
+	// under a bottom axis is anchored at its baseline and so sits a
+	// full line lower, while the other three sides only clear the
+	// tick. defaultLabelPadding added to each reproduces the
+	// historical 18 / 8 px offsets.
+	baselineDropBottom = 14.0
+	baselineDropOther  = 4.0
+)
+
+// resolveAxisMetric applies the axis-metric precedence chain: the
+// spec-level value wins, the theme token fills in where the spec is
+// silent, and the built-in metric is the floor. This is the single
+// place the rule is expressed, so `tick_size` and `label_padding`
+// cannot drift apart.
+func resolveAxisMetric(specVal, themeVal *float64, builtin float64) float64 {
+	if specVal != nil {
+		return *specVal
 	}
-	return 5
+	if themeVal != nil {
+		return *themeVal
+	}
+	return builtin
+}
+
+// themeTickSize / themeLabelPadding read the resolved axis geometry
+// tokens off a possibly-nil scene.Theme.
+func themeTickSize(t *scene.Theme) *float64 {
+	if t == nil {
+		return nil
+	}
+	return t.AxisTickSize
+}
+
+func themeLabelPadding(t *scene.Theme) *float64 {
+	if t == nil {
+		return nil
+	}
+	return t.AxisLabelPadding
+}
+
+// tickLen returns the pixel length of the tick mark, given the
+// resolved major tick size. Minor ticks are shorter than majors.
+func tickLen(t scene.Tick, size float64) float64 {
+	if t.Minor {
+		return size * minorTickRatio
+	}
+	return size
 }
 
 // emitTickMark draws a tick mark line. dx, dy are the offsets from

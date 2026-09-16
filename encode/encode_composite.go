@@ -101,6 +101,15 @@ func encodeLayerComposite(s *spec.Spec, composite *plan.CompositeDAG, childTable
 	// the padding reservation is decided before the layout, and a
 	// layer dropped for want of a table must not move the axes.
 	placement = sharedAxisPlacement(placement, declaredLayerEncodings(composite))
+	// E3-S2: the shared axes' component suppression narrows the side
+	// reservation here, before the layout is computed. The blocks are
+	// merged with the same first-specified-wins rule the shared axis
+	// itself uses below, so padding and geometry cannot disagree; the
+	// conflict warnings are dropped here on purpose and raised once,
+	// at the real build site.
+	placement.ReserveFrom(
+		specSharedAxisOpts(scene.ChannelX, childSpecs),
+		specSharedAxisOpts(scene.ChannelY, childSpecs))
 	// Legend placement (E1-S3). Every layer resolves its own legend,
 	// so the reservation is the sum of what each layer claims on a
 	// given side — that is exactly the depth the legendStackOffset

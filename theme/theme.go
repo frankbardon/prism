@@ -166,6 +166,10 @@ func (t *Theme) ToSceneTheme() *scene.Theme {
 		out.AxisLabelLetterSpacing = copyFloat(t.Axis.LabelLetterSpacing)
 		out.AxisTitleLineHeight = copyFloat(t.Axis.TitleLineHeight)
 		out.AxisTitleLetterSpacing = copyFloat(t.Axis.TitleLetterSpacing)
+		// E3-S2: the tick-size / label-padding tokens drive real
+		// geometry in render/svg, not just the CSS-variable manifest.
+		out.AxisTickSize = copyFloat(t.Axis.TickSize)
+		out.AxisLabelPadding = copyFloat(t.Axis.LabelPadding)
 	}
 	if t.Legend != nil {
 		out.LegendFilter = t.Legend.Filter

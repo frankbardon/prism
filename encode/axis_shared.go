@@ -110,6 +110,31 @@ func sharedAxisPlacement(p AxisPlacement, children []labelledEncoding) AxisPlace
 	return p
 }
 
+// specSharedAxisOpts resolves the AxisOpts a shared position axis
+// will be built with, straight from the composition children's specs.
+//
+// It exists because the layout runs *before* the executor has told us
+// which children survived: the padding a side reserves (E3-S2) has to
+// be known up front, while the axis itself is built later from the
+// live children. Both go through mergeSharedAxisSpec + axisOptsFor, so
+// they agree on every property; only the child set can differ, and
+// then only when a layer was skipped for a missing table. Conflict
+// warnings are discarded here and emitted once at the build site.
+func specSharedAxisOpts(channel scene.Channel, specs []*spec.Spec) AxisOpts {
+	children := make([]labelledEncoding, 0, len(specs))
+	for i, s := range specs {
+		if s == nil {
+			continue
+		}
+		children = append(children, labelledEncoding{
+			Label: fmt.Sprintf("layer-%d", i),
+			Enc:   s.Encoding,
+		})
+	}
+	opts, _ := sharedAxisOpts(channel, sharedAxisBlocksFrom(channel, children), "")
+	return opts
+}
+
 // mergeSharedAxisSpec folds N per-child axis blocks into one, applying
 // the first-specified-wins rule property by property. The merge walks
 // spec.Axis reflectively so a property added to the spec type is

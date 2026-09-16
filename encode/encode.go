@@ -1352,6 +1352,10 @@ func placementFor(enc *spec.Encoding) AxisPlacement {
 	p.Y = AxisPositionFor(scene.ChannelY, axisOptsFor(enc.Y).Orient)
 	p.XHidden = axisHidden(enc.X)
 	p.YHidden = axisHidden(enc.Y)
+	// E3-S2: a component suppressed by `axis.labels: false` /
+	// `axis.ticks: false` releases the padding it would have reserved,
+	// resolved through the same axisOptsFor the axis is built from.
+	p.ReserveFrom(axisOptsFor(enc.X), axisOptsFor(enc.Y))
 	return p
 }
 
@@ -1436,6 +1440,24 @@ func axisOptsFor(ch *spec.PositionChannel) AxisOpts {
 	}
 	if ch.Axis.Format != "" {
 		opts.Format = ch.Axis.Format
+	}
+	// E3-S2: component visibility, geometry and layering. Each is an
+	// optional pointer, so an absent key leaves the default in place
+	// and the three visibility switches compose independently.
+	if ch.Axis.Labels != nil {
+		opts.Labels = *ch.Axis.Labels
+	}
+	if ch.Axis.Ticks != nil {
+		opts.Ticks = *ch.Axis.Ticks
+	}
+	if ch.Axis.Domain != nil {
+		opts.Domain = *ch.Axis.Domain
+	}
+	opts.TickSize = ch.Axis.TickSize
+	opts.LabelPadding = ch.Axis.LabelPadding
+	opts.LabelLimit = ch.Axis.LabelLimit
+	if ch.Axis.Zindex != nil {
+		opts.Zindex = *ch.Axis.Zindex
 	}
 	return opts
 }

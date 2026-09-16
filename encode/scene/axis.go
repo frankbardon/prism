@@ -52,6 +52,39 @@ type Axis struct {
 	LabelAngle float64      `json:"label_angle,omitempty"`
 	LabelStyle Style        `json:"label_style,omitempty"`
 	TitleStyle Style        `json:"title_style,omitempty"`
+	// HideLabels / HideTicks / HideDomain carry the per-component
+	// suppression of `axis.labels`, `axis.ticks` and `axis.domain`
+	// (E3-S2). They are stated as *negations* so an absent key keeps
+	// the component drawn, which is both the Vega-Lite default and
+	// what makes the field omitempty-invisible to existing consumers.
+	//
+	// The ticks themselves stay in Ticks even when HideTicks is set —
+	// the labels and the grid lines are derived from the same list, so
+	// only the tick *marks* are suppressed. Likewise Domain keeps its
+	// geometry when HideDomain is set; the flag is the instruction,
+	// not the absence of coordinates.
+	//
+	// Whole-axis suppression (`"axis": null`, E1-S4) is a different
+	// mechanism: the encoder never emits a scene.Axis at all, and the
+	// side releases its layout padding.
+	HideLabels bool `json:"hide_labels,omitempty"`
+	HideTicks  bool `json:"hide_ticks,omitempty"`
+	HideDomain bool `json:"hide_domain,omitempty"`
+	// TickSize / LabelPadding carry the spec-level `axis.tick_size` and
+	// `axis.label_padding` overrides (E3-S2), in pixels. Nil means the
+	// spec said nothing, and the renderer falls back to the theme
+	// tokens (scene.Theme.AxisTickSize / AxisLabelPadding) and then to
+	// its built-in metrics. Spec wins over theme by construction: a
+	// non-nil value here is never reconciled against the theme.
+	TickSize     *float64 `json:"tick_size,omitempty"`
+	LabelPadding *float64 `json:"label_padding,omitempty"`
+	// Zindex is the axis stacking order relative to the marks (E3-S2):
+	// 0 (the default) draws the axis and its grid lines behind the
+	// marks, any positive value draws them in front. The above-marks
+	// group is a sibling of the mark container rather than a child, so
+	// an above-marks axis is never subject to the plot-region clip
+	// path applied to the marks.
+	Zindex int `json:"zindex,omitempty"`
 }
 
 // Tick is one resolved tick mark: value + pixel + pre-formatted label.

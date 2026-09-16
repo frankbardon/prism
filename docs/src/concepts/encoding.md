@@ -279,6 +279,70 @@ grid: a top-oriented x axis anchors to the top row instead of the
 bottom, and a right-oriented y axis to the last column instead of the
 first.
 
+### Axis components and geometry
+
+An axis is three drawable components plus a title, and the `axis`
+block on a position channel controls each one separately:
+
+```json
+"x": {
+  "field": "day", "type": "nominal",
+  "axis": {
+    "labels": true, "ticks": true, "domain": true,
+    "tick_size": 5, "label_padding": 4, "label_limit": 0, "zindex": 0
+  }
+}
+```
+
+| Key | Default | Effect |
+|---|---|---|
+| `labels` | `true` | Draws the tick labels. `false` suppresses **only** the labels — the tick marks, the domain line, the grid and the title all stay. |
+| `ticks` | `true` | Draws the tick marks. `false` suppresses **only** the marks; the labels sit at the same tick positions and are unaffected, as are the grid lines. |
+| `domain` | `true` | Draws the axis line along the plot edge. `false` suppresses **only** that line. |
+| `tick_size` | `5` | Major tick length in pixels. Minor ticks stay proportionally shorter (0.6×). |
+| `label_padding` | `4` | The gap between the axis line and its tick labels. Added to a fixed per-side text allowance, so `0` puts the labels as close as the baseline permits. |
+| `label_limit` | `0` (no limit) | Maximum label width in pixels. A wider label is truncated with an ellipsis (`Engineering` → `Engi…`). A limit too small to hold even the ellipsis drops the label. |
+| `zindex` | `0` | `0` draws the axis and its grid lines **behind** the marks; any positive value draws them **in front**. |
+
+The three visibility switches compose independently — set any
+combination and each component obeys only its own key. They are also
+finer-grained than [`"axis": null`](#hiding-an-axis-or-legend), which
+suppresses the whole block: with `labels`, `ticks` and `domain` all
+`false` the axis is still emitted and still draws its grid lines and
+its title.
+
+**Suppression releases padding.** The margin an axis reserves on its
+side of the plot is the sum of a tick-mark share and a label share, so
+`"ticks": false` or `"labels": false` hands that share back and the
+plot rect expands into it. The domain line rides on the plot edge and
+reserves nothing, so hiding it moves nothing. Reservations are fixed
+pixel metrics rather than measured text: a `tick_size` or
+`label_padding` far larger than the default draws into the outer
+margin instead of growing the reservation.
+
+**`zindex` and clipping.** An above-marks axis is emitted as a sibling
+of the mark container, not a child, so it is never subject to the
+plot-region clip path that keeps out-of-domain marks inside the plot
+rect — its labels and title still draw in the margin. Under `layer`
+and `facet` a *shared* axis is emitted after every cell and therefore
+always draws above the marks, whatever its `zindex`.
+
+**Truncation is measured with a fixed heuristic.** Prism runs no text
+measurement pass; `label_limit` (like overlap detection) estimates 6 px
+per character. Truncation happens once, at encode time, so the label
+text in the Scene IR is already shortened and every renderer agrees.
+
+**Spec beats theme.** `tick_size` and `label_padding` also exist as the
+theme tokens `--prism-axis-tick-size` and `--prism-axis-label-padding`.
+The `axis` block wins outright wherever it states a value; the theme
+token applies only where it says nothing, and Prism's built-in metric
+is the floor. See [Themes](./themes.md#axis-geometry-precedence).
+
+All seven keys survive composition. Under `layer` and `facet` with the
+default (shared) resolve mode they are folded from the children with
+the same first-specified-wins rule as every other `axis` property —
+see [Composition](./composition.md).
+
 ### Legend placement
 
 A legend is built from the `color` channel, and the `legend` block on
@@ -355,7 +419,9 @@ the explicit `null` and never invents one for an absent key.
 
 This is block-level suppression and is unrelated to `axis.title:
 false`, which drops only the axis *title* and leaves the ticks,
-labels, line and grid in place.
+labels, line and grid in place — or to `axis.labels` / `axis.ticks` /
+`axis.domain`, which each drop one component and leave the rest
+standing. See [Axis components and geometry](#axis-components-and-geometry).
 
 In a `layer`, the layers share one pair of axes, so the suppression
 has to be unanimous: an axis is hidden only when **every** layer that

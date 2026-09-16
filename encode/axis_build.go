@@ -24,6 +24,29 @@ type AxisOpts struct {
 	// another. A value invalid for the channel is rejected upstream by
 	// PRISM_SPEC_044 and falls back to the default side here.
 	Orient string
+	// Labels / Ticks / Domain are the per-component visibility
+	// switches from `axis.labels`, `axis.ticks` and `axis.domain`
+	// (E3-S2). All three default to true and compose independently:
+	// suppressing the labels leaves the tick marks and the domain
+	// line, and so on. Whole-axis suppression is `"axis": null`
+	// (E1-S4), handled before the axis is ever built.
+	Labels bool
+	Ticks  bool
+	Domain bool
+	// TickSize / LabelPadding are the spec-level pixel overrides. Nil
+	// defers to the theme's --prism-axis-tick-size /
+	// --prism-axis-label-padding tokens, and then to the renderer's
+	// built-in metrics.
+	TickSize     *float64
+	LabelPadding *float64
+	// LabelLimit is the maximum label width in pixels before the label
+	// is truncated with an ellipsis. Nil or non-positive means no
+	// limit. Truncation happens here, at encode time, so every
+	// renderer consuming the Scene IR agrees on the shortened text.
+	LabelLimit *float64
+	// Zindex draws the axis behind the marks at 0 (the default) and in
+	// front of them at any positive value.
+	Zindex int
 }
 
 // DefaultAxisOpts returns the P06 defaults.
@@ -34,6 +57,9 @@ func DefaultAxisOpts(title string) AxisOpts {
 		LabelAngle:   0,
 		LabelOverlap: "parity",
 		MinorTicks:   true,
+		Labels:       true,
+		Ticks:        true,
+		Domain:       true,
 	}
 }
 
@@ -48,11 +74,17 @@ func BuildAxis(scale Scale, channel scene.Channel, position scene.AxisPosition, 
 // BuildAxisWithOpts is the full-control axis builder.
 func BuildAxisWithOpts(scale Scale, channel scene.Channel, position scene.AxisPosition, plot scene.Rect, opts AxisOpts) scene.Axis {
 	axis := scene.Axis{
-		ID:         string(channel) + "-axis",
-		Channel:    channel,
-		Position:   position,
-		Title:      opts.Title,
-		LabelAngle: opts.LabelAngle,
+		ID:           string(channel) + "-axis",
+		Channel:      channel,
+		Position:     position,
+		Title:        opts.Title,
+		LabelAngle:   opts.LabelAngle,
+		HideLabels:   !opts.Labels,
+		HideTicks:    !opts.Ticks,
+		HideDomain:   !opts.Domain,
+		TickSize:     opts.TickSize,
+		LabelPadding: opts.LabelPadding,
+		Zindex:       opts.Zindex,
 	}
 
 	switch s := scale.(type) {
@@ -149,6 +181,11 @@ func BuildAxisWithOpts(scale Scale, channel scene.Channel, position scene.AxisPo
 		}
 	}
 
+	// Label truncation (E3-S2) runs before overlap detection: a
+	// truncated label is narrower, so it may no longer collide with
+	// its neighbour and should keep its slot.
+	axis.Ticks = applyLabelLimit(axis.Ticks, opts.LabelLimit)
+
 	// Overlap handling: parity-skip when adjacent labels collide.
 	if opts.LabelOverlap != "none" {
 		axis.Ticks = applyLabelOverlap(axis.Ticks, opts.LabelOverlap, position)
@@ -201,6 +238,54 @@ func horizontalGrid(ticks []scene.Tick, plot scene.Rect, vertical bool) []scene.
 	return out
 }
 
+// axisLabelCharWidth is Prism's standing approximation of one tick
+// label character's advance width in pixels. Prism runs no text
+// measurement pass, so both the overlap heuristic and the label_limit
+// truncation below estimate from this constant rather than from font
+// metrics.
+const axisLabelCharWidth = 6.0
+
+// axisLabelEllipsis is appended to a label shortened by label_limit.
+const axisLabelEllipsis = "…"
+
+// applyLabelLimit truncates every tick label whose estimated width
+// exceeds limit pixels, appending an ellipsis. A nil or non-positive
+// limit means "no limit" (Vega-Lite's convention) and returns the
+// ticks untouched. A limit too small to hold even the ellipsis drops
+// the label entirely rather than emitting a lone "…" the reader
+// cannot decode.
+func applyLabelLimit(ticks []scene.Tick, limit *float64) []scene.Tick {
+	if limit == nil || *limit <= 0 || len(ticks) == 0 {
+		return ticks
+	}
+	max := *limit
+	out := make([]scene.Tick, len(ticks))
+	copy(out, ticks)
+	for i := range out {
+		out[i].Label = truncateToWidth(out[i].Label, max)
+	}
+	return out
+}
+
+// truncateToWidth shortens label so its estimated pixel width fits
+// within max, appending an ellipsis when characters were dropped.
+// Operates on runes so a multi-byte label is never cut mid-character.
+func truncateToWidth(label string, max float64) string {
+	if label == "" {
+		return label
+	}
+	runes := []rune(label)
+	if float64(len(runes))*axisLabelCharWidth <= max {
+		return label
+	}
+	// Room for the ellipsis itself, or the label cannot be shown.
+	keep := int(max/axisLabelCharWidth) - 1
+	if keep < 1 {
+		return ""
+	}
+	return string(runes[:keep]) + axisLabelEllipsis
+}
+
 // injectLinearMinorTicks inserts a Minor=true tick at each midpoint
 // between consecutive majors. Returns the merged + sorted slice.
 func injectLinearMinorTicks(majors []scene.Tick, s *LinearScale) []scene.Tick {
@@ -242,9 +327,10 @@ func applyLabelOverlap(ticks []scene.Tick, mode string, position scene.AxisPosit
 	}
 	out := make([]scene.Tick, len(ticks))
 	copy(out, ticks)
-	// Approximate label dimensions: 6px per character horizontally,
-	// 12px tall vertically.
-	const charW, lineH = 6.0, 12.0
+	// Approximate label dimensions: axisLabelCharWidth per character
+	// horizontally, 12px tall vertically.
+	const lineH = 12.0
+	const charW = axisLabelCharWidth
 	var horizontal bool
 	switch position {
 	case scene.AxisPositionBottom, scene.AxisPositionTop:

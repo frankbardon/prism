@@ -156,10 +156,50 @@ func outerFrame(g scene.SceneGrid) scene.Rect {
 	return scene.Rect{W: maxX, H: maxY}
 }
 
+// renderAxesGroup emits one prism-axes group holding the scene's axes
+// on the requested side of the marks: above=false collects every axis
+// with a zero (or negative) zindex, above=true every axis with a
+// positive one. Nothing is emitted when the half is empty, which is
+// why a scene where no axis sets `zindex` is byte-identical to the
+// single-group output that preceded E3-S2.
+func renderAxesGroup(w *Writer, s scene.Scene, sceneTheme *scene.Theme, above bool) {
+	axes := make([]scene.Axis, 0, len(s.Axes))
+	for _, a := range s.Axes {
+		if (a.Zindex > 0) == above {
+			axes = append(axes, a)
+		}
+	}
+	if len(axes) == 0 {
+		return
+	}
+	w.Indent(4)
+	w.OpenTag("g")
+	w.Attr("class", "prism-axes")
+	if sceneTheme != nil {
+		writeFilterAttr(w, sceneTheme.AxisFilter)
+	}
+	w.CloseTagOpen()
+	w.Newline()
+	for _, a := range axes {
+		w.Indent(6)
+		renderAxis(w, a, s.Plot, sceneTheme)
+		w.Newline()
+	}
+	w.Indent(4)
+	w.EndTag("g")
+	w.Newline()
+}
+
 // renderSharedAxes emits Grid.Shared.X and Grid.Shared.Y once outside
 // the cell loop. Each axis is wrapped in its own prism-axes group so
 // the structural class is consistent with per-cell axes, but with an
 // extra data-shared="true" attribute for diagnostic + test scraping.
+//
+// A grid-level shared axis is emitted after every cell and therefore
+// always draws above the marks, whatever its `zindex` (E3-S2). The
+// ordering predates this story and moving it would restack every
+// layered and faceted golden in the repo, so zindex is honoured only
+// for the per-scene axes renderAxesGroup handles.
 func renderSharedAxes(w *Writer, g scene.SceneGrid, theme *scene.Theme) {
 	if g.Shared.X == nil && g.Shared.Y == nil {
 		return
@@ -343,25 +383,10 @@ func renderScene(w *Writer, s scene.Scene, sceneTheme *scene.Theme) error {
 		w.Newline()
 	}
 
-	// Axes group.
-	if len(s.Axes) > 0 {
-		w.Indent(4)
-		w.OpenTag("g")
-		w.Attr("class", "prism-axes")
-		if sceneTheme != nil {
-			writeFilterAttr(w, sceneTheme.AxisFilter)
-		}
-		w.CloseTagOpen()
-		w.Newline()
-		for _, a := range s.Axes {
-			w.Indent(6)
-			renderAxis(w, a, s.Plot, sceneTheme)
-			w.Newline()
-		}
-		w.Indent(4)
-		w.EndTag("g")
-		w.Newline()
-	}
+	// Axes group — the below-marks half (E3-S2). An axis with
+	// `zindex: 0` (the default) renders before the plot group, so the
+	// marks draw over its grid lines, ticks and domain line.
+	renderAxesGroup(w, s, sceneTheme, false)
 
 	// Scene-level defs (gradients used by legends + marks).
 	if s.Defs != nil {
@@ -411,6 +436,12 @@ func renderScene(w *Writer, s scene.Scene, sceneTheme *scene.Theme) error {
 	w.Indent(4)
 	w.EndTag("g")
 	w.Newline()
+
+	// Axes group — the above-marks half (E3-S2). Emitted as a sibling
+	// of prism-plot rather than a child, so an above-marks axis is
+	// outside any clip path applied to the mark container and still
+	// draws its labels and title in the margin.
+	renderAxesGroup(w, s, sceneTheme, true)
 
 	// Legends group.
 	if len(s.Legends) > 0 {

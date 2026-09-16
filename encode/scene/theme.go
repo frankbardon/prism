@@ -86,6 +86,19 @@ type Theme struct {
 	LegendTitleLetterSpacing *float64 `json:"legend_title_letter_spacing,omitempty"`
 	TitleLineHeight          *float64 `json:"title_line_height,omitempty"`
 	TitleLetterSpacing       *float64 `json:"title_letter_spacing,omitempty"`
+	// AxisTickSize / AxisLabelPadding carry the resolved
+	// theme.AxisStyle tick_size / label_padding tokens (E3-S2) — the
+	// same values theme/css.go emits as --prism-axis-tick-size and
+	// --prism-axis-label-padding. A CSS variable cannot move an SVG
+	// line endpoint or a <text> coordinate, so the geometry has to
+	// ride on the Scene IR as well for the tokens to mean anything.
+	//
+	// These are the *theme* layer of the precedence chain. A
+	// per-channel `axis.tick_size` / `axis.label_padding` lands on
+	// scene.Axis.TickSize / LabelPadding instead and wins outright;
+	// these apply only where the axis states nothing.
+	AxisTickSize     *float64 `json:"axis_tick_size,omitempty"`
+	AxisLabelPadding *float64 `json:"axis_label_padding,omitempty"`
 }
 
 // Default returns the hard-coded P05 theme:

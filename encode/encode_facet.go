@@ -113,6 +113,13 @@ func encodeFacetComposite(s *spec.Spec, composite *plan.CompositeDAG, childTable
 	// one child spec, so the shared fold can never conflict.
 	facetEncodings := []labelledEncoding{{Label: "facet-child", Enc: childEncoding(child.Spec)}}
 	placement = sharedAxisPlacement(placement, facetEncodings)
+	// E3-S2: every cell renders the same child spec, so its component
+	// suppression narrows the cell reservation uniformly — the same
+	// narrowing the flat Encode path applies inside each cell.
+	facetSpecs := []*spec.Spec{child.Spec}
+	placement.ReserveFrom(
+		specSharedAxisOpts(scene.ChannelX, facetSpecs),
+		specSharedAxisOpts(scene.ChannelY, facetSpecs))
 	cellLayout := Compute(LayoutOpts{
 		Width:  cellW,
 		Height: cellH,
