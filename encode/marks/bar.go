@@ -4,13 +4,18 @@ import (
 	"fmt"
 
 	"github.com/frankbardon/prism/encode/scene"
-	prismerrors "github.com/frankbardon/prism/errors"
 )
 
 // encodeBar emits one scene.Mark with RectGeom per table row.
-// Expects x = band scale (categorical), y = linear scale. The bar
-// grows from the plot's baseline (y where data value = 0) up or
-// down to the encoded y pixel.
+//
+// A bar has a category axis (a band scale, which sizes the bar across
+// its thickness) and a measure axis (a continuous scale, along which
+// the bar grows from the data-zero baseline). Which physical axis is
+// which is the mark's orientation: `vertical` is band-on-x, measure-on-y
+// — the default — and `horizontal` is the mirror, band-on-y with bars
+// growing rightward from a baseline on the left. MarkOrientation
+// (orient.go) resolves it from `mark.orient` when set and infers it
+// from which axis carries the band otherwise.
 //
 // When either span channel is bound (E9-S3) the bar is ranged
 // instead: encodeBarSpan replaces the baseline anchor on that axis
@@ -20,16 +25,21 @@ func encodeBar(in Inputs) ([]scene.Mark, error) {
 	if spanBound(in.X2) || spanBound(in.Y2) {
 		return encodeBarSpan(in)
 	}
-	xs, err := readField(in.Table, in.X.Field)
+	orient, err := MarkOrientation(in, "bar")
 	if err != nil {
 		return nil, err
 	}
-	ys, err := readField(in.Table, in.Y.Field)
+	category, err := CategorySlots(in, orient)
 	if err != nil {
 		return nil, err
 	}
-	if len(xs) != len(ys) {
-		return nil, fmt.Errorf("encodeBar: column length mismatch (x=%d, y=%d)", len(xs), len(ys))
+	measure, err := MeasureSpans(in, orient)
+	if err != nil {
+		return nil, err
+	}
+	if len(category) != len(measure) {
+		return nil, fmt.Errorf("encodeBar: column length mismatch (%s=%d, %s=%d)",
+			orient.CategoryAxis(), len(category), orient.MeasureAxis(), len(measure))
 	}
 	var colorVals []any
 	if in.Color != nil && in.Color.Field != "" {
@@ -40,50 +50,15 @@ func encodeBar(in Inputs) ([]scene.Mark, error) {
 		colorVals = cv
 	}
 
-	band, ok := in.X.Scale.(BandScaler)
-	if !ok {
-		return nil, prismerrors.New(
-			"PRISM_ENCODE_001",
-			"bar mark requires a band scale for x, got a continuous scale instead.",
-			map[string]any{"Field": in.X.Field, "Source": "<scale>", "Available": "band"},
-		)
-	}
-	width := band.BandWidth()
-
-	// Baseline = pixel y where data value = 0 (or plot bottom for
-	// positive-only domains where 0 sits on the lower edge).
-	baseline, err := in.Y.Scale.Apply(float64(0))
-	if err != nil {
-		// Fall back to plot bottom on apply failure (shouldn't happen
-		// for linear scales).
-		baseline = in.Layout.Bottom()
-	}
-
 	cornerR := 0.0
 	if in.Mark != nil && in.Mark.CornerRadius != nil {
 		cornerR = *in.Mark.CornerRadius
 	}
 
-	marks := make([]scene.Mark, 0, len(xs))
-	for i := range xs {
-		x, err := in.X.Scale.Apply(xs[i])
-		if err != nil {
-			return nil, err
-		}
-		y, err := in.Y.Scale.Apply(ys[i])
-		if err != nil {
-			return nil, err
-		}
-		// Rect lives between y (top) and baseline (bottom). For
-		// positive values y < baseline so H = baseline - y; for
-		// negative values y > baseline so we flip.
-		top, h := y, baseline-y
-		if h < 0 {
-			top = baseline
-			h = -h
-		}
+	marks := make([]scene.Mark, 0, len(category))
+	for i := range category {
 		style := in.Style
-		if len(colorVals) > 0 {
+		if i < len(colorVals) {
 			cat, ok := colorVals[i].(string)
 			if ok {
 				if c, v := resolveCategoryColor(in, cat); c != nil || v != "" {
@@ -92,17 +67,13 @@ func encodeBar(in Inputs) ([]scene.Mark, error) {
 				}
 			}
 		}
+		rect := OrientedRect(orient, category[i], measure[i])
+		rect.CornerR = cornerR
 		marks = append(marks, scene.Mark{
 			Type:  scene.MarkRect,
 			ID:    fmt.Sprintf("bar-%d", i),
 			Style: style,
-			Rect: &scene.RectGeom{
-				X:       x,
-				Y:       top,
-				W:       width,
-				H:       h,
-				CornerR: cornerR,
-			},
+			Rect:  &rect,
 		})
 	}
 	return marks, nil
