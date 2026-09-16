@@ -83,7 +83,17 @@ func encodeLayerComposite(s *spec.Spec, composite *plan.CompositeDAG, childTable
 	}
 
 	hasTitle := s.Title != nil
+	// Layers share one pair of axes, so the suppression has to be
+	// unanimous: the axis (and the padding its side reserves) is
+	// released only when every layer that binds the channel sets
+	// `"axis": null`.
+	childSpecs := make([]*spec.Spec, 0, len(composite.Children))
+	for _, child := range composite.Children {
+		childSpecs = append(childSpecs, child.Spec)
+	}
 	placement := DefaultAxisPlacement()
+	placement.XHidden = layerAxisHidden(childSpecs, scene.ChannelX)
+	placement.YHidden = layerAxisHidden(childSpecs, scene.ChannelY)
 	// Legend placement (E1-S3). Every layer resolves its own legend,
 	// so the reservation is the sum of what each layer claims on a
 	// given side — that is exactly the depth the legendStackOffset
@@ -241,13 +251,13 @@ func encodeLayerComposite(s *spec.Spec, composite *plan.CompositeDAG, childTable
 
 		// Add per-layer independent axes; emit once per channel so
 		// stacking N layers does not produce N visually-identical axes.
-		if xScale != nil && xSharedScale == nil && !seenIndependentX {
+		if xScale != nil && xSharedScale == nil && !seenIndependentX && !placement.XHidden {
 			perCellAxes = append(perCellAxes, BuildAxisWithOpts(
 				xScale, scene.ChannelX, placement.X, layout.Plot,
 				axisOptsFor(childEnc.X)))
 			seenIndependentX = true
 		}
-		if yScale != nil && ySharedScale == nil && !seenIndependentY {
+		if yScale != nil && ySharedScale == nil && !seenIndependentY && !placement.YHidden {
 			perCellAxes = append(perCellAxes, BuildAxisWithOpts(
 				yScale, scene.ChannelY, placement.Y, layout.Plot,
 				axisOptsFor(childEnc.Y)))
@@ -272,7 +282,7 @@ func encodeLayerComposite(s *spec.Spec, composite *plan.CompositeDAG, childTable
 				Categories: cats,
 				Palette:    ResolveCategoricalPalette(fullTheme, schemeNameOf(childEnc.Color)),
 			}
-			if len(cats) > 1 && legendPls[lc.idx].enabled {
+			if len(cats) > 1 && legendPls[lc.idx].enabled && !legendHidden(childEnc.Color) {
 				legend := BuildSymbolLegend(LegendInputs{
 					Channel:    scene.ChannelColor,
 					Title:      fmt.Sprintf("layer-%d: %s", lc.idx, childEnc.Color.Field),
@@ -372,14 +382,14 @@ func encodeLayerComposite(s *spec.Spec, composite *plan.CompositeDAG, childTable
 	// children, first-specified-wins per property, rather than
 	// discarding it. See sharedAxisOpts + docs/src/concepts/composition.md.
 	childEncodings := layerEncodings(live)
-	if xSharedScale != nil && resolution[scene.ChannelX].Axis == encresolve.ModeShared {
+	if xSharedScale != nil && !placement.XHidden && resolution[scene.ChannelX].Axis == encresolve.ModeShared {
 		opts, axWarn := sharedAxisOpts(scene.ChannelX,
 			sharedAxisBlocksFrom(scene.ChannelX, childEncodings), xSharedTitle)
 		warnings = append(warnings, axWarn...)
 		ax := BuildAxisWithOpts(xSharedScale, scene.ChannelX, placement.X, layout.Plot, opts)
 		doc.Grid.Shared.X = &ax
 	}
-	if ySharedScale != nil && resolution[scene.ChannelY].Axis == encresolve.ModeShared {
+	if ySharedScale != nil && !placement.YHidden && resolution[scene.ChannelY].Axis == encresolve.ModeShared {
 		opts, axWarn := sharedAxisOpts(scene.ChannelY,
 			sharedAxisBlocksFrom(scene.ChannelY, childEncodings), ySharedTitle)
 		warnings = append(warnings, axWarn...)

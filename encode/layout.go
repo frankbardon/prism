@@ -115,9 +115,16 @@ func (s *LayoutSides) MarkLegend(pos scene.LegendPosition, extent float64) {
 // occupies. It is the single source of truth for both the padding
 // reservation and the scene.Axis.Position the axis builder stamps, so
 // the two can never disagree.
+//
+// XHidden / YHidden carry the channel's `"axis": null` suppression
+// (spec.PositionChannel.AxisHidden). A hidden axis occupies no side:
+// Sides skips it, so the padding it would have reserved is released
+// and the plot rect expands into the freed space.
 type AxisPlacement struct {
-	X scene.AxisPosition
-	Y scene.AxisPosition
+	X       scene.AxisPosition
+	Y       scene.AxisPosition
+	XHidden bool
+	YHidden bool
 }
 
 // DefaultAxisPlacement is Vega-Lite's default orientation: the x axis
@@ -126,11 +133,16 @@ func DefaultAxisPlacement() AxisPlacement {
 	return AxisPlacement{X: scene.AxisPositionBottom, Y: scene.AxisPositionLeft}
 }
 
-// Sides reports which sides this placement's axes occupy.
+// Sides reports which sides this placement's axes occupy. A hidden
+// axis claims nothing.
 func (p AxisPlacement) Sides() LayoutSides {
 	var s LayoutSides
-	s.markAxis(p.X)
-	s.markAxis(p.Y)
+	if !p.XHidden {
+		s.markAxis(p.X)
+	}
+	if !p.YHidden {
+		s.markAxis(p.Y)
+	}
 	return s
 }
 

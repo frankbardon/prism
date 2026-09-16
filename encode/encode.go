@@ -146,7 +146,10 @@ func Encode(s *spec.Spec, tables map[plan.NodeID]*table.Table, tipID plan.NodeID
 	// with where the axis actually renders. The reservation is keyed on
 	// the placement, not on whether the channel turned out to be bound:
 	// an unbound channel still reserves its side, as it always has.
-	placement := DefaultAxisPlacement()
+	// A channel that hides its axis with `"axis": null` is the one
+	// exception — it claims no side, so the plot expands into the
+	// padding the axis would have reserved.
+	placement := placementFor(enc)
 	// Legend placement (E1-S3) resolves before the layout, because a
 	// side orient (left / right / top / bottom) reserves a margin band
 	// the plot rect has to shrink for. Corner orients (the default
@@ -278,13 +281,15 @@ func Encode(s *spec.Spec, tables map[plan.NodeID]*table.Table, tipID plan.NodeID
 	}
 
 	// Build axes (only when the channel was bound). Sparkline (D067)
-	// suppresses axes entirely — leave axes empty.
+	// suppresses axes entirely — leave axes empty. A channel with
+	// `"axis": null` is suppressed the same way: no domain line,
+	// ticks, labels, title or grid.
 	axes := make([]scene.Axis, 0, 2)
 	if !isSparkMark(markType) && !geoMark {
-		if xScale != nil {
+		if xScale != nil && !placement.XHidden {
 			axes = append(axes, BuildAxisWithOpts(xScale, scene.ChannelX, placement.X, layout.Plot, axisOptsFor(enc.X)))
 		}
-		if yScale != nil {
+		if yScale != nil && !placement.YHidden {
 			axes = append(axes, BuildAxisWithOpts(yScale, scene.ChannelY, placement.Y, layout.Plot, axisOptsFor(enc.Y)))
 		}
 	}
@@ -463,10 +468,10 @@ func Encode(s *spec.Spec, tables map[plan.NodeID]*table.Table, tipID plan.NodeID
 		if err := applyConditions(enc, tbl, hr.Marks); err != nil {
 			return nil, err
 		}
-		if hr.XScale != nil {
+		if hr.XScale != nil && !placement.XHidden {
 			axes = append(axes, BuildAxisWithOpts(hr.XScale, scene.ChannelX, placement.X, layout.Plot, axisOptsFor(enc.X)))
 		}
-		if hr.YScale != nil {
+		if hr.YScale != nil && !placement.YHidden {
 			// E3-S5: the synthetic bin-count axis honours channel.axis
 			// config exactly like the histogram's x axis; "count" is only
 			// the title fallback when the channel names no field and sets
@@ -499,9 +504,10 @@ func Encode(s *spec.Spec, tables map[plan.NodeID]*table.Table, tipID plan.NodeID
 		Marks: markList,
 	}
 	// Build legends for non-trivial mark channels. Sparkline (D067)
-	// suppresses legends entirely.
+	// suppresses legends entirely, and so does an explicit
+	// `"legend": null` on the color channel.
 	var legends []scene.Legend
-	if legendEnabled && !isSparkMark(markType) && colorChannel != nil && len(colorChannel.Categories) > 1 {
+	if legendEnabled && !isSparkMark(markType) && !legendHidden(enc.Color) && colorChannel != nil && len(colorChannel.Categories) > 1 {
 		// Sankey populates colorChannel from source ∪ target nodes when
 		// no explicit color binding exists (D064); use colorChannel.Field
 		// as the legend title in that case.
@@ -567,7 +573,7 @@ func buildSceneDoc(
 		Marks: markList,
 	}
 	var legends []scene.Legend
-	if legendEnabled && colorChannel != nil && len(colorChannel.Categories) > 1 {
+	if legendEnabled && !legendHidden(enc.Color) && colorChannel != nil && len(colorChannel.Categories) > 1 {
 		title := enc.Color.Field
 		legend := BuildSymbolLegend(LegendInputs{
 			Channel:    scene.ChannelColor,
@@ -1223,6 +1229,82 @@ func joinNames(xs []string) string {
 		out += ", " + x
 	}
 	return out
+}
+
+// axisHidden reports whether a position channel carries an explicit
+// `"axis": null` (Vega-Lite's suppression syntax). An absent axis key
+// is NOT hidden — spec.PositionChannel decodes the two states apart.
+func axisHidden(ch *spec.PositionChannel) bool {
+	return ch != nil && ch.AxisHidden
+}
+
+// legendHidden reports whether a mark channel carries an explicit
+// `"legend": null`. As with axisHidden, an absent key is not hidden.
+func legendHidden(ch *spec.MarkChannel) bool {
+	return ch != nil && ch.LegendHidden
+}
+
+// placementFor returns the default axis placement with each channel's
+// `"axis": null` suppression applied, so the layout reservation and
+// the axis-building guards below read the same flags.
+func placementFor(enc *spec.Encoding) AxisPlacement {
+	p := DefaultAxisPlacement()
+	if enc == nil {
+		return p
+	}
+	p.XHidden = axisHidden(enc.X)
+	p.YHidden = axisHidden(enc.Y)
+	return p
+}
+
+// specAxisHidden reports whether a child spec hides the axis for the
+// given cartesian channel. A nested composite child carries no
+// encoding block of its own and hides nothing.
+func specAxisHidden(s *spec.Spec, ch scene.Channel) bool {
+	if s == nil || s.Encoding == nil {
+		return false
+	}
+	switch ch {
+	case scene.ChannelX:
+		return axisHidden(s.Encoding.X)
+	case scene.ChannelY:
+		return axisHidden(s.Encoding.Y)
+	}
+	return false
+}
+
+// specDeclaresChannel reports whether a child spec binds the given
+// cartesian channel at all (hidden or not).
+func specDeclaresChannel(s *spec.Spec, ch scene.Channel) bool {
+	if s == nil || s.Encoding == nil {
+		return false
+	}
+	switch ch {
+	case scene.ChannelX:
+		return s.Encoding.X != nil
+	case scene.ChannelY:
+		return s.Encoding.Y != nil
+	}
+	return false
+}
+
+// layerAxisHidden reports whether a stack of layered children agrees
+// that the channel's axis is suppressed: at least one child declares
+// the channel and every child that declares it sets `"axis": null`.
+// Layers share one pair of axes, so a single layer that still wants
+// its axis keeps it — and keeps its padding — for the whole stack.
+func layerAxisHidden(specs []*spec.Spec, ch scene.Channel) bool {
+	declared := false
+	for _, s := range specs {
+		if !specDeclaresChannel(s, ch) {
+			continue
+		}
+		declared = true
+		if !specAxisHidden(s, ch) {
+			return false
+		}
+	}
+	return declared
 }
 
 // axisOptsFor resolves AxisOpts from a PositionChannel. Reads

@@ -5,8 +5,8 @@
   "description": "Axis configuration for a position channel.",
   "$defs": {
     "axis": {
-      "type": "object",
-      "description": "Axis options including title, ticks, grid, and label placement.",
+      "type": ["object", "null"],
+      "description": "Axis options including title, ticks, grid, and label placement. Null suppresses the axis entirely (no domain line, ticks, labels, title or grid) and releases the padding its side reserved — omitting the `axis` key instead keeps the default axis.",
       "additionalProperties": false,
       "properties": {
         "orient":         {"type": "string", "enum": ["top", "bottom", "left", "right"], "description": "Side of the chart on which the axis appears."},

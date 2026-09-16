@@ -1,6 +1,7 @@
 package spec
 
 import (
+	"bytes"
 	"encoding/json"
 	"fmt"
 )
@@ -97,21 +98,46 @@ type ChannelCommon struct {
 	Key bool `json:"key,omitempty"`
 }
 
+// isJSONNull reports whether raw is the JSON literal null. Used by
+// the channel decoders to tell an explicit `"axis": null` /
+// `"legend": null` (suppression) apart from an absent key (default).
+func isJSONNull(raw json.RawMessage) bool {
+	return bytes.Equal(bytes.TrimSpace(raw), []byte("null"))
+}
+
 // PositionChannel adds axis + stack to ChannelCommon.
+//
+// Axis is tri-state on the wire (Vega-Lite's suppression syntax):
+//
+//	key absent      → Axis nil,  AxisHidden false → default axis
+//	"axis": {...}   → Axis set,  AxisHidden false → configured axis
+//	"axis": null    → Axis nil,  AxisHidden true  → no axis at all
+//
+// A nil Axis alone therefore does NOT mean "hidden" — read
+// AxisHidden for that. The flag is decode-only state (no wire key of
+// its own); MarshalJSON re-emits it as the JSON null it came from.
 type PositionChannel struct {
 	ChannelCommon
-	Axis  *Axis `json:"axis,omitempty"`
-	Stack any   `json:"stack,omitempty"`
+	Axis *Axis `json:"axis,omitempty"`
+	// AxisHidden records an explicit `"axis": null` on this channel.
+	// Encode suppresses the axis entirely — domain line, ticks,
+	// labels, title and grid — and releases the padding the axis's
+	// side had reserved (see encode.AxisPlacement).
+	AxisHidden bool `json:"-"`
+	Stack      any  `json:"stack,omitempty"`
 }
 
 // UnmarshalJSON intercepts the `field` key so the channel accepts
-// either a bare string or a {"repeat": <axis>} substitution object.
-// All other keys decode through the default struct path; unknown
-// keys still error per Decode's DisallowUnknownFields setting.
+// either a bare string or a {"repeat": <axis>} substitution object,
+// and the `axis` key so an explicit null is distinguishable from an
+// absent key. All other keys decode through the default struct path;
+// unknown keys still error per Decode's DisallowUnknownFields
+// setting.
 func (p *PositionChannel) UnmarshalJSON(data []byte) error {
 	type alias PositionChannel
 	var aux struct {
 		Field json.RawMessage `json:"field"`
+		Axis  json.RawMessage `json:"axis"`
 		alias
 	}
 	if err := json.Unmarshal(data, &aux); err != nil {
@@ -126,21 +152,63 @@ func (p *PositionChannel) UnmarshalJSON(data []byte) error {
 		p.Field = f
 		p.FieldRef = ref
 	}
+	if len(aux.Axis) > 0 {
+		if isJSONNull(aux.Axis) {
+			p.Axis = nil
+			p.AxisHidden = true
+		} else {
+			var ax Axis
+			if err := json.Unmarshal(aux.Axis, &ax); err != nil {
+				return fmt.Errorf("axis: %w", err)
+			}
+			p.Axis = &ax
+		}
+	}
 	return nil
 }
 
+// MarshalJSON re-emits an explicit `"axis": null` for a hidden axis.
+// Without it the nil pointer plus omitempty would drop the key and
+// silently turn "hidden" back into "default" on a round-trip. The
+// non-hidden path marshals through the plain struct encoding, so its
+// bytes are unchanged.
+func (p PositionChannel) MarshalJSON() ([]byte, error) {
+	type alias PositionChannel
+	if !p.AxisHidden {
+		return json.Marshal(alias(p))
+	}
+	var aux struct {
+		alias
+		Axis *json.RawMessage `json:"axis"`
+	}
+	aux.alias = alias(p)
+	null := json.RawMessage("null")
+	aux.Axis = &null
+	return json.Marshal(aux)
+}
+
 // MarkChannel adds legend to ChannelCommon.
+//
+// Legend is tri-state on the wire exactly as PositionChannel.Axis is:
+// an absent key leaves Legend nil with LegendHidden false (default
+// legend), `"legend": null` leaves Legend nil with LegendHidden true
+// (no legend at all).
 type MarkChannel struct {
 	ChannelCommon
 	Legend *Legend `json:"legend,omitempty"`
+	// LegendHidden records an explicit `"legend": null` on this
+	// channel. Encode emits no legend for it.
+	LegendHidden bool `json:"-"`
 }
 
 // UnmarshalJSON intercepts the `field` key for the same reason as
-// PositionChannel.
+// PositionChannel, and the `legend` key so an explicit null is
+// distinguishable from an absent key.
 func (m *MarkChannel) UnmarshalJSON(data []byte) error {
 	type alias MarkChannel
 	var aux struct {
-		Field json.RawMessage `json:"field"`
+		Field  json.RawMessage `json:"field"`
+		Legend json.RawMessage `json:"legend"`
 		alias
 	}
 	if err := json.Unmarshal(data, &aux); err != nil {
@@ -155,7 +223,36 @@ func (m *MarkChannel) UnmarshalJSON(data []byte) error {
 		m.Field = f
 		m.FieldRef = ref
 	}
+	if len(aux.Legend) > 0 {
+		if isJSONNull(aux.Legend) {
+			m.Legend = nil
+			m.LegendHidden = true
+		} else {
+			var lg Legend
+			if err := json.Unmarshal(aux.Legend, &lg); err != nil {
+				return fmt.Errorf("legend: %w", err)
+			}
+			m.Legend = &lg
+		}
+	}
 	return nil
+}
+
+// MarshalJSON re-emits an explicit `"legend": null` for a hidden
+// legend; see PositionChannel.MarshalJSON.
+func (m MarkChannel) MarshalJSON() ([]byte, error) {
+	type alias MarkChannel
+	if !m.LegendHidden {
+		return json.Marshal(alias(m))
+	}
+	var aux struct {
+		alias
+		Legend *json.RawMessage `json:"legend"`
+	}
+	aux.alias = alias(m)
+	null := json.RawMessage("null")
+	aux.Legend = &null
+	return json.Marshal(aux)
 }
 
 // TextChannel is a slimmer channel for text marks and tooltips.

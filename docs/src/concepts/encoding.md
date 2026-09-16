@@ -35,6 +35,8 @@ The `encoding` object binds data fields to visual channels.
 | `scale` | Scale spec (`type`, `domain`, `range`, `scheme`, `padding`, ...). |
 | `axis` | Axis config (`title`, `format`, `grid`, `tick_count`, `label_angle`, ...). |
 | `legend` | Legend config (`orient`, `padding`, `offset`, `title`, `direction`, ...) — see [Legend placement](#legend-placement). |
+| `axis` | Axis config (`title`, `format`, `grid`, `tick_count`, `label_angle`, ...), or `null` to [hide the axis](#hiding-an-axis-or-legend). |
+| `legend` | Legend config (`title`, `orient`, `direction`, ...), or `null` to [hide the legend](#hiding-an-axis-or-legend). |
 | `format` | d3-format string for label formatting. |
 | `sort` | `"ascending"` / `"descending"` / `"-y"` / `[explicit, order, ...]`. |
 | `key` | `true` to mark this channel as the animation join key — see [Spec › Animation](spec.md#animation). At most one channel per encoding may set this; only valid on position channels (`x`, `y`, `x2`, `y2`, `theta`, `radius`) and mark channels (`color`, `fill`, `stroke`, `opacity`, `size`, `shape`, sankey `source`/`target`/`value`, geo `longitude`/`latitude`/`feature`). |
@@ -202,6 +204,46 @@ In a `layer` composite each layer resolves its own legend. Legends
 sharing an anchor stack rather than overlap, and a shared side's
 reservation is the sum (top/bottom) or the widest (left/right) of what
 the stacked legends claim.
+### Hiding an axis or legend
+
+`"axis": null` on a position channel suppresses that axis entirely —
+domain line, ticks, tick labels, title and grid lines all go. The
+padding the axis reserved on its side of the plot is released, so the
+plot rect expands into the freed space.
+
+`"legend": null` on a mark channel suppresses that channel's legend.
+Legends overlay the plot rather than reserving a side, so nothing
+moves; the legend simply is not emitted.
+
+```json
+"encoding": {
+  "x": {"field": "cat", "type": "nominal", "axis": null},
+  "y": {"field": "val", "type": "quantitative"},
+  "color": {"field": "cat", "type": "nominal", "legend": null}
+}
+```
+
+**Omitting the key is not the same as `null`.** The two are distinct
+states and Prism decodes them apart:
+
+| Wire form | Meaning |
+|---|---|
+| key absent | Default axis / legend, rendered with Prism's defaults. |
+| `"axis": {...}` / `"legend": {...}` | Configured axis / legend — including an empty `{}`, which still renders. |
+| `"axis": null` / `"legend": null` | Suppressed. Nothing is drawn, and an axis releases its padding. |
+
+The distinction survives a round-trip: re-serialising a spec re-emits
+the explicit `null` and never invents one for an absent key.
+
+This is block-level suppression and is unrelated to `axis.title:
+false`, which drops only the axis *title* and leaves the ticks,
+labels, line and grid in place.
+
+In a `layer`, the layers share one pair of axes, so the suppression
+has to be unanimous: an axis is hidden only when **every** layer that
+binds the channel sets `"axis": null`. In a `facet` or `repeat`, every
+cell renders the same child spec, so its suppression applies to the
+whole grid — the shared axis is dropped and each cell expands.
 
 ## Text channel
 

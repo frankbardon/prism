@@ -101,8 +101,13 @@ func encodeFacetComposite(s *spec.Spec, composite *plan.CompositeDAG, childTable
 	// (the package defaults), so we do nothing extra for the default
 	// path.
 
-	// Pre-compute shared scales when requested.
+	// Pre-compute shared scales when requested. Every cell renders the
+	// same child spec, so its `"axis": null` suppression applies to the
+	// whole grid: the shared axis is dropped and each cell's plot rect
+	// (computed by the flat Encode path from the same flags) expands.
 	placement := DefaultAxisPlacement()
+	placement.XHidden = specAxisHidden(child.Spec, scene.ChannelX)
+	placement.YHidden = specAxisHidden(child.Spec, scene.ChannelY)
 	cellLayout := Compute(LayoutOpts{
 		Width:  cellW,
 		Height: cellH,
@@ -215,7 +220,7 @@ func encodeFacetComposite(s *spec.Spec, composite *plan.CompositeDAG, childTable
 	// the same first-specified-wins path the layer composite uses; a
 	// facet has one child spec, so no conflict is possible.
 	facetEncodings := []labelledEncoding{{Label: "facet-child", Enc: childEncoding(child.Spec)}}
-	if xShared != nil && len(cells) > 0 {
+	if xShared != nil && len(cells) > 0 && !placement.XHidden {
 		opts, axWarn := sharedAxisOpts(scene.ChannelX,
 			sharedAxisBlocksFrom(scene.ChannelX, facetEncodings),
 			facetFieldFromChildSpec(child.Spec, scene.ChannelX))
@@ -223,7 +228,7 @@ func encodeFacetComposite(s *spec.Spec, composite *plan.CompositeDAG, childTable
 		ax := BuildAxisWithOpts(xShared, scene.ChannelX, placement.X, cells[len(cells)-1].Scene.Plot, opts)
 		doc.Grid.Shared.X = &ax
 	}
-	if yShared != nil && len(cells) > 0 {
+	if yShared != nil && len(cells) > 0 && !placement.YHidden {
 		opts, axWarn := sharedAxisOpts(scene.ChannelY,
 			sharedAxisBlocksFrom(scene.ChannelY, facetEncodings),
 			facetFieldFromChildSpec(child.Spec, scene.ChannelY))

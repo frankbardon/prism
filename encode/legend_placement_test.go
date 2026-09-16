@@ -40,10 +40,12 @@ func legendSpec(legendBlock string) string {
 }`, block)
 }
 
-// encodeInlineComposite is encodeInline's composite twin: it decodes
+// encodeInlineCompositeScene is encodeInline's composite twin (returning the
+// assembled *scene.Scene; encode_hide_test.go's encodeInlineComposite returns
+// the *scene.SceneDoc wrapper): it decodes
 // an inline layered spec, executes each child, and returns the single
 // assembled Scene.
-func encodeInlineComposite(t *testing.T, body string) *scene.Scene {
+func encodeInlineCompositeScene(t *testing.T, body string) *scene.Scene {
 	t.Helper()
 	s, err := spec.DecodeBytes([]byte(body))
 	if err != nil {
@@ -311,7 +313,7 @@ func twoLayerLegendSpec(legendBlock string) string {
 func TestPrismLegendLayerStackingSurvivesSideOrient(t *testing.T) {
 	for _, orient := range []string{"right", "top-right"} {
 		t.Run(orient, func(t *testing.T) {
-			sc := encodeInlineComposite(t, twoLayerLegendSpec(fmt.Sprintf(`{"orient": %q}`, orient)))
+			sc := encodeInlineCompositeScene(t, twoLayerLegendSpec(fmt.Sprintf(`{"orient": %q}`, orient)))
 			if len(sc.Legends) != 2 {
 				t.Fatalf("legends = %d, want 2", len(sc.Legends))
 			}

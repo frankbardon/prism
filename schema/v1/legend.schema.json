@@ -6,7 +6,7 @@
   "$defs": {
     "legend": {
       "type": ["object", "null"],
-      "description": "Legend options; null to suppress the legend entirely.",
+      "description": "Legend options. Null suppresses the legend entirely; omitting the `legend` key instead keeps the default legend.",
       "additionalProperties": false,
       "properties": {
         "type":         {"type": "string", "enum": ["symbol", "gradient"], "description": "Legend representation kind."},
