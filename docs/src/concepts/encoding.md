@@ -33,8 +33,6 @@ The `encoding` object binds data fields to visual channels.
 | `type` | One of `nominal`, `ordinal`, `quantitative`, `temporal`. |
 | `aggregate` | Friendly alias: `mean`, `sum`, `count`, `null_count`, `median`, `q1`, `q3`, `min`, `max`, `range`, `stdev`, `variance`, `skewness`, `kurtosis`, `ci0`, `ci1`, `distinct`, `mode`, `frequency`, plus `wmean`, `ratio`, `lift`, `share`. `count`, `distinct`, `mode`, `frequency`, and `null_count` work on any field type; numeric aggregates require a quantitative or temporal field. `frequency` is the scalar companion to `mode` — it returns the modal count (how many times the most frequent value occurs), whereas `mode` returns the value itself. |
 | `scale` | Scale spec (`type`, `domain`, `range`, `scheme`, `padding`, ...). |
-| `axis` | Axis config (`title`, `format`, `grid`, `tick_count`, `label_angle`, ...). |
-| `legend` | Legend config (`orient`, `padding`, `offset`, `title`, `direction`, ...) — see [Legend placement](#legend-placement). |
 | `axis` | Axis config (`orient`, `title`, `format`, `grid`, `tick_count`, `label_angle`, ...) — see [Axis placement](#axis-placement) — or `null` to [hide the axis](#hiding-an-axis-or-legend). |
 | `legend` | Legend config (`title`, `orient`, `direction`, ...), or `null` to [hide the legend](#hiding-an-axis-or-legend). |
 | `format` | d3-format string for label formatting. |
@@ -206,7 +204,7 @@ complete category set.
 
 A malformed `domain` — wrong arity, non-numeric bounds on a continuous
 scale, reversed or zero-width bounds, a non-string category — is
-rejected at validate time with `PRISM_SPEC_042`, and the encoder
+rejected at validate time with `PRISM_SPEC_041`, and the encoder
 raises the same code for callers that skip validate.
 
 **`nice` is boolean-only.** Vega-Lite's numeric (tick-count) and

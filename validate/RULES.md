@@ -84,7 +84,7 @@ that `$id` is the canonical URN.
 ## Adding a new semantic rule
 
 1. Add a file `validate/rules/<short_name>.go` implementing `SemanticRule`.
-2. Register it in `defaultRules()` in `validate/semantic.go`.
+2. Register it in `validate/rules/init.go` via `validate.RegisterDefault(...)` (loaded by `init()`) — do not edit existing rule files.
 3. Add a `PRISM_SPEC_xxx` entry in `errors/codes.go` with `Message`,
    `Fixups`, and any `SeeAlso` links.
 4. Add a positive + negative fixture under `testdata/specs/` and
