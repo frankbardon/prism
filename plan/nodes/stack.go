@@ -32,16 +32,23 @@ import (
 // Positive and negative values accumulate independently from zero, so
 // a stack holding both grows up and down from the baseline rather than
 // cancelling.
+//
+// Ordering (E5-S3) overrides that first-appearance rank. The only
+// value today is "inside-out", which a centred stack selects: series
+// are dealt onto the lighter side of the stack in order of where they
+// peak, so the earliest-peaking ones settle either side of the centre
+// line and the streamgraph flows.
 type StackNode struct {
-	id      plan.NodeID
-	input   plan.NodeID
-	field   string
-	groupby []string
-	stackBy []string
-	offset  string
-	startAs string
-	endAs   string
-	backend plan.Backend
+	id       plan.NodeID
+	input    plan.NodeID
+	field    string
+	groupby  []string
+	stackBy  []string
+	offset   string
+	ordering string
+	startAs  string
+	endAs    string
+	backend  plan.Backend
 }
 
 // NewStack constructs a StackNode. All slices are copied. An empty
@@ -142,19 +149,35 @@ func (n *StackNode) Execute(ctx context.Context, in []*table.Table) (*table.Tabl
 	return n.backend.Compile(ctx, n, in)
 }
 
+// WithOrdering selects the segment ordering applied inside each stack
+// and returns n, so a builder can chain it onto NewStack. The empty
+// ordering — the default — keeps first-appearance order of the
+// stack-by tuple; spec.StackOrderInsideOut selects the streamgraph
+// layout.
+func (n *StackNode) WithOrdering(ordering string) *StackNode {
+	n.ordering = ordering
+	return n
+}
+
 // SetBackend wires the compile backend that powers Execute.
 func (n *StackNode) SetBackend(b plan.Backend) { n.backend = b }
 
 // Fingerprint implements plan.Node.
 func (n *StackNode) Fingerprint() string {
-	return fingerprintFor("StackNode",
+	parts := []string{
 		string(n.input),
 		n.field,
-		"by:"+strings.Join(n.groupby, ","),
-		"seg:"+strings.Join(n.stackBy, ","),
-		"offset:"+n.offset,
-		"as:"+n.startAs+","+n.endAs,
-	)
+		"by:" + strings.Join(n.groupby, ","),
+		"seg:" + strings.Join(n.stackBy, ","),
+		"offset:" + n.offset,
+		"as:" + n.startAs + "," + n.endAs,
+	}
+	// Appended only when set, so every stack that predates E5-S3
+	// fingerprints to exactly the same digest it did before.
+	if n.ordering != "" {
+		parts = append(parts, "order:"+n.ordering)
+	}
+	return fingerprintFor("StackNode", parts...)
 }
 
 // Field exposes the accumulated column name.
@@ -166,8 +189,12 @@ func (n *StackNode) Groupby() []string { return n.groupby }
 // StackBy exposes the segment-ordering fields.
 func (n *StackNode) StackBy() []string { return n.stackBy }
 
-// Offset exposes the accumulation mode ("zero" or "normalize").
+// Offset exposes the accumulation mode ("zero", "normalize" or
+// "center").
 func (n *StackNode) Offset() string { return n.offset }
+
+// Ordering exposes the segment ordering ("" or "inside-out").
+func (n *StackNode) Ordering() string { return n.ordering }
 
 // StartAs / EndAs expose the output column names.
 func (n *StackNode) StartAs() string { return n.startAs }
@@ -182,5 +209,9 @@ func (n *StackNode) Summary() string {
 	if len(n.groupby) > 0 {
 		out += " | by: " + strings.Join(n.groupby, ",")
 	}
-	return out + " | offset: " + n.offset
+	out += " | offset: " + n.offset
+	if n.ordering != "" {
+		out += " | order: " + n.ordering
+	}
+	return out
 }

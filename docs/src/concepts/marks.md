@@ -12,7 +12,7 @@ arcs, etc. Specify via top-level `mark` (shorthand string) or
 |---|---|
 | `bar` | Compare categories. The default. Stacks by segment — see [Encoding › Stacking](encoding.md#stacking). |
 | `line` | Continuous trends; ordered x-axis. |
-| `area` | Filled trends. Supports negative values, an explicit `y2` lower edge, and stacking — see [Encoding › Stacking](encoding.md#stacking). |
+| `area` | Filled trends. Supports negative values, an explicit `y2` lower edge, and every stack offset including the centred streamgraph — see [Encoding › Stacking](encoding.md#stacking). |
 | `point` | Scatter, dot plots. |
 | `circle`, `square` | Convenience aliases for `point` with shape preset. |
 | `tick` | Strip plots, ranking dot plots. |
@@ -557,6 +557,15 @@ An `area` applies its curve to **both** boundaries — the upper edge and
 the reversed lower/baseline edge — so a band keeps parallel outlines
 rather than a curved top over a straight bottom. The short connector
 between the two edges is always a straight segment.
+
+That is what makes `area` the streamgraph mark: a centred stack
+(`"stack": "center"`, see
+[Encoding › Centred stacks](encoding.md#centred-stacks-the-streamgraph))
+hands each series a floating pair of edges, and a smooth
+`interpolate` carries both of them, so the ribbons read as one
+flowing stream. `bar` cannot take the centred offset — it is
+baseline-anchored geometry, and `PRISM_SPEC_053` says so rather than
+drawing detached columns.
 
 Geometry semantics match d3-shape's `curveLinear`, `curveMonotoneX`,
 `curveStep`/`curveStepBefore`/`curveStepAfter` and

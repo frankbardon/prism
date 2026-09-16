@@ -997,6 +997,16 @@ var Codes = map[string]CodeMetadata{
 		},
 		SeeAlso: []string{"PRISM_SPEC_041", "PRISM_SPEC_028"},
 	},
+	"PRISM_SPEC_053": {
+		Code:    "PRISM_SPEC_053",
+		Message: `Channel "{{.Channel}}" declares stack "center", which mark type {{.Mark}} cannot draw.`,
+		Fixups: []string{
+			"`center`" + ` is the streamgraph offset: it floats each stack's baseline so the band stays symmetric about zero. Only ` + "`area`" + ` draws that — a ribbon carries both of its own edges, so the whole shape moves intact.`,
+			`A baseline-anchored mark (` + "`bar`" + `) measures every segment from the axis, so centring it detaches the columns from the axis and the tick labels stop naming values. Switch the mark: ` + "`{\"mark\": \"area\", \"encoding\": {\"y\": {\"aggregate\": \"sum\", \"field\": \"visits\", \"type\": \"quantitative\", \"stack\": \"center\"}}}`" + `.`,
+			`To keep the bar, keep the offset anchored: ` + "`\"stack\": \"zero\"`" + ` for absolute totals, or ` + "`\"stack\": \"normalize\"`" + ` for a 100% stacked bar.`,
+		},
+		SeeAlso: []string{"PRISM_SPEC_042"},
+	},
 	"PRISM_WARN_NETWORK_CYCLE": {
 		Code:    "PRISM_WARN_NETWORK_CYCLE",
 		Message: `network input graph contains a cycle; force layout may produce a visually messy result.`,

@@ -184,3 +184,121 @@ func TestPrismStackSchemaAppendsBounds(t *testing.T) {
 		t.Error("Schema: want a collision error when `as` names an existing column")
 	}
 }
+
+// TestPrismStackCenterOffset pins the streamgraph silhouette: each
+// stack keeps its zero-offset thickness but slides so its own midpoint
+// lands on zero, independently of how much total it carries.
+func TestPrismStackCenterOffset(t *testing.T) {
+	in := stackTable(t,
+		[]string{"q1", "q1", "q2", "q2"},
+		[]string{"a", "b", "a", "b"},
+		[]float64{25, 75, 30, 10})
+	n := nodes.NewStack("stack:1", "src", "v", []string{"g"}, []string{"c"}, "center", "", "")
+	starts, ends := runStack(t, n, in)
+	// q1 totals 100 → [-50, 50]; q2 totals 40 → [-20, 20].
+	assertFloats(t, "start", starts, []float64{-50, -25, -20, 10})
+	assertFloats(t, "end", ends, []float64{-25, 50, 10, 20})
+}
+
+// TestPrismStackCenterSymmetric pins the property the measure axis
+// depends on: every centred stack is symmetric about zero, so the
+// union of all of them is symmetric too and the resolved domain
+// spans -H/2 … H/2 for the widest stack H.
+func TestPrismStackCenterSymmetric(t *testing.T) {
+	in := stackTable(t,
+		[]string{"q1", "q1", "q2", "q2"},
+		[]string{"a", "b", "a", "b"},
+		[]float64{25, 75, 30, 10})
+	n := nodes.NewStack("stack:1", "src", "v", []string{"g"}, []string{"c"}, "center", "", "")
+	starts, ends := runStack(t, n, in)
+	lo, hi := math.Inf(1), math.Inf(-1)
+	for i := range starts {
+		lo = math.Min(lo, math.Min(starts[i], ends[i]))
+		hi = math.Max(hi, math.Max(starts[i], ends[i]))
+	}
+	if math.Abs(lo+hi) > 1e-9 {
+		t.Errorf("domain [%g, %g] is not symmetric about zero", lo, hi)
+	}
+}
+
+// TestPrismStackCenterNegatives pins that the mixed-sign split still
+// happens before the centring slide: the stack grows both ways from
+// zero, then the whole band moves so its midpoint is zero.
+func TestPrismStackCenterNegatives(t *testing.T) {
+	in := stackTable(t,
+		[]string{"g", "g", "g"},
+		[]string{"a", "b", "c"},
+		[]float64{5, -3, 2})
+	n := nodes.NewStack("stack:1", "src", "v", []string{"g"}, []string{"c"}, "center", "", "")
+	starts, ends := runStack(t, n, in)
+	// Zero offset gives [-3, 7]; midpoint 2 slides to zero.
+	assertFloats(t, "start", starts, []float64{-2, -2, 3})
+	assertFloats(t, "end", ends, []float64{3, -5, 5})
+}
+
+// insideOutTable builds the three-series, three-stack shape the
+// inside-out tests use: "a" peaks first and is smallest, "b" peaks in
+// the middle and is largest, "c" peaks last. Rows arrive in
+// first-appearance order a, b, c so the reordering is visible.
+func insideOutTable(t *testing.T) *table.Table {
+	t.Helper()
+	return stackTable(t,
+		[]string{"x1", "x1", "x1", "x2", "x2", "x2", "x3", "x3", "x3"},
+		[]string{"a", "b", "c", "a", "b", "c", "a", "b", "c"},
+		[]float64{10, 1, 2, 2, 20, 3, 1, 2, 15})
+}
+
+// TestPrismStackInsideOutOrdering pins the streamgraph ordering. The
+// series are visited by where they peak and dealt alternately onto the
+// lighter side of the stack, so the bottom-to-top order becomes
+// c, a, b rather than the first-appearance a, b, c.
+//
+// Ordering is independent of the offset, so this drives it against the
+// zero offset where the expected bounds are readable by hand.
+func TestPrismStackInsideOutOrdering(t *testing.T) {
+	in := insideOutTable(t)
+	n := nodes.NewStack("stack:1", "src", "v", []string{"g"}, []string{"c"}, "zero", "", "").
+		WithOrdering("inside-out")
+	starts, ends := runStack(t, n, in)
+	assertFloats(t, "start", starts, []float64{2, 12, 0, 3, 5, 0, 15, 16, 0})
+	assertFloats(t, "end", ends, []float64{12, 13, 2, 5, 25, 3, 16, 18, 15})
+}
+
+// TestPrismStackInsideOutIsOptIn pins that the same table keeps
+// first-appearance order when no ordering is selected — the E5-S2
+// default is untouched.
+func TestPrismStackInsideOutIsOptIn(t *testing.T) {
+	in := insideOutTable(t)
+	n := nodes.NewStack("stack:1", "src", "v", []string{"g"}, []string{"c"}, "zero", "", "")
+	starts, _ := runStack(t, n, in)
+	assertFloats(t, "start", starts, []float64{0, 10, 11, 0, 2, 22, 0, 1, 3})
+}
+
+// TestPrismStackInsideOutDegenerate pins that asking for inside-out
+// with nothing to order falls back on the documented default instead
+// of failing or dropping ordering.
+func TestPrismStackInsideOutDegenerate(t *testing.T) {
+	in := stackTable(t, []string{"g", "g"}, []string{"a", "a"}, []float64{3, 4})
+	n := nodes.NewStack("stack:1", "src", "v", []string{"g"}, []string{"c"}, "zero", "", "").
+		WithOrdering("inside-out")
+	starts, ends := runStack(t, n, in)
+	assertFloats(t, "start", starts, []float64{0, 3})
+	assertFloats(t, "end", ends, []float64{3, 7})
+}
+
+// TestPrismStackOrderingFingerprint pins that a stack which selects no
+// ordering fingerprints exactly as it did before E5-S3, so no existing
+// plan's cache key moves.
+func TestPrismStackOrderingFingerprint(t *testing.T) {
+	base := nodes.NewStack("stack:1", "src", "v", []string{"g"}, []string{"c"}, "zero", "", "")
+	same := nodes.NewStack("stack:1", "src", "v", []string{"g"}, []string{"c"}, "zero", "", "").
+		WithOrdering("")
+	ordered := nodes.NewStack("stack:1", "src", "v", []string{"g"}, []string{"c"}, "zero", "", "").
+		WithOrdering("inside-out")
+	if base.Fingerprint() != same.Fingerprint() {
+		t.Error("an empty ordering changed the fingerprint")
+	}
+	if base.Fingerprint() == ordered.Fingerprint() {
+		t.Error("inside-out ordering did not change the fingerprint")
+	}
+}

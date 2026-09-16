@@ -34,6 +34,7 @@ For live interactive rendering in a browser, see [`live.html`](live.html).
 | [area_step](basic-marks/area_step.prism.json) | <img src="basic-marks/area_step.svg" width="240"> |
 | [stacked_bar](basic-marks/stacked_bar.prism.json) | <img src="basic-marks/stacked_bar.svg" width="240"> |
 | [stacked_area_normalize](basic-marks/stacked_area_normalize.prism.json) | <img src="basic-marks/stacked_area_normalize.svg" width="240"> |
+| [streamgraph](basic-marks/streamgraph.prism.json) | <img src="basic-marks/streamgraph.svg" width="240"> |
 
 ## Composite marks
 

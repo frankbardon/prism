@@ -27,8 +27,11 @@ import (
 // Stacking (E5-S2) needs no code here: the StackNode's bounds columns
 // reach this encoder as an ordinary y / y2 pair (encode/stack.go
 // rebinds the channels before scales resolve), so a stacked area is
-// just the y2 path below with a per-series lower edge. The
-// streamgraph offset lands later.
+// just the y2 path below with a per-series lower edge. The centred
+// streamgraph offset (E5-S3) is the same arrangement with signed
+// bounds — the accumulation and the inside-out segment ordering both
+// happen upstream in the plan node, and this encoder only ever sees a
+// series with two edges.
 //
 // Binding y2 (E9-S3) replaces that implicit baseline with an explicit
 // lower edge read per row from the y2 column and resolved through the

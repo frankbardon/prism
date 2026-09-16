@@ -925,7 +925,9 @@ func (c *buildCtx) injectEncodingAggregate(tip plan.NodeID, enc *spec.Encoding) 
 // Grouping is derived, not re-derived: StackBinding.StackBy comes from
 // spec.StackByFields, which walks colour-then-detail in the same order
 // encode/marks/group.go's groupChannels does, so the stack's segment
-// order and the mark partitioner's group order agree.
+// order and the mark partitioner's group order agree. The binding's
+// Ordering overrides that order for a centred stack (E5-S3), where
+// inside-out placement is what makes the streamgraph read.
 func (c *buildCtx) injectEncodingStack(tip plan.NodeID, s *spec.Spec) (plan.NodeID, error) {
 	st := spec.ResolveStack(s)
 	if st == nil {
@@ -933,7 +935,8 @@ func (c *buildCtx) injectEncodingStack(tip plan.NodeID, s *spec.Spec) (plan.Node
 	}
 	id := c.nextID("enc-stack")
 	return c.addAndReturn(nodes.NewStack(
-		id, tip, st.Field, st.Groupby, st.StackBy, st.Offset, st.StartAs, st.EndAs))
+		id, tip, st.Field, st.Groupby, st.StackBy, st.Offset, st.StartAs, st.EndAs).
+		WithOrdering(st.Ordering))
 }
 
 // missingDatasetErr formats a PRISM_PLAN_003 with the available leaf
