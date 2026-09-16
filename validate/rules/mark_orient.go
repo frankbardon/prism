@@ -74,6 +74,7 @@ var orientAwareMarks = map[string][]string{
 	"winloss":    {"vertical", "horizontal"},
 	"sparkbar":   {"vertical", "horizontal"},
 	"sparkarea":  {"vertical", "horizontal"},
+	"progress":   {"vertical", "horizontal"},
 	"tree":       {"vertical", "horizontal"},
 	"dendrogram": {"vertical", "horizontal"},
 	"network":    {"vertical", "horizontal"},

@@ -1,0 +1,17 @@
+{
+  "$schema": "urn:prism:schema:v1:spec",
+  "title": "Brand funnel",
+  "data": {
+    "values": [
+      {"metric": "Familiarity", "score": 92.4},
+      {"metric": "Consideration", "score": 71.0},
+      {"metric": "Preference", "score": 54.8},
+      {"metric": "Advocacy", "score": 33.2}
+    ]
+  },
+  "mark": {"type": "progress", "total": 100, "corner_radius": 3, "thickness": 0.45},
+  "encoding": {
+    "x": {"field": "score", "type": "quantitative", "axis": {"title": "Score"}},
+    "y": {"field": "metric", "type": "nominal"}
+  }
+}

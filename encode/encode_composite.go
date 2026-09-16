@@ -373,6 +373,10 @@ func encodeLayerComposite(s *spec.Spec, composite *plan.CompositeDAG, childTable
 			Tooltip:  childEnc.Tooltip,
 			Text:     childEnc.Text,
 			KeyField: keyFieldFromEncoding(childEnc),
+			// A progress mark inside a layer still needs its track to
+			// paint; the track's Style is theme-resolved, not derived
+			// from the layer's own mark style (E10-S1).
+			TrackStyle: progressTrackStyle(fullTheme),
 		}
 		if lc.child.Spec.Mark != nil {
 			markInputs.Mark = lc.child.Spec.Mark.Def

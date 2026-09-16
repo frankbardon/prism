@@ -98,6 +98,25 @@ type MarkDef struct {
 	// "horizontal" | "vertical". Default "horizontal".
 	Orientation string `json:"orientation,omitempty"`
 
+	// Progress mark (E10-S1) draws one metric row per table row: a
+	// value bar on a full-scale track.
+	//
+	// Total is the upper bound of the measure axis — the value the
+	// track runs to and the point the scale's domain ends at, so the
+	// track can never overflow the plot. It takes either a literal
+	// number (one ceiling for every row) or a string naming a data
+	// field, read **per row** so each metric can carry its own
+	// maximum. Left unset the track runs to the measure scale's own
+	// domain maximum. Unlike bullet.Target / bullet.Comparative — the
+	// polymorphism this mirrors — a field name is never collapsed to
+	// row 0: a progress mark is inherently multi-row.
+	Total any `json:"total,omitempty"`
+	// Thickness is the fraction of the category band a progress row's
+	// bar and track occupy, centred in the band. Must be greater than
+	// 0 and at most 1 (PRISM_SPEC_061). Nil uses
+	// ProgressThicknessDefault.
+	Thickness *float64 `json:"thickness,omitempty"`
+
 	// Spark adornments (E4) are opt-in, default-off embellishments for
 	// the compact spark marks (sparkline / sparkbar / sparkarea). The
 	// zero value of every field means "no adornment", so existing spark
@@ -139,6 +158,12 @@ type MarkDef struct {
 // table mark whose mark_def omits page_size. Documented in
 // docs/src/concepts/marks.md; keep both in sync.
 const TablePageSizeDefault = 25
+
+// ProgressThicknessDefault is the fraction of the category band a
+// progress mark's bar and track occupy when mark_def omits
+// thickness. Documented in docs/src/concepts/marks.md; keep both in
+// sync.
+const ProgressThicknessDefault = 0.5
 
 // ReferenceBand bounds the shaded normal-range band drawn behind a
 // spark mark (E4 adornments). From and To are data-space values on the
