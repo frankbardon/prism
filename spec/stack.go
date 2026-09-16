@@ -11,18 +11,29 @@ package spec
 // columns) call ResolveStack on the *same* spec, so the two stages can
 // never disagree about whether stacking happened.
 //
-// The offsets that resolve today are "zero" and "normalize".
-// "center" is accepted by the schema but intentionally resolves to no
-// stacking until the streamgraph work lands — which is exactly the
-// pre-E5-S2 behaviour for that value, so nothing regresses.
+// Three offsets resolve: "zero", "normalize" and — since E5-S3 —
+// "center", the streamgraph offset that floats each stack's baseline
+// so the band is symmetric about zero.
 
-// Stack offset names. StackOffsetCenter is declared for completeness
-// (the schema accepts it) but ResolveStack does not yet select it.
+// Stack offset names.
 const (
 	StackOffsetZero      = "zero"
 	StackOffsetNormalize = "normalize"
 	StackOffsetCenter    = "center"
 )
+
+// StackOrderInsideOut is the segment ordering a centred stack applies
+// by default. Series are visited in order of where they peak and each
+// is dealt onto whichever side of the stack currently carries less
+// total magnitude, so the earliest-peaking series settle either side
+// of the centre line and the late ones fray at the edges. That is
+// what makes a streamgraph read as a stream rather than as a shuffled
+// pile of ribbons. It is d3's stackOrderInsideOut, the ordering Vega
+// reaches for on the same chart.
+//
+// The empty ordering means first-appearance order of the stack-by
+// tuple — the E5-S2 default that keeps every segment in legend order.
+const StackOrderInsideOut = "inside-out"
 
 // StackSuffixStart / StackSuffixEnd are the default output-column
 // suffixes, matching Vega-Lite's `<field>_start` / `<field>_end`.
@@ -41,7 +52,8 @@ type StackBinding struct {
 	// output column carries the same name as its input field, so this
 	// is simply the channel's field name.
 	Field string
-	// Offset is StackOffsetZero or StackOffsetNormalize.
+	// Offset is StackOffsetZero, StackOffsetNormalize or
+	// StackOffsetCenter.
 	Offset string
 	// Groupby names the fields that delimit one stack — the opposite
 	// position channel (the dimension axis).
@@ -53,6 +65,12 @@ type StackBinding struct {
 	// appearance of this tuple so every stack orders its segments
 	// identically and in legend order.
 	StackBy []string
+	// Ordering names the segment-ordering strategy the stack node
+	// applies inside each stack. Empty means first-appearance order of
+	// the StackBy tuple; StackOrderInsideOut means the inside-out
+	// layout a centred stack wants. An explicit `order` channel on the
+	// encoding suppresses inside-out — the author's ordering wins.
+	Ordering string
 	// StartAs / EndAs are the output column names.
 	StartAs string
 	EndAs   string
@@ -102,14 +120,13 @@ func DetailEntries(enc *Encoding) []DetailChannelEntry {
 //	nil  + StackNull true  → ("", false, true)   — explicit null, disabled
 //	false                  → ("", false, true)   — disabled
 //	true                   → ("zero", true, false)
-//	"zero" | "normalize"   → (value, true, false)
-//	"center"               → ("", false, true)   — reserved, no stacking
+//	"zero"|"normalize"|"center" → (value, true, false)
 //
-// "center" reports disabled rather than absent on purpose: an author
-// who asked for a streamgraph must not silently get a zero-offset
-// stack from the implicit default instead. An unrecognised string is
-// treated the same way; the JSON Schema enum is the gate that rejects
-// it before it ever reaches here.
+// An unrecognised string reports disabled rather than absent on
+// purpose: an author who asked for an offset Prism does not know must
+// not silently get a zero-offset stack from the implicit default
+// instead. The JSON Schema enum is the gate that rejects it before it
+// ever reaches here.
 func stackOffsetOf(ch *PositionChannel) (offset string, explicit, disabled bool) {
 	if ch == nil {
 		return "", false, false
@@ -127,7 +144,7 @@ func stackOffsetOf(ch *PositionChannel) (offset string, explicit, disabled bool)
 		return "", false, true
 	case string:
 		switch v {
-		case StackOffsetZero, StackOffsetNormalize:
+		case StackOffsetZero, StackOffsetNormalize, StackOffsetCenter:
 			return v, true, false
 		}
 		return "", false, true
@@ -226,12 +243,14 @@ func ResolveStack(s *Spec) *StackBinding {
 		return nil
 	}
 
+	stackBy := StackByFields(enc)
 	return &StackBinding{
 		Channel:  channel,
 		Field:    stackCh.Field,
 		Offset:   offset,
 		Groupby:  []string{otherCh.Field},
-		StackBy:  StackByFields(enc),
+		StackBy:  stackBy,
+		Ordering: stackOrderingFor(enc, offset, stackBy),
 		StartAs:  stackCh.Field + StackSuffixStart,
 		EndAs:    stackCh.Field + StackSuffixEnd,
 		Implicit: implicit,
@@ -241,4 +260,22 @@ func ResolveStack(s *Spec) *StackBinding {
 // spanFieldBound reports whether a span channel carries a field name.
 func spanFieldBound(ch *PositionChannel) bool {
 	return ch != nil && ch.Field != ""
+}
+
+// stackOrderingFor picks the segment ordering a resolved stack uses.
+//
+// Only the centred offset departs from first-appearance order, and
+// only when there is something to order: with no stack-by field bound
+// a stack holds one segment per row in upstream order, which
+// inside-out cannot improve on. An `order` channel on the encoding
+// suppresses inside-out outright — an author who states an order gets
+// that order, whatever the offset.
+func stackOrderingFor(enc *Encoding, offset string, stackBy []string) string {
+	if offset != StackOffsetCenter || len(stackBy) == 0 {
+		return ""
+	}
+	if enc != nil && enc.Order != nil {
+		return ""
+	}
+	return StackOrderInsideOut
 }

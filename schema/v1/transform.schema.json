@@ -589,7 +589,7 @@
       "properties": {
         "stack":   {"$ref": "shared.schema.json#/$defs/field_ref", "description": "Quantitative field to accumulate."},
         "groupby": {"type": "array", "items": {"$ref": "shared.schema.json#/$defs/field_ref"}, "description": "Fields delimiting one stack; typically the dimension position channel. Omitted stacks the whole table as a single group."},
-        "offset":  {"type": "string", "enum": ["zero", "normalize"], "description": "Accumulation mode. zero stacks from the baseline (default); normalize rescales each stack to a 0..1 share."},
+        "offset":  {"type": "string", "enum": ["zero", "normalize", "center"], "description": "Accumulation mode. zero stacks from the baseline (default); normalize rescales each stack to a 0..1 share; center slides each stack so its own midpoint lands on zero, giving the streamgraph silhouette and a signed output range."},
         "as":      {"type": "array", "minItems": 2, "maxItems": 2, "items": {"type": "string", "minLength": 1}, "description": "Output column pair [start, end]. Defaults to [\"<field>_start\", \"<field>_end\"]. These are column names, not a dataset alias."},
         "data":    {"type": "string", "minLength": 1, "description": "Optional input alias."}
       }

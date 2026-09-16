@@ -2,6 +2,7 @@ package encode_test
 
 import (
 	"math"
+	"sort"
 	"testing"
 
 	"github.com/frankbardon/prism/encode/scene"
@@ -184,6 +185,112 @@ func TestPrismEncodeStackedAreaRibbons(t *testing.T) {
 		if math.Abs(second.Lower[i][1]-first.Upper[i][1]) > 1e-6 {
 			t.Errorf("ribbon %d does not sit on its neighbour: %g vs %g",
 				i, second.Lower[i][1], first.Upper[i][1])
+		}
+	}
+}
+
+// centeredAreaSpec is the streamgraph shape: three series whose totals
+// differ per stack, centred on a floating baseline.
+const centeredAreaSpec = `{
+  "$schema": "urn:prism:schema:v1:spec",
+  "data": {"values": [
+    {"w": 1, "src": "a", "v": 10},
+    {"w": 2, "src": "a", "v": 2},
+    {"w": 3, "src": "a", "v": 1},
+    {"w": 1, "src": "b", "v": 1},
+    {"w": 2, "src": "b", "v": 20},
+    {"w": 3, "src": "b", "v": 2},
+    {"w": 1, "src": "c", "v": 2},
+    {"w": 2, "src": "c", "v": 3},
+    {"w": 3, "src": "c", "v": 15}
+  ]},
+  "mark": "area",
+  "encoding": {
+    "x": {"field": "w", "type": "quantitative"},
+    "y": {"aggregate": "sum", "field": "v", "type": "quantitative", "stack": "center"},
+    "color": {"field": "src", "type": "nominal"}
+  }
+}`
+
+// yAxisOf returns the scene's y axis, or fails.
+func yAxisOf(t *testing.T, sc *scene.Scene) *scene.Axis {
+	t.Helper()
+	for i := range sc.Axes {
+		if sc.Axes[i].Channel == scene.ChannelY {
+			return &sc.Axes[i]
+		}
+	}
+	t.Fatal("scene has no y axis")
+	return nil
+}
+
+// TestPrismEncodeCenteredStackSignedDomain pins the axis contract for a
+// centred stack: the accumulated bounds are symmetric about zero, so
+// the measure axis resolves a signed domain that reaches equally far
+// either side of the midline. The extent is set by the widest stack
+// (23 here), not by the grand total.
+func TestPrismEncodeCenteredStackSignedDomain(t *testing.T) {
+	sc := encodeInline(t, centeredAreaSpec)
+	ax := yAxisOf(t, sc)
+	lo, hi := math.Inf(1), math.Inf(-1)
+	for _, tk := range ax.Ticks {
+		if v, ok := tk.Value.(float64); ok {
+			lo, hi = math.Min(lo, v), math.Max(hi, v)
+		}
+	}
+	if math.IsInf(lo, 0) || math.IsInf(hi, 0) {
+		t.Fatalf("y axis produced no numeric ticks: %+v", ax.Ticks)
+	}
+	if lo >= 0 {
+		t.Errorf("y axis low tick = %g; a centred stack must reach below zero", lo)
+	}
+	if math.Abs(lo+hi) > 1e-6 {
+		t.Errorf("y axis domain [%g, %g] is not symmetric about zero", lo, hi)
+	}
+	if ax.Title != "v" {
+		t.Errorf("y axis title = %q, want %q", ax.Title, "v")
+	}
+}
+
+// TestPrismEncodeCenteredStackInsideOut pins that the encoder sees the
+// inside-out ordering the plan applied. Ribbons are emitted in colour
+// first-appearance order (a, b, c) because the stack node reorders
+// only its own accumulation, never the table; what the ordering
+// changes is where each ribbon sits — bottom to top the streamgraph
+// order is c, a, b.
+func TestPrismEncodeCenteredStackInsideOut(t *testing.T) {
+	sc := encodeInline(t, centeredAreaSpec)
+	var areas []*scene.AreaGeom
+	for _, layer := range sc.Layers {
+		for i := range layer.Marks {
+			if layer.Marks[i].Area != nil {
+				areas = append(areas, layer.Marks[i].Area)
+			}
+		}
+	}
+	if len(areas) != 3 {
+		t.Fatalf("area ribbons = %d, want 3", len(areas))
+	}
+	// Emission order is a, b, c; SVG y grows downward, so the ribbon
+	// nearest the plot bottom has the largest y.
+	names := []string{"a", "b", "c"}
+	type ranked struct {
+		name string
+		y    float64
+	}
+	rows := make([]ranked, len(areas))
+	for i, a := range areas {
+		if len(a.Upper) == 0 {
+			t.Fatalf("ribbon %q has no upper edge", names[i])
+		}
+		rows[i] = ranked{names[i], a.Upper[0][1]}
+	}
+	sort.Slice(rows, func(i, j int) bool { return rows[i].y > rows[j].y })
+	got := []string{rows[0].name, rows[1].name, rows[2].name}
+	want := []string{"c", "a", "b"}
+	for i := range want {
+		if got[i] != want[i] {
+			t.Fatalf("bottom-to-top ribbon order = %v, want %v", got, want)
 		}
 	}
 }

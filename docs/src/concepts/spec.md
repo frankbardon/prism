@@ -486,7 +486,7 @@ implicit stacking described in
 |---|---|---|
 | `stack`   | yes | Quantitative field to accumulate. |
 | `groupby` | no  | Fields delimiting one stack — typically the dimension position channel. Omitted stacks the whole table as one group. |
-| `offset`  | no  | `zero` (default) accumulates from the baseline; `normalize` rescales each stack onto `0…1`. |
+| `offset`  | no  | `zero` (default) accumulates from the baseline; `normalize` rescales each stack onto `0…1`; `center` slides each stack so its own midpoint lands on zero. |
 | `as`      | no  | Output column pair `[start, end]`. Defaults to `["<field>_start", "<field>_end"]`. These are **column names**, not a dataset alias — `stack` publishes no alias, exactly like `bin` and `calculate`. |
 | `data`    | no  | Optional input alias. |
 
@@ -499,6 +499,16 @@ Semantics:
   (`(v − lo) / (hi − lo)`), which reduces to `v / total` for
   all-positive data. A stack whose values are all zero normalises to
   zero rather than dividing by zero.
+- `center` keeps each stack's thickness and slides the whole pair of
+  bounds so the stack's own midpoint is zero — the streamgraph
+  silhouette. Output bounds are therefore **signed**, and every stack
+  is symmetric about the same line no matter how much total it
+  carries. The inside-out segment ordering a centred *encoding* stack
+  applies (see
+  [Encoding › Centred stacks](encoding.md#centred-stacks-the-streamgraph))
+  is not available here — this transform has no grouping channel to
+  derive series from, so it keeps upstream row order like the other
+  offsets.
 - A null or non-numeric cell contributes nothing: it gets a
   zero-height `[cursor, cursor]` bound and the cursor does not move.
 - Segment order inside a stack is **upstream row order**. There is

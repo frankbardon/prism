@@ -37,7 +37,7 @@ The `encoding` object binds data fields to visual channels.
 | `legend` | Legend config — placement (`orient`, `padding`, `offset`; see [Legend placement](#legend-placement)) and content (`title`, `values`, `format`, `tick_count`, `label_limit`; see [Legend content](#legend-content)) — or `null` to [hide the legend](#hiding-an-axis-or-legend). |
 | `format` | d3-format string for label formatting. |
 | `sort` | `"ascending"` / `"descending"` / `"-y"` / `[explicit, order, ...]`. |
-| `stack` | Position channels only. `"zero"` / `"normalize"` / `true` to stack, `null` / `false` to opt out — see [Stacking](#stacking). |
+| `stack` | Position channels only. `"zero"` / `"normalize"` / `"center"` / `true` to stack, `null` / `false` to opt out — see [Stacking](#stacking). |
 | `key` | `true` to mark this channel as the animation join key — see [Spec › Animation](spec.md#animation). At most one channel per encoding may set this; only valid on position channels (`x`, `y`, `x2`, `y2`, `theta`, `radius`) and mark channels (`color`, `fill`, `stroke`, `opacity`, `size`, `shape`, sankey `source`/`target`/`value`, geo `longitude`/`latitude`/`feature`). |
 
 ## Span channels
@@ -860,7 +860,7 @@ The `stack` key on the measure channel controls it explicitly:
 | absent | The default above: stack when the shape qualifies, otherwise don't. |
 | `"zero"` / `true` | Stack from the baseline. |
 | `"normalize"` | Rescale each stack onto `0…1` — the 100% stacked chart. |
-| `"center"` | Reserved for the streamgraph offset; currently resolves to **no stacking**. |
+| `"center"` | Float each stack's baseline so the band is symmetric about zero — the streamgraph. See [Centred stacks](#centred-stacks-the-streamgraph). |
 | `null` / `false` | Opt out; every segment returns to the baseline. |
 
 Semantics:
@@ -869,7 +869,7 @@ Semantics:
 |---|---|
 | Marks affected | `bar` and `area` only. Every other mark ignores `stack`. |
 | Stack key | The **other** position channel — the dimension axis. One stack per distinct value. |
-| Segment order | First-appearance order of the (colour, detail…) tuple across the whole table — the same order the mark partitioner and the legend use, so a segment sits in the same slot in every stack. |
+| Segment order | First-appearance order of the (colour, detail…) tuple across the whole table — the same order the mark partitioner and the legend use, so a segment sits in the same slot in every stack. A centred stack reorders inside-out instead; see below. |
 | Axis domain | The stacked totals reach scale resolution, so the measure axis spans `0…sum`, not `0…max`. |
 | Negatives | Positive and negative values accumulate independently from zero, so a mixed-sign stack grows in both directions. |
 | Opt-outs | An explicit `x2` / `y2` span wins (the mark already knows both edges), as does a non-linear measure scale. |
@@ -886,6 +886,70 @@ Composition note: stacking resolves per leaf spec, so each `layer` /
 upstream pipeline once with the child encoding stripped, so a faceted
 child does not stack — the same limitation that already applies to the
 synthetic encoding aggregate.
+
+### Centred stacks (the streamgraph)
+
+`"stack": "center"` keeps every stack exactly as thick as `"zero"`
+makes it, then slides it so its own midpoint lands on zero. Each band
+is therefore symmetric about a single shared baseline no matter how
+much total it carries, which is the streamgraph shape:
+
+```json
+"mark": {"type": "area", "interpolate": "monotone"},
+"encoding": {
+  "x": {"field": "week", "type": "quantitative"},
+  "y": {"aggregate": "sum", "field": "contacts", "type": "quantitative", "stack": "center"},
+  "color": {"field": "channel", "type": "nominal"}
+}
+```
+
+Three things follow from that definition.
+
+**The measure axis carries a signed domain.** Because every stack
+spans `[-h/2, +h/2]` for its own total `h`, the union of all of them is
+`[-H/2, +H/2]` for the widest stack `H` — exactly symmetric, and it
+reaches scale resolution through the ordinary span path, so the axis
+draws it without any stack-specific code. A tick therefore reads as
+*distance from the midline*, not as a value: `200` means "200 units
+above the centre of this stack", and the full thickness at any point
+is the distance between the band's two edges. That is the honest
+reading of a floating baseline, and it is why Prism keeps the axis
+signed rather than hiding the shift inside a positive range. If the
+numbers are noise for your chart, suppress the axis outright with
+`"axis": null` — a streamgraph is usually read for shape, not for
+level.
+
+> This is a chosen divergence from Vega-Lite, which offsets every
+> stack into a positive `0…max` range instead. That keeps the axis
+> non-negative but makes each tick an arbitrary distance from an
+> invisible origin; centring on zero at least names the line the eye
+> is already following.
+
+**Segments reorder inside-out.** Declaration order is wrong for a
+streamgraph: a series that only matters late should not sit against
+the centre line for the whole chart. So a centred stack ranks its
+series by *where each one peaks*, then deals them alternately onto
+whichever side of the stack is currently carrying less magnitude. The
+earliest-peaking series end up either side of the centre and the later
+ones fray outward. This is d3's `stackOrderInsideOut`, the ordering
+Vega reaches for on the same chart.
+
+Peak position is measured against stack order, which is first-appearance
+order of the dimension values — shape it with a preceding
+[`sort` transform](spec.md#transforms) if the rows do not already
+arrive in dimension order.
+
+An explicit `order` channel turns inside-out off: an author who states
+an order gets that order. So does a stack with no grouping channel
+bound, where there is one segment per row and nothing to arrange.
+
+**`center` is an area-mark offset.** A bar is baseline-anchored
+geometry — the whole point of the column is that it is measured from
+the axis — so centring it detaches every column from the axis and
+leaves the tick labels naming offsets from a synthetic midline. Prism
+rejects that combination at validate with `PRISM_SPEC_053` rather than
+drawing something unreadable. `zero` and `normalize` are unaffected on
+bars.
 
 ## Further reading
 

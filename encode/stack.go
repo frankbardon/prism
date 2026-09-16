@@ -90,6 +90,12 @@ func rebindStack(s *spec.Spec, tbl *table.Table) *spec.Spec {
 // Formatting it as a percentage would need `axis.format`, which the
 // tick labeller still runs through fmt.Sprintf rather than the
 // d3-format subset the rest of the encoder uses — see encode/ticks.go.
+//
+// A centred stack's axis is left signed for the same reason: every
+// stack spans [-h/2, +h/2] about the shared baseline, so the resolved
+// domain is symmetric and a tick honestly reads as distance from the
+// midline. Authors who want the numbers gone suppress the axis
+// outright with `"axis": null`.
 func stackAxis(base *spec.PositionChannel, st *spec.StackBinding) *spec.Axis {
 	var ax spec.Axis
 	if base.Axis != nil {

@@ -36,6 +36,7 @@ For live interactive rendering in a browser, see [`live.html`](live.html).
 | [stacked_area_normalize](basic-marks/stacked_area_normalize.prism.json) | <img src="basic-marks/stacked_area_normalize.svg" width="240"> |
 | [area_horizontal](basic-marks/area_horizontal.prism.json) | <img src="basic-marks/area_horizontal.svg" width="240"> |
 | [tick_strip_horizontal](basic-marks/tick_strip_horizontal.prism.json) | <img src="basic-marks/tick_strip_horizontal.svg" width="240"> |
+| [streamgraph](basic-marks/streamgraph.prism.json) | <img src="basic-marks/streamgraph.svg" width="240"> |
 
 ## Composite marks
 

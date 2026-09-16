@@ -680,6 +680,15 @@ the reversed lower/baseline edge — so a band keeps parallel outlines
 rather than a curved top over a straight bottom. The short connector
 between the two edges is always a straight segment.
 
+That is what makes `area` the streamgraph mark: a centred stack
+(`"stack": "center"`, see
+[Encoding › Centred stacks](encoding.md#centred-stacks-the-streamgraph))
+hands each series a floating pair of edges, and a smooth
+`interpolate` carries both of them, so the ribbons read as one
+flowing stream. `bar` cannot take the centred offset — it is
+baseline-anchored geometry, and `PRISM_SPEC_053` says so rather than
+drawing detached columns.
+
 Geometry semantics match d3-shape's `curveLinear`, `curveMonotoneX`,
 `curveStep`/`curveStepBefore`/`curveStepAfter` and
 `curveCardinal.tension(t)`, so a Prism curve and the equivalent

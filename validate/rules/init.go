@@ -49,4 +49,5 @@ func init() {
 	validate.RegisterDefault(func() validate.SemanticRule { return MarkOrientSupported{} })
 	validate.RegisterDefault(func() validate.SemanticRule { return ScaleBandGeometry{} })
 	validate.RegisterDefault(func() validate.SemanticRule { return ProgressStructure{} })
+	validate.RegisterDefault(func() validate.SemanticRule { return StackCenterMark{} })
 }

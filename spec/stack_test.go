@@ -137,7 +137,9 @@ func TestPrismResolveStackNotImplicit(t *testing.T) {
 }
 
 // TestPrismResolveStackExplicitDisable pins the three ways an author
-// turns stacking off, and that `true` is an alias for "zero".
+// turns stacking off, that `true` is an alias for "zero", and that an
+// offset Prism does not know disables rather than falling back on the
+// implicit default.
 func TestPrismResolveStackExplicitDisable(t *testing.T) {
 	cases := []struct {
 		name string
@@ -149,7 +151,12 @@ func TestPrismResolveStackExplicitDisable(t *testing.T) {
 		{"true", `true`, StackOffsetZero},
 		{"zero", `"zero"`, StackOffsetZero},
 		{"normalize", `"normalize"`, StackOffsetNormalize},
-		{"center reserved", `"center"`, ""},
+		// The centred offset resolves on a bar too: refusing it here
+		// would silently unstack the spec, which is the failure the
+		// disabled-vs-absent split exists to prevent. Whether a bar may
+		// ask for it at all is validate's call (PRISM_SPEC_053).
+		{"center", `"center"`, StackOffsetCenter},
+		{"unknown offset", `"wiggle"`, ""},
 	}
 	for _, c := range cases {
 		t.Run(c.name, func(t *testing.T) {
@@ -276,5 +283,57 @@ func TestPrismStackTransformDecodes(t *testing.T) {
 	}
 	if round.Stack == nil || round.Stack.Stack != "v" {
 		t.Errorf("round-trip lost the stack variant: %s", out)
+	}
+}
+
+// TestPrismResolveStackCenterOrdering pins the segment ordering a
+// centred stack picks up: inside-out by default (the streamgraph
+// layout), first-appearance for every other offset, and
+// first-appearance again once the author states an `order` channel.
+func TestPrismResolveStackCenterOrdering(t *testing.T) {
+	cases := []struct {
+		name  string
+		stack string
+		extra string
+		want  string
+	}{
+		{"center", `"center"`, ``, StackOrderInsideOut},
+		{"zero", `"zero"`, ``, ""},
+		{"normalize", `"normalize"`, ``, ""},
+		{"center with order channel", `"center"`, `,
+		  "order": {"field": "c", "type": "nominal"}`, ""},
+	}
+	for _, c := range cases {
+		t.Run(c.name, func(t *testing.T) {
+			s := stackSpec(t, `"area"`, `{
+			  "x": {"field": "g", "type": "nominal"},
+			  "y": {"aggregate": "sum", "field": "v", "type": "quantitative", "stack": `+c.stack+`},
+			  "color": {"field": "c", "type": "nominal"}`+c.extra+`
+			}`)
+			st := ResolveStack(s)
+			if st == nil {
+				t.Fatalf("ResolveStack = nil, want a binding")
+			}
+			if st.Ordering != c.want {
+				t.Errorf("Ordering = %q, want %q", st.Ordering, c.want)
+			}
+		})
+	}
+}
+
+// TestPrismResolveStackCenterNoSegments pins that a centred stack with
+// no grouping channel stays on first-appearance order: there is one
+// segment per row and nothing for inside-out to arrange.
+func TestPrismResolveStackCenterNoSegments(t *testing.T) {
+	s := stackSpec(t, `"area"`, `{
+	  "x": {"field": "g", "type": "nominal"},
+	  "y": {"aggregate": "sum", "field": "v", "type": "quantitative", "stack": "center"}
+	}`)
+	st := ResolveStack(s)
+	if st == nil {
+		t.Fatalf("ResolveStack = nil, want a binding")
+	}
+	if st.Ordering != "" {
+		t.Errorf("Ordering = %q, want the first-appearance default", st.Ordering)
 	}
 }
