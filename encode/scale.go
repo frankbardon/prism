@@ -42,7 +42,7 @@ type PointScale = scale.PointScale
 // defaultNiceCount is the tick-count hint used when rounding a domain
 // to nice bounds. It matches the tick count BuildAxisWithOpts asks for
 // so the niced bounds coincide with the outermost tick.
-const defaultNiceCount = 5
+const defaultNiceCount = DefaultTickCount
 
 // ResolveScale picks the right Scale impl for a channel + column
 // kind, computes its domain from the values, and returns the

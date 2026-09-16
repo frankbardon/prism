@@ -313,10 +313,10 @@ func Encode(s *spec.Spec, tables map[plan.NodeID]*table.Table, tipID plan.NodeID
 	axes := make([]scene.Axis, 0, 2)
 	if !isSparkMark(markType) && !geoMark {
 		if xScale != nil && !placement.XHidden {
-			axes = append(axes, BuildAxisWithOpts(xScale, scene.ChannelX, placement.X, layout.Plot, axisOptsFor(enc.X)))
+			axes = append(axes, BuildAxisWithOpts(xScale, scene.ChannelX, placement.X, layout.Plot, axisOptsFor(enc.X).withWarnings(&warnings)))
 		}
 		if yScale != nil && !placement.YHidden {
-			axes = append(axes, BuildAxisWithOpts(yScale, scene.ChannelY, placement.Y, layout.Plot, axisOptsFor(enc.Y)))
+			axes = append(axes, BuildAxisWithOpts(yScale, scene.ChannelY, placement.Y, layout.Plot, axisOptsFor(enc.Y).withWarnings(&warnings)))
 		}
 	}
 
@@ -497,7 +497,7 @@ func Encode(s *spec.Spec, tables map[plan.NodeID]*table.Table, tipID plan.NodeID
 			return nil, err
 		}
 		if hr.XScale != nil && !placement.XHidden {
-			axes = append(axes, BuildAxisWithOpts(hr.XScale, scene.ChannelX, placement.X, layout.Plot, axisOptsFor(enc.X)))
+			axes = append(axes, BuildAxisWithOpts(hr.XScale, scene.ChannelX, placement.X, layout.Plot, axisOptsFor(enc.X).withWarnings(&warnings)))
 		}
 		if hr.YScale != nil && !placement.YHidden {
 			// E3-S5: the synthetic bin-count axis honours channel.axis
@@ -505,7 +505,7 @@ func Encode(s *spec.Spec, tables map[plan.NodeID]*table.Table, tipID plan.NodeID
 			// the title fallback when the channel names no field and sets
 			// no explicit axis.title.
 			axes = append(axes, BuildAxisWithOpts(hr.YScale, scene.ChannelY, placement.Y, layout.Plot,
-				axisOptsForTitled(enc.Y, "count")))
+				axisOptsForTitled(enc.Y, "count").withWarnings(&warnings)))
 		}
 		finalizeAutoDarkCSS(sceneTheme, fullTheme, colorReg, isThemeOwner)
 		return buildSceneDoc(s, layout, axes, hr.Marks, markType, colorChannel, enc, sceneTheme, warnings, hasTitle, legendPl, legendEnabled), nil
@@ -1427,6 +1427,16 @@ func axisOptsFor(ch *spec.PositionChannel) AxisOpts {
 	}
 	if ch.Axis.Format != "" {
 		opts.Format = ch.Axis.Format
+	}
+	if ch.Axis.TickCount != nil {
+		n := *ch.Axis.TickCount
+		opts.TickCount = &n
+	}
+	if ch.Axis.TickMinStep != nil {
+		opts.TickMinStep = *ch.Axis.TickMinStep
+	}
+	if len(ch.Axis.Values) > 0 {
+		opts.Values = append([]any(nil), ch.Axis.Values...)
 	}
 	return opts
 }

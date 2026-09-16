@@ -225,7 +225,7 @@ func encodeFacetComposite(s *spec.Spec, composite *plan.CompositeDAG, childTable
 			sharedAxisBlocksFrom(scene.ChannelX, facetEncodings),
 			facetFieldFromChildSpec(child.Spec, scene.ChannelX))
 		warnings = append(warnings, axWarn...)
-		ax := BuildAxisWithOpts(xShared, scene.ChannelX, placement.X, cells[len(cells)-1].Scene.Plot, opts)
+		ax := BuildAxisWithOpts(xShared, scene.ChannelX, placement.X, cells[len(cells)-1].Scene.Plot, opts.withWarnings(&warnings))
 		doc.Grid.Shared.X = &ax
 	}
 	if yShared != nil && len(cells) > 0 && !placement.YHidden {
@@ -233,7 +233,7 @@ func encodeFacetComposite(s *spec.Spec, composite *plan.CompositeDAG, childTable
 			sharedAxisBlocksFrom(scene.ChannelY, facetEncodings),
 			facetFieldFromChildSpec(child.Spec, scene.ChannelY))
 		warnings = append(warnings, axWarn...)
-		ax := BuildAxisWithOpts(yShared, scene.ChannelY, placement.Y, cells[0].Scene.Plot, opts)
+		ax := BuildAxisWithOpts(yShared, scene.ChannelY, placement.Y, cells[0].Scene.Plot, opts.withWarnings(&warnings))
 		doc.Grid.Shared.Y = &ax
 	}
 	doc.Warnings = warnings

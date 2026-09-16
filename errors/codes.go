@@ -506,6 +506,17 @@ var Codes = map[string]CodeMetadata{
 		SeeAlso: []string{"PRISM_WARN_LAYER_SKIPPED"},
 	},
 
+	"PRISM_WARN_AXIS_VALUES_DROPPED": {
+		Code:    "PRISM_WARN_AXIS_VALUES_DROPPED",
+		Message: `{{.Channel}} axis: {{.Count}} entries of "axis": {"values": [...]} cannot be placed and were dropped.`,
+		Fixups: []string{
+			`Every pinned tick must fall inside the resolved scale domain ({{.DomainMin}} … {{.DomainMax}}); widen it with "scale": {"domain": [...]} if the values are the ones you want.`,
+			`Pin numbers on a quantitative axis, ISO-8601 date strings (or epoch milliseconds) on a temporal one, and exact category names on a nominal / ordinal one.`,
+			`Grid lines follow the tick set, so a dropped value takes its grid line with it. Dropped entries: {{.Dropped}}.`,
+		},
+		SeeAlso: []string{"PRISM_WARN_AXIS_CONFIG_CONFLICT"},
+	},
+
 	// --- P09 facet / repeat codes.
 	"PRISM_SPEC_012": {
 		Code:    "PRISM_SPEC_012",
