@@ -56,9 +56,24 @@ type Theme struct {
 
 	// v2 nested blocks. Each block is a pointer so JSON merges
 	// remain sparse.
-	Mark   *MarkStyle             `json:"mark,omitempty"`
-	Marks  map[string]*MarkStyle  `json:"marks,omitempty"`
+	Mark  *MarkStyle            `json:"mark,omitempty"`
+	Marks map[string]*MarkStyle `json:"marks,omitempty"`
+	// Axis is the shared axis block: every token set here applies to
+	// both cartesian axes. AxisX / AxisY layer over it **per property**
+	// for one axis only — a block that sets nothing but grid_color
+	// leaves every other token inherited from Axis. nil means "inherit
+	// Axis unchanged", which is why a theme that states neither is
+	// byte-for-byte identical to one authored before they existed.
+	//
+	// Because the x axis draws the *vertical* grid lines and the y axis
+	// the *horizontal* ones, these blocks are also how grid lines are
+	// themed per orientation (E8-S1).
+	//
+	// Resolution lives in exactly one place — AxisFor — and the full
+	// precedence chain is documented there.
 	Axis   *AxisStyle             `json:"axis,omitempty"`
+	AxisX  *AxisStyle             `json:"axis_x,omitempty"`
+	AxisY  *AxisStyle             `json:"axis_y,omitempty"`
 	Legend *LegendStyle           `json:"legend,omitempty"`
 	Title  *TitleStyle            `json:"title,omitempty"`
 	View   *ViewStyle             `json:"view,omitempty"`
@@ -171,6 +186,12 @@ func (t *Theme) ToSceneTheme() *scene.Theme {
 		out.AxisTickSize = copyFloat(t.Axis.TickSize)
 		out.AxisLabelPadding = copyFloat(t.Axis.LabelPadding)
 	}
+	// E8-S1: the per-axis `axis_x` / `axis_y` overrides, narrowed to
+	// the tokens a CSS variable cannot express. The colour/stroke half
+	// of these blocks leaves via theme/css.go's scoped
+	// `.prism-axis-x` / `.prism-axis-y` declarations instead.
+	out.AxisX = sceneAxisTokens(t.AxisX)
+	out.AxisY = sceneAxisTokens(t.AxisY)
 	if t.Legend != nil {
 		out.LegendFilter = t.Legend.Filter
 		out.LegendLabelLineHeight = copyFloat(t.Legend.LabelLineHeight)
@@ -207,6 +228,30 @@ func (t *Theme) ToSceneTheme() *scene.Theme {
 	return out
 }
 
+// sceneAxisTokens projects a per-axis AxisStyle onto the Scene IR
+// subset the renderer needs (geometry + SVG-attribute typography +
+// the group filter). Returns nil when the block is nil or states
+// nothing in that subset, so a theme whose `axis_x` is colour-only
+// adds no bytes to the serialised scene.
+func sceneAxisTokens(a *AxisStyle) *scene.AxisTokens {
+	if a == nil {
+		return nil
+	}
+	out := &scene.AxisTokens{
+		TickSize:           copyFloat(a.TickSize),
+		LabelPadding:       copyFloat(a.LabelPadding),
+		LabelLineHeight:    copyFloat(a.LabelLineHeight),
+		LabelLetterSpacing: copyFloat(a.LabelLetterSpacing),
+		TitleLineHeight:    copyFloat(a.TitleLineHeight),
+		TitleLetterSpacing: copyFloat(a.TitleLetterSpacing),
+		Filter:             a.Filter,
+	}
+	if *out == (scene.AxisTokens{}) {
+		return nil
+	}
+	return out
+}
+
 // Clone returns a deep copy of the theme; lists, maps, and nested
 // pointers are duplicated so sparse-override merges do not
 // aliasing-leak.
@@ -228,13 +273,9 @@ func (t *Theme) Clone() *Theme {
 			out.Marks[k] = v.Clone()
 		}
 	}
-	if t.Axis != nil {
-		v := *t.Axis
-		if t.Axis.GridDash != nil {
-			v.GridDash = append([]float64(nil), t.Axis.GridDash...)
-		}
-		out.Axis = &v
-	}
+	out.Axis = cloneAxisStyle(t.Axis)
+	out.AxisX = cloneAxisStyle(t.AxisX)
+	out.AxisY = cloneAxisStyle(t.AxisY)
 	if t.Legend != nil {
 		v := *t.Legend
 		out.Legend = &v

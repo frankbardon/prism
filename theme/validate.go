@@ -44,6 +44,16 @@ func (t *Theme) Validate() error {
 			return err
 		}
 	}
+	if t.AxisX != nil {
+		if err := t.checkFilterRef("axis_x", t.AxisX.Filter); err != nil {
+			return err
+		}
+	}
+	if t.AxisY != nil {
+		if err := t.checkFilterRef("axis_y", t.AxisY.Filter); err != nil {
+			return err
+		}
+	}
 	if t.Legend != nil {
 		if err := t.checkFilterRef("legend", t.Legend.Filter); err != nil {
 			return err

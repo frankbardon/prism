@@ -67,6 +67,7 @@ func (t *Theme) CSSVariables(resolved ...ResolvedColorVar) string {
 	writeResolvedVars(&b, resolved, false)
 	b.WriteString("}")
 	writeClassSelectors(&b)
+	writeAxisScopeVars(&b, t)
 	// Auto light/dark chrome swap (E4-S2): when DarkVariant names a
 	// registered theme, append a second :root rule guarded by
 	// prefers-color-scheme carrying that theme's chrome values (axis,
@@ -87,7 +88,9 @@ func (t *Theme) CSSVariables(resolved ...ResolvedColorVar) string {
 		b.WriteString("@media (prefers-color-scheme: dark){:root{")
 		writeDarkChromeVars(&b, dv)
 		writeResolvedVars(&b, resolved, true)
-		b.WriteString("}}")
+		b.WriteString("}")
+		writeAxisScopeVars(&b, dv)
+		b.WriteString("}")
 	}
 	// RawCSS escape hatch (E1-S2): appended verbatim after the
 	// generated variable manifest + fixed class selectors, still
@@ -206,6 +209,47 @@ func writeResolvedVars(b *strings.Builder, resolved []ResolvedColorVar, dark boo
 			continue
 		}
 		fmt.Fprintf(b, "--%s:%s;", rv.Name, v)
+	}
+}
+
+// writeAxisScopeVars emits the theme's per-axis `axis_x` / `axis_y`
+// overrides (E8-S1) as custom-property declarations scoped to that
+// axis's own group — `.prism-axis-x{--prism-grid-color:…;}`. The
+// renderer already wraps each axis (its grid lines included) in
+// `<g class="prism-axis prism-axis-<channel>">`, and CSS custom
+// properties inherit, so the scoped declaration shadows the `:root`
+// one for that axis alone and leaves the other axis on the shared
+// `axis` value. That is the whole per-property merge: no fold is
+// computed here, the cascade performs it.
+//
+// The same helper writeRootVars uses emits the declarations, so every
+// token `axis` understands is automatically per-axis-addressable. A
+// theme that sets neither block writes nothing — which is what keeps
+// output byte-identical to a pre-E8-S1 theme.
+//
+// Geometry (tick_size, label_padding) and the SVG-attribute
+// typography tokens cannot be carried this way; they ride the Scene
+// IR via scene.Theme.AxisX / AxisY instead.
+func writeAxisScopeVars(b *strings.Builder, t *Theme) {
+	if t == nil {
+		return
+	}
+	for _, s := range []struct {
+		class string
+		style *AxisStyle
+	}{
+		{"x", t.AxisX},
+		{"y", t.AxisY},
+	} {
+		if s.style == nil {
+			continue
+		}
+		var inner strings.Builder
+		writeAxisVars(&inner, s.style)
+		if inner.Len() == 0 {
+			continue
+		}
+		fmt.Fprintf(b, ".prism-axis-%s{%s}", s.class, inner.String())
 	}
 }
 
