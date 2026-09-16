@@ -252,6 +252,13 @@ func Encode(s *spec.Spec, tables map[plan.NodeID]*table.Table, tipID plan.NodeID
 			xExtra = ext
 		}
 	}
+	// A bound span channel (E9-S3) shares its base channel's scale, so
+	// its values have to widen that channel's domain before the scale
+	// is built — otherwise an interval reaching past the base column's
+	// range would resolve outside the plot. No-ops when x2 / y2 is
+	// absent.
+	xExtra = append(xExtra, spanDomainValues(enc.X2, tbl)...)
+	yExtra = append(yExtra, spanDomainValues(enc.Y2, tbl)...)
 	if !polarMark && !selfScaleMark && !specialtyMark && !geoMark {
 		if opts.OverrideXScale != nil {
 			xScale = opts.OverrideXScale
@@ -347,6 +354,8 @@ func Encode(s *spec.Spec, tables map[plan.NodeID]*table.Table, tipID plan.NodeID
 		Table:         tbl,
 		X:             markX,
 		Y:             markY,
+		X2:            spanChannel(enc.X2, toMarkScale(xScale)),
+		Y2:            spanChannel(enc.Y2, toMarkScale(yScale)),
 		Color:         colorChannel,
 		Detail:        detailFields(enc),
 		Opacity:       opacityChannel,

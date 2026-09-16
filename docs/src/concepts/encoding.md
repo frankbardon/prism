@@ -6,7 +6,7 @@ The `encoding` object binds data fields to visual channels.
 
 | Family | Channels |
 |---|---|
-| Position | `x`, `y`, `x2`, `y2`, `theta`, `theta2`, `radius`, `radius2` |
+| Position | `x`, `y`, `x2`, `y2` (see [Span channels](#span-channels)), `theta`, `radius` |
 | Color & opacity | `color`, `fill`, `stroke`, `opacity` |
 | Size & shape | `size`, `shape` |
 | Text & order | `text` (see [Text channel](#text-channel)), `tooltip`, `order` |
@@ -40,6 +40,69 @@ The `encoding` object binds data fields to visual channels.
 | `format` | d3-format string for label formatting. |
 | `sort` | `"ascending"` / `"descending"` / `"-y"` / `[explicit, order, ...]`. |
 | `key` | `true` to mark this channel as the animation join key — see [Spec › Animation](spec.md#animation). At most one channel per encoding may set this; only valid on position channels (`x`, `y`, `x2`, `y2`, `theta`, `radius`) and mark channels (`color`, `fill`, `stroke`, `opacity`, `size`, `shape`, sankey `source`/`target`/`value`, geo `longitude`/`latitude`/`feature`). |
+
+## Span channels
+
+`x2` and `y2` turn a position into an interval. They take the same
+channel shape as `x` / `y`, with one rule that shapes everything else:
+**a span channel never resolves a scale of its own.** It is measured on
+the scale its base channel resolved, so both ends of a span land on one
+axis and in one set of units. Two consequences follow.
+
+- The base channel's domain is widened with the span column's values
+  before the scale is built, so an interval reaching past the base
+  column's own range is never clipped.
+- `x2.type` must equal `x.type` (and `y2.type` must equal `y.type`).
+  A mismatch is `PRISM_SPEC_043`, because declaring two types does not
+  produce two scales — it produces one scale silently reading the
+  second column under the first column's rules.
+
+A span channel also needs its base channel: `x2` without `x` is an
+error, as is a span channel that names no field.
+
+### Per-mark semantics
+
+| Mark | `x2` | `y2` |
+|---|---|---|
+| `bar` | Spans `x`→`x2`. The other axis keeps its band slot, so a ranged bar still needs a categorical axis on the side that is not ranged — bind both `x2` and `y2` only when you want a free-floating rect. | Spans `y`→`y2`, replacing the baseline anchor. |
+| `rect` | Spans `x`→`x2`. An unranged axis uses its band width, or the historic 1-px cell when it is continuous. | Spans `y`→`y2`, same rules. |
+| `rule` | Draws an interval segment from `(x, y)` to `(x2, y2)` instead of spanning the plot. Both `x` and `y` must be bound; an unbound span channel holds its endpoint at the base pixel, so `x`/`x2` + `y` is a horizontal whisker, `y`/`y2` + `x` a vertical one, and all four a diagonal. Endpoints keep their authored order, so a descending interval stays descending. | As `x2`. |
+| `area` | Not supported — an area's `x` sequence is the path it traces, not an extent. | Replaces the implicit zero baseline with an explicit lower edge read per row. Grouping, x-sorting and curve interpolation are unchanged, so a `color`- or `detail`-split band keeps parallel boundaries. |
+| every other mark | Rejected (`PRISM_SPEC_042`). | Rejected (`PRISM_SPEC_042`). |
+
+Rejecting rather than ignoring is a design choice: a span channel a mark
+cannot draw used to disappear silently, which made a ranged bar look
+like an ordinary baseline bar with no diagnostic.
+
+A Gantt row — categorical `y`, ranged `x`:
+
+```json
+{
+  "mark": {"type": "bar"},
+  "encoding": {
+    "y":  {"field": "task",  "type": "nominal"},
+    "x":  {"field": "start", "type": "quantitative"},
+    "x2": {"field": "end",   "type": "quantitative"}
+  }
+}
+```
+
+A confidence band — `area` with an explicit lower edge:
+
+```json
+{
+  "mark": {"type": "area"},
+  "encoding": {
+    "x":  {"field": "day",   "type": "temporal"},
+    "y":  {"field": "upper", "type": "quantitative"},
+    "y2": {"field": "lower", "type": "quantitative"}
+  }
+}
+```
+
+Vega-Lite's polar span channels `theta2` and `radius2` are **not**
+implemented. They are not in the schema, so a spec carrying either is
+rejected at decode.
 
 ## Conditions
 
@@ -142,7 +205,7 @@ complete category set.
 
 A malformed `domain` — wrong arity, non-numeric bounds on a continuous
 scale, reversed or zero-width bounds, a non-string category — is
-rejected at validate time with `PRISM_SPEC_041`, and the encoder
+rejected at validate time with `PRISM_SPEC_042`, and the encoder
 raises the same code for callers that skip validate.
 
 **`nice` is boolean-only.** Vega-Lite's numeric (tick-count) and

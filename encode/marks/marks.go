@@ -89,6 +89,14 @@ type Inputs struct {
 	Table *table.Table
 	X     Channel
 	Y     Channel
+	// X2 / Y2 (E9-S3) are the secondary position channels. Each one
+	// carries its own field name but the *same* resolved Scale as its
+	// base channel, so a span is measured in the base channel's units
+	// and lands on the base channel's axis. A zero Channel means "no
+	// span bound", which keeps every mark on its historic
+	// baseline-anchored geometry. See span.go.
+	X2    Channel
+	Y2    Channel
 	Color *ColorChannel
 	// Detail (E5-S1) carries the encoding.detail binding as an
 	// ordered list of table field names. Detail is a pure grouping

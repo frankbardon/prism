@@ -912,6 +912,25 @@ var Codes = map[string]CodeMetadata{
 		},
 		SeeAlso: []string{"PRISM_SPEC_007", "PRISM_SPEC_010"},
 	},
+	"PRISM_SPEC_042": {
+		Code:    "PRISM_SPEC_042",
+		Message: `Span channel {{.Channel}} draws no geometry on mark type {{.Mark}}.`,
+		Fixups: []string{
+			`The span channels ` + "`x2`" + ` and ` + "`y2`" + ` extend a position into an interval. Only ` + "`bar`" + `, ` + "`rect`" + ` and ` + "`rule`" + ` range on either axis, and ` + "`area`" + ` takes ` + "`y2`" + ` as an explicit lower edge; on any other mark the binding has nowhere to land, so it is rejected rather than dropped.`,
+			`For a ranged bar keep the categorical axis and range the other one, e.g. ` + "`{mark: {type: \"bar\"}, encoding: {y: {field: \"task\", type: \"nominal\"}, x: {field: \"start\", type: \"quantitative\"}, x2: {field: \"end\", type: \"quantitative\"}}}`" + `.`,
+			`A span channel also needs its base channel: bind ` + "`x`" + ` alongside ` + "`x2`" + ` (and ` + "`y`" + ` alongside ` + "`y2`" + `), each naming a field.`,
+		},
+		SeeAlso: []string{"PRISM_SPEC_003", "PRISM_SPEC_043"},
+	},
+	"PRISM_SPEC_043": {
+		Code:    "PRISM_SPEC_043",
+		Message: `Span channel {{.Channel}} declares type {{.Type}} but {{.Base}} declares {{.BaseType}}.`,
+		Fixups: []string{
+			`A span channel never resolves a scale of its own — it is measured on the scale its base channel resolved, so both ends must declare the same ` + "`type`" + `.`,
+			`Set ` + "`x2.type`" + ` to match ` + "`x.type`" + ` (and ` + "`y2.type`" + ` to match ` + "`y.type`" + `). If the two columns genuinely hold different kinds of value, precompute a single comparable column upstream.`,
+		},
+		SeeAlso: []string{"PRISM_SPEC_042"},
+	},
 	"PRISM_WARN_NETWORK_CYCLE": {
 		Code:    "PRISM_WARN_NETWORK_CYCLE",
 		Message: `network input graph contains a cycle; force layout may produce a visually messy result.`,

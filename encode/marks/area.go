@@ -25,6 +25,13 @@ import (
 // zero-crossing domains fill above and below the mid-plot zero line.
 // Stacked / streamgraph variants land in P08.
 //
+// Binding y2 (E9-S3) replaces that implicit baseline with an explicit
+// lower edge read per row from the y2 column and resolved through the
+// y scale — the band shape behind a confidence interval. The
+// geometry is otherwise identical, so grouping, sorting and curve
+// interpolation all carry over unchanged. x2 is not expressible on an
+// area and is rejected at validate (PRISM_SPEC_041).
+//
 // When neither channel is bound, behavior is unchanged from before
 // grouping existed: a single scene.Mark ("area-0") carrying every
 // row's points in raw upstream order.
@@ -51,6 +58,19 @@ func encodeArea(in Inputs) ([]scene.Mark, error) {
 	if err != nil {
 		baseline = in.Layout.Bottom()
 	}
+	// y2 (E9-S3), when bound, supplies the lower edge per row instead
+	// of the baseline. Left nil otherwise, which keeps the baseline
+	// path byte-identical.
+	var lows []any
+	if spanBound(in.Y2) {
+		lows, err = readField(in.Table, in.Y2.Field)
+		if err != nil {
+			return nil, err
+		}
+		if len(lows) != len(xs) {
+			return nil, fmt.Errorf("encodeArea: column length mismatch (x=%d, y2=%d)", len(xs), len(lows))
+		}
+	}
 	upperAll := make([][2]float64, len(xs))
 	lowerAll := make([][2]float64, len(xs))
 	for i := range xs {
@@ -62,8 +82,14 @@ func encodeArea(in Inputs) ([]scene.Mark, error) {
 		if err != nil {
 			return nil, err
 		}
+		low := baseline
+		if lows != nil {
+			if low, err = in.Y2.Scale.Apply(lows[i]); err != nil {
+				return nil, err
+			}
+		}
 		upperAll[i] = [2]float64{x, y}
-		lowerAll[i] = [2]float64{x, baseline}
+		lowerAll[i] = [2]float64{x, low}
 	}
 
 	grouped := len(groupChannels(in)) > 0

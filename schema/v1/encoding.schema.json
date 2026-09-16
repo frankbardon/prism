@@ -53,7 +53,7 @@
     },
     "position_channel": {
       "type": "object",
-      "description": "Spatial position channel (x, y, x2, y2).",
+      "description": "Spatial position channel (x, y, x2, y2, theta, radius).",
       "additionalProperties": false,
       "properties": {
         "field":     {"$ref": "shared.schema.json#/$defs/field_ref"},
@@ -237,8 +237,8 @@
       "properties": {
         "x":       {"$ref": "encoding.schema.json#/$defs/position_channel", "description": "Primary horizontal position channel."},
         "y":       {"$ref": "encoding.schema.json#/$defs/position_channel", "description": "Primary vertical position channel."},
-        "x2":      {"$ref": "encoding.schema.json#/$defs/position_channel", "description": "Secondary horizontal position (for ranged marks)."},
-        "y2":      {"$ref": "encoding.schema.json#/$defs/position_channel", "description": "Secondary vertical position (for ranged marks)."},
+        "x2":      {"$ref": "encoding.schema.json#/$defs/position_channel", "description": "Secondary horizontal position: spans x -> x2. Measured on x's scale, so x2.type must equal x.type. Drawn by bar, rect and rule; rejected on every other mark (PRISM_SPEC_041)."},
+        "y2":      {"$ref": "encoding.schema.json#/$defs/position_channel", "description": "Secondary vertical position: spans y -> y2. Measured on y's scale, so y2.type must equal y.type. Drawn by bar, rect, rule, and area (as its explicit lower edge); rejected on every other mark (PRISM_SPEC_041)."},
         "theta":   {"$ref": "encoding.schema.json#/$defs/position_channel", "description": "Angle position for arc/pie/donut."},
         "radius":  {"$ref": "encoding.schema.json#/$defs/position_channel", "description": "Radial position for arc/pie/donut."},
         "color":   {"$ref": "encoding.schema.json#/$defs/mark_channel", "description": "Color encoding."},

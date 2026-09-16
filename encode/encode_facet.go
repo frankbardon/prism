@@ -430,14 +430,21 @@ func buildSharedScaleForFacet(childSpec *spec.Spec, parts *facetPartitions, chan
 		return nil, nil
 	}
 	var ch *spec.PositionChannel
+	// span is the channel's `2` companion (E9-S3). It shares this
+	// scale, so its values join the shared domain below. nil unless
+	// x2 / y2 is bound.
+	var span *spec.PositionChannel
 	switch channel {
 	case scene.ChannelX:
-		ch = childSpec.Encoding.X
+		ch, span = childSpec.Encoding.X, childSpec.Encoding.X2
 	case scene.ChannelY:
-		ch = childSpec.Encoding.Y
+		ch, span = childSpec.Encoding.Y, childSpec.Encoding.Y2
 	}
 	if ch == nil || ch.Field == "" {
 		return nil, nil
+	}
+	if span != nil && span.Field == "" {
+		span = nil
 	}
 
 	// Union the per-partition values into one big slice in a stable
@@ -469,6 +476,9 @@ func buildSharedScaleForFacet(childSpec *spec.Spec, parts *facetPartitions, chan
 			}
 			for i := 0; i < col.Len(); i++ {
 				allValues = append(allValues, col.ValueAt(i))
+			}
+			if span != nil {
+				allValues = append(allValues, spanDomainValues(span, tbl)...)
 			}
 		}
 	}

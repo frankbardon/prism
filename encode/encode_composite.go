@@ -226,7 +226,8 @@ func encodeLayerComposite(s *spec.Spec, composite *plan.CompositeDAG, childTable
 		if xSharedScale != nil {
 			xScale = xSharedScale
 		} else if childEnc.X != nil && childEnc.X.Field != "" {
-			sc, wn, err := resolveChannel(childEnc.X, lc.tbl, layout.Plot.X, layout.Plot.Right())
+			sc, wn, err := resolveChannel(childEnc.X, lc.tbl, layout.Plot.X, layout.Plot.Right(),
+				spanDomainValues(childEnc.X2, lc.tbl)...)
 			if err != nil {
 				return nil, err
 			}
@@ -239,7 +240,8 @@ func encodeLayerComposite(s *spec.Spec, composite *plan.CompositeDAG, childTable
 		if ySharedScale != nil {
 			yScale = ySharedScale
 		} else if childEnc.Y != nil && childEnc.Y.Field != "" {
-			sc, wn, err := resolveChannel(childEnc.Y, lc.tbl, layout.Plot.Bottom(), layout.Plot.Y)
+			sc, wn, err := resolveChannel(childEnc.Y, lc.tbl, layout.Plot.Bottom(), layout.Plot.Y,
+				spanDomainValues(childEnc.Y2, lc.tbl)...)
 			if err != nil {
 				return nil, err
 			}
@@ -320,6 +322,8 @@ func encodeLayerComposite(s *spec.Spec, composite *plan.CompositeDAG, childTable
 			Table:    lc.tbl,
 			X:        marks.Channel{Field: fieldOf(childEnc.X), Scale: toMarkScale(xScale)},
 			Y:        marks.Channel{Field: fieldOf(childEnc.Y), Scale: toMarkScale(yScale)},
+			X2:       spanChannel(childEnc.X2, toMarkScale(xScale)),
+			Y2:       spanChannel(childEnc.Y2, toMarkScale(yScale)),
 			Color:    colorChannel,
 			Detail:   detailFields(childEnc),
 			Layout:   layout.Plot,
@@ -521,6 +525,15 @@ func collectLayerDomains(live []liveChild, channel scene.Channel) ([]encresolve.
 		values := make([]any, col.Len())
 		for i := 0; i < col.Len(); i++ {
 			values[i] = col.ValueAt(i)
+		}
+		// A span channel shares the base channel's scale (E9-S3), so
+		// its values belong in the same shared domain. No-op unless
+		// x2 / y2 is bound on this layer.
+		switch channel {
+		case scene.ChannelX:
+			values = append(values, spanDomainValues(enc.X2, lc.tbl)...)
+		case scene.ChannelY:
+			values = append(values, spanDomainValues(enc.Y2, lc.tbl)...)
 		}
 		ty := scaleTypeForChannel(ch, col.Kind())
 		out = append(out, encresolve.LayerDomain{
