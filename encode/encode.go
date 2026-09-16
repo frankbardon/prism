@@ -164,6 +164,11 @@ func Encode(s *spec.Spec, tables map[plan.NodeID]*table.Table, tipID plan.NodeID
 	// top-right included) overlay the plot and reserve nothing, which
 	// is what keeps default placement byte-identical.
 	legendPl, legendEnabled := ResolveLegendPlacement(legendSpecOf(enc), scene.LegendTopRight)
+	// Legend content (E3-S3) resolves alongside it, because the band a
+	// side orient reserves is measured from the *shown* entries and
+	// the label budget — both of which legend.values, legend.title
+	// and legend.label_limit move.
+	legendContent := ResolveLegendContent(legendSpecOf(enc))
 	sides := placement.Sides()
 	reservedLegendSide := false
 	if legendEnabled && !isSparkMark(markType) && IsSideLegend(legendPl.Position) {
@@ -171,9 +176,14 @@ func Encode(s *spec.Spec, tables map[plan.NodeID]*table.Table, tipID plan.NodeID
 		// grows with the entry count, and a channel with fewer than
 		// two categories builds no legend at all, so it must not
 		// reserve an empty band either.
-		if n := legendEntryCount(enc, tbl); n > 1 {
-			sides.MarkLegend(legendPl.Position, LegendSideExtent(
-				legendPl.Position, n, legendPl.Padding, legendPl.Offset, enc.Color.Field != ""))
+		if n := legendEntryCount(enc, tbl); n > 0 {
+			sides.MarkLegend(legendPl.Position, LegendBox{
+				Entries:  n,
+				RowH:     legendSymbolRowH,
+				Padding:  legendPl.Padding,
+				MaxChars: legendContent.MaxChars(),
+				HasTitle: legendTitle(enc.Color.Field, legendContent) != "",
+			}.SideExtent(legendPl.Position, legendPl.Offset))
 			reservedLegendSide = true
 		}
 	}
@@ -516,7 +526,7 @@ func Encode(s *spec.Spec, tables map[plan.NodeID]*table.Table, tipID plan.NodeID
 				axisOptsForTitled(enc.Y, "count").withWarnings(&warnings)))
 		}
 		finalizeAutoDarkCSS(sceneTheme, fullTheme, colorReg, isThemeOwner)
-		return buildSceneDoc(s, layout, axes, hr.Marks, markType, colorChannel, enc, sceneTheme, warnings, hasTitle, legendPl, legendEnabled), nil
+		return buildSceneDoc(s, layout, axes, hr.Marks, markType, colorChannel, enc, sceneTheme, warnings, hasTitle, legendPl, legendEnabled, legendContent), nil
 	}
 
 	markList, markWarn, err := marks.Encode(markType, markInputs)
@@ -557,6 +567,7 @@ func Encode(s *spec.Spec, tables map[plan.NodeID]*table.Table, tipID plan.NodeID
 			Categories: colorChannel.Categories,
 			Palette:    colorChannel.Palette,
 			Placement:  legendPl,
+			Content:    legendContent,
 		}, layout.Plot)
 		if legend != nil {
 			legends = append(legends, *legend)
@@ -604,7 +615,7 @@ func buildSceneDoc(
 	s *spec.Spec, layout Layout, axes []scene.Axis, markList []scene.Mark,
 	markType string, colorChannel *marks.ColorChannel, enc *spec.Encoding,
 	sceneTheme *scene.Theme, warnings []scene.Warning, hasTitle bool,
-	legendPl LegendPlacement, legendEnabled bool,
+	legendPl LegendPlacement, legendEnabled bool, legendContent LegendContent,
 ) *scene.SceneDoc {
 	layer := scene.SceneLayer{
 		ID:    "layer-0",
@@ -620,6 +631,7 @@ func buildSceneDoc(
 			Categories: colorChannel.Categories,
 			Palette:    colorChannel.Palette,
 			Placement:  legendPl,
+			Content:    legendContent,
 		}, layout.Plot)
 		if legend != nil {
 			legends = append(legends, *legend)

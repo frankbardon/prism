@@ -332,6 +332,7 @@ func encodeLayerComposite(s *spec.Spec, composite *plan.CompositeDAG, childTable
 					Categories: cats,
 					Palette:    colorChannel.Palette,
 					Placement:  legendPls[lc.idx].placement,
+					Content:    legendPls[lc.idx].content,
 				}, layout.Plot)
 				if legend != nil {
 					if off := legendStackOffset[legend.Position]; off != 0 {
@@ -466,7 +467,10 @@ const legendStackGap = 8.0
 // positionally by composite child.
 type layerLegend struct {
 	placement LegendPlacement
-	enabled   bool
+	// content is the layer's resolved legend content (E3-S3): title
+	// override, entry filter, label format and label limit.
+	content LegendContent
+	enabled bool
 	// reserved records that this layer's legend claimed margin on a
 	// side, so the Reserve depth is filled in once the layout is
 	// computed.
@@ -486,7 +490,8 @@ func layerLegendPlacements(composite *plan.CompositeDAG, childTables []map[plan.
 	for i, child := range composite.Children {
 		enc := child.Spec.Encoding
 		pl, enabled := ResolveLegendPlacement(legendSpecOf(enc), scene.LegendTopRight)
-		out[i] = layerLegend{placement: pl, enabled: enabled}
+		content := ResolveLegendContent(legendSpecOf(enc))
+		out[i] = layerLegend{placement: pl, content: content, enabled: enabled}
 		if !enabled || !IsSideLegend(pl.Position) {
 			continue
 		}
@@ -495,10 +500,18 @@ func layerLegendPlacements(composite *plan.CompositeDAG, childTables []map[plan.
 			continue
 		}
 		n := legendEntryCount(enc, tbl)
-		if n <= 1 {
+		if n <= 0 {
 			continue
 		}
-		extent := LegendSideExtent(pl.Position, n, pl.Padding, pl.Offset, true)
+		// A layer legend always carries a title (the "layer-N: field"
+		// form below) unless legend.title suppresses it.
+		extent := LegendBox{
+			Entries:  n,
+			RowH:     legendSymbolRowH,
+			Padding:  pl.Padding,
+			MaxChars: content.MaxChars(),
+			HasTitle: !content.TitleSet || content.Title != "",
+		}.SideExtent(pl.Position, pl.Offset)
 		addLegendExtent(sides, pl.Position, extent+legendStackGap)
 		out[i].reserved = true
 	}

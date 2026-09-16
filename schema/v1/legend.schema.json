@@ -11,16 +11,16 @@
       "properties": {
         "type":         {"type": "string", "enum": ["symbol", "gradient"], "description": "Legend representation kind."},
         "orient":       {"type": "string", "enum": ["left", "right", "top", "bottom", "top-left", "top-right", "bottom-left", "bottom-right", "none"], "description": "Legend anchor. The four side values reserve margin next to the plot; the four corner values overlay the plot; none hides the legend (an alias for `\"legend\": null`, which is the canonical form)."},
-        "title":        {"type": ["string", "null"], "description": "Legend title; null suppresses."},
+        "title":        {"type": ["string", "boolean"], "description": "Legend title. A string replaces the title derived from the bound field; false suppresses it. Same string-or-false convention as axis.title."},
         "direction":    {"type": "string", "enum": ["horizontal", "vertical"], "description": "Layout direction."},
-        "format":       {"type": "string", "description": "Format string for legend tick labels."},
-        "tick_count":   {"type": "integer", "minimum": 0, "description": "Suggested tick count for gradient legends."},
-        "values":       {"type": "array", "description": "Explicit legend values."},
+        "format":       {"type": "string", "description": "d3-format specifier applied to legend labels — gradient stop labels, and symbol labels whose category reads as a number. Same subset as axis.format and channel.format (see encode/format)."},
+        "tick_count":   {"type": "integer", "minimum": 0, "description": "Number of labelled stops a gradient legend draws (default 5). 1 labels the domain minimum alone; 0 leaves a bare bar."},
+        "values":       {"type": "array", "description": "Explicit legend entries. On a symbol legend it selects and reorders the categories shown, each keeping its own swatch colour; on a gradient legend it pins the labelled stops. Values matching no category (or falling outside the gradient domain) are dropped."},
         "symbol_type":  {"type": "string", "description": "Symbol shape used by symbol legends."},
         "symbol_size":  {"type": "number", "minimum": 0, "description": "Pixel size of legend symbols."},
         "padding":      {"type": "number", "minimum": 0, "description": "Interior padding in pixels: grows the legend frame on every side and insets its content by the same amount."},
         "offset":       {"type": "number", "description": "Gap in pixels between the legend and the plot's chrome for a side orient, or the inward inset from the plot corner for a corner orient."},
-        "label_limit":  {"type": "number", "minimum": 0, "description": "Maximum label pixel width before truncation."}
+        "label_limit":  {"type": "number", "minimum": 0, "description": "Maximum label width in pixels. Longer labels are truncated with an ellipsis, and the legend box narrows or widens to the budget. 0 (the default) means unlimited."}
       }
     }
   }
