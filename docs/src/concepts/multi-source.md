@@ -68,6 +68,15 @@ genuine measurement:
 | `wmean`, `ratio`, `lift`, `share` | Skip nulls. |
 | `filter` predicates | Rows where any input is null evaluate to false (matches pandas / Vega-Lite). |
 | `calculate` expressions | Any null input propagates to a null output. |
+| Inline type inference | A null carries no type. Each column takes its kind from its **first non-null value**, wherever that value sits — a leading `null` no longer decides the column. |
+| Inline column with no non-null value | Nothing to infer from, so it resolves to the categorical (string) fallback rather than erroring. Every row is flagged null, so the kind never holds a value. Declare `data.fields` if a specific kind matters. |
+| Inline column order | The union of every row's keys, alphabetical. A field that first appears in a later row still becomes a column, in the slot it would have held had row 0 carried it; the rows above it are null. |
+
+An explicit `data.fields` declaration bypasses inference entirely and
+wins over any observed value. Inference only applies when `data.fields`
+is absent, and it still rejects a genuinely mixed column — a real string
+arriving in a column inferred as numeric raises
+`PRISM_RESOLVE_INLINE_TYPE_MISMATCH` with the offending row and field.
 
 The encoder collects null rows it drops and emits
 `PRISM_WARN_NULL_DROPPED` carrying the count + offending channels.
