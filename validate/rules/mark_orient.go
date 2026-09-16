@@ -45,8 +45,8 @@ var orientValues = map[string]bool{
 
 // orientAwareMarks maps a mark type to the orient values its encoder
 // reads. It is the validate-side twin of the encoders themselves —
-// `encode/marks/orient.go` (bar / rect, where orient swaps the
-// category and measure axes) and `encode/marks/tree.go` (tree /
+// `encode/marks/orient.go` (bar / rect / progress, where orient swaps
+// the category and measure axes) and `encode/marks/tree.go` (tree /
 // dendrogram / network, where it selects the direction the layout
 // grows). A mark absent from this map draws no orientation at all, and
 // a value absent from a mark's list is not implemented for it.
@@ -58,6 +58,7 @@ var orientValues = map[string]bool{
 var orientAwareMarks = map[string][]string{
 	"bar":        {"vertical", "horizontal"},
 	"rect":       {"vertical", "horizontal"},
+	"progress":   {"vertical", "horizontal"},
 	"tree":       {"vertical", "horizontal"},
 	"dendrogram": {"vertical", "horizontal"},
 	"network":    {"vertical", "horizontal"},

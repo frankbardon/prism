@@ -109,6 +109,11 @@ func allowedChannelsForMark(mark string) []string {
 	// bullet carries target / comparative / bands as mark-def fields; the
 	// measure value rides the x (horizontal) or y (vertical) channel.
 	bulletMark := []string{"x", "y", "color", "fill", "stroke", "opacity", "text"}
+	// progress (E10-S1) rides the same pair as bullet — one axis
+	// discrete (the metric labels), the other quantitative (the value)
+	// — with total / thickness carried as mark-def fields rather than
+	// channels.
+	progressMark := []string{"x", "y", "color", "fill", "stroke", "opacity", "text"}
 	sparklineMark := []string{"x", "y", "color", "fill", "stroke", "opacity"}
 	sparkbarMark := []string{"x", "y", "color", "fill", "stroke", "opacity"}
 	winlossMark := []string{"x", "y", "color", "fill", "stroke", "opacity"}
@@ -130,6 +135,8 @@ func allowedChannelsForMark(mark string) []string {
 		set = funnelMark
 	case "bullet":
 		set = bulletMark
+	case "progress":
+		set = progressMark
 	case "sparkline":
 		set = sparklineMark
 	case "sparkbar":

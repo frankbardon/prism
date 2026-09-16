@@ -12,6 +12,7 @@
         "arc", "pie", "donut",
         "histogram", "heatmap", "boxplot", "violin",
         "sankey", "funnel", "sparkline", "sparkbar", "winloss", "sparkarea", "bullet",
+        "progress",
         "image", "path",
         "geoshape", "geopoint",
         "tree", "dendrogram", "network",
@@ -83,6 +84,8 @@
         "bands":         {"type": "array", "items": {"type": "number"}, "description": "Bullet qualitative range bounds, ordered ascending (e.g. poor / ok / good thresholds)."},
         "comparative":   {"type": ["number", "string"], "description": "Bullet secondary measure value (e.g. prior period) — a literal number or a data-field name."},
         "orientation":   {"type": "string", "enum": ["horizontal", "vertical"], "description": "Bullet layout direction."},
+        "total":         {"type": ["number", "string"], "description": "Progress measure ceiling — the value the track runs to, and the point the measure scale's domain ends at so the track cannot overflow the plot. A literal number applies to every row; a string names a data field read per row so each metric can carry its own maximum. Omit to let the track span the data-derived domain."},
+        "thickness":     {"type": "number", "exclusiveMinimum": 0, "maximum": 1, "description": "Progress row thickness as a fraction of the category band, centred in it. Defaults to 0.5."},
         "point_last":    {"type": "boolean", "description": "Spark adornment: draw an emphasis dot on the final value."},
         "point_extent":  {"type": "boolean", "description": "Spark adornment: draw highlight dots on the minimum and maximum values."},
         "reference_band": {

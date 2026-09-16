@@ -279,6 +279,20 @@ func Encode(s *spec.Spec, tables map[plan.NodeID]*table.Table, tipID plan.NodeID
 			xExtra = ext
 		}
 	}
+	// A progress mark owns its measure domain: mark.total names the
+	// value the track runs to, and the track would overflow the plot
+	// if the domain stopped at the data max. Inject the totals as
+	// extra domain values on the measure axis — x when the mark reads
+	// horizontally (a nominal y against a quantitative x, the
+	// canonical metric-row shape), y when it reads vertically.
+	if markType == "progress" && s.Mark != nil && s.Mark.Def != nil {
+		ext := progressMeasureExtras(s.Mark.Def, tbl)
+		if progressMeasureIsX(s.Mark.Def, enc) {
+			xExtra = append(xExtra, ext...)
+		} else {
+			yExtra = append(yExtra, ext...)
+		}
+	}
 	// A bound span channel (E9-S3) shares its base channel's scale, so
 	// its values have to widen that channel's domain before the scale
 	// is built — otherwise an interval reaching past the base column's
@@ -389,6 +403,7 @@ func Encode(s *spec.Spec, tables map[plan.NodeID]*table.Table, tipID plan.NodeID
 		Layout:        layout.Plot,
 		Style:         style,
 		LabelStyle:    defaultMarkStyleAuto(fullTheme, darkTheme, colorReg, "text"),
+		TrackStyle:    progressTrackStyle(fullTheme),
 		Tooltip:       enc.Tooltip,
 		Text:          enc.Text,
 		KeyField:      keyFieldFromEncoding(enc),

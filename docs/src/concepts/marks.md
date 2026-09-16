@@ -43,6 +43,7 @@ arcs, etc. Specify via top-level `mark` (shorthand string) or
 | `winloss` | Equal-height up/down micro-bars by the sign of `y` (>0 up, <0 down, ==0 flat). Magnitude is ignored — only direction encodes. |
 | `sparkarea` | Inline filled micro-area charts, no axes — area-family sibling of `sparkline`; fill reaches the y=0 baseline. |
 | `bullet` | Compact KPI gauge — a measure bar over qualitative bands, with an optional comparative bar and target tick. Keeps its measure axis. |
+| `progress` | Multi-row metric bars — one value bar per row on a full-scale track. The multi-row sibling of `bullet`; row labels come from the category axis. |
 | `image` | Sprites / data-URL images at position. |
 | `path` | Raw SVG path data — escape hatch. |
 | `geoshape` | Country / admin-1 polygons (choropleth). See [Geographic Marks](geo.md). |
@@ -220,6 +221,79 @@ Mark-def options:
 ```
 
 Validate rule: `PRISM_SPEC_036` (bands strictly ascending).
+
+### Progress
+
+The `progress` mark draws **one metric row per data row**: a value bar
+sitting on a full-scale track, where the visible remainder of the track
+reads as "distance still to go". It is the layout behind a metric-row
+panel — four labelled rows, each a bar against a 0–100 ceiling.
+
+It is the multi-row sibling of [`bullet`](#bullet). `bullet` collapses
+its measure to row 0 — it is a single KPI readout — so a four-metric
+panel needs a `facet` wrapper, and facet labels its rows
+`"<field> = <value>"` with no format control. `progress` reads every
+row, and the row labels are simply the category axis's tick labels.
+
+Two things make it more than a bar with a background rect:
+
+- **The measure domain is mark-owned.** `total` names the value the
+  track runs to, and the measure scale is extended to reach it before
+  the scale is built. The track therefore ends at the plot edge instead
+  of running past it — the clipping `bullet` still suffers when a band
+  bound sits above the data range.
+- **The track is a separate scene mark.** Each row emits a
+  `progress-track-N` rect *and* a `progress-N` value rect, in that
+  order, rather than one rect with a painted backdrop. Both carry the
+  row's `data-prism-datum-row` back-reference, so a hover on the filled
+  part of a row behaves like a hover on its remainder.
+
+Channel bindings:
+
+- Horizontal (the default reading): `x` is the quantitative value, `y`
+  is the nominal metric label.
+- Vertical: `x` is the nominal label, `y` is the quantitative value.
+
+Orientation comes from the shared [`mark.orient`](#orientation-markorient)
+vocabulary — `progress` does **not** carry a per-mark orientation field
+the way `bullet` does. You rarely write it: a nominal `y` against a
+quantitative `x` already infers horizontal.
+
+Mark-def options:
+
+- `total` — the measure ceiling the track runs to. A literal number
+  applies to every row; a string names a data field read **per row**, so
+  each metric can carry its own maximum (a per-rep quota, say). Omit it
+  and the track spans the data-derived domain instead. A literal must be
+  positive (`PRISM_SPEC_061`).
+- `thickness` — the fraction of the category band a row occupies,
+  centred in it. Defaults to `0.5`; must be greater than 0 and at most 1.
+- `corner_radius` — the standard mark-def field, applied to both the
+  track and the value bar so they round together.
+
+A value above its row's `total` overflows the track rather than being
+clipped — over-attainment stays visible.
+
+```json
+{
+  "mark": {"type": "progress", "total": 100, "corner_radius": 3, "thickness": 0.45},
+  "encoding": {
+    "x": {"field": "score", "type": "quantitative"},
+    "y": {"field": "metric", "type": "nominal"}
+  }
+}
+```
+
+The track's colour comes from the active theme's grid colour, so it
+tracks light / dark / print without per-chart configuration. Set the
+value bar's colour with `mark.fill`, a `color` channel, or the theme's
+`marks.progress` block.
+
+Right-hand value and delta labels ("92.4", "+14.3 vs category") are not
+part of the mark — layer a `text` mark over it.
+
+Validate rule: `PRISM_SPEC_061` (both position channels bound;
+`thickness` in (0, 1]; a literal `total` positive).
 
 ### Image and path
 
@@ -490,6 +564,7 @@ not the top. Pin an explicit order with
 | Mark | Meaning of `orient` |
 |---|---|
 | `bar`, `rect` | Swaps the category and measure axes, as above. |
+| `progress` | Swaps the category and measure axes, as above. |
 | `tree`, `dendrogram`, `network` | The direction the layout grows — not a category/measure swap. |
 | `bullet` | Uses its own `orientation` field instead (see [Bullet](#bullet)). |
 | everything else | Not implemented — `orient` is **rejected**, never ignored. |

@@ -982,7 +982,7 @@ var Codes = map[string]CodeMetadata{
 			"`orient`" + ` names which axis a baseline-anchored mark grows along: ` + "`vertical`" + ` (the default) puts the category on ` + "`x`" + ` and the measure on ` + "`y`" + `, and ` + "`horizontal`" + ` swaps them, e.g. ` + "`{mark: {type: \"bar\", orient: \"horizontal\"}, encoding: {y: {field: \"brand\", type: \"nominal\"}, x: {field: \"score\", type: \"quantitative\"}}}`" + `.`,
 			`You rarely need to declare it — orientation is inferred from whichever axis carries the discrete (band) scale, so a nominal ` + "`y`" + ` against a quantitative ` + "`x`" + ` already draws horizontally. Declare ` + "`orient`" + ` only to override that inference.`,
 			"`radial`" + ` is named by the vocabulary but implemented by no mark. Drop it; for a radial reading reach for a polar mark (` + "`arc`" + ` / ` + "`pie`" + ` / ` + "`donut`" + `) instead.`,
-			`Only ` + "`bar`" + ` and ` + "`rect`" + ` swap their category and measure axes, and ` + "`tree`" + ` / ` + "`dendrogram`" + ` / ` + "`network`" + ` read ` + "`orient`" + ` as the direction their layout grows. On any other mark type the property has no geometry to affect, so it is rejected rather than ignored.`,
+			`Only ` + "`bar`" + `, ` + "`rect`" + ` and ` + "`progress`" + ` swap their category and measure axes, and ` + "`tree`" + ` / ` + "`dendrogram`" + ` / ` + "`network`" + ` read ` + "`orient`" + ` as the direction their layout grows. On any other mark type the property has no geometry to affect, so it is rejected rather than ignored.`,
 		},
 		SeeAlso: []string{"PRISM_SPEC_003", "PRISM_SPEC_042"},
 	},
@@ -996,6 +996,17 @@ var Codes = map[string]CodeMetadata{
 			`On a color channel ` + "`range`" + ` is supported and takes an inline color list, e.g. ` + "`{\"color\": {\"field\": \"origin\", \"type\": \"nominal\", \"scale\": {\"range\": [\"#4c78a8\", \"#f58518\", \"#54a24b\"]}}}`" + `.`,
 		},
 		SeeAlso: []string{"PRISM_SPEC_041", "PRISM_SPEC_028"},
+	},
+	"PRISM_SPEC_061": {
+		Code:    "PRISM_SPEC_061",
+		Message: `Progress mark structure is invalid: {{.Path}}.`,
+		Fixups: []string{
+			`A ` + "`progress`" + ` mark draws one metric row per data row — a value bar on a full-scale track — so it needs both position channels bound: one discrete for the metric labels and one quantitative for the value, e.g. ` + "`{mark: {type: \"progress\", total: 100}, encoding: {y: {field: \"metric\", type: \"nominal\"}, x: {field: \"score\", type: \"quantitative\"}}}`" + `.`,
+			"`thickness`" + ` is the fraction of the category band a row occupies, centred in it, so it must be greater than 0 and at most 1 (it defaults to 0.5). Values outside that range draw nothing or overlap the neighbouring rows.`,
+			"`total`" + ` is the measure ceiling the track runs to, and the measure scale is extended to reach it so the track cannot overflow the plot. As a literal it must be a positive number; as a string it names a data field read per row, so each metric can carry its own maximum.`,
+			`Leave ` + "`total`" + ` off entirely to let the track span the data-derived domain instead.`,
+		},
+		SeeAlso: []string{"PRISM_SPEC_003", "PRISM_SPEC_046", "PRISM_SPEC_036"},
 	},
 	"PRISM_WARN_NETWORK_CYCLE": {
 		Code:    "PRISM_WARN_NETWORK_CYCLE",

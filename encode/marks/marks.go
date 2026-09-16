@@ -155,6 +155,15 @@ type Inputs struct {
 	// the label picks up the theme's text fill and stays legible
 	// across dark/print/high-contrast themes.
 	LabelStyle scene.Style
+	// TrackStyle is the theme-resolved default Style for the unfilled
+	// track a progress mark's value bar sits on (E10-S1). The track is
+	// a distinct scene mark ("progress-track-N"), not a backdrop baked
+	// into the bar's geometry, so it takes its own Style rather than a
+	// tinted copy of Style. Resolved by encode from the active theme —
+	// never from a constant in this package; E10-S2 promotes the
+	// resolution behind it to a first-class theme token. A zero Style
+	// paints nothing, which is what a mark other than progress gets.
+	TrackStyle scene.Style
 	// ColorRegistry (E4-S3) accumulates light/dark resolved mark-color
 	// pairs for the "auto light/dark in one SVG" feature. nil — the
 	// default, and the entire state whenever the active theme has no
@@ -221,6 +230,8 @@ func Encode(markType string, in Inputs) ([]scene.Mark, *scene.Warning, error) {
 		marksOut, err = encodeFunnel(in)
 	case "bullet":
 		marksOut, err = encodeBullet(in)
+	case "progress":
+		marksOut, err = encodeProgress(in)
 	case "sparkline":
 		marksOut, err = encodeSparkline(in)
 	case "sparkbar":

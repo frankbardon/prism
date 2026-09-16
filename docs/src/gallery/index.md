@@ -1,6 +1,6 @@
 # Prism Gallery
 
-112 fixture specs across 16 categories. Each entry pairs a `*.prism.json`
+115 fixture specs across 17 categories. Each entry pairs a `*.prism.json`
 spec with a rendered `*.svg`. Browse the source to learn the spec
 shapes; open the SVGs to see what they render. The `table/` fixtures
 are one exception — a top-level `table` mark renders only through
@@ -75,6 +75,18 @@ For live interactive rendering in a browser, see [`live.html`](live.html).
 | [bullet_pipeline](specialty-marks/bullet_pipeline.prism.json) | <img src="specialty-marks/bullet_pipeline.svg" width="240"> |
 | [image_logo](specialty-marks/image_logo.prism.json) | <img src="specialty-marks/image_logo.svg" width="240"> |
 | [path_arbitrary](specialty-marks/path_arbitrary.prism.json) | <img src="specialty-marks/path_arbitrary.svg" width="240"> |
+
+## Progress
+
+One value bar per data row on a full-scale track — the multi-row
+sibling of `bullet`. See [Marks ›
+Progress](../concepts/marks.md#progress).
+
+| Spec | Preview |
+|---|---|
+| [progress_brand_funnel](progress/progress_brand_funnel.prism.json) | <img src="progress/progress_brand_funnel.svg" width="240"> |
+| [progress_team_quota](progress/progress_team_quota.prism.json) | <img src="progress/progress_team_quota.svg" width="240"> |
+| [progress_vertical_capacity](progress/progress_vertical_capacity.prism.json) | <img src="progress/progress_vertical_capacity.svg" width="240"> |
 
 ## Geographic marks
 
