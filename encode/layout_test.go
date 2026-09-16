@@ -79,6 +79,55 @@ func TestPrismLayoutLegendReservation(t *testing.T) {
 	}
 }
 
+// TestPrismLayoutMeasuredLegendExtent pins E1-S3: a caller that knows
+// how wide the legend actually is reserves that, not the fallback
+// constant.
+func TestPrismLayoutMeasuredLegendExtent(t *testing.T) {
+	sides := DefaultAxisPlacement().Sides()
+	sides.MarkLegend(scene.LegendLeft, 114)
+	got := LayoutOpts{Width: 800, Height: 600, Sides: sides}.Padding()
+	want := Padding{Top: 20, Right: 20, Bottom: 40, Left: 40 + 114}
+	if got != want {
+		t.Errorf("Padding with a measured left legend = %+v, want %+v", got, want)
+	}
+}
+
+// TestPrismLayoutMarkLegendIgnoresCorners pins that corner placements
+// overlay rather than reserve.
+func TestPrismLayoutMarkLegendIgnoresCorners(t *testing.T) {
+	for _, pos := range []scene.LegendPosition{
+		scene.LegendTopLeft, scene.LegendTopRight,
+		scene.LegendBottomLeft, scene.LegendBottomRight,
+	} {
+		sides := DefaultAxisPlacement().Sides()
+		sides.MarkLegend(pos, 114)
+		got := LayoutOpts{Width: 800, Height: 600, Sides: sides}.Padding()
+		want := Padding{Top: 20, Right: 20, Bottom: 40, Left: 40}
+		if got != want {
+			t.Errorf("Padding with a %q legend = %+v, want the unreserved %+v", pos, got, want)
+		}
+	}
+}
+
+// TestPrismLayoutLegendBand pins the band depth a side legend anchors
+// its far edge against — the axis reservation plus the legend extent,
+// with the title reservation excluded from the top band.
+func TestPrismLayoutLegendBand(t *testing.T) {
+	sides := DefaultAxisPlacement().Sides()
+	sides.MarkLegend(scene.LegendLeft, 114)
+	sides.MarkLegend(scene.LegendTop, 70)
+	pad := LayoutOpts{Width: 800, Height: 600, Title: true, Sides: sides}.Padding()
+	if got := pad.LegendBand(scene.LegendLeft, true); got != layoutAxisReserve+114 {
+		t.Errorf("left band = %v, want %v", got, layoutAxisReserve+114)
+	}
+	if got := pad.LegendBand(scene.LegendTop, true); got != 70 {
+		t.Errorf("top band = %v, want 70 (title reservation excluded)", got)
+	}
+	if got := pad.LegendBand(scene.LegendRight, true); got != 0 {
+		t.Errorf("unreserved right band = %v, want 0", got)
+	}
+}
+
 // TestPrismLayoutSparkline pins D067: 4 px all sides, no axis /
 // legend / title reservation.
 func TestPrismLayoutSparkline(t *testing.T) {

@@ -84,12 +84,24 @@ func encodeLayerComposite(s *spec.Spec, composite *plan.CompositeDAG, childTable
 
 	hasTitle := s.Title != nil
 	placement := DefaultAxisPlacement()
+	// Legend placement (E1-S3). Every layer resolves its own legend,
+	// so the reservation is the sum of what each layer claims on a
+	// given side — that is exactly the depth the legendStackOffset
+	// accumulation below stacks into.
+	sides := placement.Sides()
+	legendPls := layerLegendPlacements(composite, childTables, &sides)
 	layout := Compute(LayoutOpts{
 		Width:  width,
 		Height: height,
 		Title:  hasTitle,
-		Sides:  placement.Sides(),
+		Sides:  sides,
 	})
+	for i, ll := range legendPls {
+		if ll.reserved {
+			ll.placement.Reserve = layout.Padding.LegendBand(ll.placement.Position, hasTitle)
+			legendPls[i] = ll
+		}
+	}
 
 	var warnings []scene.Warning
 
@@ -174,7 +186,6 @@ func encodeLayerComposite(s *spec.Spec, composite *plan.CompositeDAG, childTable
 	// sweep finding: layer_independent_color.svg rendered two
 	// "prism-legend-color" groups at identical x/y).
 	legendStackOffset := map[scene.LegendPosition]float64{}
-	const legendStackGap = 8.0
 	seenIndependentX := false
 	seenIndependentY := false
 	for _, lc := range live {
@@ -255,36 +266,30 @@ func encodeLayerComposite(s *spec.Spec, composite *plan.CompositeDAG, childTable
 					map[string]any{"Field": childEnc.Color.Field, "Source": "<layer-table>", "Available": joinTableFields(lc.tbl)},
 				)
 			}
-			cats := []string{}
-			seenCat := map[string]bool{}
-			for i := 0; i < col.Len(); i++ {
-				s, ok := col.ValueAt(i).(string)
-				if !ok || seenCat[s] {
-					continue
-				}
-				seenCat[s] = true
-				cats = append(cats, s)
-			}
+			cats := distinctStringValues(col)
 			colorChannel = &marks.ColorChannel{
 				Field:      childEnc.Color.Field,
 				Categories: cats,
 				Palette:    ResolveCategoricalPalette(fullTheme, schemeNameOf(childEnc.Color)),
 			}
-			if len(cats) > 1 {
+			if len(cats) > 1 && legendPls[lc.idx].enabled {
 				legend := BuildSymbolLegend(LegendInputs{
 					Channel:    scene.ChannelColor,
 					Title:      fmt.Sprintf("layer-%d: %s", lc.idx, childEnc.Color.Field),
 					Categories: cats,
 					Palette:    colorChannel.Palette,
-					Position:   scene.LegendTopRight,
+					Placement:  legendPls[lc.idx].placement,
 				}, layout.Plot)
 				if legend != nil {
 					if off := legendStackOffset[legend.Position]; off != 0 {
 						switch legend.Position {
-						case scene.LegendBottomLeft, scene.LegendBottomRight, scene.LegendBottom:
-							// Bottom-anchored legends grow upward off the
-							// plot's bottom edge, so later legends stack
-							// above (not through) earlier ones.
+						case scene.LegendBottomLeft, scene.LegendBottomRight:
+							// The bottom corners anchor their lower edge to
+							// the plot's bottom, so later legends stack
+							// above (not through) earlier ones. The bottom
+							// *side* placement sits below the plot and
+							// grows downward into its reserved band, so it
+							// takes the default branch.
 							legend.Frame.Y -= off
 						default:
 							legend.Frame.Y += off
@@ -392,6 +397,81 @@ type liveChild struct {
 	idx   int
 	child plan.ChildDAG
 	tbl   *table.Table
+}
+
+// legendStackGap is the vertical breathing room between two legends
+// stacked at the same anchor.
+const legendStackGap = 8.0
+
+// layerLegend is one layer's resolved legend placement, indexed
+// positionally by composite child.
+type layerLegend struct {
+	placement LegendPlacement
+	enabled   bool
+	// reserved records that this layer's legend claimed margin on a
+	// side, so the Reserve depth is filled in once the layout is
+	// computed.
+	reserved bool
+}
+
+// layerLegendPlacements resolves each layer's legend.orient / padding
+// / offset and accumulates the margin every side placement claims
+// into sides. Legends stack within a side (see legendStackOffset in
+// encodeLayerComposite), so the extents on one side add.
+//
+// It runs before the layout is computed and therefore re-reads the
+// child tables to count categories; the scan happens only for a layer
+// that actually asked for a side orient, which is the opt-in case.
+func layerLegendPlacements(composite *plan.CompositeDAG, childTables []map[plan.NodeID]*table.Table, sides *LayoutSides) []layerLegend {
+	out := make([]layerLegend, len(composite.Children))
+	for i, child := range composite.Children {
+		enc := child.Spec.Encoding
+		pl, enabled := ResolveLegendPlacement(legendSpecOf(enc), scene.LegendTopRight)
+		out[i] = layerLegend{placement: pl, enabled: enabled}
+		if !enabled || !IsSideLegend(pl.Position) {
+			continue
+		}
+		tbl, ok := childTables[i][child.Tip]
+		if !ok || tbl == nil {
+			continue
+		}
+		n := legendEntryCount(enc, tbl)
+		if n <= 1 {
+			continue
+		}
+		extent := LegendSideExtent(pl.Position, n, pl.Padding, pl.Offset, true)
+		addLegendExtent(sides, pl.Position, extent+legendStackGap)
+		out[i].reserved = true
+	}
+	return out
+}
+
+// addLegendExtent accumulates extent onto the side named by pos.
+func addLegendExtent(sides *LayoutSides, pos scene.LegendPosition, extent float64) {
+	var c *SideChrome
+	switch pos {
+	case scene.LegendTop:
+		c = &sides.Top
+	case scene.LegendRight:
+		c = &sides.Right
+	case scene.LegendBottom:
+		c = &sides.Bottom
+	case scene.LegendLeft:
+		c = &sides.Left
+	default:
+		return
+	}
+	c.Legend = true
+	switch pos {
+	case scene.LegendLeft, scene.LegendRight:
+		// Left / right legends stack vertically, so the side needs the
+		// widest one, not the sum.
+		if extent > c.LegendExtent {
+			c.LegendExtent = extent
+		}
+	default:
+		c.LegendExtent += extent
+	}
 }
 
 // collectLayerDomains returns one LayerDomain per surviving layer for

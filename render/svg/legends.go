@@ -43,13 +43,18 @@ func renderLegend(w *Writer, lg scene.Legend, theme *scene.Theme) {
 		titleLH, titleLS = theme.LegendTitleLineHeight, theme.LegendTitleLetterSpacing
 	}
 
+	// Interior padding (E1-S3): legend.padding insets the content on
+	// every side, on top of the fixed 4-px inset below. Zero — the
+	// default — leaves the geometry exactly where it was.
+	pad := lg.Padding
+
 	// Title (if any) above entries.
 	const titleH = 14.0
 	if lg.Title != "" {
 		w.OpenTag("text")
 		w.Attr("class", "prism-legend-title")
-		w.AttrFloat("x", lg.Frame.X+4)
-		w.AttrFloat("y", lg.Frame.Y+titleH)
+		w.AttrFloat("x", lg.Frame.X+4+pad)
+		w.AttrFloat("y", lg.Frame.Y+titleH+pad)
 		writeTypographyAttrs(w, titleLH, titleLS)
 		w.CloseTagOpen()
 		w.Text(lg.Title)
@@ -62,13 +67,13 @@ func renderLegend(w *Writer, lg scene.Legend, theme *scene.Theme) {
 	}
 
 	for i, entry := range lg.Entries {
-		y := lg.Frame.Y + rowOffset + float64(i)*18 + 8
+		y := lg.Frame.Y + pad + rowOffset + float64(i)*18 + 8
 		switch entry.Swatch.Type {
 		case scene.SwatchSolid:
 			// 12x12 swatch + label.
 			w.OpenTag("rect")
 			w.Attr("class", "prism-legend-swatch")
-			w.AttrFloat("x", lg.Frame.X+4)
+			w.AttrFloat("x", lg.Frame.X+4+pad)
 			w.AttrFloat("y", y)
 			w.AttrFloat("width", 12)
 			w.AttrFloat("height", 12)
@@ -78,7 +83,7 @@ func renderLegend(w *Writer, lg scene.Legend, theme *scene.Theme) {
 			w.SelfClose()
 			w.OpenTag("text")
 			w.Attr("class", "prism-legend-label")
-			w.AttrFloat("x", lg.Frame.X+22)
+			w.AttrFloat("x", lg.Frame.X+22+pad)
 			w.AttrFloat("y", y+10)
 			writeTypographyAttrs(w, labelLH, labelLS)
 			w.CloseTagOpen()
@@ -88,15 +93,15 @@ func renderLegend(w *Writer, lg scene.Legend, theme *scene.Theme) {
 			// 12-wide × Frame.H-tall rect filled with the gradient.
 			w.OpenTag("rect")
 			w.Attr("class", "prism-legend-swatch")
-			w.AttrFloat("x", lg.Frame.X+4)
+			w.AttrFloat("x", lg.Frame.X+4+pad)
 			w.AttrFloat("y", y)
 			w.AttrFloat("width", 12)
-			w.AttrFloat("height", lg.Frame.H-rowOffset-16)
+			w.AttrFloat("height", lg.Frame.H-rowOffset-16-2*pad)
 			w.Attr("fill", fmt.Sprintf("url(#%s)", entry.Swatch.GradientID))
 			w.SelfClose()
 			w.OpenTag("text")
 			w.Attr("class", "prism-legend-label")
-			w.AttrFloat("x", lg.Frame.X+22)
+			w.AttrFloat("x", lg.Frame.X+22+pad)
 			w.AttrFloat("y", y+10)
 			writeTypographyAttrs(w, labelLH, labelLS)
 			w.CloseTagOpen()
@@ -106,7 +111,7 @@ func renderLegend(w *Writer, lg scene.Legend, theme *scene.Theme) {
 			// Reuse the solid swatch shape with a class hint.
 			w.OpenTag("circle")
 			w.Attr("class", "prism-legend-symbol")
-			w.AttrFloat("cx", lg.Frame.X+10)
+			w.AttrFloat("cx", lg.Frame.X+10+pad)
 			w.AttrFloat("cy", y+6)
 			w.AttrFloat("r", 5)
 			if entry.Swatch.Color != nil {
@@ -115,7 +120,7 @@ func renderLegend(w *Writer, lg scene.Legend, theme *scene.Theme) {
 			w.SelfClose()
 			w.OpenTag("text")
 			w.Attr("class", "prism-legend-label")
-			w.AttrFloat("x", lg.Frame.X+22)
+			w.AttrFloat("x", lg.Frame.X+22+pad)
 			w.AttrFloat("y", y+10)
 			writeTypographyAttrs(w, labelLH, labelLS)
 			w.CloseTagOpen()

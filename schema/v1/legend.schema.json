@@ -10,7 +10,7 @@
       "additionalProperties": false,
       "properties": {
         "type":         {"type": "string", "enum": ["symbol", "gradient"], "description": "Legend representation kind."},
-        "orient":       {"type": "string", "enum": ["left", "right", "top", "bottom", "none"], "description": "Anchor side or none to hide."},
+        "orient":       {"type": "string", "enum": ["left", "right", "top", "bottom", "top-left", "top-right", "bottom-left", "bottom-right", "none"], "description": "Legend anchor. The four side values reserve margin next to the plot; the four corner values overlay the plot; none hides the legend."},
         "title":        {"type": ["string", "null"], "description": "Legend title; null suppresses."},
         "direction":    {"type": "string", "enum": ["horizontal", "vertical"], "description": "Layout direction."},
         "format":       {"type": "string", "description": "Format string for legend tick labels."},
@@ -18,8 +18,8 @@
         "values":       {"type": "array", "description": "Explicit legend values."},
         "symbol_type":  {"type": "string", "description": "Symbol shape used by symbol legends."},
         "symbol_size":  {"type": "number", "minimum": 0, "description": "Pixel size of legend symbols."},
-        "padding":      {"type": "number", "minimum": 0, "description": "Padding around the legend in pixels."},
-        "offset":       {"type": "number", "description": "Pixel offset from the chart edge."},
+        "padding":      {"type": "number", "minimum": 0, "description": "Interior padding in pixels: grows the legend frame on every side and insets its content by the same amount."},
+        "offset":       {"type": "number", "description": "Gap in pixels between the legend and the plot's chrome for a side orient, or the inward inset from the plot corner for a corner orient."},
         "label_limit":  {"type": "number", "minimum": 0, "description": "Maximum label pixel width before truncation."}
       }
     }

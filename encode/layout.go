@@ -32,12 +32,14 @@ const (
 	layoutAxisReserve = 20.0
 	// layoutTitleReserve is the extra top space a chart title needs.
 	layoutTitleReserve = 30.0
-	// layoutLegendReserve is the extra space a side carrying an
-	// out-of-plot legend needs. Legends currently overlay the plot at
-	// its top-right corner, so no caller reserves legend space yet;
-	// the reservation takes effect the moment one sets Legend on a
-	// side.
-	layoutLegendReserve = 80.0
+	// layoutLegendReserve is the fallback space a side carrying an
+	// out-of-plot legend needs when the caller flags the side without
+	// measuring the legend. E1-S1 shipped it as a placeholder; E1-S3
+	// measured the real box (a symbol legend is 104 px wide plus its
+	// offset gap) and made the encoder pass the measured extent
+	// through SideChrome.LegendExtent, so this constant now only
+	// covers a caller that knows a legend is coming but not how big.
+	layoutLegendReserve = 120.0
 )
 
 // SideChrome records which chrome occupies one side of the plot rect.
@@ -46,6 +48,11 @@ const (
 type SideChrome struct {
 	Axis   bool
 	Legend bool
+	// LegendExtent is the measured width (left/right) or height
+	// (top/bottom) the legend on this side claims, offset gap
+	// included. Zero with Legend set falls back to
+	// layoutLegendReserve.
+	LegendExtent float64
 }
 
 // reserve returns the extra pixels this side needs beyond the base
@@ -56,7 +63,11 @@ func (c SideChrome) reserve() float64 {
 		r += layoutAxisReserve
 	}
 	if c.Legend {
-		r += layoutLegendReserve
+		if c.LegendExtent > 0 {
+			r += c.LegendExtent
+		} else {
+			r += layoutLegendReserve
+		}
 	}
 	return r
 }
@@ -81,6 +92,22 @@ func (s *LayoutSides) markAxis(pos scene.AxisPosition) {
 		s.Bottom.Axis = true
 	case scene.AxisPositionLeft:
 		s.Left.Axis = true
+	}
+}
+
+// MarkLegend flags the side named by pos as carrying an out-of-plot
+// legend claiming extent pixels. Corner placements overlay the plot
+// and reserve nothing, so they are a no-op here.
+func (s *LayoutSides) MarkLegend(pos scene.LegendPosition, extent float64) {
+	switch pos {
+	case scene.LegendTop:
+		s.Top.Legend, s.Top.LegendExtent = true, extent
+	case scene.LegendRight:
+		s.Right.Legend, s.Right.LegendExtent = true, extent
+	case scene.LegendBottom:
+		s.Bottom.Legend, s.Bottom.LegendExtent = true, extent
+	case scene.LegendLeft:
+		s.Left.Legend, s.Left.LegendExtent = true, extent
 	}
 }
 
@@ -132,6 +159,33 @@ func (o LayoutOpts) Padding() Padding {
 		Bottom: layoutMargin + o.Sides.Bottom.reserve(),
 		Left:   layoutMargin + o.Sides.Left.reserve(),
 	}
+}
+
+// LegendBand returns the pixel depth of the strip reserved between
+// the plot edge on side pos and the outer margin — the axis
+// reservation plus the legend extent. A side legend anchors its far
+// edge there, which is what keeps it clear of the axis chrome. The
+// top band excludes the title reservation so a top legend never
+// lands under the chart title.
+func (p Padding) LegendBand(pos scene.LegendPosition, hasTitle bool) float64 {
+	band := 0.0
+	switch pos {
+	case scene.LegendLeft:
+		band = p.Left - layoutMargin
+	case scene.LegendRight:
+		band = p.Right - layoutMargin
+	case scene.LegendBottom:
+		band = p.Bottom - layoutMargin
+	case scene.LegendTop:
+		band = p.Top - layoutMargin
+		if hasTitle {
+			band -= layoutTitleReserve
+		}
+	}
+	if band < 0 {
+		return 0
+	}
+	return band
 }
 
 // Layout is the resolved frame + plot region for a single Scene.

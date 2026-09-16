@@ -147,6 +147,25 @@ func Encode(s *spec.Spec, tables map[plan.NodeID]*table.Table, tipID plan.NodeID
 	// the placement, not on whether the channel turned out to be bound:
 	// an unbound channel still reserves its side, as it always has.
 	placement := DefaultAxisPlacement()
+	// Legend placement (E1-S3) resolves before the layout, because a
+	// side orient (left / right / top / bottom) reserves a margin band
+	// the plot rect has to shrink for. Corner orients (the default
+	// top-right included) overlay the plot and reserve nothing, which
+	// is what keeps default placement byte-identical.
+	legendPl, legendEnabled := ResolveLegendPlacement(legendSpecOf(enc), scene.LegendTopRight)
+	sides := placement.Sides()
+	reservedLegendSide := false
+	if legendEnabled && !isSparkMark(markType) && IsSideLegend(legendPl.Position) {
+		// Entries are counted up front: a top/bottom band's depth
+		// grows with the entry count, and a channel with fewer than
+		// two categories builds no legend at all, so it must not
+		// reserve an empty band either.
+		if n := legendEntryCount(enc, tbl); n > 1 {
+			sides.MarkLegend(legendPl.Position, LegendSideExtent(
+				legendPl.Position, n, legendPl.Padding, legendPl.Offset, enc.Color.Field != ""))
+			reservedLegendSide = true
+		}
+	}
 	// Sparkline (D067): 4-px-padded plot rect, no axis/legend/title
 	// reservation; the title block, axes, and legends are suppressed
 	// at scene-assembly time below.
@@ -159,8 +178,11 @@ func Encode(s *spec.Spec, tables map[plan.NodeID]*table.Table, tipID plan.NodeID
 			Width:  width,
 			Height: height,
 			Title:  hasTitle,
-			Sides:  placement.Sides(),
+			Sides:  sides,
 		})
+	}
+	if reservedLegendSide {
+		legendPl.Reserve = layout.Padding.LegendBand(legendPl.Position, hasTitle)
 	}
 
 	var warnings []scene.Warning
@@ -278,16 +300,7 @@ func Encode(s *spec.Spec, tables map[plan.NodeID]*table.Table, tipID plan.NodeID
 				map[string]any{"Field": enc.Color.Field, "Source": "<table>", "Available": joinTableFields(tbl)},
 			)
 		}
-		cats := []string{}
-		seen := map[string]bool{}
-		for i := 0; i < col.Len(); i++ {
-			s, ok := col.ValueAt(i).(string)
-			if !ok || seen[s] {
-				continue
-			}
-			seen[s] = true
-			cats = append(cats, s)
-		}
+		cats := distinctStringValues(col)
 		colorChannel = &marks.ColorChannel{
 			Field:             enc.Color.Field,
 			Categories:        cats,
@@ -462,7 +475,7 @@ func Encode(s *spec.Spec, tables map[plan.NodeID]*table.Table, tipID plan.NodeID
 				axisOptsForTitled(enc.Y, "count")))
 		}
 		finalizeAutoDarkCSS(sceneTheme, fullTheme, colorReg, isThemeOwner)
-		return buildSceneDoc(s, layout, axes, hr.Marks, markType, colorChannel, enc, sceneTheme, warnings, hasTitle), nil
+		return buildSceneDoc(s, layout, axes, hr.Marks, markType, colorChannel, enc, sceneTheme, warnings, hasTitle, legendPl, legendEnabled), nil
 	}
 
 	markList, markWarn, err := marks.Encode(markType, markInputs)
@@ -488,7 +501,7 @@ func Encode(s *spec.Spec, tables map[plan.NodeID]*table.Table, tipID plan.NodeID
 	// Build legends for non-trivial mark channels. Sparkline (D067)
 	// suppresses legends entirely.
 	var legends []scene.Legend
-	if !isSparkMark(markType) && colorChannel != nil && len(colorChannel.Categories) > 1 {
+	if legendEnabled && !isSparkMark(markType) && colorChannel != nil && len(colorChannel.Categories) > 1 {
 		// Sankey populates colorChannel from source ∪ target nodes when
 		// no explicit color binding exists (D064); use colorChannel.Field
 		// as the legend title in that case.
@@ -501,7 +514,7 @@ func Encode(s *spec.Spec, tables map[plan.NodeID]*table.Table, tipID plan.NodeID
 			Title:      title,
 			Categories: colorChannel.Categories,
 			Palette:    colorChannel.Palette,
-			Position:   scene.LegendTopRight,
+			Placement:  legendPl,
 		}, layout.Plot)
 		if legend != nil {
 			legends = append(legends, *legend)
@@ -546,6 +559,7 @@ func buildSceneDoc(
 	s *spec.Spec, layout Layout, axes []scene.Axis, markList []scene.Mark,
 	markType string, colorChannel *marks.ColorChannel, enc *spec.Encoding,
 	sceneTheme *scene.Theme, warnings []scene.Warning, hasTitle bool,
+	legendPl LegendPlacement, legendEnabled bool,
 ) *scene.SceneDoc {
 	layer := scene.SceneLayer{
 		ID:    "layer-0",
@@ -553,14 +567,14 @@ func buildSceneDoc(
 		Marks: markList,
 	}
 	var legends []scene.Legend
-	if colorChannel != nil && len(colorChannel.Categories) > 1 {
+	if legendEnabled && colorChannel != nil && len(colorChannel.Categories) > 1 {
 		title := enc.Color.Field
 		legend := BuildSymbolLegend(LegendInputs{
 			Channel:    scene.ChannelColor,
 			Title:      title,
 			Categories: colorChannel.Categories,
 			Palette:    colorChannel.Palette,
-			Position:   scene.LegendTopRight,
+			Placement:  legendPl,
 		}, layout.Plot)
 		if legend != nil {
 			legends = append(legends, *legend)

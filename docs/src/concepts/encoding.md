@@ -34,7 +34,7 @@ The `encoding` object binds data fields to visual channels.
 | `aggregate` | Friendly alias: `mean`, `sum`, `count`, `null_count`, `median`, `q1`, `q3`, `min`, `max`, `range`, `stdev`, `variance`, `skewness`, `kurtosis`, `ci0`, `ci1`, `distinct`, `mode`, `frequency`, plus `wmean`, `ratio`, `lift`, `share`. `count`, `distinct`, `mode`, `frequency`, and `null_count` work on any field type; numeric aggregates require a quantitative or temporal field. `frequency` is the scalar companion to `mode` — it returns the modal count (how many times the most frequent value occurs), whereas `mode` returns the value itself. |
 | `scale` | Scale spec (`type`, `domain`, `range`, `scheme`, `padding`, ...). |
 | `axis` | Axis config (`title`, `format`, `grid`, `tick_count`, `label_angle`, ...). |
-| `legend` | Legend config (`title`, `orient`, `direction`, ...). |
+| `legend` | Legend config (`orient`, `padding`, `offset`, `title`, `direction`, ...) — see [Legend placement](#legend-placement). |
 | `format` | d3-format string for label formatting. |
 | `sort` | `"ascending"` / `"descending"` / `"-y"` / `[explicit, order, ...]`. |
 | `key` | `true` to mark this channel as the animation join key — see [Spec › Animation](spec.md#animation). At most one channel per encoding may set this; only valid on position channels (`x`, `y`, `x2`, `y2`, `theta`, `radius`) and mark channels (`color`, `fill`, `stroke`, `opacity`, `size`, `shape`, sankey `source`/`target`/`value`, geo `longitude`/`latitude`/`feature`). |
@@ -167,6 +167,41 @@ Both are auto-generated based on the encoded channels but can be
 overridden per channel. Bundled support: 4 orientations
 (bottom/left/top/right), major + minor ticks, grid toggle, label
 rotation, overlap handling, gradient + symbol legends.
+
+### Legend placement
+
+A legend is built from the `color` channel, and the `legend` block on
+that channel places it:
+
+```json
+"color": {"field": "region", "type": "nominal", "legend": {"orient": "left"}}
+```
+
+`orient` accepts nine values, and they fall into two groups that
+behave differently:
+
+| `orient` | Group | Behaviour |
+|---|---|---|
+| `left`, `right`, `top`, `bottom` | **Side** | **Reserves margin.** The plot rect shrinks by the legend's width (left/right) or height (top/bottom) plus the offset gap, and the legend parks in that reserved band — outside the axis chrome, so a left legend never lands on the y axis. |
+| `top-left`, `top-right`, `bottom-left`, `bottom-right` | **Corner** | **Overlays the plot.** The plot rect is untouched and the legend is drawn over its corner. This is the default (`top-right`) and the historical behaviour. |
+| `none` | — | Suppresses the legend entirely. No legend is built and no margin is reserved. |
+
+Two knobs adjust the placement:
+
+| Key | Effect |
+|---|---|
+| `padding` | Interior padding. Grows the legend frame by that many pixels on every side and insets the swatches, labels and title by the same amount. A side placement widens its reserved band to match, so padding never eats into the plot. Default `0`. |
+| `offset` | The gap the legend keeps from the plot. On a side placement it is the space between the legend and the plot's chrome, and it widens the reserved band (defaults: `10` for left/right, `4` for top/bottom). On a corner placement it is the inward inset from the plot corner (default `0`). |
+
+Reservations are measured, not guessed: a symbol legend is 104 px
+wide, and a top/bottom band is sized from the entry count. A channel
+with fewer than two categories builds no legend, so it reserves
+nothing either.
+
+In a `layer` composite each layer resolves its own legend. Legends
+sharing an anchor stack rather than overlap, and a shared side's
+reservation is the sum (top/bottom) or the widest (left/right) of what
+the stacked legends claim.
 
 ## Text channel
 

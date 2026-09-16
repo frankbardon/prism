@@ -27,14 +27,19 @@ const (
 // but the encoder never populates them — no fixture has more than
 // one color band.
 type Legend struct {
-	ID         string         `json:"id"`
-	Channel    Channel        `json:"channel"`
-	Position   LegendPosition `json:"position"`
-	Title      string         `json:"title,omitempty"`
-	Entries    []LegendEntry  `json:"entries"`
-	Frame      Rect           `json:"frame"`
-	TitleStyle Style          `json:"title_style,omitempty"`
-	LabelStyle Style          `json:"label_style,omitempty"`
+	ID       string         `json:"id"`
+	Channel  Channel        `json:"channel"`
+	Position LegendPosition `json:"position"`
+	Title    string         `json:"title,omitempty"`
+	Entries  []LegendEntry  `json:"entries"`
+	Frame    Rect           `json:"frame"`
+	// Padding is the interior padding (legend.padding) the renderer
+	// insets the title, swatches and labels by, on top of its own
+	// fixed 4-px content inset. Zero — the default — reproduces the
+	// pre-E1-S3 geometry.
+	Padding    float64 `json:"padding,omitempty"`
+	TitleStyle Style   `json:"title_style,omitempty"`
+	LabelStyle Style   `json:"label_style,omitempty"`
 }
 
 // LegendEntry is one row in a legend.
