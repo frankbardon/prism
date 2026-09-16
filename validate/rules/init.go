@@ -50,4 +50,6 @@ func init() {
 	validate.RegisterDefault(func() validate.SemanticRule { return ScaleBandGeometry{} })
 	validate.RegisterDefault(func() validate.SemanticRule { return ProgressStructure{} })
 	validate.RegisterDefault(func() validate.SemanticRule { return StackCenterMark{} })
+	validate.RegisterDefault(func() validate.SemanticRule { return OrderChannelShape{} })
+	validate.RegisterDefault(func() validate.SemanticRule { return OrderChannelAggregate{} })
 }

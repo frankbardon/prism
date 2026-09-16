@@ -17,7 +17,10 @@ import (
 // in.Style's fill untouched: detail groups series without consuming a
 // palette slot or producing a legend. Within each group, points are
 // sorted by resolved x pixel ascending so the ribbon traces
-// left-to-right rather than upstream row order.
+// left-to-right rather than upstream row order — unless the encoding
+// binds `order` (E5-S4), which hands the point sequence to the
+// author: the plan has already sorted the rows and each group traces
+// in table order.
 //
 // Each group's Upper is its row-by-row points and Lower is the y=0
 // baseline edge (one point per Upper x, snapped to the pixel where
@@ -128,7 +131,10 @@ func encodeArea(in Inputs) ([]scene.Mark, error) {
 		lowerAll[i] = [2]float64{lx, ly}
 	}
 
-	grouped := len(groupChannels(in)) > 0
+	// An `order` binding (E5-S4) means the plan already sequenced the
+	// rows; honour that sequence instead of the default left-to-right
+	// x-sort, which is the whole point of the channel's path sense.
+	sortByX := len(groupChannels(in)) > 0 && !in.Ordered
 	groups, err := groupRows(in, len(cats))
 	if err != nil {
 		return nil, err
@@ -139,7 +145,7 @@ func encodeArea(in Inputs) ([]scene.Mark, error) {
 	marks := make([]scene.Mark, 0, len(groups))
 	for gi, g := range groups {
 		idxs := append([]int(nil), g.indices...)
-		if grouped {
+		if sortByX {
 			sort.SliceStable(idxs, func(a, b int) bool {
 				return seriesPos[idxs[a]] < seriesPos[idxs[b]]
 			})

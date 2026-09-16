@@ -135,7 +135,7 @@
             "field":     {"$ref": "shared.schema.json#/$defs/field_ref"},
             "type":      {"$ref": "shared.schema.json#/$defs/measure_type"},
             "aggregate": {"$ref": "transform.schema.json#/$defs/aggregate_op"},
-            "sort":      {"type": "string", "enum": ["ascending", "descending"]}
+            "sort":      {"type": "string", "enum": ["ascending", "descending", "asc", "desc"], "description": "Sort direction; \"ascending\" (default) or \"descending\". \"asc\" / \"desc\" are accepted aliases."}
           }
         },
         {
@@ -147,12 +147,12 @@
               "field":     {"$ref": "shared.schema.json#/$defs/field_ref"},
               "type":      {"$ref": "shared.schema.json#/$defs/measure_type"},
               "aggregate": {"$ref": "transform.schema.json#/$defs/aggregate_op"},
-              "sort":      {"type": "string", "enum": ["ascending", "descending"]}
+              "sort":      {"type": "string", "enum": ["ascending", "descending", "asc", "desc"], "description": "Sort direction; \"ascending\" (default) or \"descending\". \"asc\" / \"desc\" are accepted aliases."}
             }
           }
         }
       ],
-      "description": "Drawing order channel; single field or array."
+      "description": "Row-order channel; single entry or array of entries, applied left to right. Binding it sorts the rows before anything reads them, which sets three things at once: stack order (which segment sits at the bottom), draw order (later-ordered marks paint on top), and point sequence along a line or area path. Leave it unbound to keep the table's own row order. `aggregate` is rejected here — see PRISM_SPEC_056."
     },
     "detail_channel": {
       "oneOf": [
@@ -249,7 +249,7 @@
         "shape":   {"$ref": "encoding.schema.json#/$defs/mark_channel", "description": "Point shape encoding."},
         "text":    {"$ref": "encoding.schema.json#/$defs/text_channel", "description": "Text encoding for text marks."},
         "tooltip": {"$ref": "encoding.schema.json#/$defs/tooltip_channel", "description": "Tooltip encoding."},
-        "order":   {"$ref": "encoding.schema.json#/$defs/order_channel", "description": "Drawing order encoding."},
+        "order":   {"$ref": "encoding.schema.json#/$defs/order_channel", "description": "Row-order encoding: stack order, draw order and path point sequence."},
         "detail":  {"$ref": "encoding.schema.json#/$defs/detail_channel", "description": "Detail (grouping) encoding."},
         "row":     {"$ref": "encoding.schema.json#/$defs/facet_channel", "description": "Row facet channel."},
         "column":  {"$ref": "encoding.schema.json#/$defs/facet_channel", "description": "Column facet channel."},

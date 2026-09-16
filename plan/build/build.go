@@ -129,6 +129,18 @@ func Build(s *spec.Spec, opts Options) (*plan.DAG, plan.NodeID, error) {
 		return nil, "", err
 	}
 
+	// If the encoding binds `order`, inject a SortNode so the rows
+	// reach every downstream consumer in the author's sequence. It
+	// runs after the synthetic aggregate (so an order key may name an
+	// aggregated output column) and before the StackNode (whose
+	// segment ranking reads first appearance in row order). See
+	// spec/order.go for why row order is the single mechanism behind
+	// all three senses of the channel.
+	tip, err = ctx.injectEncodingOrder(tip, s.Encoding)
+	if err != nil {
+		return nil, "", err
+	}
+
 	// If the encoding stacks — explicitly via `stack`, or implicitly
 	// because it is the bar/area + aggregate + grouping shape
 	// Vega-Lite stacks — inject a StackNode on top. It must run after
@@ -863,6 +875,28 @@ func (c *buildCtx) injectEncodingAggregate(tip plan.NodeID, enc *spec.Encoding) 
 	if enc.Text != nil && enc.Text.Field != "" {
 		entries = append(entries, entry{field: enc.Text.Field, agg: enc.Text.Aggregate})
 	}
+	// Order (E5-S4) is a grouping-adjacent channel: a non-aggregated
+	// order key has to survive the synthetic aggregate or the
+	// injected SortNode downstream has nothing to read. Matching
+	// Vega-Lite, whose implicit aggregate derives its groupby from
+	// every non-aggregate field def, order included.
+	//
+	// A field another channel already aggregates is skipped: the
+	// aggregate's output column carries the same name, so the sort
+	// reads the aggregated value and the field must NOT also widen
+	// the groupby (which would defeat the aggregation entirely).
+	aggregatedField := map[string]bool{}
+	for _, e := range entries {
+		if e.agg != "" {
+			aggregatedField[e.field] = true
+		}
+	}
+	for _, o := range spec.OrderEntries(enc) {
+		if o.Field == "" || aggregatedField[o.Field] {
+			continue
+		}
+		entries = append(entries, entry{field: o.Field, agg: o.Aggregate})
+	}
 	// Table columns (E1) carry the same field/aggregate shape via the
 	// embedded ChannelCommon, so a table column declaring an
 	// aggregate triggers the synthetic GroupAggregateNode exactly
@@ -914,6 +948,35 @@ func (c *buildCtx) injectEncodingAggregate(tip plan.NodeID, enc *spec.Encoding) 
 	}
 	id := c.nextID("enc-ga")
 	return c.addAndReturn(nodes.NewGroupAggregate(id, tip, groupby, aggs))
+}
+
+// injectEncodingOrder appends a SortNode when the leaf encoding binds
+// `order` (E5-S4). The resolution lives in spec/order.go so the
+// encoder — which only has to stop re-sorting line / area points by x
+// once the author has taken control — reaches the same verdict from
+// the same spec, with no plan → encode side channel.
+//
+// Reordering the rows here, upstream of everything, is what makes one
+// mechanism cover all three senses of the channel: the StackNode
+// ranks segments by first appearance, encode/marks/group.go hands
+// each group its indices in table order, and every per-row mark
+// encoder emits in table order. With `order` unbound this is a no-op
+// and row order is preserved exactly.
+func (c *buildCtx) injectEncodingOrder(tip plan.NodeID, enc *spec.Encoding) (plan.NodeID, error) {
+	keys := spec.ResolveOrder(enc)
+	if len(keys) == 0 {
+		return tip, nil
+	}
+	sk := make([]nodes.SortKey, 0, len(keys))
+	for _, k := range keys {
+		dir := spec.SortAscending
+		if k.Descending {
+			dir = spec.SortDescending
+		}
+		sk = append(sk, nodes.SortKey{Field: k.Field, Order: dir})
+	}
+	id := c.nextID("enc-order")
+	return c.addAndReturn(nodes.NewSort(id, tip, sk))
 }
 
 // injectEncodingStack appends a StackNode when spec.ResolveStack says

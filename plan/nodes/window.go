@@ -6,6 +6,7 @@ import (
 	"strings"
 
 	"github.com/frankbardon/prism/plan"
+	"github.com/frankbardon/prism/spec"
 	"github.com/frankbardon/prism/table"
 )
 
@@ -28,10 +29,25 @@ func (w WindowOp) String() string {
 	return w.Op + "(" + w.Field + ")->" + w.As + p
 }
 
-// SortKey is a (field, order) pair the window operator consumes.
+// SortKey is a (field, order) pair the sort / window operators
+// consume. Order carries the wire spelling verbatim; read the
+// direction through Descending, never by comparing the string.
 type SortKey struct {
 	Field string
-	Order string // "asc"|"desc"; empty defaults to "asc"
+	// Order is one of "ascending" / "descending" (canonical) or
+	// "asc" / "desc" (aliases). Empty defaults to ascending.
+	Order string
+}
+
+// Descending reports whether the key sorts in reverse.
+//
+// It delegates to spec.SortDirectionDescending so the plan, the
+// in-memory executors and the JSON Schema enums share one
+// vocabulary. Before E5-S4 the executors compared against the literal
+// "desc" while the schema advertised only "ascending"/"descending",
+// so the documented spelling silently did not reverse.
+func (s SortKey) Descending() bool {
+	return spec.SortDirectionDescending(s.Order)
 }
 
 // String returns a stable text form for fingerprints.

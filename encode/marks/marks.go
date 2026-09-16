@@ -105,7 +105,17 @@ type Inputs struct {
 	// slot, builds no legend, and leaves mark styling untouched. Nil
 	// or empty means "no detail bound", which keeps grouping
 	// byte-identical to the color-only behavior.
-	Detail  []string
+	Detail []string
+	// Ordered (E5-S4) reports that the leaf encoding binds `order`,
+	// i.e. the author took explicit control of row sequence and the
+	// plan already sorted the table (plan/build's injectEncodingOrder;
+	// see spec/order.go). The path marks act on it: line and area
+	// trace their points in table order instead of re-sorting each
+	// group by resolved x pixel. Every other sense of the channel —
+	// stack order, draw order — falls out of table order and needs no
+	// flag. False (the default) preserves the pre-E5-S4 geometry
+	// exactly.
+	Ordered bool
 	Opacity *OpacityChannel
 	Layout  scene.Rect // the Plot region
 	Style   scene.Style

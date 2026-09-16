@@ -511,11 +511,11 @@ Semantics:
   offsets.
 - A null or non-numeric cell contributes nothing: it gets a
   zero-height `[cursor, cursor]` bound and the cursor does not move.
-- Segment order inside a stack is **upstream row order**. There is
-  intentionally no `sort` key on this transform — `sort` is itself a
-  transform discriminator, so an object carrying both keys is
-  ambiguous and rejected at decode. Order the rows with a preceding
-  `{"sort": …}` transform instead.
+- Segment order inside a stack is **upstream row order**. This
+  transform carries no `sort` key of its own; order the rows with a
+  preceding `{"sort": …}` transform, or bind the
+  [`order` channel](encoding.md#order-channel), which sorts the rows
+  before the stack accumulates.
 - The output columns must not collide with existing ones;
   `PRISM_PLAN_STACK_OUTPUT_COLLISION` names the offender. A `stack`
   field the upstream table does not carry raises
@@ -524,6 +524,29 @@ Semantics:
 Like every other transform, `stack` accepts **any** upstream table — a
 leaf, inline values, or the output of an earlier transform — so it
 composes anywhere in the chain.
+
+## Sort direction
+
+The `sort` transform and the `window` transform's `sort` key both take
+per-field entries of the form `{"field": …, "order": …}`. `order` is
+`"ascending"` (the default) or `"descending"`; `"asc"` and `"desc"` are
+accepted aliases. The same vocabulary applies to the
+[`order` channel](encoding.md#order-channel)'s `sort` key.
+
+```json
+{"transform": [{"sort": [{"field": "revenue", "order": "descending"}]}]}
+```
+
+A `window` transform may carry its own `sort` array — it orders rows
+*within* each partition without reordering the table:
+
+```json
+{"transform": [
+  {"window": [{"op": "rank", "as": "place"}],
+   "partitionby": ["region"],
+   "sort": [{"field": "revenue", "order": "descending"}]}
+]}
+```
 
 ## Strict by default
 

@@ -1029,6 +1029,28 @@ var Codes = map[string]CodeMetadata{
 		},
 		SeeAlso: []string{"PRISM_SPEC_042"},
 	},
+	"PRISM_SPEC_055": {
+		Code:    "PRISM_SPEC_055",
+		Message: `Order entry {{.Entry}} is malformed.`,
+		Fixups: []string{
+			`Every ` + "`encoding.order`" + ` entry needs a ` + "`field`" + ` — the column rows are compared on. An entry without one has nothing to order by, e.g. ` + "`{\"order\": {\"field\": \"rank\", \"type\": \"quantitative\"}}`" + `.`,
+			`The ` + "`sort`" + ` direction is ` + "`\"ascending\"`" + ` (the default) or ` + "`\"descending\"`" + `; ` + "`\"asc\"`" + ` and ` + "`\"desc\"`" + ` are accepted aliases. Any other spelling is rejected rather than silently read as ascending.`,
+			`To order by several keys, use the array form: ` + "`{\"order\": [{\"field\": \"tier\"}, {\"field\": \"revenue\", \"sort\": \"descending\"}]}`" + `.`,
+			`Leave ` + "`order`" + ` unbound to keep the table's own row order, which is what every chart that does not declare it gets.`,
+		},
+		SeeAlso: []string{"PRISM_SPEC_056", "PRISM_SPEC_003"},
+	},
+	"PRISM_SPEC_056": {
+		Code:    "PRISM_SPEC_056",
+		Message: `Order entry {{.Entry}} declares aggregate "{{.Aggregate}}", which the order channel does not support.`,
+		Fixups: []string{
+			`Ordering by a per-series total needs a second aggregation at a different granularity than the chart's own, joined back onto the rows. Prism rejects the key rather than accepting and ignoring it.`,
+			`Precompute the total upstream and order by that column, e.g. a ` + "`window`" + ` transform writing ` + "`revenue_total`" + `, then ` + "`{\"order\": {\"field\": \"revenue_total\", \"sort\": \"descending\"}}`" + `.`,
+			`If another channel already aggregates the same field, drop the ` + "`aggregate`" + ` key and name the field alone — the order key then reads that aggregate's output column.`,
+			`For a plain row reordering with no aggregation involved, a ` + "`sort`" + ` transform does the same job and leaves ` + "`order`" + ` unbound.`,
+		},
+		SeeAlso: []string{"PRISM_SPEC_055", "PRISM_SPEC_002"},
+	},
 	"PRISM_WARN_NETWORK_CYCLE": {
 		Code:    "PRISM_WARN_NETWORK_CYCLE",
 		Message: `network input graph contains a cycle; force layout may produce a visually messy result.`,
