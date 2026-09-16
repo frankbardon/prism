@@ -931,6 +931,17 @@ var Codes = map[string]CodeMetadata{
 		},
 		SeeAlso: []string{"PRISM_SPEC_042"},
 	},
+	"PRISM_SPEC_044": {
+		Code:    "PRISM_SPEC_044",
+		Message: `Mark property "orient" is not drawn as declared: {{.Orient}} on mark {{.Mark}}.`,
+		Fixups: []string{
+			"`orient`" + ` names which axis a baseline-anchored mark grows along: ` + "`vertical`" + ` (the default) puts the category on ` + "`x`" + ` and the measure on ` + "`y`" + `, and ` + "`horizontal`" + ` swaps them, e.g. ` + "`{mark: {type: \"bar\", orient: \"horizontal\"}, encoding: {y: {field: \"brand\", type: \"nominal\"}, x: {field: \"score\", type: \"quantitative\"}}}`" + `.`,
+			`You rarely need to declare it — orientation is inferred from whichever axis carries the discrete (band) scale, so a nominal ` + "`y`" + ` against a quantitative ` + "`x`" + ` already draws horizontally. Declare ` + "`orient`" + ` only to override that inference.`,
+			"`radial`" + ` is named by the vocabulary but implemented by no mark. Drop it; for a radial reading reach for a polar mark (` + "`arc`" + ` / ` + "`pie`" + ` / ` + "`donut`" + `) instead.`,
+			`Only ` + "`bar`" + ` and ` + "`rect`" + ` swap their category and measure axes, and ` + "`tree`" + ` / ` + "`dendrogram`" + ` / ` + "`network`" + ` read ` + "`orient`" + ` as the direction their layout grows. On any other mark type the property has no geometry to affect, so it is rejected rather than ignored.`,
+		},
+		SeeAlso: []string{"PRISM_SPEC_003", "PRISM_SPEC_042"},
+	},
 	"PRISM_WARN_NETWORK_CYCLE": {
 		Code:    "PRISM_WARN_NETWORK_CYCLE",
 		Message: `network input graph contains a cycle; force layout may produce a visually messy result.`,

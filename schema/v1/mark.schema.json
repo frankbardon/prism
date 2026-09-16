@@ -55,7 +55,7 @@
         "shape":         {"type": "string", "description": "Default point shape name.", "minLength": 1},
         "interpolate":   {"type": "string", "description": "Line/area interpolation method. The basis and bundle families and the -open/-closed variants are out of scope.", "enum": ["linear", "monotone", "step", "step-before", "step-after", "cardinal"]},
         "tension":       {"type": "number", "minimum": 0, "maximum": 1, "description": "Cardinal-spline tension (0 = loosest, 1 = straight segments). Ignored by every other interpolation method."},
-        "orient":        {"type": "string", "enum": ["vertical", "horizontal"], "description": "Orientation for bar/area/boxplot/violin."},
+        "orient":        {"type": "string", "enum": ["vertical", "horizontal", "radial"], "description": "Which axis a baseline-anchored mark grows along. vertical (default) puts the category on x and the measure on y; horizontal swaps them. Inferred from whichever axis carries the band scale when omitted. radial is vocabulary only — no mark implements it and PRISM_SPEC_044 rejects it."},
         "align":         {"type": "string", "enum": ["left", "center", "right"], "description": "Horizontal text alignment for text marks."},
         "baseline":      {"type": "string", "enum": ["top", "middle", "bottom", "alphabetic"], "description": "Vertical text baseline for text marks."},
         "font":          {"type": "string", "description": "Font family for text marks and text components of other marks."},

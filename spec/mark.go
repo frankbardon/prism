@@ -16,19 +16,28 @@ type MarkDef struct {
 	Shape         string    `json:"shape,omitempty"`
 	Interpolate   string    `json:"interpolate,omitempty"`
 	Tension       *float64  `json:"tension,omitempty"`
-	Orient        string    `json:"orient,omitempty"`
-	Align         string    `json:"align,omitempty"`
-	Baseline      string    `json:"baseline,omitempty"`
-	Font          string    `json:"font,omitempty"`
-	FontSize      *float64  `json:"font_size,omitempty"`
-	FontWeight    any       `json:"font_weight,omitempty"`
-	FontStyle     string    `json:"font_style,omitempty"`
-	Angle         *float64  `json:"angle,omitempty"`
-	Dx            *float64  `json:"dx,omitempty"`
-	Dy            *float64  `json:"dy,omitempty"`
-	Tooltip       any       `json:"tooltip,omitempty"`
-	InnerRadius   *float64  `json:"inner_radius,omitempty"`
-	OuterRadius   *float64  `json:"outer_radius,omitempty"`
+	// Orient (E9-S1) names which axis a baseline-anchored mark grows
+	// along: "vertical" (the default) puts the category on x and the
+	// measure on y, "horizontal" swaps them. Left empty the encoder
+	// *infers* it from whichever axis carries the band scale — see
+	// encode/marks/orient.go MarkOrientation. "radial" is part of the
+	// vocabulary but implemented by no mark and rejected at validate
+	// (PRISM_SPEC_044). The tree / dendrogram / network marks read the
+	// same field as the direction their layout grows rather than as an
+	// axis swap; the bullet mark keeps its own Orientation (below).
+	Orient      string   `json:"orient,omitempty"`
+	Align       string   `json:"align,omitempty"`
+	Baseline    string   `json:"baseline,omitempty"`
+	Font        string   `json:"font,omitempty"`
+	FontSize    *float64 `json:"font_size,omitempty"`
+	FontWeight  any      `json:"font_weight,omitempty"`
+	FontStyle   string   `json:"font_style,omitempty"`
+	Angle       *float64 `json:"angle,omitempty"`
+	Dx          *float64 `json:"dx,omitempty"`
+	Dy          *float64 `json:"dy,omitempty"`
+	Tooltip     any      `json:"tooltip,omitempty"`
+	InnerRadius *float64 `json:"inner_radius,omitempty"`
+	OuterRadius *float64 `json:"outer_radius,omitempty"`
 	// InnerRadiusRatio (P10) is the donut hole's inner radius as a
 	// fraction of OuterR (0–1). When set, takes precedence over the
 	// default donut ratio (0.55). Ignored when InnerRadius is also

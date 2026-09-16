@@ -27,6 +27,7 @@ For live interactive rendering in a browser, see [`live.html`](live.html).
 | [tick_strip](basic-marks/tick_strip.prism.json) | <img src="basic-marks/tick_strip.svg" width="240"> |
 | [arc_basic](basic-marks/arc_basic.prism.json) | <img src="basic-marks/arc_basic.svg" width="240"> |
 | [rect_heatmap_lite](basic-marks/rect_heatmap_lite.prism.json) | <img src="basic-marks/rect_heatmap_lite.svg" width="240"> |
+| [bar_horizontal](basic-marks/bar_horizontal.prism.json) | <img src="basic-marks/bar_horizontal.svg" width="240"> |
 | [multi_series_line](basic-marks/multi_series_line.prism.json) | <img src="basic-marks/multi_series_line.svg" width="240"> |
 | [detail_series_line](basic-marks/detail_series_line.prism.json) | <img src="basic-marks/detail_series_line.svg" width="240"> |
 | [line_monotone](basic-marks/line_monotone.prism.json) | <img src="basic-marks/line_monotone.svg" width="240"> |

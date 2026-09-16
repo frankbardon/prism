@@ -149,7 +149,9 @@ Channel bindings:
 
 Mark-def options:
 
-- `orient` — `vertical` (default), `horizontal`, `radial`.
+- `orient` — `vertical` (default) or `horizontal`; picks the direction
+  the layout grows. See [Orientation](#orientation-markorient). `radial`
+  is rejected (`PRISM_SPEC_044`).
 - `link_shape` — `step` (default), `curve`, `straight`.
 - `node_shape` — `circle` (default), `rect`, `none`.
 - `node_size` — base radius / side length (default 6).
@@ -194,7 +196,13 @@ Mark-def options:
   naming a data field resolved from row 0.
 - `comparative` — a secondary measure (e.g. prior period). Like `target`,
   a literal number or a data-field name.
-- `orientation` — `horizontal` (default) or `vertical`.
+- `orientation` — `horizontal` (default) or `vertical`. Note the field
+  name: `bullet` keeps its own `orientation` rather than the shared
+  `orient`, because it is not a category/measure swap — a bullet is a
+  single KPI readout whose bands, comparative bar and target tick all
+  rotate together, and its default is `horizontal` where `orient`'s is
+  `vertical`. Folding it into `orient` would silently flip every
+  existing bullet. See [Orientation](#orientation-markorient).
 
 ```json
 {
@@ -422,6 +430,76 @@ annotates:
     "x": {"field": "quarter", "type": "nominal"},
     "y": {"field": "revenue", "type": "quantitative"},
     "text": {"field": "revenue", "type": "quantitative"}
+## Orientation (`mark.orient`)
+
+A bar does not really have an "x axis" and a "y axis" — it has a
+**category** axis (the discrete band the bar sits in, which sets its
+thickness) and a **measure** axis (the continuous value, along which it
+grows from the data-zero baseline). Which physical axis plays which
+role is the mark's orientation.
+
+| `orient` | Category axis | Measure axis | Bars grow |
+|---|---|---|---|
+| `vertical` | `x` | `y` | up/down from a baseline at `y = 0` |
+| `horizontal` | `y` | `x` | right/left from a baseline at `x = 0` |
+
+### Inference
+
+**You usually do not write `orient` at all.** It is inferred from
+whichever axis carries the discrete (band) scale, the same way
+Vega-Lite infers it:
+
+| `x` scale | `y` scale | Inferred |
+|---|---|---|
+| band | continuous | `vertical` |
+| continuous | band | `horizontal` |
+| band | band | `vertical` (ambiguous; the default wins) |
+| continuous | continuous | error — neither axis can host the category |
+
+So a nominal `y` against a quantitative `x` already draws a horizontal
+bar chart:
+
+```json
+{
+  "mark": "bar",
+  "encoding": {
+    "y": {"field": "channel", "type": "nominal"},
+    "x": {"field": "delta",   "type": "quantitative"}
+  }
+}
+```
+
+An explicit `orient` **overrides** the inference. It cannot invent a
+band scale, though: `"orient": "horizontal"` against a continuous `y`
+fails with `PRISM_ENCODE_001` naming the axis that needs the band,
+rather than drawing something else and hoping you notice.
+
+Everything else about the mark is orientation-agnostic: the baseline,
+`corner_radius`, `color` grouping and the `x2`/`y2`
+[span channels](encoding.md#span-channels) all behave the same in
+either direction. A negative value crosses the baseline the same way
+too — leftward instead of downward.
+
+Categories run in the same direction as every other Prism `y` scale:
+the first category sits at the **bottom** of a horizontal bar chart,
+not the top. Pin an explicit order with
+`{"scale": {"domain": [...]}}` when you want a different one.
+
+### Which marks read it
+
+| Mark | Meaning of `orient` |
+|---|---|
+| `bar`, `rect` | Swaps the category and measure axes, as above. |
+| `tree`, `dendrogram`, `network` | The direction the layout grows — not a category/measure swap. |
+| `bullet` | Uses its own `orientation` field instead (see [Bullet](#bullet)). |
+| everything else | Not implemented — `orient` is **rejected**, never ignored. |
+
+`radial` is named by the vocabulary but implemented by no mark, so it
+is rejected too. For a radial reading reach for a polar mark (`arc` /
+`pie` / `donut`). Both rejections are `PRISM_SPEC_044` at validate
+time; the rule is `mark orient supported` in
+[`validate/RULES.md`](https://github.com/frankbardon/prism/blob/main/validate/RULES.md).
+
 ## Interpolation (`line` and `area` curves)
 
 `mark.interpolate` selects how consecutive points are joined. It

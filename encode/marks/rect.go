@@ -6,85 +6,94 @@ import (
 	"github.com/frankbardon/prism/encode/scene"
 )
 
-// encodeRect emits one RectGeom per row spanning x..x2 × y..y2 when
-// both upper bounds are bound. When only x (or only y) bounds are
-// present, falls back to the bar-style geometry: band scale on x,
-// baseline-anchored bar height on y.
+// encodeRect emits one RectGeom per row.
 //
-// For the heatmap-lite case (categorical x + categorical y) the
-// width/height come from the BandSizer (or PointScale step) on each
-// axis.
+// Three shapes fall out of which axes carry a band scale:
+//
+//   - band on exactly one axis — the bar-like variant. The band axis
+//     is the category, the other axis is the measure, and the rect
+//     grows from the data-zero baseline. Orientation follows
+//     MarkOrientation (orient.go), so a band on y draws horizontally
+//     just as a band on x draws vertically.
+//   - band on both axes — the heatmap-lite cell: each axis contributes
+//     its band slot.
+//   - band on neither — the historic 1-px cell centred on the point.
+//
+// Every one of those slots routes through rectAxisExtent, the single
+// band normaliser (E9-S3). That matters because a y band scale runs
+// bottom-to-top and so has a *negative* step: reading BandWidth()
+// straight into RectGeom.H — which this encoder used to do on both the
+// horizontal-bar and heatmap-lite branches — produced an undrawable
+// rect with a negative height. E9-S1 routes both through the
+// normaliser instead.
 //
 // E9-S3 makes the ranged case real: when x2 and/or y2 is bound,
 // encodeRectSpan draws the x→x2 / y→y2 interval on that axis and
-// keeps the band (or the historic 1-px cell) on the other. Specs
-// without a span channel never reach that path.
+// keeps the band (or the 1-px cell) on the other. Specs without a span
+// channel never reach that path.
 func encodeRect(in Inputs) ([]scene.Mark, error) {
 	if spanBound(in.X2) || spanBound(in.Y2) {
 		return encodeRectSpan(in)
 	}
-	xs, err := readField(in.Table, in.X.Field)
+	_, xIsBand := bandOf(in.X)
+	_, yIsBand := bandOf(in.Y)
+	if xIsBand != yIsBand {
+		return encodeRectBaseline(in)
+	}
+	// Band on both axes (cell) or neither (1-px point cell): each axis
+	// resolves independently, exactly as the ranged path does with no
+	// span bound.
+	xExt, err := rectAxisExtent(in, "x", in.X, Channel{}, false)
 	if err != nil {
 		return nil, err
 	}
-	ys, err := readField(in.Table, in.Y.Field)
+	yExt, err := rectAxisExtent(in, "y", in.Y, Channel{}, false)
 	if err != nil {
 		return nil, err
 	}
-	if len(xs) != len(ys) {
-		return nil, fmt.Errorf("encodeRect: column length mismatch (x=%d, y=%d)", len(xs), len(ys))
+	if len(xExt) != len(yExt) {
+		return nil, fmt.Errorf("encodeRect: column length mismatch (x=%d, y=%d)", len(xExt), len(yExt))
 	}
+	marks := make([]scene.Mark, 0, len(xExt))
+	for i := range xExt {
+		marks = append(marks, scene.Mark{
+			Type:  scene.MarkRect,
+			ID:    fmt.Sprintf("rect-%d", i),
+			Style: in.Style,
+			Rect: &scene.RectGeom{
+				X: xExt[i][0],
+				Y: yExt[i][0],
+				W: xExt[i][1],
+				H: yExt[i][1],
+			},
+		})
+	}
+	return marks, nil
+}
 
-	xBand, xIsBand := in.X.Scale.(BandScaler)
-	yBand, yIsBand := in.Y.Scale.(BandScaler)
-
-	marks := make([]scene.Mark, 0, len(xs))
-	for i := range xs {
-		x, err := in.X.Scale.Apply(xs[i])
-		if err != nil {
-			return nil, err
-		}
-		y, err := in.Y.Scale.Apply(ys[i])
-		if err != nil {
-			return nil, err
-		}
-		var rect scene.RectGeom
-		switch {
-		case xIsBand && yIsBand:
-			// Heatmap-lite cell.
-			rect = scene.RectGeom{
-				X: x, Y: y,
-				W: xBand.BandWidth(),
-				H: yBand.BandWidth(),
-			}
-		case xIsBand:
-			// Bar-like (band x, quantitative y).
-			baseline, err := in.Y.Scale.Apply(float64(0))
-			if err != nil {
-				baseline = in.Layout.Bottom()
-			}
-			top, h := y, baseline-y
-			if h < 0 {
-				top = baseline
-				h = -h
-			}
-			rect = scene.RectGeom{X: x, Y: top, W: xBand.BandWidth(), H: h}
-		case yIsBand:
-			// Horizontal-bar variant.
-			baseline, err := in.X.Scale.Apply(float64(0))
-			if err != nil {
-				baseline = in.Layout.X
-			}
-			left, w := baseline, x-baseline
-			if w < 0 {
-				left = x
-				w = -w
-			}
-			rect = scene.RectGeom{X: left, Y: y, W: w, H: yBand.BandWidth()}
-		default:
-			// Fully quantitative; render a 1-px cell centered on the point.
-			rect = scene.RectGeom{X: x - 0.5, Y: y - 0.5, W: 1, H: 1}
-		}
+// encodeRectBaseline draws the bar-like rect variant: one band axis,
+// one baseline-anchored measure axis, in whichever orientation the
+// band implies (or `mark.orient` declares).
+func encodeRectBaseline(in Inputs) ([]scene.Mark, error) {
+	orient, err := MarkOrientation(in, "rect")
+	if err != nil {
+		return nil, err
+	}
+	category, err := CategorySlots(in, orient)
+	if err != nil {
+		return nil, err
+	}
+	measure, err := MeasureSpans(in, orient)
+	if err != nil {
+		return nil, err
+	}
+	if len(category) != len(measure) {
+		return nil, fmt.Errorf("encodeRect: column length mismatch (%s=%d, %s=%d)",
+			orient.CategoryAxis(), len(category), orient.MeasureAxis(), len(measure))
+	}
+	marks := make([]scene.Mark, 0, len(category))
+	for i := range category {
+		rect := OrientedRect(orient, category[i], measure[i])
 		marks = append(marks, scene.Mark{
 			Type:  scene.MarkRect,
 			ID:    fmt.Sprintf("rect-%d", i),

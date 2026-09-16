@@ -44,4 +44,5 @@ func init() {
 	validate.RegisterDefault(func() validate.SemanticRule { return ScaleDomain{} })
 	validate.RegisterDefault(func() validate.SemanticRule { return SpanChannelSupported{} })
 	validate.RegisterDefault(func() validate.SemanticRule { return SpanChannelTypeMatch{} })
+	validate.RegisterDefault(func() validate.SemanticRule { return MarkOrientSupported{} })
 }
