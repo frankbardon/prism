@@ -99,6 +99,55 @@ type Theme struct {
 	// these apply only where the axis states nothing.
 	AxisTickSize     *float64 `json:"axis_tick_size,omitempty"`
 	AxisLabelPadding *float64 `json:"axis_label_padding,omitempty"`
+	// AxisX / AxisY carry the theme's per-axis `axis_x` / `axis_y`
+	// overrides (E8-S1), narrowed to the tokens that cannot ride a CSS
+	// variable. Colour and stroke tokens are *not* here: theme/css.go
+	// scopes those onto the `.prism-axis-x` / `.prism-axis-y` group as
+	// custom-property declarations and CSS inheritance does the
+	// per-property fold for free. Geometry (tick length, label gap) and
+	// typography emitted as SVG attributes (line-height, letter-spacing)
+	// have no such route — a CSS variable cannot move a line endpoint —
+	// so they ride the IR, exactly as AxisTickSize / AxisLabelPadding
+	// above do for the shared block.
+	//
+	// These hold the *override* only, never the fold with the shared
+	// block: render/svg falls back to the flat Axis* fields above when
+	// a per-axis token is nil, which is what makes the merge
+	// per-property.
+	AxisX *AxisTokens `json:"axis_x,omitempty"`
+	AxisY *AxisTokens `json:"axis_y,omitempty"`
+}
+
+// AxisTokens is the per-axis slice of the theme's axis tokens that the
+// renderer has to read off the Scene IR rather than off a CSS
+// variable. See Theme.AxisX.
+type AxisTokens struct {
+	TickSize           *float64 `json:"tick_size,omitempty"`
+	LabelPadding       *float64 `json:"label_padding,omitempty"`
+	LabelLineHeight    *float64 `json:"label_line_height,omitempty"`
+	LabelLetterSpacing *float64 `json:"label_letter_spacing,omitempty"`
+	TitleLineHeight    *float64 `json:"title_line_height,omitempty"`
+	TitleLetterSpacing *float64 `json:"title_letter_spacing,omitempty"`
+	// Filter names an entry in Theme.Filters, applied to this axis's
+	// own group. The shared block's Filter (Theme.AxisFilter) still
+	// applies to the enclosing `prism-axes` group, so the two compose
+	// rather than replace.
+	Filter string `json:"filter,omitempty"`
+}
+
+// AxisTokensFor returns the per-axis override block for one channel,
+// or nil when the theme states none. Nil-safe in the receiver.
+func (t *Theme) AxisTokensFor(ch Channel) *AxisTokens {
+	if t == nil {
+		return nil
+	}
+	switch ch {
+	case ChannelX, ChannelX2:
+		return t.AxisX
+	case ChannelY, ChannelY2:
+		return t.AxisY
+	}
+	return nil
 }
 
 // Default returns the hard-coded P05 theme:

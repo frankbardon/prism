@@ -48,6 +48,12 @@ func ApplyOverride(base *Theme, o *spec.ThemeOverride) *Theme {
 	if o.Axis != nil {
 		override.Axis = copyAxisStyle(o.Axis)
 	}
+	if o.AxisX != nil {
+		override.AxisX = copyAxisStyle(o.AxisX)
+	}
+	if o.AxisY != nil {
+		override.AxisY = copyAxisStyle(o.AxisY)
+	}
 	if o.Legend != nil {
 		override.Legend = copyLegendStyle(o.Legend)
 	}

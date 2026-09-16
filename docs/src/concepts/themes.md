@@ -146,7 +146,8 @@ prism plot bar.json --theme=colorblind > bar-cb.svg
 |---|---|
 | `mark`     | Default style applied to every mark unless `marks.<type>` overrides. |
 | `marks.<type>` | Per-mark-type defaults. Key matches the spec's `mark.type` (bar, line, area, point, rule, text, tick, rect, arc, geoshape, geopoint, ...). |
-| `axis`     | Axis domain, ticks, grid, labels, titles. |
+| `axis`     | Axis domain, ticks, grid, labels, titles — applied to **both** cartesian axes. |
+| `axis_x` / `axis_y` | Same token set as `axis`, layered over it **per property** for one axis only (see [Per-axis blocks](#per-axis-blocks)). Because the x axis draws the vertical grid lines and the y axis the horizontal ones, these are also how grid lines are themed per orientation. |
 | `legend`   | Legend fills, symbols, labels, padding. |
 | `title`    | Chart title typography. |
 | `view`     | Chart-rect background, stroke, padding. |
@@ -210,6 +211,71 @@ renders at `fill_opacity: 0.9` even under a theme declaring
 `stroke` and `corner_radius` (which the spec does not mention) still
 apply.
 
+### Per-axis blocks
+
+`axis` states house style for *both* cartesian axes at once. When the
+two need to differ, `axis_x` and `axis_y` layer over it — carrying the
+same token set, and overriding **per property**:
+
+```json
+{
+  "axis":   { "grid_color": "#e5e7eb", "tick_color": "#6b7280" },
+  "axis_x": { "grid_color": "#f3f4f6" }
+}
+```
+
+The x axis draws a `#f3f4f6` grid and keeps the `#6b7280` tick colour
+it inherited; the y axis takes both values from `axis` unchanged. A
+block that sets one token does not reset the rest — nothing is
+replaced wholesale.
+
+**Grid orientation.** An x axis emits the **vertical** grid lines and a
+y axis the **horizontal** ones, so `axis_x.grid_color` /
+`axis_y.grid_color` (and `grid_width`, `grid_dash`, `grid_opacity`)
+are how the two orientations are coloured apart — a common request that
+`axis` alone cannot express. A frequent pattern is horizontal rules
+only:
+
+```json
+{
+  "axis_x": { "grid_color": "transparent" },
+  "axis_y": { "grid_color": "#e5e7eb", "grid_dash": [2, 2] }
+}
+```
+
+`x2` and `y2` resolve to the same block as their base channel — a span
+channel never carries an axis of its own.
+
+#### How it is applied
+
+Most of these tokens ride the CSS cascade: `theme/css.go` emits the
+per-axis block as custom-property declarations scoped to that axis's
+own group, and the renderer already wraps each axis (its grid lines
+included) in `<g class="prism-axis prism-axis-x">`:
+
+```css
+:root{--prism-grid-color:#e5e7eb;}
+.prism-axis-x{--prism-grid-color:#f3f4f6;}
+```
+
+Custom properties inherit, so the scoped declaration shadows the
+`:root` one for that axis alone. The per-property merge *is* the
+cascade — nothing is pre-folded, and the same post-hoc restyling that
+works on `--prism-grid-color` works on the scoped variable.
+
+Tokens that move SVG coordinates (`tick_size`, `label_padding`) or
+that are emitted as SVG attributes rather than CSS
+(`label_line_height`, `label_letter_spacing`, `title_line_height`,
+`title_letter_spacing`) cannot travel that way — a CSS variable cannot
+move a line endpoint. Those ride the Scene IR instead, on
+`scene.Theme.axis_x` / `axis_y`, and the renderer falls back to the
+shared `axis` value property by property. `filter` lands on the axis's
+own group and composes with the shared block's filter on the enclosing
+`prism-axes` group.
+
+A theme that declares neither block emits exactly the bytes it did
+before the blocks existed: this is purely additive.
+
 ### Axis geometry precedence
 
 Two `axis` tokens are **geometry**, not appearance: `tick_size` (the
@@ -226,8 +292,15 @@ Where they overlap, the resolution order is fixed, highest first:
 
 1. **The spec's `axis` block** — `"axis": {"tick_size": 12}` on the
    channel.
-2. **The theme's `axis` block** — `"axis": {"tick_size": 9}`.
-3. **Prism's built-in metric** — 5 px tick, 4 px label padding.
+2. **The theme's `axis_x` / `axis_y` block** — the per-axis override
+   (see [Per-axis blocks](#per-axis-blocks)).
+3. **The theme's `axis` block** — `"axis": {"tick_size": 9}`.
+4. **Prism's built-in metric** — 5 px tick, 4 px label padding.
+
+This is the one precedence chain every axis token follows, geometry or
+not; only the machinery differs (the CSS cascade for colour and font
+tokens, `resolveAxisMetric` in the SVG renderer for geometry). Each
+level shadows the previous **per property**.
 
 **The spec wins.** A theme can set the house tick length for every
 chart, and an individual chart still overrides it per channel; the
@@ -669,10 +742,15 @@ in the encoding reference for the full treatment.
     },
     "range": {
       "category": { "scheme": "okabe_ito" }
-    }
+    },
+    "axis_y": { "grid_dash": [2, 2] }
   }
 }
 ```
+
+Every block the theme struct carries is available here, `axis_x` /
+`axis_y` included — each merges against its own counterpart in the
+base theme, never against the shared `axis` block.
 
 Spec-level overrides merge over the named base theme without
 restating the whole struct. Order of precedence:
@@ -764,6 +842,15 @@ endpoint or a `<text>` coordinate, so the geometry those two tokens
 describe is resolved at render time (see
 [Axis geometry precedence](#axis-geometry-precedence)). Overriding them
 in the DOM restyles nothing.
+
+A theme's `axis_x` / `axis_y` blocks (see
+[Per-axis blocks](#per-axis-blocks)) emit the same `--prism-axis-*` /
+`--prism-grid-*` names a second time, scoped to
+`.prism-axis-x { ... }` / `.prism-axis-y { ... }` rather than `:root`.
+Custom properties inherit, so the scoped declaration wins for that
+axis's group and leaves the other axis on the `:root` value. Both are
+runtime-overridable the same way — assigning to the group element's
+style shadows the theme's scoped value.
 
 ## Rendering backends
 

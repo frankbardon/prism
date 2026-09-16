@@ -32,7 +32,9 @@
           "additionalProperties": {"$ref": "#/$defs/mark_style"},
           "description": "Per-mark-type defaults keyed by mark type (bar, line, area, point, ...)."
         },
-        "axis":   {"$ref": "#/$defs/axis_style", "description": "Axis token overrides."},
+        "axis":   {"$ref": "#/$defs/axis_style", "description": "Axis token overrides applying to both cartesian axes."},
+        "axis_x": {"$ref": "#/$defs/axis_style", "description": "x-axis token overrides, layered over `axis` per property. Also themes the vertical grid lines, which the x axis emits."},
+        "axis_y": {"$ref": "#/$defs/axis_style", "description": "y-axis token overrides, layered over `axis` per property. Also themes the horizontal grid lines, which the y axis emits."},
         "legend": {"$ref": "#/$defs/legend_style", "description": "Legend token overrides."},
         "title":  {"$ref": "#/$defs/title_style", "description": "Title block tokens."},
         "view":   {"$ref": "#/$defs/view_style", "description": "Chart-rect tokens."},

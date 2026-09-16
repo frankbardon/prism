@@ -14,9 +14,21 @@ import "github.com/frankbardon/prism/encode/scene"
 // AxisTitleLineHeight/AxisTitleLetterSpacing tokens (E2-S2) apply to
 // tick labels and the axis title respectively.
 func renderAxis(w *Writer, a scene.Axis, plot scene.Rect, theme *scene.Theme) {
+	// The theme's per-axis override block for this channel, if any
+	// (E8-S1). Its colour/stroke half never reaches here — theme/css.go
+	// scopes those onto this very group's class and CSS inheritance
+	// applies them. What is left is geometry, SVG-attribute typography,
+	// and the group filter.
+	perAxis := theme.AxisTokensFor(a.Channel)
+
 	w.OpenTag("g")
 	w.Attr("class", "prism-axis prism-axis-"+string(a.Channel))
 	w.Attr("data-prism-axis-id", a.ID)
+	if perAxis != nil {
+		// Composes with the shared block's filter on the enclosing
+		// prism-axes group rather than replacing it.
+		writeFilterAttr(w, perAxis.Filter)
+	}
 	w.CloseTagOpen()
 
 	// Grid lines first (so axis lines + ticks render on top).
@@ -44,19 +56,28 @@ func renderAxis(w *Writer, a scene.Axis, plot scene.Rect, theme *scene.Theme) {
 
 	// Resolved typography tokens (E2-S2) — nil-safe extraction once,
 	// reused across every tick label / the axis title below.
+	// Per-axis overrides fall through to the shared block property by
+	// property (E8-S1).
 	var labelLH, labelLS, titleLH, titleLS *float64
 	if theme != nil {
 		labelLH, labelLS = theme.AxisLabelLineHeight, theme.AxisLabelLetterSpacing
 		titleLH, titleLS = theme.AxisTitleLineHeight, theme.AxisTitleLetterSpacing
 	}
+	if perAxis != nil {
+		labelLH = firstFloat(perAxis.LabelLineHeight, labelLH)
+		labelLS = firstFloat(perAxis.LabelLetterSpacing, labelLS)
+		titleLH = firstFloat(perAxis.TitleLineHeight, titleLH)
+		titleLS = firstFloat(perAxis.TitleLetterSpacing, titleLS)
+	}
 
 	// Tick length and label gap (E3-S2). Precedence, highest first:
-	// the axis's own spec value, then the theme's
-	// --prism-axis-tick-size / --prism-axis-label-padding token, then
-	// the built-in metric. With both unset these reproduce the
+	// the axis's own spec value, then the theme's per-axis `axis_x` /
+	// `axis_y` token, then the shared `axis` token
+	// (--prism-axis-tick-size / --prism-axis-label-padding), then the
+	// built-in metric. With all of them unset these reproduce the
 	// historical 5 px tick and 18/8/8/8 px label offsets exactly.
-	size := resolveAxisMetric(a.TickSize, themeTickSize(theme), defaultTickSize)
-	pad := resolveAxisMetric(a.LabelPadding, themeLabelPadding(theme), defaultLabelPadding)
+	size := resolveAxisMetric(a.TickSize, themeTickSize(theme, a.Channel), defaultTickSize)
+	pad := resolveAxisMetric(a.LabelPadding, themeLabelPadding(theme, a.Channel), defaultLabelPadding)
 
 	// Ticks + labels. `axis.ticks: false` drops the marks, `axis.labels:
 	// false` drops the text; the two are independent of each other and
@@ -160,6 +181,11 @@ const (
 // silent, and the built-in metric is the floor. This is the single
 // place the rule is expressed, so `tick_size` and `label_padding`
 // cannot drift apart.
+//
+// themeVal has already had the per-axis `axis_x` / `axis_y` block
+// folded over the shared `axis` one by themeTickSize /
+// themeLabelPadding (E8-S1), so the full chain this participates in is
+// spec > theme.axis_x|axis_y > theme.axis > built-in.
 func resolveAxisMetric(specVal, themeVal *float64, builtin float64) float64 {
 	if specVal != nil {
 		return *specVal
@@ -171,19 +197,40 @@ func resolveAxisMetric(specVal, themeVal *float64, builtin float64) float64 {
 }
 
 // themeTickSize / themeLabelPadding read the resolved axis geometry
-// tokens off a possibly-nil scene.Theme.
-func themeTickSize(t *scene.Theme) *float64 {
+// tokens off a possibly-nil scene.Theme, for one channel. The
+// channel's own `axis_x` / `axis_y` block wins over the shared `axis`
+// one (E8-S1); a nil there falls through to the shared value, which is
+// what makes the theme layer merge per property rather than
+// wholesale. The result is still only the *theme* arm — the spec's own
+// value outranks it in resolveAxisMetric.
+func themeTickSize(t *scene.Theme, ch scene.Channel) *float64 {
 	if t == nil {
 		return nil
+	}
+	if per := t.AxisTokensFor(ch); per != nil && per.TickSize != nil {
+		return per.TickSize
 	}
 	return t.AxisTickSize
 }
 
-func themeLabelPadding(t *scene.Theme) *float64 {
+func themeLabelPadding(t *scene.Theme, ch scene.Channel) *float64 {
 	if t == nil {
 		return nil
 	}
+	if per := t.AxisTokensFor(ch); per != nil && per.LabelPadding != nil {
+		return per.LabelPadding
+	}
 	return t.AxisLabelPadding
+}
+
+// firstFloat is the same per-property fall-through applied to the
+// typography tokens: the per-axis value when stated, the shared one
+// otherwise.
+func firstFloat(per, shared *float64) *float64 {
+	if per != nil {
+		return per
+	}
+	return shared
 }
 
 // tickLen returns the pixel length of the tick mark, given the

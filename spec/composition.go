@@ -89,9 +89,16 @@ type ThemeOverride struct {
 	Padding     *Padding `json:"padding,omitempty"`
 
 	// v2 nested blocks. Each is a pointer so JSON merges sparsely.
-	Mark    *MarkStyle             `json:"mark,omitempty"`
-	Marks   map[string]*MarkStyle  `json:"marks,omitempty"`
+	Mark  *MarkStyle            `json:"mark,omitempty"`
+	Marks map[string]*MarkStyle `json:"marks,omitempty"`
+	// Axis mirrors theme.Theme.Axis — the shared block applying to both
+	// cartesian axes. AxisX / AxisY mirror theme.Theme.AxisX / AxisY
+	// and layer over it per property for one axis only, which is also
+	// how vertical (x) and horizontal (y) grid lines are themed apart.
+	// See theme.Theme.AxisFor for the precedence chain.
 	Axis    *AxisStyle             `json:"axis,omitempty"`
+	AxisX   *AxisStyle             `json:"axis_x,omitempty"`
+	AxisY   *AxisStyle             `json:"axis_y,omitempty"`
 	Legend  *LegendStyle           `json:"legend,omitempty"`
 	Title   *TitleStyle            `json:"title,omitempty"`
 	View    *ViewStyle             `json:"view,omitempty"`
