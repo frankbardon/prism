@@ -997,6 +997,17 @@ var Codes = map[string]CodeMetadata{
 		},
 		SeeAlso: []string{"PRISM_SPEC_041", "PRISM_SPEC_028"},
 	},
+	"PRISM_SPEC_049": {
+		Code:    "PRISM_SPEC_049",
+		Message: `Channel "{{.Channel}}" sets scale.{{.Property}} to {{.Value}}, outside {{.Range}}.`,
+		Fixups: []string{
+			`Band padding is a *fraction of the step*, not a pixel count: ` + "`padding_inner`" + ` is the gap between adjacent bands and ` + "`padding_outer`" + ` the gap before the first and after the last one, so both live in [0,1). The defaults are 0.1 inner and 0.05 outer.`,
+			`To widen the gaps between bars: ` + "`{\"x\": {\"field\": \"origin\", \"type\": \"nominal\", \"scale\": {\"padding_inner\": 0.4}}}`" + `. To set both gaps at once use the ` + "`padding`" + ` shorthand.`,
+			"`align`" + ` says where the slack left over after layout sits, so it is a position in [0,1]: 0 packs the bands against the range start, 1 against the end, 0.5 (the default) centres them.`,
+			`Wider bars come from a wider chart, not from a padding above 1 — set ` + "`width`" + ` / ` + "`height`" + ` on the spec instead.`,
+		},
+		SeeAlso: []string{"PRISM_SPEC_041", "PRISM_SPEC_045"},
+	},
 	"PRISM_WARN_NETWORK_CYCLE": {
 		Code:    "PRISM_WARN_NETWORK_CYCLE",
 		Message: `network input graph contains a cycle; force layout may produce a visually messy result.`,

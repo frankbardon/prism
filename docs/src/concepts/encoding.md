@@ -162,7 +162,9 @@ See the [scales gallery](../gallery/scales) for one fixture per type.
 
 Three keys shape the resolved domain. They compose in a fixed
 precedence: **`domain` wins outright**, and when it is absent the data
-extent is widened by `zero` and then rounded by `nice`.
+extent is widened by `zero` and then rounded by `nice`. How that
+resolved domain is then laid onto pixels is a separate set of keys —
+see [Mapping the domain onto pixels](#mapping-the-domain-onto-pixels--clamp-reverse-round).
 
 | Key | Type | Default | Effect |
 |---|---|---|---|
@@ -284,6 +286,104 @@ IR's gradient stops, the browser web component — only ever blends
 neighbouring stops linearly, so no renderer carries colorspace math of
 its own and every backend agrees. `interpolate` has no effect on a
 discrete palette, which is indexed rather than traversed.
+
+### Mapping the domain onto pixels — `clamp`, `reverse`, `round`
+
+`domain` / `zero` / `nice` decide *what* the scale covers. Five further
+keys decide *how* that domain lands on pixels.
+
+| Key | Type | Default | Applies to | Effect |
+|---|---|---|---|---|
+| `clamp` | boolean | `false` | continuous | Pins an out-of-domain value to the nearest domain edge instead of letting it map past the range. |
+| `reverse` | boolean | `false` | all | Runs the scale the other way round, relative to the channel's default direction. |
+| `round` | boolean | `false` | all | Quantises layout to whole pixels. |
+| `padding_inner` | number `[0,1)` | `0.1` | band | Gap between adjacent bands, as a fraction of the step. |
+| `padding_outer` | number `[0,1)` | `0.05` band, `0.5` point | band / point | Gap before the first and after the last band. |
+| `align` | number `[0,1]` | `0.5` | band / point | Where the slack left over after layout sits. |
+
+An out-of-range padding or `align` is rejected at validate time with
+`PRISM_SPEC_049`; a caller that skips validate gets the value pinned
+into its legal range rather than an inside-out band.
+
+**`clamp`.** By default a value outside the resolved domain keeps
+mapping past the range and is clipped by the plot rect — the useful
+behaviour when a pinned `domain` crops outliers on purpose. Turn
+`clamp` on to pile them against the edge instead:
+
+```json
+"y": {
+  "field": "score", "type": "quantitative",
+  "scale": {"domain": [0, 100], "clamp": true}
+}
+```
+
+`clamp` is a continuous-family knob. A band / point / ordinal scale has
+no out-of-domain image to pin — an unknown category is an error, not an
+overflow. On a `log` scale `clamp` pins positive out-of-domain values,
+but a zero or negative value still has no image at all and raises
+`PRISM_SPEC_010`.
+
+**`reverse` is axis-relative, not screen-relative.** Prism's y scales
+already run bottom-to-top: the domain minimum is handed the *bottom*
+pixel, because SVG's origin is the top-left corner. `reverse` composes
+with that existing inversion rather than replacing it. Concretely:
+
+- on `x`, `reverse: true` puts the domain minimum on the **right**;
+- on `y`, `reverse: true` puts the domain minimum at the **top**, so
+  the axis reads downward.
+
+Axes, ticks and gridlines all place through the same scale, so they
+follow automatically — a reversed axis relabels itself rather than
+needing a separate `axis` override.
+
+Continuous families implement `reverse` by flipping the pixel range.
+Discrete families instead hand the computed slots to the categories
+back to front — d3-scale's own band behaviour — which keeps band widths
+and the signed step untouched, so a reversed band scale on `y` still
+draws horizontal bars correctly. The resolved domain order is not
+changed either way: `scale.domain` still lists categories in the order
+the axis reads them before reversal.
+
+**`round` is layout, not serialisation.** On a band or point scale it
+floors the step and rounds the leading offset and the band width, which
+is what makes band edges land on device pixels and stops adjacent bars
+sharing a half-pixel seam. On a continuous scale it rounds the resolved
+pixel. It is independent of the renderer's pinned 3-decimal coordinate
+quantisation (see [Scene IR](./spec.md)) — both can apply, and rounding
+the layout first is what actually produces whole numbers in the output.
+
+**Band geometry.** A band scale divides its range into one step per
+category and draws the band inside that step:
+
+```text
+step   = span / (n - padding_inner + 2 * padding_outer)
+offset = (span - step * (n - padding_inner)) * align
+width  = step * (1 - padding_inner)
+left_i = range_start + offset + step * i
+```
+
+`padding` is the shorthand: on a band scale it sets `padding_inner` and
+`padding_outer` together, on a point scale it sets the (only) outer
+padding. An explicit `padding_inner` / `padding_outer` outranks it.
+
+```json
+"x": {
+  "field": "origin", "type": "nominal",
+  "scale": {"padding_inner": 0.4, "padding_outer": 0.2}
+}
+```
+
+The defaults — `0.1` inner, `0.05` outer, `0.5` align — are Vega-Lite's,
+and they reproduce Prism's pre-split band layout exactly (which spent
+half an inner gap at each end of the range), so adopting the split moved
+no existing chart. A point scale has no inner padding — every band
+collapses to a point — so `padding_inner` never reaches it; its outer
+padding defaults to `0.5`, which is what centres the first and last
+point half a step inside the range.
+
+`align` only moves where the leftover slack sits; it never changes the
+band width. `0` packs the bands against the range start, `1` against the
+end, `0.5` centres them.
 
 ## Axes & legends
 

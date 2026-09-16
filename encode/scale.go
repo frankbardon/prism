@@ -160,7 +160,72 @@ type ScaleOpts struct {
 	// "lab". Applied once, at encode time, by resampling the ramp
 	// (see ResampleRamp) so nothing downstream needs colorspace math.
 	Interpolate string
+
+	// Clamp is `scale.clamp`: pin a value outside the resolved domain
+	// to the nearest domain edge rather than letting it map past the
+	// range. nil / false is the default — the value overflows and the
+	// plot rect clips it. Continuous families only; a band / point /
+	// ordinal scale has no out-of-domain image to pin (an unknown
+	// category is an error, not an overflow).
+	Clamp *bool
+
+	// Reverse is `scale.reverse`: run the scale the other way round.
+	// It is defined *relative to the channel's default orientation*,
+	// not to an absolute screen direction — a y scale already maps the
+	// domain minimum to the bottom of the plot, so reverse:true puts
+	// the minimum at the top; on x it swaps left for right.
+	//
+	// Continuous families implement it by flipping the pixel range
+	// (see pixelRange), which carries axes, ticks and gridlines along
+	// automatically because all three are placed through Scale.Apply.
+	// Discrete families instead hand the slots to the categories back
+	// to front — d3-scale's own band behaviour — so band widths and
+	// the signed step are untouched and inverted-y marks keep working.
+	Reverse *bool
+
+	// Round is `scale.round`: quantise layout to whole pixels. On a
+	// band / point scale it floors the step and rounds the leading
+	// offset and the band width, which is what makes band edges crisp;
+	// on a continuous scale it rounds the resolved pixel. It is a
+	// layout knob, independent of render/precision.go's 3-decimal
+	// serialisation pinning — both can apply.
+	Round *bool
+
+	// Padding is `scale.padding`, the shorthand: on a band scale it
+	// sets PaddingInner and PaddingOuter together, on a point scale it
+	// sets the (only) outer padding. An explicit padding_inner /
+	// padding_outer outranks it.
+	Padding *float64
+
+	// PaddingInner is `scale.padding_inner`: the gap between adjacent
+	// bands, as a fraction of the step, in [0,1). Band scales only.
+	PaddingInner *float64
+
+	// PaddingOuter is `scale.padding_outer`: the gap before the first
+	// and after the last band / point, as a fraction of the step.
+	PaddingOuter *float64
+
+	// Align is `scale.align` in [0,1]: where the slack left over after
+	// the bands are laid out sits. 0 packs them against the range
+	// start, 1 against the end, 0.5 (the default) centres them.
+	Align *float64
 }
+
+// Band and point geometry defaults. The band trio matches Vega-Lite
+// (inner 0.1, outer 0.05) *and* reproduces Prism's historic band
+// layout byte-for-byte: the pre-split scale spent a half-inner-gap at
+// each end of the range, which is exactly what outer = inner/2 with
+// align = 0.5 produces. Changing any of the three moves every bar,
+// tick, heatmap and boxplot golden.
+const (
+	defaultBandPaddingInner = 0.1
+	defaultBandPaddingOuter = 0.05
+	defaultPointPadding     = 0.5
+	defaultScaleAlign       = 0.5
+	// maxInnerPadding is the largest inner padding that still leaves
+	// a band something to draw.
+	maxInnerPadding = 0.99
+)
 
 // ScaleOptsFromSpec lifts a spec scale block into ScaleOpts. A nil
 // block yields the zero value, which reads as "all defaults".
@@ -191,7 +256,33 @@ func ScaleOptsFromSpec(sc *spec.Scale) ScaleOpts {
 	opts.Scheme = sc.Scheme
 	opts.Range = colorRangeList(sc.Range)
 	opts.Interpolate = sc.Interpolate
+	opts.Clamp = copyBool(sc.Clamp)
+	opts.Reverse = copyBool(sc.Reverse)
+	opts.Round = copyBool(sc.Round)
+	opts.Padding = copyFloat(sc.Padding)
+	opts.PaddingInner = copyFloat(sc.PaddingInner)
+	opts.PaddingOuter = copyFloat(sc.PaddingOuter)
+	opts.Align = copyFloat(sc.Align)
 	return opts
+}
+
+// copyBool detaches an optional flag from the spec block so a later
+// mutation of the spec cannot reach the resolved scale.
+func copyBool(v *bool) *bool {
+	if v == nil {
+		return nil
+	}
+	b := *v
+	return &b
+}
+
+// copyFloat is copyBool for the optional float knobs.
+func copyFloat(v *float64) *float64 {
+	if v == nil {
+		return nil
+	}
+	f := *v
+	return &f
 }
 
 // colorRangeList lifts `scale.range` into the inline color list the
@@ -231,6 +322,99 @@ func (o ScaleOpts) niceEnabled(def bool) bool {
 		return *o.Nice
 	}
 	return def
+}
+
+// output returns the clamp / round policy the continuous scale impls
+// embed.
+func (o ScaleOpts) output() scale.ContinuousOutput {
+	return scale.ContinuousOutput{Clamp: o.clampEnabled(), Round: o.roundEnabled()}
+}
+
+// clampEnabled reports whether out-of-domain values are pinned to the
+// domain edge. Off unless the author asks.
+func (o ScaleOpts) clampEnabled() bool { return o.Clamp != nil && *o.Clamp }
+
+// roundEnabled reports whether layout is quantised to whole pixels.
+func (o ScaleOpts) roundEnabled() bool { return o.Round != nil && *o.Round }
+
+// reverseEnabled reports whether the scale runs the other way round.
+func (o ScaleOpts) reverseEnabled() bool { return o.Reverse != nil && *o.Reverse }
+
+// pixelRange applies `scale.reverse` to a continuous scale's pixel
+// range. Discrete families do NOT come through here — they reverse the
+// slot assignment instead, so their signed step survives.
+func (o ScaleOpts) pixelRange(rangeMin, rangeMax float64) (float64, float64) {
+	if o.reverseEnabled() {
+		return rangeMax, rangeMin
+	}
+	return rangeMin, rangeMax
+}
+
+// bandPadding resolves a band scale's (inner, outer, align) triple:
+// the defaults first, then the `padding` shorthand, then the explicit
+// padding_inner / padding_outer / align. Values are pinned into their
+// legal ranges so a spec that skipped validation still yields drawable
+// geometry.
+func (o ScaleOpts) bandPadding() (inner, outer, align float64) {
+	inner, outer, align = defaultBandPaddingInner, defaultBandPaddingOuter, defaultScaleAlign
+	if o.Padding != nil {
+		inner, outer = *o.Padding, *o.Padding
+	}
+	if o.PaddingInner != nil {
+		inner = *o.PaddingInner
+	}
+	if o.PaddingOuter != nil {
+		outer = *o.PaddingOuter
+	}
+	if o.Align != nil {
+		align = *o.Align
+	}
+	return pinInnerPadding(inner), pinNonNegative(outer), pinUnit(align)
+}
+
+// pointPadding resolves a point scale's (outer, align) pair. A point
+// scale collapses every band to a point, so it has no inner padding
+// and `padding_inner` never reaches it.
+func (o ScaleOpts) pointPadding() (outer, align float64) {
+	outer, align = defaultPointPadding, defaultScaleAlign
+	if o.Padding != nil {
+		outer = *o.Padding
+	}
+	if o.PaddingOuter != nil {
+		outer = *o.PaddingOuter
+	}
+	if o.Align != nil {
+		align = *o.Align
+	}
+	return pinNonNegative(outer), pinUnit(align)
+}
+
+// pinUnit pins v into [0,1].
+func pinUnit(v float64) float64 {
+	if math.IsNaN(v) || v < 0 {
+		return 0
+	}
+	if v > 1 {
+		return 1
+	}
+	return v
+}
+
+// pinInnerPadding pins v into [0,1): an inner padding of exactly 1
+// would collapse every band to zero width.
+func pinInnerPadding(v float64) float64 {
+	if v = pinUnit(v); v >= 1 {
+		return maxInnerPadding
+	}
+	return v
+}
+
+// pinNonNegative pins v into [0, +inf).
+func pinNonNegative(v float64) float64 {
+	if math.IsNaN(v) || v < 0 {
+		return 0
+	}
+	return v
 }
 
 func (o ScaleOpts) niceCount() int {
@@ -398,15 +582,16 @@ func numericExtent(values []any) (mn float64, mx float64, ok bool) {
 }
 
 func resolveLinear(values []any, rangeMin, rangeMax float64, opts ScaleOpts) (Scale, *scene.Warning, error) {
+	rangeMin, rangeMax = opts.pixelRange(rangeMin, rangeMax)
 	lo, hi, pinned, err := opts.numericDomain("linear")
 	if err != nil {
 		return nil, nil, err
 	}
 	if pinned {
-		return &LinearScale{DomainMin: lo, DomainMax: hi, RangeMin: rangeMin, RangeMax: rangeMax}, nil, nil
+		return newLinearScale(lo, hi, rangeMin, rangeMax, opts), nil, nil
 	}
 	if len(values) == 0 {
-		return &LinearScale{DomainMin: 0, DomainMax: 1, RangeMin: rangeMin, RangeMax: rangeMax}, nil, nil
+		return newLinearScale(0, 1, rangeMin, rangeMax, opts), nil, nil
 	}
 	mn, mx, ok := numericExtent(values)
 	if !ok {
@@ -417,7 +602,53 @@ func resolveLinear(values []any, rangeMin, rangeMax float64, opts ScaleOpts) (Sc
 		)
 	}
 	mn, mx = opts.shapeContinuous(mn, mx, true, true)
-	return &LinearScale{DomainMin: mn, DomainMax: mx, RangeMin: rangeMin, RangeMax: rangeMax}, nil, nil
+	return newLinearScale(mn, mx, rangeMin, rangeMax, opts), nil, nil
+}
+
+// newLinearScale is the single LinearScale constructor that folds in
+// the clamp / round output policy. The pixel range arrives already
+// flipped by pixelRange when `scale.reverse` is on.
+func newLinearScale(domainMin, domainMax, rangeMin, rangeMax float64, opts ScaleOpts) *LinearScale {
+	return &LinearScale{
+		DomainMin:        domainMin,
+		DomainMax:        domainMax,
+		RangeMin:         rangeMin,
+		RangeMax:         rangeMax,
+		ContinuousOutput: opts.output(),
+	}
+}
+
+// NewBandScale builds a band scale over cats, folding in the spec's
+// padding / align / round / reverse knobs. It is the one band
+// constructor: the flat encoder and the shared-scale path in
+// encode_composite.go both come through here so a spec knob can never
+// apply to one and not the other.
+func NewBandScale(cats []string, rangeMin, rangeMax float64, opts ScaleOpts) *BandScale {
+	inner, outer, align := opts.bandPadding()
+	return &BandScale{
+		Categories:   cats,
+		RangeMin:     rangeMin,
+		RangeMax:     rangeMax,
+		PaddingInner: inner,
+		PaddingOuter: outer,
+		Align:        align,
+		Round:        opts.roundEnabled(),
+		Reverse:      opts.reverseEnabled(),
+	}
+}
+
+// NewPointScale is NewBandScale's point-family twin.
+func NewPointScale(cats []string, rangeMin, rangeMax float64, opts ScaleOpts) *PointScale {
+	outer, align := opts.pointPadding()
+	return &PointScale{
+		Categories: cats,
+		RangeMin:   rangeMin,
+		RangeMax:   rangeMax,
+		Padding:    outer,
+		Align:      align,
+		Round:      opts.roundEnabled(),
+		Reverse:    opts.reverseEnabled(),
+	}
 }
 
 func resolveBand(values []any, rangeMin, rangeMax float64, opts ScaleOpts) (Scale, *scene.Warning, error) {
@@ -425,12 +656,7 @@ func resolveBand(values []any, rangeMin, rangeMax float64, opts ScaleOpts) (Scal
 	if err != nil {
 		return nil, nil, err
 	}
-	return &BandScale{
-		Categories: cats,
-		RangeMin:   rangeMin,
-		RangeMax:   rangeMax,
-		Padding:    0.1,
-	}, nil, nil
+	return NewBandScale(cats, rangeMin, rangeMax, opts), nil, nil
 }
 
 func resolvePoint(values []any, rangeMin, rangeMax float64, opts ScaleOpts) (Scale, *scene.Warning, error) {
@@ -438,12 +664,7 @@ func resolvePoint(values []any, rangeMin, rangeMax float64, opts ScaleOpts) (Sca
 	if err != nil {
 		return nil, nil, err
 	}
-	return &PointScale{
-		Categories: cats,
-		RangeMin:   rangeMin,
-		RangeMax:   rangeMax,
-		Padding:    0.5,
-	}, nil, nil
+	return NewPointScale(cats, rangeMin, rangeMax, opts), nil, nil
 }
 
 func resolveOrdinal(values []any, rangeMin, rangeMax float64, opts ScaleOpts) (Scale, *scene.Warning, error) {
@@ -451,7 +672,13 @@ func resolveOrdinal(values []any, rangeMin, rangeMax float64, opts ScaleOpts) (S
 	if err != nil {
 		return nil, nil, err
 	}
-	// Evenly distribute positions across [rangeMin, rangeMax].
+	return newOrdinalScale(cats, rangeMin, rangeMax, opts), nil, nil
+}
+
+// newOrdinalScale evenly distributes positions across the range. An
+// ordinal scale pins positions up front rather than deriving them per
+// lookup, so `reverse` and `round` are baked in here.
+func newOrdinalScale(cats []string, rangeMin, rangeMax float64, opts ScaleOpts) *OrdinalScale {
 	positions := make([]float64, len(cats))
 	if len(cats) == 1 {
 		positions[0] = (rangeMin + rangeMax) / 2
@@ -461,7 +688,17 @@ func resolveOrdinal(values []any, rangeMin, rangeMax float64, opts ScaleOpts) (S
 			positions[i] = rangeMin + step*float64(i)
 		}
 	}
-	return &OrdinalScale{Categories: cats, Positions: positions}, nil, nil
+	if opts.reverseEnabled() {
+		for i, j := 0, len(positions)-1; i < j; i, j = i+1, j-1 {
+			positions[i], positions[j] = positions[j], positions[i]
+		}
+	}
+	if opts.roundEnabled() {
+		for i := range positions {
+			positions[i] = math.Round(positions[i])
+		}
+	}
+	return &OrdinalScale{Categories: cats, Positions: positions}
 }
 
 // bandCategories resolves the category order for a discrete scale: an
@@ -486,13 +723,13 @@ func bandCategories(values []any, opts ScaleOpts, fn, field string) ([]string, e
 }
 
 func resolveTime(values []any, rangeMin, rangeMax float64, opts ScaleOpts) (Scale, *scene.Warning, error) {
+	rangeMin, rangeMax = opts.pixelRange(rangeMin, rangeMax)
 	lo, hi, pinned, err := opts.temporalDomain()
 	if err != nil {
 		return nil, nil, err
 	}
 	if pinned {
-		lin := &LinearScale{DomainMin: lo, DomainMax: hi, RangeMin: rangeMin, RangeMax: rangeMax}
-		return &TimeScale{Linear: lin}, nil, nil
+		return &TimeScale{Linear: newLinearScale(lo, hi, rangeMin, rangeMax, opts)}, nil, nil
 	}
 	var mn, mx float64
 	first := true
@@ -527,13 +764,14 @@ func resolveTime(values []any, rangeMin, rangeMax float64, opts ScaleOpts) (Scal
 	if opts.niceEnabled(true) {
 		mn, mx = niceTimeDomain(mn, mx)
 	}
-	lin := &LinearScale{DomainMin: mn, DomainMax: mx, RangeMin: rangeMin, RangeMax: rangeMax}
+	lin := newLinearScale(mn, mx, rangeMin, rangeMax, opts)
 	// T06.04: calendar-aware ticks live in encode/ticks_time.go;
 	// drop the stub warning that P05 emitted.
 	return &TimeScale{Linear: lin}, nil, nil
 }
 
 func resolveLog(values []any, rangeMin, rangeMax float64, opts ScaleOpts) (Scale, *scene.Warning, error) {
+	rangeMin, rangeMax = opts.pixelRange(rangeMin, rangeMax)
 	base := opts.Base
 	if base == 0 {
 		base = 10
@@ -550,7 +788,14 @@ func resolveLog(values []any, rangeMin, rangeMax float64, opts ScaleOpts) (Scale
 				map[string]any{"Value": lo, "ScaleType": "log"},
 			)
 		}
-		return &LogScale{Base: base, DomainMin: lo, DomainMax: hi, RangeMin: rangeMin, RangeMax: rangeMax}, nil, nil
+		return &LogScale{
+			Base:             base,
+			DomainMin:        lo,
+			DomainMax:        hi,
+			RangeMin:         rangeMin,
+			RangeMax:         rangeMax,
+			ContinuousOutput: opts.output(),
+		}, nil, nil
 	}
 	var mn, mx float64
 	first := true
@@ -594,11 +839,12 @@ func resolveLog(values []any, rangeMin, rangeMax float64, opts ScaleOpts) (Scale
 		mn, mx = niceLogDomain(mn, mx, base)
 	}
 	return &LogScale{
-		Base:      base,
-		DomainMin: mn,
-		DomainMax: mx,
-		RangeMin:  rangeMin,
-		RangeMax:  rangeMax,
+		Base:             base,
+		DomainMin:        mn,
+		DomainMax:        mx,
+		RangeMin:         rangeMin,
+		RangeMax:         rangeMax,
+		ContinuousOutput: opts.output(),
 	}, nil, nil
 }
 
@@ -617,6 +863,7 @@ func niceLogDomain(mn, mx, base float64) (float64, float64) {
 }
 
 func resolvePow(values []any, rangeMin, rangeMax, exp float64, opts ScaleOpts) (Scale, *scene.Warning, error) {
+	rangeMin, rangeMax = opts.pixelRange(rangeMin, rangeMax)
 	if exp == 0 {
 		exp = 1
 	}
@@ -629,7 +876,7 @@ func resolvePow(values []any, rangeMin, rangeMax, exp float64, opts ScaleOpts) (
 		return nil, nil, err
 	}
 	if pinned {
-		return powScale(exp, lo, hi, rangeMin, rangeMax), nil, nil
+		return powScale(exp, lo, hi, rangeMin, rangeMax, opts), nil, nil
 	}
 	mn, mx, ok := numericExtent(values)
 	if !ok {
@@ -640,14 +887,22 @@ func resolvePow(values []any, rangeMin, rangeMax, exp float64, opts ScaleOpts) (
 		)
 	}
 	mn, mx = opts.shapeContinuous(mn, mx, true, true)
-	return powScale(exp, mn, mx, rangeMin, rangeMax), nil, nil
+	return powScale(exp, mn, mx, rangeMin, rangeMax, opts), nil, nil
 }
 
-func powScale(exp, mn, mx, rangeMin, rangeMax float64) Scale {
-	if exp == 0.5 {
-		return &SqrtScale{Inner: PowScale{Exp: 0.5, DomainMin: mn, DomainMax: mx, RangeMin: rangeMin, RangeMax: rangeMax}}
+func powScale(exp, mn, mx, rangeMin, rangeMax float64, opts ScaleOpts) Scale {
+	inner := PowScale{
+		Exp:              exp,
+		DomainMin:        mn,
+		DomainMax:        mx,
+		RangeMin:         rangeMin,
+		RangeMax:         rangeMax,
+		ContinuousOutput: opts.output(),
 	}
-	return &PowScale{Exp: exp, DomainMin: mn, DomainMax: mx, RangeMin: rangeMin, RangeMax: rangeMax}
+	if exp == 0.5 {
+		return &SqrtScale{Inner: inner}
+	}
+	return &inner
 }
 
 func uniqueStrings(values []any) []string {

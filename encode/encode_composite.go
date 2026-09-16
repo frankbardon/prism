@@ -748,8 +748,12 @@ func sharedScaleOpts(live []liveChild, channel scene.Channel) ScaleOpts {
 // already in the right shape; categorical domains arrive as the full
 // ordered list of categories.
 func scaleFromUnified(ty scene.ScaleType, domain []any, rmin, rmax float64, opts ScaleOpts) (Scale, error) {
+	// `scale.reverse` flips a continuous pixel range; a discrete
+	// family reverses its slot assignment inside the scale instead
+	// (see ScaleOpts.Reverse), so the flip is applied per family.
 	switch ty {
 	case scene.ScaleLinear, scene.ScaleLog, scene.ScalePow, scene.ScaleSqrt:
+		rmin, rmax = opts.pixelRange(rmin, rmax)
 		// Zero-forcing and nice rounding follow the same per-family
 		// defaults the flat encoder uses — notably log opts out of
 		// both, matching resolveLog.
@@ -759,7 +763,7 @@ func scaleFromUnified(ty scene.ScaleType, domain []any, rmin, rmax float64, opts
 			return nil, err
 		}
 		if pinned {
-			return &LinearScale{DomainMin: lo, DomainMax: hi, RangeMin: rmin, RangeMax: rmax}, nil
+			return newLinearScale(lo, hi, rmin, rmax, opts), nil
 		}
 		if len(domain) < 2 {
 			return nil, fmt.Errorf("scaleFromUnified: numeric domain needs [min,max], got %v", domain)
@@ -770,12 +774,7 @@ func scaleFromUnified(ty scene.ScaleType, domain []any, rmin, rmax float64, opts
 			return nil, fmt.Errorf("scaleFromUnified: numeric domain values not float64: %T %T", domain[0], domain[1])
 		}
 		mn, mx = opts.shapeContinuous(mn, mx, !isLog, !isLog)
-		return &LinearScale{
-			DomainMin: mn,
-			DomainMax: mx,
-			RangeMin:  rmin,
-			RangeMax:  rmax,
-		}, nil
+		return newLinearScale(mn, mx, rmin, rmax, opts), nil
 	case scene.ScaleBand, scene.ScalePoint, scene.ScaleOrdinal:
 		cats, err := opts.categoryDomain(domain)
 		if err != nil {
@@ -789,19 +788,15 @@ func scaleFromUnified(ty scene.ScaleType, domain []any, rmin, rmax float64, opts
 				}
 			}
 		}
-		return &BandScale{
-			Categories: cats,
-			RangeMin:   rmin,
-			RangeMax:   rmax,
-			Padding:    0.1,
-		}, nil
+		return NewBandScale(cats, rmin, rmax, opts), nil
 	case scene.ScaleTime:
+		rmin, rmax = opts.pixelRange(rmin, rmax)
 		lo, hi, pinned, err := opts.temporalDomain()
 		if err != nil {
 			return nil, err
 		}
 		if pinned {
-			return &TimeScale{Linear: &LinearScale{DomainMin: lo, DomainMax: hi, RangeMin: rmin, RangeMax: rmax}}, nil
+			return &TimeScale{Linear: newLinearScale(lo, hi, rmin, rmax, opts)}, nil
 		}
 		if len(domain) < 2 {
 			return nil, fmt.Errorf("scaleFromUnified: time domain needs [min,max]")
@@ -814,8 +809,7 @@ func scaleFromUnified(ty scene.ScaleType, domain []any, rmin, rmax float64, opts
 		if opts.niceEnabled(true) {
 			mn, mx = niceTimeDomain(mn, mx)
 		}
-		lin := &LinearScale{DomainMin: mn, DomainMax: mx, RangeMin: rmin, RangeMax: rmax}
-		return &TimeScale{Linear: lin}, nil
+		return &TimeScale{Linear: newLinearScale(mn, mx, rmin, rmax, opts)}, nil
 	}
 	return nil, fmt.Errorf("scaleFromUnified: unknown scale type %q", ty)
 }

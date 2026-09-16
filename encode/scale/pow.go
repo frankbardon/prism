@@ -17,6 +17,8 @@ type PowScale struct {
 	DomainMax float64
 	RangeMin  float64
 	RangeMax  float64
+	// ContinuousOutput carries `scale.clamp` and `scale.round`.
+	ContinuousOutput
 }
 
 // Apply implements Scale.
@@ -37,10 +39,10 @@ func (s *PowScale) Apply(value any) (float64, error) {
 	mn := signedPow(s.DomainMin, exp)
 	mx := signedPow(s.DomainMax, exp)
 	if mx == mn {
-		return (s.RangeMin + s.RangeMax) / 2, nil
+		return s.quantise((s.RangeMin + s.RangeMax) / 2), nil
 	}
 	t := (transformed - mn) / (mx - mn)
-	return s.RangeMin + t*(s.RangeMax-s.RangeMin), nil
+	return s.interpolate(t, s.RangeMin, s.RangeMax), nil
 }
 
 // Domain implements Scale.

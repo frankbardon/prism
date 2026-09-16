@@ -61,7 +61,7 @@ func TestPrismBoxplotQuantileParity(t *testing.T) {
 
 	// Build a band x scale + linear y scale matching what the encoder
 	// would produce for the fixture.
-	xBand := &scale.BandScale{Categories: []string{"a", "b"}, RangeMin: 40, RangeMax: 760, Padding: 0.1}
+	xBand := &scale.BandScale{Categories: []string{"a", "b"}, RangeMin: 40, RangeMax: 760, PaddingInner: 0.1, PaddingOuter: 0.05, Align: 0.5}
 	yLin := &scale.LinearScale{DomainMin: 0, DomainMax: 1, RangeMin: 560, RangeMax: 20}
 	in := marks.Inputs{
 		Table:  tbl,

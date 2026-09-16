@@ -39,6 +39,7 @@ func TestPointScalePadding(t *testing.T) {
 		RangeMin:   0,
 		RangeMax:   400,
 		Padding:    0.5,
+		Align:      0.5,
 	}
 	// step = 400 / (3-1 + 2*0.5) = 400/3 ≈ 133.33
 	// positions: padding*step, padding*step + step, padding*step + 2*step

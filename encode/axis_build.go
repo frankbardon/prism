@@ -167,6 +167,7 @@ func BuildAxisWithOpts(scale Scale, channel scene.Channel, position scene.AxisPo
 			Type:   scene.ScaleLinear,
 			Domain: []any{s.DomainMin, s.DomainMax},
 			Range:  [2]float64{s.RangeMin, s.RangeMax},
+			Clamp:  s.Clamp,
 		}
 	case *TimeScale:
 		if opts.pinned() {
@@ -178,6 +179,7 @@ func BuildAxisWithOpts(scale Scale, channel scene.Channel, position scene.AxisPo
 			Type:   scene.ScaleTime,
 			Domain: []any{s.Linear.DomainMin, s.Linear.DomainMax},
 			Range:  [2]float64{s.Linear.RangeMin, s.Linear.RangeMax},
+			Clamp:  s.Linear.Clamp,
 		}
 	case *LogScale:
 		if opts.pinned() {
@@ -191,6 +193,7 @@ func BuildAxisWithOpts(scale Scale, channel scene.Channel, position scene.AxisPo
 			Domain: []any{s.DomainMin, s.DomainMax},
 			Range:  [2]float64{s.RangeMin, s.RangeMax},
 			Base:   s.Base,
+			Clamp:  s.Clamp,
 		}
 	case *PowScale:
 		if opts.pinned() {
@@ -204,6 +207,7 @@ func BuildAxisWithOpts(scale Scale, channel scene.Channel, position scene.AxisPo
 			Domain: []any{s.DomainMin, s.DomainMax},
 			Range:  [2]float64{s.RangeMin, s.RangeMax},
 			Exp:    s.Exp,
+			Clamp:  s.Clamp,
 		}
 	case *SqrtScale:
 		if opts.pinned() {
@@ -217,6 +221,7 @@ func BuildAxisWithOpts(scale Scale, channel scene.Channel, position scene.AxisPo
 			Domain: []any{s.Inner.DomainMin, s.Inner.DomainMax},
 			Range:  [2]float64{s.Inner.RangeMin, s.Inner.RangeMax},
 			Exp:    0.5,
+			Clamp:  s.Inner.Clamp,
 		}
 	case *BandScale:
 		axis.Ticks = pinnedCategoryTicks(BandTicks(s), opts, channel)
@@ -228,7 +233,7 @@ func BuildAxisWithOpts(scale Scale, channel scene.Channel, position scene.AxisPo
 			Type:    scene.ScaleBand,
 			Domain:  dom,
 			Range:   [2]float64{s.RangeMin, s.RangeMax},
-			Padding: s.Padding,
+			Padding: s.PaddingInner,
 		}
 	case *PointScale:
 		ticks := make([]scene.Tick, 0, len(s.Categories))

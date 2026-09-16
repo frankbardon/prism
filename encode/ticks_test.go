@@ -52,10 +52,10 @@ func TestPrismNiceTicksDegenerate(t *testing.T) {
 
 func TestPrismBandTicksCenter(t *testing.T) {
 	scale := &BandScale{
-		Categories: []string{"a", "b", "c"},
-		RangeMin:   0,
-		RangeMax:   300,
-		Padding:    0,
+		Categories:   []string{"a", "b", "c"},
+		RangeMin:     0,
+		RangeMax:     300,
+		PaddingInner: 0,
 	}
 	ticks := BandTicks(scale)
 	if len(ticks) != 3 {
