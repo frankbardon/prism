@@ -243,6 +243,20 @@ func renderTextMark(w *Writer, m scene.Mark) {
 	writeKeyAttr(w, m)
 	w.AttrFloat("x", g.X)
 	w.AttrFloat("y", g.Y)
+	// dx / dy (E4-S1) are SVG presentation attributes rather than
+	// being folded into x / y, so they offset the glyph inside the
+	// element's own (already rotated) coordinate system. Combined with
+	// the rotate-about-anchor transform below that reproduces Vega's
+	// text transform, translate(x,y) rotate(a) translate(dx,dy):
+	// rotation still pivots on the anchor, and the offset rides along
+	// with it. Routed through AttrFloat (render.FormatFloat) like
+	// every other coordinate.
+	if g.Dx != 0 {
+		w.AttrFloat("dx", g.Dx)
+	}
+	if g.Dy != 0 {
+		w.AttrFloat("dy", g.Dy)
+	}
 	switch g.Anchor {
 	case scene.AnchorStart:
 		w.Attr("text-anchor", "start")
@@ -254,6 +268,7 @@ func renderTextMark(w *Writer, m scene.Mark) {
 	if g.FontSize > 0 {
 		w.AttrFloat("font-size", g.FontSize)
 	}
+	writeFontAttrs(w, m.Style)
 	if g.Angle != 0 {
 		w.Attr("transform", rotateAround(g.Angle, g.X, g.Y))
 	}
@@ -300,14 +315,15 @@ func renderArc(w *Writer, m scene.Mark) {
 func arcPath(g *scene.ArcGeom) string {
 	const sweepCW = 1 // SVG sweep flag: 1 = clockwise in pixel space.
 	const sweepCCW = 0
+	startAngle, endAngle := paddedArcAngles(g)
 	largeArc := "0"
-	if (g.EndAngle - g.StartAngle) > 3.141592653589793 {
+	if (endAngle - startAngle) > 3.141592653589793 {
 		largeArc = "1"
 	}
-	cosS := cos(g.StartAngle)
-	sinS := sin(g.StartAngle)
-	cosE := cos(g.EndAngle)
-	sinE := sin(g.EndAngle)
+	cosS := cos(startAngle)
+	sinS := sin(startAngle)
+	cosE := cos(endAngle)
+	sinE := sin(endAngle)
 	ax := g.Cx + g.OuterR*cosS
 	ay := g.Cy + g.OuterR*sinS
 	bx := g.Cx + g.OuterR*cosE
@@ -328,6 +344,30 @@ func arcPath(g *scene.ArcGeom) string {
 		" L" + ff(cx) + "," + ff(cy) +
 		" A" + ff(g.InnerR) + "," + ff(g.InnerR) + " 0 " + largeArc + " " + itoa(sweepCCW) + " " + ff(dx) + "," + ff(dy) +
 		" Z"
+}
+
+// paddedArcAngles applies ArcGeom.PadAngle (E4-S1), returning the
+// sector's drawn start / end angles. Half the pad is taken off each
+// end, so the gap left between two sectors that share a boundary is
+// exactly PadAngle — the reading Vega-Lite's mark_def.pad_angle
+// carries (d3-shape varies the inset with radius; Prism uses the
+// single constant angular inset, which is the same thing whenever
+// inner and outer radius are close and a good approximation
+// otherwise — see docs/src/concepts/marks.md).
+//
+// A sector narrower than PadAngle would invert if inset naively, so
+// the inset is clamped to half the span: such a sector collapses to a
+// zero-width wedge rather than drawing backwards.
+func paddedArcAngles(g *scene.ArcGeom) (float64, float64) {
+	span := g.EndAngle - g.StartAngle
+	if g.PadAngle <= 0 || span <= 0 {
+		return g.StartAngle, g.EndAngle
+	}
+	inset := g.PadAngle / 2
+	if inset > span/2 {
+		inset = span / 2
+	}
+	return g.StartAngle + inset, g.EndAngle - inset
 }
 
 func ff(v float64) string { return render.FormatFloat(v) }

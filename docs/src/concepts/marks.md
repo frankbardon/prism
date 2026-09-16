@@ -348,6 +348,108 @@ details). See [Renderer compatibility](#renderer-compatibility) below
 — unlike `table`, `custom` renders through **both** backends, since a
 renderer can implement `RenderSVG`, `RenderHTML`, or both.
 
+## Style properties
+
+Beyond `type`, a `mark_def` object carries the visual properties every
+mark is drawn with. They are spec-level constants — one value for the
+whole mark — as distinct from an encoding channel, which varies per
+row. Where a mark-def property and a theme `mark` token name the same
+thing, the **mark def wins**; see
+[Themes: mark style precedence](themes.md#mark-style-precedence).
+
+### Paint
+
+| Property | Applies to | Meaning |
+|---|---|---|
+| `fill` | filled marks | Fill color, `#RRGGBB` / `#RRGGBBAA`. |
+| `stroke` | all | Stroke color. |
+| `stroke_width` | all | Stroke width in pixels. |
+| `stroke_dash` | line-family | Dash pattern, `[on, off, …]` pixels. |
+| `opacity` | all | Overall element opacity, `[0, 1]`. |
+| `fill_opacity` | filled marks | Fill-paint alpha, `[0, 1]`. |
+| `stroke_opacity` | stroked marks | Stroke-paint alpha, `[0, 1]`. |
+| `corner_radius` | `bar` / `rect` | Corner rounding in pixels. |
+
+`opacity`, `fill_opacity` and `stroke_opacity` are **independent and
+multiplicative** — none overrides another. This matches Vega-Lite,
+whose canvas renderer computes the fill alpha as
+`opacity × (fillOpacity ?? 1)` and the stroke alpha as
+`opacity × (strokeOpacity ?? 1)`. Prism emits all three as separate
+SVG attributes (`opacity`, `fill-opacity`, `stroke-opacity`), which
+SVG composites the same way, so:
+
+```json
+{"mark": {"type": "bar", "opacity": 0.5, "fill_opacity": 0.5}}
+```
+
+paints a fill at an effective alpha of `0.25`, not `0.5`. Set
+`fill_opacity` alone when you want a translucent fill under a solid
+stroke; set `opacity` when you want the whole mark — fill, stroke and
+all — to fade together. An explicit `0` is honoured (a fully
+transparent paint), unlike an omitted property, which inherits.
+
+### Typography
+
+Applies to `text` marks and to any mark that draws a text component.
+
+| Property | Meaning |
+|---|---|
+| `font` | Font family, e.g. `"Inter, system-ui, sans-serif"`. |
+| `font_size` | Glyph size in pixels. |
+| `font_weight` | `"normal"` \| `"bold"` \| `"lighter"` \| `"bolder"`, or a number (100–900). |
+| `font_style` | `"normal"` \| `"italic"` \| `"oblique"`. |
+| `align` | Horizontal anchor — `"left"` \| `"center"` \| `"right"`. |
+| `baseline` | Vertical anchor — `"top"` \| `"middle"` \| `"bottom"` \| `"alphabetic"`. |
+| `angle` | Rotation in degrees about the anchor point. |
+| `dx`, `dy` | Pixel offset from the anchor point. |
+
+`font_weight` normalises to a number in the Scene IR, since SVG's
+`font-weight` attribute is numeric. The CSS keywords map to their
+computed values against the default inherited weight of 400:
+`normal` → 400, `bold` → 700, `bolder` → 700, `lighter` → 100.
+
+`dx` / `dy` are applied **after** `angle`, in the rotated frame — so a
+rotated label nudged with `dy: -4` moves 4px along its own baseline
+normal, not straight up the page. This is Vega's rule
+(`translate(x,y) rotate(a) translate(dx,dy)`) and is what makes
+`dx`/`dy` useful for lifting a label clear of the geometry it
+annotates:
+
+```json
+{
+  "mark": {"type": "text", "dy": -6, "font_weight": "bold", "font_style": "italic"},
+  "encoding": {
+    "x": {"field": "quarter", "type": "nominal"},
+    "y": {"field": "revenue", "type": "quantitative"},
+    "text": {"field": "revenue", "type": "quantitative"}
+  }
+}
+```
+
+### Arc geometry
+
+| Property | Meaning |
+|---|---|
+| `inner_radius` | Donut hole radius in pixels (absolute; wins over the ratio). |
+| `inner_radius_ratio` | Donut hole as a fraction of the outer radius, `[0, 1]`. |
+| `outer_radius` | Outer radius in pixels. |
+| `pad_angle` | Angular gap between neighbouring sectors, in **radians**. |
+
+`pad_angle` is the gap *between* two sectors, not the inset applied to
+one: each sector gives up half the pad at each of its two ends, so two
+adjacent sectors end up `pad_angle` radians apart. A sector narrower
+than `pad_angle` collapses to nothing rather than drawing backwards.
+
+Prism applies a single constant angular inset at every radius.
+d3-shape (and therefore Vega-Lite) varies the inset with radius so the
+*linear* gap stays constant from the inner to the outer edge; the two
+agree closely for a thin annulus and diverge for a full pie with a
+large pad. `pad_angle: 0.02` (about 1.15°) is a good starting point:
+
+```json
+{"mark": {"type": "donut", "pad_angle": 0.02, "inner_radius_ratio": 0.6}}
+```
+
 ## Channel allowlists
 
 Not every channel is valid for every mark — `theta` only makes sense

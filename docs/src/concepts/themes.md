@@ -161,6 +161,55 @@ prism plot bar.json --theme=colorblind > bar-cb.svg
 | `dark_variant` | Name of a registered counterpart theme for automatic light/dark rendering (see [Dark variant pairing](#dark-variant-pairing)). |
 | `category_styles` | Field name → field value → `MarkStyle` map for theme-level data-driven styling (see [Category styles](#category-styles)). |
 
+### Mark style precedence
+
+A mark's final style is resolved by folding four layers in a fixed
+order, each shadowing the previous **per field**. A layer that leaves
+a field unset never clears what an earlier layer wrote:
+
+1. Prism's built-in fallback for the mark type (so a chart still
+   renders under a theme that declares nothing).
+2. The theme's `mark` block — the global default for every mark.
+3. The theme's `marks.<type>` block — the per-mark-type override.
+4. The spec's own `mark_def` — see
+   [Marks: style properties](marks.md#style-properties).
+
+**The spec wins.** Anything written in a spec's `mark: {…}` object
+shadows the theme token of the same name; a theme can only supply the
+default for a property the spec does not state. Encoding channels and
+conditions resolve after all four and shadow the lot, since they vary
+per row.
+
+`theme.MarkStyle` and `spec.MarkDef` share field names by design
+where they mean the same thing. The overlap is:
+
+| Property | In theme `mark` / `marks.<type>` | In spec `mark_def` |
+|---|---|---|
+| `fill`, `stroke`, `stroke_width`, `stroke_dash` | ✅ | ✅ |
+| `opacity`, `fill_opacity` | ✅ | ✅ |
+| `corner_radius`, `size`, `shape` | ✅ | ✅ |
+| `font_size`, `font_weight`, `font_style` | ✅ | ✅ |
+| `align`, `baseline` | ✅ | ✅ |
+| `line_height`, `letter_spacing`, `filter` | ✅ | — theme-only |
+| `stroke_opacity`, `font` (family) | — spec-only | ✅ |
+| `dx`, `dy`, `angle`, `pad_angle`, radii | — spec-only | ✅ |
+
+So a theme can set a house `fill_opacity` for every `area` mark and an
+individual chart can still override it:
+
+```json
+{
+  "mark": {"type": "area", "fill_opacity": 0.9},
+  "encoding": {"x": {"field": "t", "type": "temporal"},
+               "y": {"field": "v", "type": "quantitative"}}
+}
+```
+
+renders at `fill_opacity: 0.9` even under a theme declaring
+`"marks": {"area": {"fill_opacity": 0.3}}`, while that theme's
+`stroke` and `corner_radius` (which the spec does not mention) still
+apply.
+
 ### Typography tokens
 
 `line_height` and `letter_spacing` are optional pointer-typed typography

@@ -2,6 +2,7 @@ package encode
 
 import (
 	"fmt"
+	"strconv"
 
 	"github.com/frankbardon/prism/encode/marks"
 	"github.com/frankbardon/prism/encode/scale"
@@ -865,6 +866,22 @@ func applyThemeMarkStyle(style *scene.Style, ms *theme.MarkStyle, t *theme.Theme
 	if ms.Opacity != nil {
 		style.Opacity = *ms.Opacity
 	}
+	// E4-S1: the theme's paint-alpha / typography tokens. These are
+	// the theme.MarkStyle counterparts of spec.MarkDef's fill_opacity
+	// / font_weight / font_style, and applyMarkDef runs after this
+	// function, so a spec mark_def value shadows the theme token.
+	// (theme.MarkStyle has no stroke_opacity or font-family token —
+	// the mark def's stroke_opacity / font are spec-only.)
+	if ms.FillOpacity != nil {
+		v := *ms.FillOpacity
+		style.FillOpacity = &v
+	}
+	if w, ok := normalizeFontWeight(ms.FontWeight); ok {
+		style.FontWeight = w
+	}
+	if ms.FontStyle != "" {
+		style.FontStyle = ms.FontStyle
+	}
 	if ms.LineHeight != nil {
 		v := *ms.LineHeight
 		style.LineHeight = &v
@@ -921,9 +938,23 @@ func finalizeAutoDarkCSS(sceneTheme *scene.Theme, fullTheme *theme.Theme, colorR
 	sceneTheme.CSS = fullTheme.CSSVariables(vars...)
 }
 
-// applyMarkDef folds spec.MarkDef overrides into a style. P05
-// honours Fill, Stroke, StrokeWidth, Opacity; richer fields land in
-// P06.
+// applyMarkDef folds spec.MarkDef overrides into a style.
+//
+// It runs *after* defaultMarkStyleAuto (which folds in the theme's
+// theme.MarkStyle cascade), so every field written here shadows the
+// theme's same-named token — the spec-wins precedence documented in
+// docs/src/concepts/themes.md. Fields the mark def leaves nil are not
+// touched, so the theme value survives.
+//
+// Paint alphas: FillOpacity / StrokeOpacity are *independent* of
+// Opacity, not overrides of it. All three ride into the SVG as
+// separate attributes and compose multiplicatively, matching Vega's
+// canvas renderer (`alpha = opacity * (fillOpacity ?? 1)`) and SVG's
+// own compositing. See scene.Style.FillOpacity.
+//
+// Geometric mark-def fields (dx / dy / pad_angle) are not style —
+// they land on the geometry in the per-mark encoders
+// (encode/marks/text.go, encode/marks/arc.go).
 func applyMarkDef(def *spec.MarkDef, style *scene.Style) {
 	if def == nil {
 		return
@@ -944,6 +975,66 @@ func applyMarkDef(def *spec.MarkDef, style *scene.Style) {
 	if def.Opacity != nil {
 		style.Opacity = *def.Opacity
 	}
+	if def.FillOpacity != nil {
+		v := *def.FillOpacity
+		style.FillOpacity = &v
+	}
+	if def.StrokeOpacity != nil {
+		v := *def.StrokeOpacity
+		style.StrokeOpacity = &v
+	}
+	if def.Font != "" {
+		style.FontFamily = def.Font
+	}
+	if w, ok := normalizeFontWeight(def.FontWeight); ok {
+		style.FontWeight = w
+	}
+	if def.FontStyle != "" {
+		style.FontStyle = def.FontStyle
+	}
+}
+
+// normalizeFontWeight folds spec's polymorphic font_weight (a JSON
+// number or one of the CSS keywords) into scene.Style's numeric
+// FontWeight. ok is false for nil, an empty string, or anything the
+// keyword table and the number forms don't cover — the caller then
+// leaves the existing weight alone rather than writing a 0.
+//
+// "bolder" / "lighter" are relative in CSS; SVG text in Prism always
+// starts from the default inherited weight of 400, so they resolve to
+// CSS's computed values for that base — 700 and 100 respectively.
+func normalizeFontWeight(v any) (int, bool) {
+	switch w := v.(type) {
+	case nil:
+		return 0, false
+	case float64:
+		return int(w), w > 0
+	case float32:
+		return int(w), w > 0
+	case int:
+		return w, w > 0
+	case int64:
+		return int(w), w > 0
+	case string:
+		switch w {
+		case "":
+			return 0, false
+		case "normal":
+			return 400, true
+		case "bold":
+			return 700, true
+		case "lighter":
+			return 100, true
+		case "bolder":
+			return 700, true
+		}
+		n, err := strconv.Atoi(w)
+		if err != nil || n <= 0 {
+			return 0, false
+		}
+		return n, true
+	}
+	return 0, false
 }
 
 // specMarkToScene maps the spec's mark-type string to the canonical

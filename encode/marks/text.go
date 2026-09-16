@@ -62,6 +62,10 @@ func encodeText(in Inputs) ([]scene.Mark, error) {
 	baseline := scene.BaselineMiddle
 	angle := 0.0
 	fontSize := 11.0
+	// dx / dy (E4-S1) offset the glyph from its anchor. They ride on
+	// the geometry rather than the style because they are positional,
+	// and the renderer applies them after Angle — see scene.TextGeom.
+	dx, dy := 0.0, 0.0
 	if in.Mark != nil {
 		switch in.Mark.Align {
 		case "left":
@@ -80,6 +84,12 @@ func encodeText(in Inputs) ([]scene.Mark, error) {
 		}
 		if in.Mark.FontSize != nil {
 			fontSize = *in.Mark.FontSize
+		}
+		if in.Mark.Dx != nil {
+			dx = *in.Mark.Dx
+		}
+		if in.Mark.Dy != nil {
+			dy = *in.Mark.Dy
 		}
 	}
 
@@ -109,6 +119,8 @@ func encodeText(in Inputs) ([]scene.Mark, error) {
 				Baseline: baseline,
 				Angle:    angle,
 				FontSize: fontSize,
+				Dx:       dx,
+				Dy:       dy,
 			},
 		})
 	}

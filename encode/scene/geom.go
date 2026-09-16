@@ -81,8 +81,10 @@ type RuleGeom struct {
 	Dash []float64 `json:"dash,omitempty"`
 }
 
-// ArcGeom is the geometry for arc / pie / donut marks (declared for
-// JSON stability; encoder emits PRISM_WARN_MARK_NOT_IMPLEMENTED in P05).
+// ArcGeom is the geometry for arc / pie / donut marks. PadAngle is
+// the angular gap (radians) the renderer opens between this sector
+// and its neighbours; the encoder carries the mark_def value through
+// unchanged and render/svg's arcPath does the inset (E4-S1).
 type ArcGeom struct {
 	Cx         float64 `json:"cx"`
 	Cy         float64 `json:"cy"`
@@ -102,6 +104,15 @@ type TextGeom struct {
 	Baseline TextBaseline `json:"baseline,omitempty"`
 	Angle    float64      `json:"angle,omitempty"`
 	FontSize float64      `json:"font_size,omitempty"`
+	// Dx and Dy offset the glyph from its anchor point
+	// (spec.MarkDef.dx / dy, E4-S1). They are applied *after* Angle,
+	// in the rotated frame — the renderer emits them as the SVG
+	// `dx` / `dy` presentation attributes on <text>, which the
+	// element's own rotate() transform has already rotated. That
+	// matches Vega's text mark, whose transform is
+	// translate(x,y) rotate(a) translate(dx,dy).
+	Dx float64 `json:"dx,omitempty"`
+	Dy float64 `json:"dy,omitempty"`
 }
 
 // PathGeom is the SVG-passthrough escape hatch for shapes Prism does

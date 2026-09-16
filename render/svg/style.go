@@ -3,6 +3,7 @@ package svg
 import (
 	"fmt"
 	"sort"
+	"strconv"
 
 	"github.com/frankbardon/prism/encode/scene"
 	"github.com/frankbardon/prism/render"
@@ -83,11 +84,46 @@ func writeStyleAttrs(w *Writer, s scene.Style) {
 	if s.StrokeWidth > 0 {
 		w.AttrFloat("stroke-width", s.StrokeWidth)
 	}
+	// fill-opacity / stroke-opacity (E4-S1) are per-paint alphas that
+	// compose multiplicatively with the element-level opacity below —
+	// SVG's own compositing rule, and the same one Vega's canvas
+	// renderer implements as `alpha = opacity * (fillOpacity ?? 1)`.
+	// Emitting all three independently is therefore the whole
+	// implementation; neither overrides the other. Unlike Opacity
+	// (whose float64 zero has always meant "unset" in this IR) these
+	// are pointer-typed, so an explicit 0 emits a fully transparent
+	// paint rather than being swallowed.
+	if s.FillOpacity != nil {
+		w.AttrFloat("fill-opacity", *s.FillOpacity)
+	}
+	if s.StrokeOpacity != nil {
+		w.AttrFloat("stroke-opacity", *s.StrokeOpacity)
+	}
 	if s.Opacity > 0 && s.Opacity < 1 {
 		w.AttrFloat("opacity", s.Opacity)
 	}
 	writeTypographyAttrs(w, s.LineHeight, s.LetterSpacing)
 	writeFilterAttr(w, s.Filter)
+}
+
+// writeFontAttrs emits the font-family / font-weight / font-style
+// presentation attributes carried by a text-bearing mark's Style
+// (E4-S1). Called only from renderTextMark: every other mark element
+// is glyph-free, and the structural axis / legend / title text
+// elements take their typography from the theme's CSS classes rather
+// than from a scene.Style. Each attribute is skipped when unset, so
+// a mark that declares no font properties emits byte-identical
+// output to before this existed.
+func writeFontAttrs(w *Writer, s scene.Style) {
+	if s.FontFamily != "" {
+		w.Attr("font-family", s.FontFamily)
+	}
+	if s.FontWeight > 0 {
+		w.Attr("font-weight", strconv.Itoa(s.FontWeight))
+	}
+	if s.FontStyle != "" {
+		w.Attr("font-style", s.FontStyle)
+	}
 }
 
 // writeTypographyAttrs applies the E2-S2 line-height / letter-spacing

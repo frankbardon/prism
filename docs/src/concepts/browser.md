@@ -341,6 +341,10 @@ the default clear-and-replace path.
 3. A `requestAnimationFrame` loop interpolates numeric attrs
    (`x`/`y`/`width`/`height`/`cx`/`cy`/`r`/`opacity`/...) on the
    **live** SVG, writing target values read from the staged SVG.
+   The tweenable set is per element tag (`NUMERIC_ATTRS` in
+   `prism-animator.mjs`) and includes the mark-def style vocabulary:
+   `fill-opacity` / `stroke-opacity` on filled and stroked marks, and
+   `dx` / `dy` (a text mark's anchor offset) on `<text>`.
    Color attrs (`fill`, `stroke`) interpolate through OKLab via
    `oklab.mjs` for perceptually smooth transitions.
 4. At `t = 1` the previous SVG is removed and the staged SVG becomes
