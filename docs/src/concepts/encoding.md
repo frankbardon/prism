@@ -343,6 +343,75 @@ default (shared) resolve mode they are folded from the children with
 the same first-specified-wins rule as every other `axis` property —
 see [Composition](./composition.md).
 
+### Ticks and gridlines
+
+**Gridline positions are tick positions.** Prism emits one gridline per
+*major* tick, so whatever picks the ticks picks the gridlines with it.
+That coupling is intentional and matches Vega-Lite — there is no
+separate "grid values" knob, and there is not going to be one. Minor
+ticks get a tick mark but never a gridline.
+
+Three keys on the `axis` block choose the tick set:
+
+| Key | Effect |
+|---|---|
+| `tick_count` | How many major ticks to aim for on a continuous axis. A *hint*: the generator rounds to a readable step (1/2/5 × 10ⁿ) and may land either side of the request. Default `5`. `0` removes every tick — and therefore every gridline — while keeping the domain line and title. |
+| `values` | An explicit tick set that replaces the generated one. Pins exactly what it names, and overrides both `tick_count` and `tick_min_step`. |
+| `tick_min_step` | The smallest gap, in domain units, allowed between adjacent *generated* ticks. |
+
+```json
+"y": {
+  "field": "revenue", "type": "quantitative",
+  "scale": {"domain": [0, 80]},
+  "axis": {"values": [0, 25, 50, 75]}
+}
+```
+
+That spec draws four gridlines, at 0, 25, 50 and 75, and nothing else.
+
+`tick_count` applies to the continuous families — `linear`, `log`,
+`pow`, `sqrt` and `time`. On a `log` axis the decades drive the tick
+set, so the count acts as a ceiling: when there are more decades than
+the count allows, every *k*-th decade survives and the mantissa minor
+ticks are dropped. Discrete (`band`, `point`, `ordinal`) axes tick once
+per category and ignore `tick_count`.
+
+`values` works on every family. Pin numbers on a quantitative axis,
+ISO-8601 date strings (or epoch milliseconds) on a temporal one, and
+exact category names on a discrete one:
+
+```json
+"x": {"field": "month", "type": "temporal", "axis": {"values": ["2021-01-01", "2021-07-01"]}}
+"x": {"field": "region", "type": "nominal",  "axis": {"values": ["north", "south"]}}
+```
+
+An entry the axis cannot place — outside the resolved scale domain,
+unreadable for the scale family, or a category the domain does not
+contain — is **dropped**, not drawn off-plot, and reported as
+`PRISM_WARN_AXIS_VALUES_DROPPED` listing every casualty. A dropped
+value takes its gridline with it. If the values are the ones you want,
+widen the domain with [`scale.domain`](#scales).
+
+**Pinning suppresses minor ticks.** Minor ticks are midpoints of a
+generated nice sequence; an author-chosen set has no such sequence to
+halve, and inventing midpoints between arbitrary pinned values would
+add tick marks nobody asked for. So `values` yields exactly the ticks
+it names — all major, all with gridlines. `tick_count` and
+`tick_min_step` leave the generator in charge, so minor ticks are
+recomputed from whatever majors come out.
+
+`tick_min_step` is enforced by asking the generator for *fewer* ticks
+until the gap opens, rather than by thinning the result, so the
+survivors stay round numbers (0/50/100, not 0/40/80). It shapes
+generated ticks only: `values` pins exactly what it names, spacing
+included.
+
+All three keys survive composition. Under the default (shared) resolve
+mode a `layer` or `facet` folds its children's `axis` blocks together
+property by property, first-specified-wins, so `tick_count` set on one
+layer reaches the shared axis — see
+[Composition](composition.md).
+
 ### Legend placement
 
 A legend is built from the `color` channel, and the `legend` block on

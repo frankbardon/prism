@@ -161,6 +161,7 @@ source.
 | [band](scales/band.prism.json) | <img src="scales/band.svg" width="240"> |
 | [point](scales/point.prism.json) | <img src="scales/point.svg" width="240"> |
 | [ordinal](scales/ordinal.prism.json) | <img src="scales/ordinal.svg" width="240"> |
+| [axis_tick_values](scales/axis_tick_values.prism.json) | <img src="scales/axis_tick_values.svg" width="240"> |
 
 ## Axes
 

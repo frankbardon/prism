@@ -153,7 +153,9 @@ func TestPrismSharedAxisOptsFallsBackToDefaults(t *testing.T) {
 	if len(warns) != 0 {
 		t.Errorf("warnings = %+v, want none", warns)
 	}
-	if want := DefaultAxisOpts("day"); opts != want {
+	// AxisOpts carries slice + pointer fields since E3-S1 (Values,
+	// TickCount, Warnings), so it is no longer comparable with ==.
+	if want := DefaultAxisOpts("day"); !reflect.DeepEqual(opts, want) {
 		t.Errorf("opts = %+v, want %+v", opts, want)
 	}
 }

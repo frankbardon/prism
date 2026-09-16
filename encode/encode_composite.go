@@ -289,13 +289,13 @@ func encodeLayerComposite(s *spec.Spec, composite *plan.CompositeDAG, childTable
 		if xScale != nil && xSharedScale == nil && !seenIndependentX && !placement.XHidden {
 			perCellAxes = append(perCellAxes, BuildAxisWithOpts(
 				xScale, scene.ChannelX, placement.X, layout.Plot,
-				axisOptsFor(childEnc.X)))
+				axisOptsFor(childEnc.X).withWarnings(&warnings)))
 			seenIndependentX = true
 		}
 		if yScale != nil && ySharedScale == nil && !seenIndependentY && !placement.YHidden {
 			perCellAxes = append(perCellAxes, BuildAxisWithOpts(
 				yScale, scene.ChannelY, placement.Y, layout.Plot,
-				axisOptsFor(childEnc.Y)))
+				axisOptsFor(childEnc.Y).withWarnings(&warnings)))
 			seenIndependentY = true
 		}
 
@@ -423,14 +423,14 @@ func encodeLayerComposite(s *spec.Spec, composite *plan.CompositeDAG, childTable
 		opts, axWarn := sharedAxisOpts(scene.ChannelX,
 			sharedAxisBlocksFrom(scene.ChannelX, childEncodings), xSharedTitle)
 		warnings = append(warnings, axWarn...)
-		ax := BuildAxisWithOpts(xSharedScale, scene.ChannelX, placement.X, layout.Plot, opts)
+		ax := BuildAxisWithOpts(xSharedScale, scene.ChannelX, placement.X, layout.Plot, opts.withWarnings(&warnings))
 		doc.Grid.Shared.X = &ax
 	}
 	if ySharedScale != nil && !placement.YHidden && resolution[scene.ChannelY].Axis == encresolve.ModeShared {
 		opts, axWarn := sharedAxisOpts(scene.ChannelY,
 			sharedAxisBlocksFrom(scene.ChannelY, childEncodings), ySharedTitle)
 		warnings = append(warnings, axWarn...)
-		ax := BuildAxisWithOpts(ySharedScale, scene.ChannelY, placement.Y, layout.Plot, opts)
+		ax := BuildAxisWithOpts(ySharedScale, scene.ChannelY, placement.Y, layout.Plot, opts.withWarnings(&warnings))
 		doc.Grid.Shared.Y = &ax
 	}
 	doc.Warnings = warnings

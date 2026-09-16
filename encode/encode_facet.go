@@ -242,7 +242,7 @@ func encodeFacetComposite(s *spec.Spec, composite *plan.CompositeDAG, childTable
 			facetFieldFromChildSpec(child.Spec, scene.ChannelX))
 		warnings = append(warnings, axWarn...)
 		ax := BuildAxisWithOpts(xShared, scene.ChannelX, placement.X,
-			facetAnchorPlot(cells, placement.X == scene.AxisPositionTop), opts)
+			facetAnchorPlot(cells, placement.X == scene.AxisPositionTop), opts.withWarnings(&warnings))
 		doc.Grid.Shared.X = &ax
 	}
 	if yShared != nil && len(cells) > 0 && !placement.YHidden {
@@ -251,7 +251,7 @@ func encodeFacetComposite(s *spec.Spec, composite *plan.CompositeDAG, childTable
 			facetFieldFromChildSpec(child.Spec, scene.ChannelY))
 		warnings = append(warnings, axWarn...)
 		ax := BuildAxisWithOpts(yShared, scene.ChannelY, placement.Y,
-			facetAnchorPlot(cells, placement.Y != scene.AxisPositionRight), opts)
+			facetAnchorPlot(cells, placement.Y != scene.AxisPositionRight), opts.withWarnings(&warnings))
 		doc.Grid.Shared.Y = &ax
 	}
 	doc.Warnings = warnings

@@ -47,7 +47,65 @@ type AxisOpts struct {
 	// Zindex draws the axis behind the marks at 0 (the default) and in
 	// front of them at any positive value.
 	Zindex int
+
+	// TickCount is the author's `axis.tick_count`: how many major
+	// ticks the continuous generators should aim for. Nil means the
+	// spec said nothing, so DefaultTickCount applies; an explicit 0
+	// means "no ticks" (and therefore no grid lines). It is a hint,
+	// not a guarantee — the nice-tick generator rounds to a readable
+	// step and may land either side of the request.
+	TickCount *int
+
+	// Values is the author's `axis.values`: an explicit tick set that
+	// replaces the generated one outright, overriding both TickCount
+	// and TickMinStep. Entries the axis cannot place are dropped with
+	// scene.WarnAxisValuesDropped rather than drawn off-plot.
+	Values []any
+
+	// TickMinStep is the author's `axis.tick_min_step`: the smallest
+	// gap, in domain units, allowed between adjacent generated ticks.
+	// Zero means unset. It only shapes *generated* ticks — Values
+	// pins exactly what it names.
+	TickMinStep float64
+
+	// Warnings is an optional sink for the warnings the axis builder
+	// raises (today: dropped `axis.values` entries). BuildAxisWithOpts
+	// cannot return warnings without breaking its pinned five-argument
+	// shape, which encode/axis_call_sites_test.go gates, so callers
+	// that collect warnings wire their slice in via withWarnings.
+	Warnings *[]scene.Warning
 }
+
+// withWarnings returns a copy of opts with sink wired as its warning
+// destination. Call sites read `axisOptsFor(enc.X).withWarnings(&warnings)`.
+func (o AxisOpts) withWarnings(sink *[]scene.Warning) AxisOpts {
+	o.Warnings = sink
+	return o
+}
+
+// warn appends w to the opts' warning sink, if one is wired.
+func (o AxisOpts) warn(w scene.Warning) {
+	if o.Warnings == nil {
+		return
+	}
+	*o.Warnings = append(*o.Warnings, w)
+}
+
+// tickCount returns the effective tick-count hint: the author's
+// `axis.tick_count` when set, DefaultTickCount otherwise. A negative
+// request is clamped to 0 ("no ticks").
+func (o AxisOpts) tickCount() int {
+	if o.TickCount == nil {
+		return DefaultTickCount
+	}
+	if *o.TickCount < 0 {
+		return 0
+	}
+	return *o.TickCount
+}
+
+// pinned reports whether the author pinned an explicit tick set.
+func (o AxisOpts) pinned() bool { return len(o.Values) > 0 }
 
 // DefaultAxisOpts returns the P06 defaults.
 func DefaultAxisOpts(title string) AxisOpts {
@@ -89,12 +147,20 @@ func BuildAxisWithOpts(scale Scale, channel scene.Channel, position scene.AxisPo
 
 	switch s := scale.(type) {
 	case *LinearScale:
-		ticks := NiceTicks(s.DomainMin, s.DomainMax, 5)
+		var ticks []float64
+		if opts.pinned() {
+			ticks = pinnedNumericTicks(opts, channel, s.DomainMin, s.DomainMax, toFloatValue)
+		} else {
+			ticks = generatedLinearTicks(s.DomainMin, s.DomainMax, opts)
+		}
 		labelled, err := TicksWithLabels(ticks, s, opts.Format)
 		if err == nil {
 			axis.Ticks = labelled
 		}
-		if opts.MinorTicks {
+		// Minor ticks are midpoints of a *generated* nice sequence.
+		// A pinned tick set has no such sequence to halve, so pinning
+		// suppresses them (see docs/src/concepts/encoding.md).
+		if opts.MinorTicks && !opts.pinned() {
 			axis.Ticks = injectLinearMinorTicks(axis.Ticks, s)
 		}
 		axis.Scale = scene.ScaleSpec{
@@ -103,14 +169,23 @@ func BuildAxisWithOpts(scale Scale, channel scene.Channel, position scene.AxisPo
 			Range:  [2]float64{s.RangeMin, s.RangeMax},
 		}
 	case *TimeScale:
-		axis.Ticks = TimeTicks(s, 5)
+		if opts.pinned() {
+			axis.Ticks = pinnedTimeTicks(s, opts, channel)
+		} else if count := opts.tickCount(); count > 0 {
+			axis.Ticks = filterTickMinStep(TimeTicks(s, count), opts.TickMinStep)
+		}
 		axis.Scale = scene.ScaleSpec{
 			Type:   scene.ScaleTime,
 			Domain: []any{s.Linear.DomainMin, s.Linear.DomainMax},
 			Range:  [2]float64{s.Linear.RangeMin, s.Linear.RangeMax},
 		}
 	case *LogScale:
-		axis.Ticks = LogTicks(s)
+		if opts.pinned() {
+			axis.Ticks = pinnedScaleTicks(s, opts, channel,
+				s.DomainMin, s.DomainMax, toFloatValue, formatLogTick)
+		} else if count := opts.tickCount(); count > 0 {
+			axis.Ticks = filterTickMinStep(thinLogTicks(LogTicks(s), count), opts.TickMinStep)
+		}
 		axis.Scale = scene.ScaleSpec{
 			Type:   scene.ScaleLog,
 			Domain: []any{s.DomainMin, s.DomainMax},
@@ -118,7 +193,12 @@ func BuildAxisWithOpts(scale Scale, channel scene.Channel, position scene.AxisPo
 			Base:   s.Base,
 		}
 	case *PowScale:
-		axis.Ticks = PowTicks(s, 5)
+		if opts.pinned() {
+			axis.Ticks = pinnedScaleTicks(s, opts, channel,
+				s.DomainMin, s.DomainMax, toFloatValue, powTickLabel(opts.Format))
+		} else if count := opts.tickCount(); count > 0 {
+			axis.Ticks = filterTickMinStep(PowTicks(s, count), opts.TickMinStep)
+		}
 		axis.Scale = scene.ScaleSpec{
 			Type:   scene.ScalePow,
 			Domain: []any{s.DomainMin, s.DomainMax},
@@ -126,7 +206,12 @@ func BuildAxisWithOpts(scale Scale, channel scene.Channel, position scene.AxisPo
 			Exp:    s.Exp,
 		}
 	case *SqrtScale:
-		axis.Ticks = SqrtTicks(s, 5)
+		if opts.pinned() {
+			axis.Ticks = pinnedScaleTicks(s, opts, channel,
+				s.Inner.DomainMin, s.Inner.DomainMax, toFloatValue, powTickLabel(opts.Format))
+		} else if count := opts.tickCount(); count > 0 {
+			axis.Ticks = filterTickMinStep(SqrtTicks(s, count), opts.TickMinStep)
+		}
 		axis.Scale = scene.ScaleSpec{
 			Type:   scene.ScaleSqrt,
 			Domain: []any{s.Inner.DomainMin, s.Inner.DomainMax},
@@ -134,7 +219,7 @@ func BuildAxisWithOpts(scale Scale, channel scene.Channel, position scene.AxisPo
 			Exp:    0.5,
 		}
 	case *BandScale:
-		axis.Ticks = BandTicks(s)
+		axis.Ticks = pinnedCategoryTicks(BandTicks(s), opts, channel)
 		dom := make([]any, len(s.Categories))
 		for i, c := range s.Categories {
 			dom[i] = c
@@ -154,7 +239,7 @@ func BuildAxisWithOpts(scale Scale, channel scene.Channel, position scene.AxisPo
 			}
 			ticks = append(ticks, scene.Tick{Value: c, Pixel: pix, Label: c})
 		}
-		axis.Ticks = ticks
+		axis.Ticks = pinnedCategoryTicks(ticks, opts, channel)
 		dom := make([]any, len(s.Categories))
 		for i, c := range s.Categories {
 			dom[i] = c
@@ -169,7 +254,7 @@ func BuildAxisWithOpts(scale Scale, channel scene.Channel, position scene.AxisPo
 		for i, c := range s.Categories {
 			ticks[i] = scene.Tick{Value: c, Pixel: s.Positions[i], Label: c}
 		}
-		axis.Ticks = ticks
+		axis.Ticks = pinnedCategoryTicks(ticks, opts, channel)
 		dom := make([]any, len(s.Categories))
 		for i, c := range s.Categories {
 			dom[i] = c

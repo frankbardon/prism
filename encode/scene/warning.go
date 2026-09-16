@@ -24,6 +24,15 @@ const (
 	// position axis. The first child to specify the property wins; the
 	// later value is ignored and reported rather than silently dropped.
 	WarnAxisConfigConflict = "PRISM_WARN_AXIS_CONFIG_CONFLICT"
+	// WarnAxisValuesDropped fires when `axis.values` pins tick values
+	// the axis cannot place: an entry outside the resolved scale
+	// domain, an entry the scale family cannot read (a string on a
+	// quantitative axis, an unparseable date on a temporal one), or a
+	// category the discrete domain does not contain. The surviving
+	// entries still become ticks — and, since grid lines follow the
+	// tick set, grid lines. Details carry the dropped entries plus the
+	// domain they were measured against.
+	WarnAxisValuesDropped = "PRISM_WARN_AXIS_VALUES_DROPPED"
 	// WarnTableCellUnparseable (E1) fires when a table column carries
 	// a sub-mark (e.g. "sparkline") but a given row's raw field value
 	// could not be parsed as a numeric series — the cell renders with
