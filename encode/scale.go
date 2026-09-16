@@ -139,6 +139,27 @@ type ScaleOpts struct {
 	// NiceCount is the tick-count hint used when rounding. Zero means
 	// defaultNiceCount, matching the axis builder's tick count.
 	NiceCount int
+
+	// Scheme is `scale.scheme`: a named color scheme from the global
+	// catalogue or the theme's own registry. Read by the palette
+	// cascade (ResolveCategoricalPaletteWithOpts and its sequential
+	// twin), never by the numeric scale resolvers.
+	Scheme string
+
+	// Range is `scale.range` in its inline-color-list form, lifted
+	// only when every entry is a string. It outranks Scheme and the
+	// theme's Range slots, and is honoured on **color channels
+	// only** — on a position channel it is rejected at validate with
+	// PRISM_SPEC_044, because a range that disagrees with the plot
+	// rect encode/layout.go computes would desynchronise axes,
+	// gridlines and marks.
+	Range []string
+
+	// Interpolate is `scale.interpolate`: the colorspace a
+	// continuous ramp is traversed in — "rgb" (default), "hsl" or
+	// "lab". Applied once, at encode time, by resampling the ramp
+	// (see ResampleRamp) so nothing downstream needs colorspace math.
+	Interpolate string
 }
 
 // ScaleOptsFromSpec lifts a spec scale block into ScaleOpts. A nil
@@ -167,7 +188,31 @@ func ScaleOptsFromSpec(sc *spec.Scale) ScaleOpts {
 	if dom, ok := sc.Domain.([]any); ok {
 		opts.Domain = dom
 	}
+	opts.Scheme = sc.Scheme
+	opts.Range = colorRangeList(sc.Range)
+	opts.Interpolate = sc.Interpolate
 	return opts
+}
+
+// colorRangeList lifts `scale.range` into the inline color list the
+// palette cascade consumes. The wire type is `any` because Vega-Lite
+// also allows a string (a named range reference) and numeric arrays
+// (size / opacity ranges); Prism honours neither, so anything that is
+// not a list of strings reads as "no explicit range".
+func colorRangeList(v any) []string {
+	items, ok := v.([]any)
+	if !ok || len(items) == 0 {
+		return nil
+	}
+	out := make([]string, 0, len(items))
+	for _, it := range items {
+		s, ok := it.(string)
+		if !ok {
+			return nil
+		}
+		out = append(out, s)
+	}
+	return out
 }
 
 // zeroEnabled reports whether zero-forcing runs, given the per-family

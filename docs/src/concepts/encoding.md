@@ -226,6 +226,66 @@ zero, so `zero` is ignored there — including an explicit `zero: true`.
 compared with pre-E2-S1 Prism: an extent of 3..97 now resolves to
 0..100 rather than 0..97. Set `{"nice": false}` to keep the raw extent.
 
+### Choosing the colors — `range`, `scheme`, `interpolate`
+
+`scale.range` is an inline list of colors: the alternative to naming a
+`scheme`. It is the **top** of the palette cascade, so it beats both
+`scheme` and whatever the active theme's
+[range slots](./themes.md#color-schemes) supply:
+
+```json
+"color": {
+  "field": "origin", "type": "nominal",
+  "scale": {"range": ["#4c78a8", "#f58518", "#54a24b"]}
+}
+```
+
+Colors are `#rrggbb` or `#rrggbbaa`. An entry Prism cannot parse is
+dropped and the rest still win; a range whose every entry is
+unparseable falls through to the next tier rather than blanking the
+chart. On a discrete color channel the list is indexed positionally —
+the i-th category takes the (i mod n)-th color — which is what the
+symbol legend's swatches show. On a quantitative color channel the
+list is the ramp's control points, interpolated between.
+
+**`range` is honoured on color channels only.** On a position channel
+(`x`, `y`, `x2`, `y2`, `theta`, `radius`) it is rejected at validate
+with `PRISM_SPEC_045`, not silently ignored. A position scale's range
+is the plot rect Prism computes, and the axis, the gridlines and every
+mark all measure against that same rect — a spec-supplied range would
+move the marks without moving the chrome, producing a chart whose axes
+disagree with the data they label. Bound the axis with `domain` /
+`zero` / `nice`, and size the rect with `width` / `height` or the band
+paddings. Vega-Lite's non-color ranges (`size`, `opacity`, a named
+range reference string) are not implemented; those forms read as "no
+explicit range" and fall through to the rest of the cascade.
+
+`scale.interpolate` picks the colorspace a **continuous** ramp is
+traversed in:
+
+| Value | Effect |
+|---|---|
+| `rgb` | Default. Blends the sRGB components directly. |
+| `hsl` | Blends hue along the shorter arc, keeping saturation up where sRGB would pass through grey. |
+| `lab` | Blends in CIELAB, which is roughly perceptually uniform, so the ramp's steps read as evenly spaced. |
+
+Vega-Lite's `hcl` is **not** supported — the schema rejects it.
+
+```json
+"color": {
+  "field": "density", "type": "quantitative",
+  "scale": {"scheme": "viridis", "interpolate": "lab"}
+}
+```
+
+The interpolation happens once, at encode time: Prism resamples the
+ramp into evenly spaced sRGB stops that already trace the requested
+space's curve. Everything downstream — the SVG renderer, the Scene
+IR's gradient stops, the browser web component — only ever blends
+neighbouring stops linearly, so no renderer carries colorspace math of
+its own and every backend agrees. `interpolate` has no effect on a
+discrete palette, which is indexed rather than traversed.
+
 ## Axes & legends
 
 Both are auto-generated based on the encoded channels but can be

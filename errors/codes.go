@@ -964,6 +964,17 @@ var Codes = map[string]CodeMetadata{
 		},
 		SeeAlso: []string{"PRISM_SPEC_003", "PRISM_SPEC_042"},
 	},
+	"PRISM_SPEC_045": {
+		Code:    "PRISM_SPEC_045",
+		Message: `Channel "{{.Channel}}" declares scale.range, which Prism honours on color channels only.`,
+		Fixups: []string{
+			`A position scale's range is the plot rect Prism computes, not a spec-supplied span: the axis, the gridlines and every mark measure against that same rect, so an author-chosen range would move the marks without moving the chrome and the chart would render with axes that disagree with the data they label.`,
+			`To change what the axis covers, bound the domain instead: ` + "`{\"scale\": {\"domain\": [0, 100]}}`" + `, or shape the data extent with ` + "`zero`" + ` / ` + "`nice`" + `.`,
+			`To change the pixel span, size the chart — ` + "`width`" + ` / ` + "`height`" + ` on the spec — or adjust ` + "`scale.padding`" + ` / ` + "`padding_inner`" + ` / ` + "`padding_outer`" + ` on a band or point scale.`,
+			`On a color channel ` + "`range`" + ` is supported and takes an inline color list, e.g. ` + "`{\"color\": {\"field\": \"origin\", \"type\": \"nominal\", \"scale\": {\"range\": [\"#4c78a8\", \"#f58518\", \"#54a24b\"]}}}`" + `.`,
+		},
+		SeeAlso: []string{"PRISM_SPEC_041", "PRISM_SPEC_028"},
+	},
 	"PRISM_WARN_NETWORK_CYCLE": {
 		Code:    "PRISM_WARN_NETWORK_CYCLE",
 		Message: `network input graph contains a cycle; force layout may produce a visually messy result.`,

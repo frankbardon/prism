@@ -22,10 +22,10 @@
         },
         "range": {
           "oneOf": [
-            {"type": "array", "description": "Explicit range values."},
+            {"type": "array", "description": "Explicit range values. Honoured as an inline color list on a color channel; declaring it on a position channel is rejected with PRISM_SPEC_045."},
             {"type": "string", "minLength": 1, "description": "Named scheme or range reference (e.g. \"viridis\")."}
           ],
-          "description": "Range of the scale."
+          "description": "Range of the scale. On a color channel an inline list of colors — the alternative to scheme, outranking both scheme and the theme's range slots. Position channels take their range from the computed plot rect and reject an explicit range (PRISM_SPEC_045)."
         },
         "scheme":   {"type": "string", "description": "Categorical or sequential color scheme name."},
         "padding":  {"type": "number", "minimum": 0, "description": "Inner padding fraction for band/point scales."},
@@ -39,7 +39,11 @@
         "zero":     {"type": "boolean", "description": "Include zero in the domain. Defaults to true for linear/pow/sqrt; ignored on log (a log domain cannot contain zero) and on time."},
         "reverse":  {"type": "boolean", "description": "Reverse the range."},
         "round":    {"type": "boolean", "description": "Round output values to integers."},
-        "interpolate": {"type": "string", "description": "Range interpolation method (e.g. \"rgb\", \"hcl\")."}
+        "interpolate": {
+          "type": "string",
+          "enum": ["rgb", "hsl", "lab"],
+          "description": "Colorspace a continuous color ramp is traversed in. \"rgb\" (default) blends sRGB components directly; \"hsl\" blends hue along the shorter arc; \"lab\" blends in CIELAB, which is roughly perceptually uniform. Vega-Lite's \"hcl\" is not supported. Applied at encode time by resampling the ramp, so the emitted gradient stops already carry the space."
+        }
       }
     }
   }
