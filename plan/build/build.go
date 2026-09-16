@@ -832,6 +832,15 @@ func (c *buildCtx) injectEncodingAggregate(tip plan.NodeID, enc *spec.Encoding) 
 		}
 		entries = append(entries, entry{field: d.Field, agg: d.Aggregate})
 	}
+	// The text channel (E4-S4) carries the same field/aggregate pair
+	// on its slimmer struct, so a text mark labelling aggregated
+	// values ({"text": {"aggregate": "mean", "field": "score"}})
+	// routes through the same synthetic GroupAggregateNode — and a
+	// non-aggregated text field joins the groupby alongside the
+	// position channels.
+	if enc.Text != nil && enc.Text.Field != "" {
+		entries = append(entries, entry{field: enc.Text.Field, agg: enc.Text.Aggregate})
+	}
 	// Table columns (E1) carry the same field/aggregate shape via the
 	// embedded ChannelCommon, so a table column declaring an
 	// aggregate triggers the synthetic GroupAggregateNode exactly
@@ -857,6 +866,7 @@ func (c *buildCtx) injectEncodingAggregate(tip plan.NodeID, enc *spec.Encoding) 
 	var groupby []string
 	var aggs []nodes.AggOp
 	seen := map[string]bool{}
+	seenAgg := map[string]bool{}
 	for _, e := range entries {
 		if e.agg == "" {
 			if !seen[e.field] {
@@ -865,6 +875,19 @@ func (c *buildCtx) injectEncodingAggregate(tip plan.NodeID, enc *spec.Encoding) 
 			}
 			continue
 		}
+		// Two channels may name the same aggregate of the same field —
+		// e.g. a text mark labelling its own aggregated y value with
+		// {"y": {"aggregate": "mean", "field": "score"}, "text":
+		// {"aggregate": "mean", "field": "score"}}. Both alias to the
+		// same output column, so emitting the AggOp twice would
+		// declare a schema field the aggregator never materialises
+		// (PRISM_COMPILE_001, "have N columns, schema declares N+1").
+		// Collapse exact duplicates.
+		key := e.agg + "\x00" + e.field
+		if seenAgg[key] {
+			continue
+		}
+		seenAgg[key] = true
 		aggs = append(aggs, nodes.AggOp{Op: e.agg, Field: e.field, As: e.field})
 	}
 	id := c.nextID("enc-ga")

@@ -18,7 +18,7 @@ arcs, etc. Specify via top-level `mark` (shorthand string) or
 | `tick` | Strip plots, ranking dot plots. |
 | `rect` | Heatmap cells, custom rectangular layouts. |
 | `rule` | Reference lines, benchmarks, ranges. |
-| `text` | Inline labels, annotations. |
+| `text` | Inline labels, annotations. Content comes from the `text` channel — see [Text](#text). |
 | `arc` | Primitive for `pie` / `donut` / sankey links. |
 
 ### Composite marks
@@ -84,6 +84,47 @@ series.
   }
 }
 ```
+
+### Text
+
+The `text` mark draws one label per row at the position its `x` / `y`
+channels resolve to. Label **content** comes from the `text` encoding
+channel:
+
+| `encoding.text` | Label content |
+|---|---|
+| `{"field": "label", "type": "nominal"}` | That column's value for the row. |
+| `{"field": "score", "type": "quantitative", "format": ".1f"}` | The column's value through the [d3-format](encoding.md#text-channel) subset — `80.04` renders as `80.0`. |
+| `{"value": "n/a"}` | The literal, repeated on every row (formatted too, when `format` is set). |
+| *omitted* | Fallback: the `y` field's value verbatim (or the `x` field's when `y` is unbound). |
+
+`text.aggregate` is honoured exactly like a position channel's: it
+injects the same synthetic group-aggregate node, and a non-aggregated
+`text` field joins the group-by alongside the other channels. So
+`{"text": {"aggregate": "mean", "field": "score", "type": "quantitative"}}`
+labels each group with its mean.
+
+At least one position channel must be bound. A label-only mark (say
+`x` bound, `y` omitted) is valid — the unbound axis centres the label
+in the plot region rather than erroring.
+
+```json
+{
+  "mark": {"type": "text", "font_size": 12, "baseline": "bottom"},
+  "encoding": {
+    "x": {"field": "brand_id", "type": "nominal"},
+    "y": {"field": "score", "type": "quantitative"},
+    "text": {"field": "score", "type": "quantitative", "format": ".0%"}
+  }
+}
+```
+
+Mark-def fields `align` (`left` / `right`), `baseline` (`top` /
+`bottom`), `angle`, and `font_size` position and orient the label.
+
+Arbitrary free-floating annotations ("no data" callouts not tied to a
+row) are **not** reachable from a spec today — every text mark is
+row-driven.
 
 ### Tree / dendrogram / network
 

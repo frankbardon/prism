@@ -335,6 +335,7 @@ func Encode(s *spec.Spec, tables map[plan.NodeID]*table.Table, tipID plan.NodeID
 		Style:         style,
 		LabelStyle:    defaultMarkStyleAuto(fullTheme, darkTheme, colorReg, "text"),
 		Tooltip:       enc.Tooltip,
+		Text:          enc.Text,
 		KeyField:      keyFieldFromEncoding(enc),
 		ColorRegistry: colorReg,
 	}

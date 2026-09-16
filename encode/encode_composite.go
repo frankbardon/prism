@@ -310,6 +310,7 @@ func encodeLayerComposite(s *spec.Spec, composite *plan.CompositeDAG, childTable
 			Layout:   layout.Plot,
 			Style:    style,
 			Tooltip:  childEnc.Tooltip,
+			Text:     childEnc.Text,
 			KeyField: keyFieldFromEncoding(childEnc),
 		}
 		if lc.child.Spec.Mark != nil {

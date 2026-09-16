@@ -9,7 +9,7 @@ The `encoding` object binds data fields to visual channels.
 | Position | `x`, `y`, `x2`, `y2`, `theta`, `theta2`, `radius`, `radius2` |
 | Color & opacity | `color`, `fill`, `stroke`, `opacity` |
 | Size & shape | `size`, `shape` |
-| Text & order | `text`, `tooltip`, `order` |
+| Text & order | `text` (see [Text channel](#text-channel)), `tooltip`, `order` |
 | Grouping | `detail` — see [Detail channel](#detail-channel) |
 | Facet | `row`, `column` |
 | Sankey | `source`, `target`, `value` |
@@ -100,6 +100,29 @@ Both are auto-generated based on the encoded channels but can be
 overridden per channel. Bundled support: 4 orientations
 (bottom/left/top/right), major + minor ticks, grid toggle, label
 rotation, overlap handling, gradient + symbol legends.
+
+## Text channel
+
+The `text` channel supplies the label content for a `text` mark (and
+the line text for [tooltips](#tooltip-channel), which share the same
+slimmer channel shape: `field`, `type`, `aggregate`, `format`,
+`title`, `value`).
+
+```json
+"text": {"field": "score", "type": "quantitative", "format": ".1f"}
+```
+
+| Key | Effect on a `text` mark |
+|---|---|
+| `field` | The column whose value becomes the label. |
+| `value` | A literal label, repeated on every row. Used when no `field` is set. |
+| `format` | d3-format specifier applied to the label — `.1f` renders `80.04` as `80.0`, `.0%` renders `0.42` as `42%`. Invalid specifiers are rejected at validate time with `PRISM_SPEC_011`. |
+| `aggregate` | Honoured exactly like a position channel's: it injects the same synthetic group-aggregate node, and a non-aggregated `text` field joins the group-by. |
+
+With **no** `text` channel bound, a `text` mark falls back to
+rendering the `y` field's value verbatim (or `x`'s when `y` is
+unbound). See [Marks › Text](marks.md#text) for the mark-side
+positioning rules.
 
 ## Tooltip channel
 

@@ -106,6 +106,12 @@ type Inputs struct {
 	Source  Channel              // sankey source-node field (no scale)
 	Target  Channel              // sankey target-node field (no scale)
 	Value   Channel              // sankey flow-magnitude field (no scale)
+	// Text is the encoding.text binding (E4-S4). Consumed by the text
+	// mark to source its label content — `field` reads a column,
+	// `value` supplies a literal, and `format` runs the result through
+	// encode/format. nil (the default) leaves the text encoder on its
+	// historical y-value fallback.
+	Text *spec.TextChannel
 	// Feature (P18) is the geoshape feature-id binding — the table
 	// column whose values are geodata IDs (USA, US-CA, …).
 	Feature Channel
