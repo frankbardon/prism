@@ -46,6 +46,20 @@ type Legend struct {
 type LegendEntry struct {
 	Label  string     `json:"label"`
 	Swatch SwatchSpec `json:"swatch"`
+	// Ticks are the labelled stops a gradient entry draws alongside
+	// its bar, ordered from the domain minimum to the maximum. Empty
+	// for a solid or symbol swatch, and empty for a gradient whose
+	// legend.tick_count is zero — a renderer then falls back to the
+	// entry's own Label.
+	Ticks []LegendTick `json:"ticks,omitempty"`
+}
+
+// LegendTick is one labelled stop along a gradient legend's bar.
+// Offset is the fraction of the bar's length the label sits at: 0 at
+// the domain minimum, 1 at the maximum.
+type LegendTick struct {
+	Offset float64 `json:"offset"`
+	Label  string  `json:"label"`
 }
 
 // SwatchSpec describes a single legend swatch.

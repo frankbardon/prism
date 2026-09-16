@@ -34,7 +34,7 @@ The `encoding` object binds data fields to visual channels.
 | `aggregate` | Friendly alias: `mean`, `sum`, `count`, `null_count`, `median`, `q1`, `q3`, `min`, `max`, `range`, `stdev`, `variance`, `skewness`, `kurtosis`, `ci0`, `ci1`, `distinct`, `mode`, `frequency`, plus `wmean`, `ratio`, `lift`, `share`. `count`, `distinct`, `mode`, `frequency`, and `null_count` work on any field type; numeric aggregates require a quantitative or temporal field. `frequency` is the scalar companion to `mode` — it returns the modal count (how many times the most frequent value occurs), whereas `mode` returns the value itself. |
 | `scale` | Scale spec (`type`, `domain`, `range`, `scheme`, `padding`, ...). |
 | `axis` | Axis config (`orient`, `title`, `format`, `grid`, `tick_count`, `label_angle`, ...) — see [Axis placement](#axis-placement) — or `null` to [hide the axis](#hiding-an-axis-or-legend). |
-| `legend` | Legend config (`title`, `orient`, `direction`, ...), or `null` to [hide the legend](#hiding-an-axis-or-legend). |
+| `legend` | Legend config — placement (`orient`, `padding`, `offset`; see [Legend placement](#legend-placement)) and content (`title`, `values`, `format`, `tick_count`, `label_limit`; see [Legend content](#legend-content)) — or `null` to [hide the legend](#hiding-an-axis-or-legend). |
 | `format` | d3-format string for label formatting. |
 | `sort` | `"ascending"` / `"descending"` / `"-y"` / `[explicit, order, ...]`. |
 | `stack` | Position channels only. `"zero"` / `"normalize"` / `true` to stack, `null` / `false` to opt out — see [Stacking](#stacking). |
@@ -505,6 +505,56 @@ In a `layer` composite each layer resolves its own legend. Legends
 sharing an anchor stack rather than overlap, and a shared side's
 reservation is the sum (top/bottom) or the widest (left/right) of what
 the stacked legends claim.
+
+### Legend content
+
+The same `legend` block controls what the legend *says*:
+
+| Key | Effect |
+|---|---|
+| `title` | Replaces the title derived from the bound field. `false` suppresses the title entirely — the same string-or-false convention `axis.title` uses. Absent keeps the field name. |
+| `values` | Selects which entries the legend shows, **in the order listed**. Entries matching no category are dropped. |
+| `format` | A d3-format specifier applied to the entry labels (the subset in `encode/format`, the same one `axis.format` and `text.format` use). |
+| `tick_count` | How many labelled stops a gradient legend draws. |
+| `label_limit` | Maximum label width in pixels; longer labels are truncated with an ellipsis. |
+
+```json
+"color": {
+  "field": "region", "type": "nominal",
+  "legend": {
+    "title": "Sales region",
+    "values": ["EMEA", "APAC"],
+    "label_limit": 60
+  }
+}
+```
+
+**`values` never re-colours the legend.** Each surviving entry keeps
+the palette slot of its *original* category position, so a legend
+narrowed to two of six regions still shows those two regions' actual
+mark colours rather than the first two palette entries. The order is
+the author's: listing `["APAC", "EMEA"]` swaps the rows without
+swapping the swatches.
+
+**`format` goes through the real formatter.** `legend.format` is
+parsed by the same `encode/format` d3 subset that
+`PRISM_SPEC_011` validates it against, so `".1%"` renders `12.3%`.
+It applies to gradient stop labels always, and to a symbol label
+whose category reads as a number; a non-numeric category is passed
+through untouched.
+
+**The frame follows the content.** Filtering with `values` shortens
+the box, suppressing the title with `"title": false` drops the title
+band, and `label_limit` sets the width budget (the default is 14
+characters, or 84 px). A side `orient` reserves its margin from those
+same numbers, so the plot never overlaps a resized legend.
+
+`tick_count` applies to gradient legends — the continuous form used by
+a quantitative `color` channel. It defaults to 5 evenly spaced stops
+across the colour domain; `1` labels the minimum alone and `0` leaves
+a bare bar. Setting `values` instead pins the stops outright, dropping
+any value outside the domain.
+
 ### Hiding an axis or legend
 
 > **Two legend-suppression syntaxes exist.** `"legend": null` is the

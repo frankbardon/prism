@@ -3,6 +3,7 @@ package encode
 import (
 	"fmt"
 
+	"github.com/frankbardon/prism/encode/format"
 	"github.com/frankbardon/prism/encode/scene"
 	"github.com/frankbardon/prism/spec"
 	"github.com/frankbardon/prism/table"
@@ -25,6 +26,11 @@ const (
 	// (which must hold what is actually drawn) uses legendRowPitch.
 	legendSymbolRowH = 16.0
 	legendGradientH  = 130.0
+	// legendGradientTickCount is the number of labelled stops a
+	// gradient legend draws when legend.tick_count is unset. It
+	// matches the axis builder's default tick count so a gradient
+	// legend reads at the same density as the axis beside it.
+	legendGradientTickCount = 5
 	// legendRowPitch is the vertical pitch render/svg/legends.go draws
 	// legend rows at, and legendTitleBand the extra height a legend
 	// title claims above the first row (14-px baseline + 4-px gap).
@@ -49,6 +55,10 @@ type LegendInputs struct {
 	Categories []string       // for symbol legends
 	Palette    []*scene.Color // for symbol legends
 	Placement  LegendPlacement
+	// Content is the resolved content half of the channel's legend
+	// block (E3-S3): title override, entry filter, label format and
+	// label limit. The zero value reproduces the defaults.
+	Content LegendContent
 	// Continuous gradient legend (optional, overrides Categories):
 	Gradient *GradientLegend
 }
@@ -119,31 +129,59 @@ func DefaultLegendOffset(pos scene.LegendPosition) float64 {
 	return 0
 }
 
-// LegendBoxSize returns the frame size of a legend box holding
-// entries rows of rowH height with the given interior padding.
-func LegendBoxSize(entries int, rowH, padding float64) (w, h float64) {
-	w = legendSwatchSize + legendInset + legendLabelMaxChars*legendLabelCharW + legendInset + 2*padding
-	h = float64(entries)*rowH + legendInset*2 + 2*padding
+// LegendBox is the measured geometry of one legend box: how many
+// entries it draws, the per-entry row height, the interior padding,
+// the label character budget it is sized against and whether a title
+// sits above the first row.
+//
+// It is the single place a legend's pixel extent is computed — the
+// frame the encoder emits (placeLegendFrame) and the margin band the
+// layout reserves (SideExtent) both go through it, which is what
+// keeps the two in step. E3-S4's `direction` is a field here: laying
+// entries out in a row instead of a column changes Size, and the
+// frame plus the reservation follow automatically.
+type LegendBox struct {
+	Entries int
+	RowH    float64
+	Padding float64
+	// MaxChars is the label character budget. Zero falls back to the
+	// default 14-character budget.
+	MaxChars float64
+	HasTitle bool
+}
+
+// maxChars resolves the character budget, defaulting when unset.
+func (b LegendBox) maxChars() float64 {
+	if b.MaxChars > 0 {
+		return b.MaxChars
+	}
+	return legendLabelMaxChars
+}
+
+// Size returns the frame size of the box.
+func (b LegendBox) Size() (w, h float64) {
+	w = legendSwatchSize + legendInset + b.maxChars()*legendLabelCharW + legendInset + 2*b.Padding
+	h = float64(b.Entries)*b.RowH + legendInset*2 + 2*b.Padding
 	return w, h
 }
 
-// LegendSideExtent returns the pixels a side-placed legend claims
-// beyond the plot's chrome: its drawn size across the side plus the
-// offset gap. Corner placements overlay the plot and claim nothing,
-// so they return 0.
+// SideExtent returns the pixels a side-placed legend claims beyond
+// the plot's chrome: its drawn size across the side plus the offset
+// gap. Corner placements overlay the plot and claim nothing, so they
+// return 0.
 //
 // Left / right measure the box width; top / bottom measure what the
 // renderer actually draws (legendRowPitch per entry plus the title
 // band), which is taller than the frame the goldens pin — the
 // reservation has to hold the drawing, not the approximation.
-func LegendSideExtent(pos scene.LegendPosition, entries int, padding, offset float64, hasTitle bool) float64 {
+func (b LegendBox) SideExtent(pos scene.LegendPosition, offset float64) float64 {
 	switch pos {
 	case scene.LegendLeft, scene.LegendRight:
-		w, _ := LegendBoxSize(entries, legendSymbolRowH, padding)
+		w, _ := b.Size()
 		return w + offset
 	case scene.LegendTop, scene.LegendBottom:
-		h := float64(entries)*legendRowPitch + legendInset*2 + 2*padding
-		if hasTitle {
+		h := float64(b.Entries)*legendRowPitch + legendInset*2 + 2*b.Padding
+		if b.HasTitle {
 			h += legendTitleBand
 		}
 		return h + offset
@@ -220,7 +258,15 @@ func legendEntryCount(enc *spec.Encoding, tbl *table.Table) int {
 	if !ok {
 		return 0
 	}
-	return len(distinctStringValues(col))
+	cats := distinctStringValues(col)
+	// Fewer than two categories builds no legend at all, so nothing
+	// is reserved. Above that the count is the *shown* entry count:
+	// legend.values filters entries, and the reserved band has to
+	// match what BuildSymbolLegend will actually draw.
+	if len(cats) < 2 {
+		return 0
+	}
+	return len(ResolveLegendContent(legendSpecOf(enc)).SelectCategories(cats))
 }
 
 // GradientLegend describes a continuous-color legend.
@@ -232,44 +278,66 @@ type GradientLegend struct {
 	LabelFormat string
 }
 
-// BuildSymbolLegend returns one Legend with N solid swatches, one
-// per category. Returns nil when the channel is trivial (<=1
-// category).
+// BuildSymbolLegend returns one Legend with a solid swatch per shown
+// category. Returns nil when the channel is trivial (<=1 category),
+// or when legend.values filters every entry away.
+//
+// legend.values selects and reorders the entries; each surviving
+// entry keeps the palette slot of its *original* category index, so a
+// filtered legend's swatches still match the marks. legend.format
+// then renders each label and legend.label_limit truncates it.
 func BuildSymbolLegend(in LegendInputs, plot scene.Rect) *scene.Legend {
 	if len(in.Categories) < 2 {
+		return nil
+	}
+	shown := in.Content.SelectCategories(in.Categories)
+	if len(shown) == 0 {
 		return nil
 	}
 	pl := in.Placement
 	if pl.Position == "" {
 		pl.Position = scene.LegendTopRight
 	}
-	entries := make([]scene.LegendEntry, len(in.Categories))
-	for i, c := range in.Categories {
+	entries := make([]scene.LegendEntry, len(shown))
+	for i, idx := range shown {
 		var color *scene.Color
 		if len(in.Palette) > 0 {
-			color = in.Palette[i%len(in.Palette)]
+			color = in.Palette[idx%len(in.Palette)]
 		}
 		entries[i] = scene.LegendEntry{
-			Label: c,
+			Label: in.Content.Truncate(in.Content.Label(in.Categories[idx])),
 			Swatch: scene.SwatchSpec{
 				Type:  scene.SwatchSolid,
 				Color: color,
 			},
 		}
 	}
+	title := legendTitle(in.Title, in.Content)
+	box := LegendBox{
+		Entries:  len(entries),
+		RowH:     legendSymbolRowH,
+		Padding:  pl.Padding,
+		MaxChars: in.Content.MaxChars(),
+		HasTitle: title != "",
+	}
 	return &scene.Legend{
 		ID:       fmt.Sprintf("legend-%s", in.Channel),
 		Channel:  in.Channel,
 		Position: pl.Position,
-		Title:    in.Title,
+		Title:    title,
 		Entries:  entries,
 		Padding:  pl.Padding,
-		Frame:    placeLegendFrame(pl, len(entries), legendSymbolRowH, plot),
+		Frame:    placeLegendFrame(pl, box, plot),
 	}
 }
 
 // BuildGradientLegend returns one Legend with a single gradient
-// swatch referencing the supplied Gradient via scene.Defs.
+// swatch referencing the supplied Gradient via scene.Defs, carrying
+// legend.tick_count labelled stops along the bar.
+//
+// The entry's Label stays the "min–max" summary the legend has always
+// carried, so an IR consumer that ignores Ticks still reads something
+// sensible; a renderer that understands Ticks draws those instead.
 func BuildGradientLegend(in LegendInputs, plot scene.Rect) *scene.Legend {
 	if in.Gradient == nil {
 		return nil
@@ -278,8 +346,14 @@ func BuildGradientLegend(in LegendInputs, plot scene.Rect) *scene.Legend {
 	if pl.Position == "" {
 		pl.Position = scene.LegendRight
 	}
-	mnLabel := fmt.Sprintf("%g", in.Gradient.DomainMin)
-	mxLabel := fmt.Sprintf("%g", in.Gradient.DomainMax)
+	content := in.Content
+	if content.Format == nil && in.Gradient.LabelFormat != "" {
+		if sp, err := format.Parse(in.Gradient.LabelFormat); err == nil {
+			content.Format = sp
+		}
+	}
+	mnLabel := content.Truncate(content.Label(in.Gradient.DomainMin))
+	mxLabel := content.Truncate(content.Label(in.Gradient.DomainMax))
 	entries := []scene.LegendEntry{
 		{
 			Label: mnLabel + "–" + mxLabel,
@@ -287,17 +361,82 @@ func BuildGradientLegend(in LegendInputs, plot scene.Rect) *scene.Legend {
 				Type:       scene.SwatchGradient,
 				GradientID: in.Gradient.ID,
 			},
+			Ticks: gradientLegendTicks(in.Gradient, content),
 		},
+	}
+	title := legendTitle(in.Title, in.Content)
+	box := LegendBox{
+		Entries:  1,
+		RowH:     legendGradientH,
+		Padding:  pl.Padding,
+		MaxChars: in.Content.MaxChars(),
+		HasTitle: title != "",
 	}
 	return &scene.Legend{
 		ID:       fmt.Sprintf("legend-%s", in.Channel),
 		Channel:  in.Channel,
 		Position: pl.Position,
-		Title:    in.Title,
+		Title:    title,
 		Entries:  entries,
 		Padding:  pl.Padding,
-		Frame:    placeLegendFrame(pl, 1, legendGradientH, plot),
+		Frame:    placeLegendFrame(pl, box, plot),
 	}
+}
+
+// gradientLegendTicks returns the labelled stops drawn alongside a
+// gradient bar, ordered from the domain minimum to the maximum.
+//
+// legend.values, when given, pins the stops outright (non-numeric and
+// out-of-domain entries are dropped). Otherwise legend.tick_count
+// evenly spaced stops are generated: the default is
+// legendGradientTickCount, a count of 1 labels the minimum alone, and
+// 0 or less labels nothing — which is Vega-Lite's reading of a zero
+// tick count and leaves a bare bar.
+func gradientLegendTicks(g *GradientLegend, c LegendContent) []scene.LegendTick {
+	span := g.DomainMax - g.DomainMin
+	offsetOf := func(v float64) float64 {
+		if span == 0 {
+			return 0
+		}
+		return (v - g.DomainMin) / span
+	}
+	if len(c.Values) > 0 {
+		out := make([]scene.LegendTick, 0, len(c.Values))
+		for _, v := range c.Values {
+			f, ok := legendValueFloat(v)
+			if !ok || f < g.DomainMin || f > g.DomainMax {
+				continue
+			}
+			out = append(out, scene.LegendTick{
+				Offset: offsetOf(f),
+				Label:  c.Truncate(c.Label(f)),
+			})
+		}
+		if len(out) == 0 {
+			return nil
+		}
+		return out
+	}
+	n := legendGradientTickCount
+	if c.TickCount != nil {
+		n = *c.TickCount
+	}
+	if n <= 0 {
+		return nil
+	}
+	out := make([]scene.LegendTick, 0, n)
+	for i := 0; i < n; i++ {
+		frac := 0.0
+		if n > 1 {
+			frac = float64(i) / float64(n-1)
+		}
+		v := g.DomainMin + frac*span
+		out = append(out, scene.LegendTick{
+			Offset: frac,
+			Label:  c.Truncate(c.Label(v)),
+		})
+	}
+	return out
 }
 
 // placeLegendFrame returns the pixel rect for the legend. Corner
@@ -308,8 +447,8 @@ func BuildGradientLegend(in LegendInputs, plot scene.Rect) *scene.Legend {
 // (Reserve), which is what keeps them clear of the axis chrome. With
 // no Reserve supplied a side placement falls back to hugging the plot
 // edge — the pre-E1-S3 geometry.
-func placeLegendFrame(pl LegendPlacement, entries int, rowH float64, plot scene.Rect) scene.Rect {
-	w, h := LegendBoxSize(entries, rowH, pl.Padding)
+func placeLegendFrame(pl LegendPlacement, box LegendBox, plot scene.Rect) scene.Rect {
+	w, h := box.Size()
 	off := pl.Offset
 	switch pl.Position {
 	case scene.LegendTopLeft:

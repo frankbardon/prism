@@ -29,6 +29,11 @@ func renderLegends(w *Writer, legends []scene.Legend, filterName string, theme *
 	w.EndTag("g")
 }
 
+// legendTickBaseline nudges a gradient tick label down from the stop
+// it marks so the text's baseline, not its top, lines up with the
+// gradient bar at that offset.
+const legendTickBaseline = 4.0
+
 func renderLegend(w *Writer, lg scene.Legend, theme *scene.Theme) {
 	w.OpenTag("g")
 	w.Attr("class", "prism-legend prism-legend-"+string(lg.Channel))
@@ -91,14 +96,32 @@ func renderLegend(w *Writer, lg scene.Legend, theme *scene.Theme) {
 			w.EndTag("text")
 		case scene.SwatchGradient:
 			// 12-wide × Frame.H-tall rect filled with the gradient.
+			barH := lg.Frame.H - rowOffset - 16 - 2*pad
 			w.OpenTag("rect")
 			w.Attr("class", "prism-legend-swatch")
 			w.AttrFloat("x", lg.Frame.X+4+pad)
 			w.AttrFloat("y", y)
 			w.AttrFloat("width", 12)
-			w.AttrFloat("height", lg.Frame.H-rowOffset-16-2*pad)
+			w.AttrFloat("height", barH)
 			w.Attr("fill", fmt.Sprintf("url(#%s)", entry.Swatch.GradientID))
 			w.SelfClose()
+			// legend.tick_count labelled stops run down the bar, the
+			// first level with its top and the last with its bottom.
+			// An entry with no ticks falls back to its own summary
+			// label, which is what a gradient legend drew before E3-S3.
+			if len(entry.Ticks) > 0 {
+				for _, tk := range entry.Ticks {
+					w.OpenTag("text")
+					w.Attr("class", "prism-legend-label")
+					w.AttrFloat("x", lg.Frame.X+22+pad)
+					w.AttrFloat("y", y+tk.Offset*barH+legendTickBaseline)
+					writeTypographyAttrs(w, labelLH, labelLS)
+					w.CloseTagOpen()
+					w.Text(tk.Label)
+					w.EndTag("text")
+				}
+				break
+			}
 			w.OpenTag("text")
 			w.Attr("class", "prism-legend-label")
 			w.AttrFloat("x", lg.Frame.X+22+pad)
