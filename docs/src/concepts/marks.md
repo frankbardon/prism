@@ -396,6 +396,23 @@ stroke; set `opacity` when you want the whole mark — fill, stroke and
 all — to fade together. An explicit `0` is honoured (a fully
 transparent paint), unlike an omitted property, which inherits.
 
+### Clipping (`clip`)
+
+`clip` is the one mark-def property that is not a paint at all: it
+forces the **plot-region clip** on (`true`) or off (`false`).
+
+```json
+{"mark": {"type": "line", "clip": true}}
+```
+
+Omit it and the encoder decides: the clip is armed only when a position
+channel pins an explicit `scale.domain`, which is the one way a mark can
+land outside the plot rect. Because the clip bounds a plot rect rather
+than a single mark, a `layer` resolves it once for the whole stack — one
+`clip: true` arms it for every layer, and a `clip: false` otherwise
+disarms it for all of them. See
+[Encoding: rows outside the domain](encoding.md#rows-outside-the-domain--overflow-and-clip).
+
 ### Typography
 
 Applies to `text` marks and to any mark that draws a text component.

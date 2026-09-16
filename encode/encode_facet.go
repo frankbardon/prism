@@ -194,7 +194,7 @@ func encodeFacetComposite(s *spec.Spec, composite *plan.CompositeDAG, childTable
 			for ii, inner := range cellDoc.Grid.Cells {
 				innerScene := inner.Scene
 				offsetScene(&innerScene, dx, dy)
-				innerScene.ID = fmt.Sprintf("scene-r%d-c%d-%d", ri, ci, ii)
+				renameScene(&innerScene, fmt.Sprintf("scene-r%d-c%d-%d", ri, ci, ii))
 
 				// Strip per-cell axes for shared channels (D051).
 				if xShared != nil {

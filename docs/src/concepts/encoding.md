@@ -225,6 +225,53 @@ zero, so `zero` is ignored there — including an explicit `zero: true`.
 compared with pre-E2-S1 Prism: an extent of 3..97 now resolves to
 0..100 rather than 0..97. Set `{"nice": false}` to keep the raw extent.
 
+### Rows outside the domain — overflow and clip
+
+Pinning `domain: [90, 130]` on a column that holds a 150 puts that row
+outside the plot rect. Prism's answer is **overflow with a clip**: the
+row is encoded at its true position, and the plot region clips whatever
+reaches past its edge.
+
+Three things it is not, by design:
+
+- **Not dropped.** The row still produces a mark, so a line stays
+  continuous through it and an aggregate still counts it.
+- **Not clamped.** Pulling the value back to the domain bound is
+  `scale.clamp`'s job. Making it the default would make that key
+  meaningless and would silently misreport the value's magnitude.
+- **Not drawn over the chrome.** Without a clip, a line reaching past
+  the top of the plot would cross the title, and a bar reaching past
+  the left would cross the y-axis labels.
+
+The clip is expressed in the Scene IR, not invented by a renderer: the
+encoder registers the plot rect as a `defs.clips` entry and points
+`scene.clip_ref` at it, and every renderer applies it to the **mark
+container alone**. Axes, gridlines, legends and the title are siblings
+of that container and stay unclipped — including an axis raised above
+the marks with [`axis.zindex`](#axis-components-and-geometry), which is
+emitted outside the container for exactly this reason. Gridlines need no
+clip of their own: they are generated from ticks inside the domain, so
+they can never reach past the plot edge.
+
+**When the clip is armed.** By default, only when a position channel
+(`x`, `y`, `x2`, `y2`) pins an explicit `scale.domain`. That is the one
+way a mark can land outside the plot rect — with a data-derived domain
+the bounds come from the very rows being drawn, so every mark is inside
+by construction, and arming a clip there would only risk shaving a
+stroke or a glyph that legitimately overhangs the edge by a pixel.
+
+**Forcing it either way.** `mark_def.clip` overrides the default:
+
+```json
+"mark": {"type": "line", "clip": true}
+```
+
+`true` always clips, `false` never does. The clip bounds one plot rect
+rather than one mark, so in a `layer` a single `clip: true` arms it for
+every layer and a `clip: false` otherwise disarms it for all of them.
+`concat` / `facet` / `repeat` cells each own a plot rect and decide
+independently.
+
 ### Choosing the colors — `range`, `scheme`, `interpolate`
 
 `scale.range` is an inline list of colors: the alternative to naming a
@@ -381,10 +428,16 @@ margin instead of growing the reservation.
 
 **`zindex` and clipping.** An above-marks axis is emitted as a sibling
 of the mark container, not a child, so it is never subject to the
-plot-region clip path that keeps out-of-domain marks inside the plot
-rect — its labels and title still draw in the margin. Under `layer`
-and `facet` a *shared* axis is emitted after every cell and therefore
-always draws above the marks, whatever its `zindex`.
+[plot-region clip](#rows-outside-the-domain--overflow-and-clip) that
+keeps out-of-domain marks inside the plot rect — its labels and title
+still draw in the margin. Under `layer` and `facet` a *shared* axis is
+emitted after every cell and therefore always draws above the marks,
+whatever its `zindex`. That shared-axis ordering is a known fidelity
+gap, not a clipping one: a shared axis lives outside every cell's mark
+container, so the clip never reaches it either way. Honouring `zindex`
+there would move the shared axes ahead of the cells and restack every
+layered and faceted chart, so it is held for a change of its own, made
+on purpose.
 
 **Truncation is measured with a fixed heuristic.** Prism runs no text
 measurement pass; `label_limit` (like overlap detection) estimates 6 px

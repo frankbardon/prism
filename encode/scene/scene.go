@@ -29,6 +29,17 @@ type Scene struct {
 	Selections  []Selection  `json:"selections,omitempty"`
 	Defs        *Defs        `json:"defs,omitempty"`
 	Animation   *Animation   `json:"animation,omitempty"`
+	// ClipRef (E2-S2) names a Defs.Clips entry bounding the mark
+	// container to Plot. Empty means the marks are unclipped, which is
+	// the default for every scene whose position scales derive their
+	// domain from the data — nothing can fall outside the plot rect
+	// then. The encoder arms it when an author pins `scale.domain` (or
+	// asks for it outright with `mark_def.clip`), so an out-of-domain
+	// row overflows and is cut at the plot edge instead of drawing over
+	// the axes, the legends or the title. Renderers apply it to the
+	// mark container ONLY: axes, legends and the title are siblings of
+	// that container and must stay unclipped.
+	ClipRef string `json:"clip_ref,omitempty"`
 }
 
 // Rect is a pixel-resolved bounding box.

@@ -580,6 +580,9 @@ func Encode(s *spec.Spec, tables map[plan.NodeID]*table.Table, tipID plan.NodeID
 			Y:       20,
 		}
 	}
+	// Plot-region clip (E2-S2). Armed only when a position scale pins
+	// an explicit domain, or `mark_def.clip` asks for it outright.
+	armPlotClip(&sceneObj, wantsPlotClip(s))
 	finalizeAutoDarkCSS(sceneTheme, fullTheme, colorReg, isThemeOwner)
 	doc := scene.NewDoc()
 	doc.Theme = sceneTheme
@@ -639,6 +642,7 @@ func buildSceneDoc(
 			Y:       20,
 		}
 	}
+	armPlotClip(&sceneObj, wantsPlotClip(s))
 	doc := scene.NewDoc()
 	doc.Theme = sceneTheme
 	doc.Grid = scene.SceneGrid{
