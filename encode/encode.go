@@ -335,12 +335,12 @@ func Encode(s *spec.Spec, tables map[plan.NodeID]*table.Table, tipID plan.NodeID
 		colorChannel = &marks.ColorChannel{
 			Field:             enc.Color.Field,
 			Categories:        cats,
-			Palette:           ResolveCategoricalPalette(fullTheme, schemeNameOf(enc.Color)),
-			SequentialPalette: ResolveSequentialPalette(fullTheme, schemeNameOf(enc.Color)),
+			Palette:           ResolveCategoricalPaletteWithOpts(fullTheme, colorScaleOpts(enc.Color)),
+			SequentialPalette: ResolveSequentialPaletteWithOpts(fullTheme, colorScaleOpts(enc.Color)),
 		}
 		if darkTheme != nil {
-			colorChannel.DarkPalette = ResolveCategoricalPalette(darkTheme, schemeNameOf(enc.Color))
-			colorChannel.DarkSequentialPalette = ResolveSequentialPalette(darkTheme, schemeNameOf(enc.Color))
+			colorChannel.DarkPalette = ResolveCategoricalPaletteWithOpts(darkTheme, colorScaleOpts(enc.Color))
+			colorChannel.DarkSequentialPalette = ResolveSequentialPaletteWithOpts(darkTheme, colorScaleOpts(enc.Color))
 		}
 	}
 
@@ -1215,13 +1215,15 @@ func joinNodeIDs(tables map[plan.NodeID]*table.Table) string {
 	return out
 }
 
-// schemeNameOf returns the scheme name from a color-channel
-// scale block, or "" when absent.
-func schemeNameOf(ch *spec.MarkChannel) string {
-	if ch == nil || ch.Scale == nil {
-		return ""
+// colorScaleOpts lifts a color channel's scale block into the
+// ScaleOpts the palette cascade reads (scheme, inline range,
+// interpolation space). A nil channel or a channel with no scale
+// block yields the zero value, which reads as "all defaults".
+func colorScaleOpts(ch *spec.MarkChannel) ScaleOpts {
+	if ch == nil {
+		return ScaleOpts{}
 	}
-	return ch.Scale.Scheme
+	return ScaleOptsFromSpec(ch.Scale)
 }
 
 // resolveTheme picks the active theme. Precedence:

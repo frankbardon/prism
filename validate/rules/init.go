@@ -42,6 +42,7 @@ func init() {
 	validate.RegisterDefault(func() validate.SemanticRule { return FilterPredicate{} })
 	validate.RegisterDefault(func() validate.SemanticRule { return TableColumns{} })
 	validate.RegisterDefault(func() validate.SemanticRule { return ScaleDomain{} })
+	validate.RegisterDefault(func() validate.SemanticRule { return ScaleRangePosition{} })
 	validate.RegisterDefault(func() validate.SemanticRule { return SpanChannelSupported{} })
 	validate.RegisterDefault(func() validate.SemanticRule { return SpanChannelTypeMatch{} })
 }

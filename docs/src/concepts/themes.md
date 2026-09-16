@@ -578,6 +578,44 @@ peer-reviewed sources (Wong 2011, Tol 2018). The default
 `colorblind` theme uses `okabe_ito` for categorical channels and
 `cividis` for continuous channels.
 
+### Where a scheme sits in the cascade
+
+A named scheme is the **second** tier of palette resolution, not the
+first. The full order, highest first:
+
+1. `scale.range` on the channel — an inline color list supplied by the
+   spec author. Nothing overrides it.
+2. `scale.scheme` on the channel — a name from the catalogue above, or
+   from the theme's own `schemes` registry (which shadows the global
+   catalogue for that name).
+3. The theme's `range` slot for the role — `range.category` for a
+   discrete channel, `range.ramp` then `range.heatmap` for a
+   continuous one.
+4. The theme's legacy flat `color_scheme_categorical` /
+   `color_scheme_sequential` field.
+5. Prism's built-in default palette (a category10 derivative), or a
+   9-stop `blues` ramp on the continuous side.
+
+An unknown scheme name degrades quietly to the next tier so a
+malformed spec still renders; validate reports it separately as
+`PRISM_SPEC_028`. An inline `range` is the one tier that does not
+degrade as a unit — unparseable entries are dropped and the rest still
+win, and only a wholly unparseable range falls through.
+
+### Traversing a ramp — `scale.interpolate`
+
+A continuous ramp — whether it came from a scheme above or from an
+inline `scale.range` — is traversed in the colorspace
+`scale.interpolate` names: `rgb` (default), `hsl`, or `lab`.
+Vega-Lite's `hcl` is not supported. `lab` is the one to reach for when
+a ramp's steps need to read as evenly spaced rather than merely be
+evenly spaced in sRGB.
+
+Prism resamples the ramp at encode time, so the stops that reach a
+renderer already trace the chosen space's curve. See
+[Choosing the colors](./encoding.md#choosing-the-colors--range-scheme-interpolate)
+in the encoding reference for the full treatment.
+
 ## Sparse override at spec level
 
 ```json

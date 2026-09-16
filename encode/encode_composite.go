@@ -299,7 +299,7 @@ func encodeLayerComposite(s *spec.Spec, composite *plan.CompositeDAG, childTable
 			colorChannel = &marks.ColorChannel{
 				Field:      childEnc.Color.Field,
 				Categories: cats,
-				Palette:    ResolveCategoricalPalette(fullTheme, schemeNameOf(childEnc.Color)),
+				Palette:    ResolveCategoricalPaletteWithOpts(fullTheme, colorScaleOpts(childEnc.Color)),
 			}
 			if len(cats) > 1 && legendPls[lc.idx].enabled && !legendHidden(childEnc.Color) {
 				legend := BuildSymbolLegend(LegendInputs{
