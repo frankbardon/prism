@@ -495,6 +495,17 @@ var Codes = map[string]CodeMetadata{
 		SeeAlso: []string{"PRISM_COMPILE_001"},
 	},
 
+	"PRISM_WARN_AXIS_CONFIG_CONFLICT": {
+		Code:    "PRISM_WARN_AXIS_CONFIG_CONFLICT",
+		Message: `Shared {{.Channel}} axis: {{.Winner}} already set {{.Property}}; {{.Loser}} disagrees and is ignored.`,
+		Fixups: []string{
+			`Set "{{.Property}}" identically on every child that specifies it, or on only one child.`,
+			`Move the axis block to the child whose value should win — the first child that specifies a property wins.`,
+			`Opt the channel out of sharing with "resolve": {"scale": {"{{.Channel}}": "independent"}} so each child keeps its own axis.`,
+		},
+		SeeAlso: []string{"PRISM_WARN_LAYER_SKIPPED"},
+	},
+
 	// --- P09 facet / repeat codes.
 	"PRISM_SPEC_012": {
 		Code:    "PRISM_SPEC_012",

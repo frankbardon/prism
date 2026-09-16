@@ -134,6 +134,73 @@ changes whether scales/axes are shared or independent across cells.
 Mixing incompatible types on a shared scale (quantitative + nominal)
 raises `PRISM_PLAN_005`.
 
+## Axis config under shared vs independent scales
+
+A channel's `axis` block (`grid`, `title`, `label_angle`,
+`label_overlap`, `format`, …) is honoured under **both** resolve modes —
+which one is in force only changes *whose* block is read.
+
+| Resolve mode | Where the axis config comes from |
+|---|---|
+| `independent` | Each child renders its own axis from its own `axis` block. Nothing is merged. |
+| `shared` (the default for `x`/`y`) | One axis is drawn for all children, so the children's `axis` blocks are folded into one. |
+
+### The shared-axis rule: first specified wins, per property
+
+A shared axis is drawn once but may be described by N children that
+disagree. Prism resolves this **property by property, in child
+declaration order**:
+
+- A property is taken from the **first** child that specifies it. A
+  child that omits the property does not participate — so if only
+  layer 1 sets `grid`, layer 1's value is used even though layer 0 came
+  first.
+- A later child specifying the **same** property with the **same** value
+  is a no-op.
+- A later child specifying the same property with a **different** value
+  is ignored, and the encoder emits
+  `PRISM_WARN_AXIS_CONFIG_CONFLICT` naming the channel, the property,
+  the winning child, and the ignored value. A conflict is never
+  silently resolved.
+
+This matches Vega-Lite, which also resolves a shared axis from the
+first child that specifies it. Prism's refinement is that the unit of
+resolution is the individual property rather than the whole `axis`
+block, so a child that sets only `grid` does not wipe out another
+child's `title`.
+
+```json
+{
+  "layer": [
+    {"encoding": {"x": {"field": "day", "type": "nominal", "axis": {"grid": false}}}},
+    {"encoding": {"x": {"field": "day", "type": "nominal", "axis": {"grid": true, "title": "Day"}}}}
+  ]
+}
+```
+
+The shared x axis draws **no grid** (layer 0 specified `grid` first)
+with the title **"Day"** (only layer 1 specified `title`), and a
+`PRISM_WARN_AXIS_CONFIG_CONFLICT` reports that layer 1's `grid: true`
+was ignored.
+
+To silence a conflict, either set the property identically on every
+child that specifies it, set it on only one child, or opt the channel
+out of sharing with `"resolve": {"scale": {"x": "independent"}}` —
+noting that independent scales also stop the children's positions from
+aligning.
+
+Facets take the same path. A facet has a single child `spec`, so its
+`axis` block simply flows onto the shared axis and no conflict is
+possible.
+
+### Axis titles
+
+When no child sets `axis.title`, a shared axis falls back to the field
+name bound on the first child that declares the channel. An explicit
+`"title": false` suppresses the title and is **not** overwritten by that
+fallback — including on a histogram's synthetic bin-count axis, whose
+`"count"` label is only a fallback.
+
 ## Worked examples
 
 - [layer_actual_vs_benchmark](../gallery/composition/layer_actual_vs_benchmark.prism.json) — bar + rule overlay.

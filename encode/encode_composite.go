@@ -363,14 +363,22 @@ func encodeLayerComposite(s *spec.Spec, composite *plan.CompositeDAG, childTable
 	// Shared axes (D051): emit once on the grid, not per cell. Only
 	// populated when the axis resolves shared AND we built a shared
 	// scale for the channel.
+	// E3-S5: a shared axis resolves its `axis` config from the layer
+	// children, first-specified-wins per property, rather than
+	// discarding it. See sharedAxisOpts + docs/src/concepts/composition.md.
+	childEncodings := layerEncodings(live)
 	if xSharedScale != nil && resolution[scene.ChannelX].Axis == encresolve.ModeShared {
-		ax := BuildAxisWithOpts(xSharedScale, scene.ChannelX, placement.X, layout.Plot,
-			DefaultAxisOpts(xSharedTitle))
+		opts, axWarn := sharedAxisOpts(scene.ChannelX,
+			sharedAxisBlocksFrom(scene.ChannelX, childEncodings), xSharedTitle)
+		warnings = append(warnings, axWarn...)
+		ax := BuildAxisWithOpts(xSharedScale, scene.ChannelX, placement.X, layout.Plot, opts)
 		doc.Grid.Shared.X = &ax
 	}
 	if ySharedScale != nil && resolution[scene.ChannelY].Axis == encresolve.ModeShared {
-		ax := BuildAxisWithOpts(ySharedScale, scene.ChannelY, placement.Y, layout.Plot,
-			DefaultAxisOpts(ySharedTitle))
+		opts, axWarn := sharedAxisOpts(scene.ChannelY,
+			sharedAxisBlocksFrom(scene.ChannelY, childEncodings), ySharedTitle)
+		warnings = append(warnings, axWarn...)
+		ax := BuildAxisWithOpts(ySharedScale, scene.ChannelY, placement.Y, layout.Plot, opts)
 		doc.Grid.Shared.Y = &ax
 	}
 	doc.Warnings = warnings
@@ -433,6 +441,20 @@ func collectLayerDomains(live []liveChild, channel scene.Channel) ([]encresolve.
 		})
 	}
 	return out, nil
+}
+
+// layerEncodings projects the surviving layers onto the labelled
+// encodings the shared-axis resolver consumes, preserving layer order
+// so "first specified wins" means the lowest-indexed layer.
+func layerEncodings(live []liveChild) []labelledEncoding {
+	out := make([]labelledEncoding, 0, len(live))
+	for _, lc := range live {
+		out = append(out, labelledEncoding{
+			Label: fmt.Sprintf("layer-%d", lc.idx),
+			Enc:   lc.child.Spec.Encoding,
+		})
+	}
+	return out
 }
 
 // firstFieldName returns the field name on the first live layer that

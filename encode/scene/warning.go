@@ -19,6 +19,11 @@ const (
 	// its upstream Source / sub-DAG produced no table (typically a
 	// partial-failure cascade per D006). The other layers still render.
 	WarnLayerSkipped = "PRISM_WARN_LAYER_SKIPPED"
+	// WarnAxisConfigConflict fires when two composition children
+	// specify different values for the same property of a shared
+	// position axis. The first child to specify the property wins; the
+	// later value is ignored and reported rather than silently dropped.
+	WarnAxisConfigConflict = "PRISM_WARN_AXIS_CONFIG_CONFLICT"
 	// WarnTableCellUnparseable (E1) fires when a table column carries
 	// a sub-mark (e.g. "sparkline") but a given row's raw field value
 	// could not be parsed as a numeric series — the cell renders with

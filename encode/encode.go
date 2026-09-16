@@ -454,11 +454,12 @@ func Encode(s *spec.Spec, tables map[plan.NodeID]*table.Table, tipID plan.NodeID
 			axes = append(axes, BuildAxisWithOpts(hr.XScale, scene.ChannelX, placement.X, layout.Plot, axisOptsFor(enc.X)))
 		}
 		if hr.YScale != nil {
-			yTitle := "count"
-			if enc.Y != nil && enc.Y.Field != "" {
-				yTitle = enc.Y.Field
-			}
-			axes = append(axes, BuildAxisWithOpts(hr.YScale, scene.ChannelY, placement.Y, layout.Plot, DefaultAxisOpts(yTitle)))
+			// E3-S5: the synthetic bin-count axis honours channel.axis
+			// config exactly like the histogram's x axis; "count" is only
+			// the title fallback when the channel names no field and sets
+			// no explicit axis.title.
+			axes = append(axes, BuildAxisWithOpts(hr.YScale, scene.ChannelY, placement.Y, layout.Plot,
+				axisOptsForTitled(enc.Y, "count")))
 		}
 		finalizeAutoDarkCSS(sceneTheme, fullTheme, colorReg, isThemeOwner)
 		return buildSceneDoc(s, layout, axes, hr.Marks, markType, colorChannel, enc, sceneTheme, warnings, hasTitle), nil
@@ -1241,6 +1242,28 @@ func axisOptsFor(ch *spec.PositionChannel) AxisOpts {
 		opts.Format = ch.Axis.Format
 	}
 	return opts
+}
+
+// axisOptsForTitled resolves AxisOpts from a PositionChannel, falling
+// back to the supplied title when the channel names no field. An
+// explicit `"title": false` still suppresses the title — the fallback
+// only fills a title the spec never asked about.
+func axisOptsForTitled(ch *spec.PositionChannel, fallback string) AxisOpts {
+	opts := axisOptsFor(ch)
+	if opts.Title == "" && !axisTitleExplicit(ch) {
+		opts.Title = fallback
+	}
+	return opts
+}
+
+// axisTitleExplicit reports whether the channel's axis block sets a
+// usable `title` (a string, or `false` to suppress).
+func axisTitleExplicit(ch *spec.PositionChannel) bool {
+	if ch == nil || ch.Axis == nil {
+		return false
+	}
+	_, ok := axisTitleString(ch.Axis.Title)
+	return ok
 }
 
 // axisTitleString accepts the polymorphic axis.title field (string or
