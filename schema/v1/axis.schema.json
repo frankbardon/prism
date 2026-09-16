@@ -10,7 +10,7 @@
       "additionalProperties": false,
       "properties": {
         "orient":         {"type": "string", "enum": ["top", "bottom", "left", "right"], "description": "Side of the plot the axis occupies, and the side its padding is reserved on. Only two of the four are meaningful per channel — `bottom` (default) or `top` on x, `left` (default) or `right` on y; the other two are rejected as PRISM_SPEC_044."},
-        "title":          {"type": ["string", "null"], "description": "Axis title; null to suppress."},
+        "title":          {"type": ["string", "boolean"], "description": "Axis title. A string replaces the derived title; false suppresses it. The title block is separate from `\"axis\": null`, which suppresses the whole axis."},
         "format":         {"type": "string", "description": "Format string for tick labels."},
         "tick_count":     {"type": "integer", "minimum": 0, "description": "How many major ticks to aim for on a continuous axis (linear, log, pow, sqrt, time). A hint, not a guarantee: the generator rounds to a readable step and may land either side of the request. Omit for the default of 5; 0 removes every tick. Grid lines sit at the major tick positions, so this also controls how many grid lines appear. Ignored on discrete (band / point / ordinal) axes, which tick once per category."},
         "tick_min_step":  {"type": "number", "exclusiveMinimum": 0, "description": "Smallest gap, in domain units, allowed between adjacent generated ticks. Enforced by asking the generator for fewer ticks so the survivors stay round. Shapes generated ticks only - `values` pins exactly what it names."},
