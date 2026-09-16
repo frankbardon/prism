@@ -83,7 +83,13 @@ func encodeLayerComposite(s *spec.Spec, composite *plan.CompositeDAG, childTable
 	}
 
 	hasTitle := s.Title != nil
-	layout := Compute(width, height, hasTitle)
+	placement := DefaultAxisPlacement()
+	layout := Compute(LayoutOpts{
+		Width:  width,
+		Height: height,
+		Title:  hasTitle,
+		Sides:  placement.Sides(),
+	})
 
 	var warnings []scene.Warning
 
@@ -226,13 +232,13 @@ func encodeLayerComposite(s *spec.Spec, composite *plan.CompositeDAG, childTable
 		// stacking N layers does not produce N visually-identical axes.
 		if xScale != nil && xSharedScale == nil && !seenIndependentX {
 			perCellAxes = append(perCellAxes, BuildAxisWithOpts(
-				xScale, scene.ChannelX, scene.AxisPositionBottom, layout.Plot,
+				xScale, scene.ChannelX, placement.X, layout.Plot,
 				axisOptsFor(childEnc.X)))
 			seenIndependentX = true
 		}
 		if yScale != nil && ySharedScale == nil && !seenIndependentY {
 			perCellAxes = append(perCellAxes, BuildAxisWithOpts(
-				yScale, scene.ChannelY, scene.AxisPositionLeft, layout.Plot,
+				yScale, scene.ChannelY, placement.Y, layout.Plot,
 				axisOptsFor(childEnc.Y)))
 			seenIndependentY = true
 		}
@@ -356,12 +362,12 @@ func encodeLayerComposite(s *spec.Spec, composite *plan.CompositeDAG, childTable
 	// populated when the axis resolves shared AND we built a shared
 	// scale for the channel.
 	if xSharedScale != nil && resolution[scene.ChannelX].Axis == encresolve.ModeShared {
-		ax := BuildAxisWithOpts(xSharedScale, scene.ChannelX, scene.AxisPositionBottom, layout.Plot,
+		ax := BuildAxisWithOpts(xSharedScale, scene.ChannelX, placement.X, layout.Plot,
 			DefaultAxisOpts(xSharedTitle))
 		doc.Grid.Shared.X = &ax
 	}
 	if ySharedScale != nil && resolution[scene.ChannelY].Axis == encresolve.ModeShared {
-		ax := BuildAxisWithOpts(ySharedScale, scene.ChannelY, scene.AxisPositionLeft, layout.Plot,
+		ax := BuildAxisWithOpts(ySharedScale, scene.ChannelY, placement.Y, layout.Plot,
 			DefaultAxisOpts(ySharedTitle))
 		doc.Grid.Shared.Y = &ax
 	}

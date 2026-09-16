@@ -140,6 +140,12 @@ func Encode(s *spec.Spec, tables map[plan.NodeID]*table.Table, tipID plan.NodeID
 	}
 
 	hasTitle := s.Title != nil
+	// Axis placement drives both the layout reservation and the
+	// scene.Axis.Position stamped below, so padding can never disagree
+	// with where the axis actually renders. The reservation is keyed on
+	// the placement, not on whether the channel turned out to be bound:
+	// an unbound channel still reserves its side, as it always has.
+	placement := DefaultAxisPlacement()
 	// Sparkline (D067): 4-px-padded plot rect, no axis/legend/title
 	// reservation; the title block, axes, and legends are suppressed
 	// at scene-assembly time below.
@@ -148,7 +154,12 @@ func Encode(s *spec.Spec, tables map[plan.NodeID]*table.Table, tipID plan.NodeID
 		layout = ComputeSparkline(width, height)
 		hasTitle = false
 	} else {
-		layout = Compute(width, height, hasTitle)
+		layout = Compute(LayoutOpts{
+			Width:  width,
+			Height: height,
+			Title:  hasTitle,
+			Sides:  placement.Sides(),
+		})
 	}
 
 	var warnings []scene.Warning
@@ -248,10 +259,10 @@ func Encode(s *spec.Spec, tables map[plan.NodeID]*table.Table, tipID plan.NodeID
 	axes := make([]scene.Axis, 0, 2)
 	if !isSparkMark(markType) && !geoMark {
 		if xScale != nil {
-			axes = append(axes, BuildAxisWithOpts(xScale, scene.ChannelX, scene.AxisPositionBottom, layout.Plot, axisOptsFor(enc.X)))
+			axes = append(axes, BuildAxisWithOpts(xScale, scene.ChannelX, placement.X, layout.Plot, axisOptsFor(enc.X)))
 		}
 		if yScale != nil {
-			axes = append(axes, BuildAxisWithOpts(yScale, scene.ChannelY, scene.AxisPositionLeft, layout.Plot, axisOptsFor(enc.Y)))
+			axes = append(axes, BuildAxisWithOpts(yScale, scene.ChannelY, placement.Y, layout.Plot, axisOptsFor(enc.Y)))
 		}
 	}
 
@@ -437,14 +448,14 @@ func Encode(s *spec.Spec, tables map[plan.NodeID]*table.Table, tipID plan.NodeID
 			return nil, err
 		}
 		if hr.XScale != nil {
-			axes = append(axes, BuildAxisWithOpts(hr.XScale, scene.ChannelX, scene.AxisPositionBottom, layout.Plot, axisOptsFor(enc.X)))
+			axes = append(axes, BuildAxisWithOpts(hr.XScale, scene.ChannelX, placement.X, layout.Plot, axisOptsFor(enc.X)))
 		}
 		if hr.YScale != nil {
 			yTitle := "count"
 			if enc.Y != nil && enc.Y.Field != "" {
 				yTitle = enc.Y.Field
 			}
-			axes = append(axes, BuildAxisWithOpts(hr.YScale, scene.ChannelY, scene.AxisPositionLeft, layout.Plot, DefaultAxisOpts(yTitle)))
+			axes = append(axes, BuildAxisWithOpts(hr.YScale, scene.ChannelY, placement.Y, layout.Plot, DefaultAxisOpts(yTitle)))
 		}
 		finalizeAutoDarkCSS(sceneTheme, fullTheme, colorReg, isThemeOwner)
 		return buildSceneDoc(s, layout, axes, hr.Marks, markType, colorChannel, enc, sceneTheme, warnings, hasTitle), nil

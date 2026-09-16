@@ -102,7 +102,12 @@ func encodeFacetComposite(s *spec.Spec, composite *plan.CompositeDAG, childTable
 	// path.
 
 	// Pre-compute shared scales when requested.
-	cellLayout := Compute(cellW, cellH, false)
+	placement := DefaultAxisPlacement()
+	cellLayout := Compute(LayoutOpts{
+		Width:  cellW,
+		Height: cellH,
+		Sides:  placement.Sides(),
+	})
 	xMode := resolution[scene.ChannelX]
 	yMode := resolution[scene.ChannelY]
 
@@ -207,12 +212,12 @@ func encodeFacetComposite(s *spec.Spec, composite *plan.CompositeDAG, childTable
 	}
 	// Shared axes anchored to the first surviving cell's Plot rect.
 	if xShared != nil && len(cells) > 0 {
-		ax := BuildAxisWithOpts(xShared, scene.ChannelX, scene.AxisPositionBottom, cells[len(cells)-1].Scene.Plot,
+		ax := BuildAxisWithOpts(xShared, scene.ChannelX, placement.X, cells[len(cells)-1].Scene.Plot,
 			DefaultAxisOpts(facetFieldFromChildSpec(child.Spec, scene.ChannelX)))
 		doc.Grid.Shared.X = &ax
 	}
 	if yShared != nil && len(cells) > 0 {
-		ax := BuildAxisWithOpts(yShared, scene.ChannelY, scene.AxisPositionLeft, cells[0].Scene.Plot,
+		ax := BuildAxisWithOpts(yShared, scene.ChannelY, placement.Y, cells[0].Scene.Plot,
 			DefaultAxisOpts(facetFieldFromChildSpec(child.Spec, scene.ChannelY)))
 		doc.Grid.Shared.Y = &ax
 	}
