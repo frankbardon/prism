@@ -86,10 +86,18 @@ const OpacityFloor = 0.15
 // bindings — Field name only, no scale. See D064. Used exclusively
 // by encodeSankey; other encoders ignore them.
 type Inputs struct {
-	Table   *table.Table
-	X       Channel
-	Y       Channel
-	Color   *ColorChannel
+	Table *table.Table
+	X     Channel
+	Y     Channel
+	Color *ColorChannel
+	// Detail (E5-S1) carries the encoding.detail binding as an
+	// ordered list of table field names. Detail is a pure grouping
+	// channel: it partitions a mark's rows into separate series
+	// exactly as Color does (see groupRows) but consumes no palette
+	// slot, builds no legend, and leaves mark styling untouched. Nil
+	// or empty means "no detail bound", which keeps grouping
+	// byte-identical to the color-only behavior.
+	Detail  []string
 	Opacity *OpacityChannel
 	Layout  scene.Rect // the Plot region
 	Style   scene.Style

@@ -1,6 +1,6 @@
 # Prism Gallery
 
-98 fixture specs across 16 categories. Each entry pairs a `*.prism.json`
+99 fixture specs across 16 categories. Each entry pairs a `*.prism.json`
 spec with a rendered `*.svg`. Browse the source to learn the spec
 shapes; open the SVGs to see what they render. The `table/` fixtures
 are one exception — a top-level `table` mark renders only through
@@ -27,6 +27,7 @@ For live interactive rendering in a browser, see [`live.html`](live.html).
 | [arc_basic](basic-marks/arc_basic.prism.json) | <img src="basic-marks/arc_basic.svg" width="240"> |
 | [rect_heatmap_lite](basic-marks/rect_heatmap_lite.prism.json) | <img src="basic-marks/rect_heatmap_lite.svg" width="240"> |
 | [multi_series_line](basic-marks/multi_series_line.prism.json) | <img src="basic-marks/multi_series_line.svg" width="240"> |
+| [detail_series_line](basic-marks/detail_series_line.prism.json) | <img src="basic-marks/detail_series_line.svg" width="240"> |
 
 ## Composite marks
 

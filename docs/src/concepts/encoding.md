@@ -9,7 +9,8 @@ The `encoding` object binds data fields to visual channels.
 | Position | `x`, `y`, `x2`, `y2`, `theta`, `theta2`, `radius`, `radius2` |
 | Color & opacity | `color`, `fill`, `stroke`, `opacity` |
 | Size & shape | `size`, `shape` |
-| Text & order | `text`, `tooltip`, `order`, `detail` |
+| Text & order | `text`, `tooltip`, `order` |
+| Grouping | `detail` — see [Detail channel](#detail-channel) |
 | Facet | `row`, `column` |
 | Sankey | `source`, `target`, `value` |
 
@@ -112,6 +113,47 @@ rotation, overlap handling, gradient + symbol legends.
 Materialized in the Scene IR as pre-formatted `TooltipLine` lists.
 SVG emits `<title>` per mark; the JS port renders rich HTML tooltips
 in P12+.
+
+## Detail channel
+
+`detail` is a **pure grouping channel**. It splits a mark into one
+series per distinct value of the bound field — exactly as `color`
+does — but it consumes no palette slot, builds no legend, and leaves
+mark styling untouched. Use it when the data has more series than the
+chart should distinguish visually: ten sensors that all belong to one
+cohort should draw as ten separate lines in one colour, not ten
+colours plus a ten-entry legend.
+
+```json
+"detail": {"field": "sensor", "type": "nominal"}
+```
+
+An array binds several fields; the grouping key is the tuple, so a
+new series starts at each distinct combination:
+
+```json
+"detail": [
+  {"field": "site", "type": "nominal"},
+  {"field": "unit", "type": "nominal"}
+]
+```
+
+Semantics:
+
+| Aspect | Behaviour |
+|---|---|
+| Marks affected | `line` and `area` — the path-forming marks, whose geometry spans multiple rows. Every other mark already emits one mark per row, so a partition changes nothing; `detail` is accepted there and is simply inert. |
+| Composition with `color` | Both bound produces one series per distinct (colour, detail…) pair. Every series sharing a colour keeps that colour — `detail` never advances the palette. |
+| Legend | Never. The legend is built from `color` alone, so a `color` + `detail` chart still shows one entry per colour. |
+| Emission order | Colour first-appearance order outer (so it continues to match legend order), full-tuple first-appearance order inner. Series sharing a colour are emitted contiguously. |
+| Point ordering | As with `color`, points within a series are sorted by resolved x pixel ascending, so each path traces left-to-right regardless of upstream row order. |
+| Aggregates | A `detail` field joins the implicit group-by of the synthetic aggregate an aggregated channel injects, so `detail` + `y: {"aggregate": …}` aggregates per series. |
+
+Key coercion differs slightly between the two grouping channels:
+`color` categories are string-valued (a non-string cell has no
+palette entry), whereas a `detail` key is the value's string form —
+a numeric series id groups per distinct number rather than collapsing
+into one bucket.
 
 ## Further reading
 

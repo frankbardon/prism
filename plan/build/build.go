@@ -768,6 +768,21 @@ func joinOnFields(on any) []string {
 	return nil
 }
 
+// detailEntries (E5-S1) flattens encoding.detail — which decodes as
+// either a single entry or an array (spec.DetailChannel) — into a
+// flat slice, so callers don't have to re-handle both forms.
+func detailEntries(enc *spec.Encoding) []spec.DetailChannelEntry {
+	if enc == nil || enc.Detail == nil {
+		return nil
+	}
+	out := make([]spec.DetailChannelEntry, 0, len(enc.Detail.Multi)+1)
+	if enc.Detail.Single != nil {
+		out = append(out, *enc.Detail.Single)
+	}
+	out = append(out, enc.Detail.Multi...)
+	return out
+}
+
 // injectEncodingAggregate looks at the encoding for any channel
 // declaring an aggregate; if any does, append a GroupAggregateNode
 // whose groupby = every non-aggregated field channel and whose aggs =
@@ -805,6 +820,18 @@ func (c *buildCtx) injectEncodingAggregate(tip plan.NodeID, enc *spec.Encoding) 
 	collectMark(enc.Opacity)
 	collectMark(enc.Size)
 	collectMark(enc.Shape)
+	// Detail (E5-S1) is a pure grouping channel: it carries no scale
+	// and no palette, but it partitions the marks a series is split
+	// into, so it has to survive the synthetic aggregate the same way
+	// color does. Without this, `detail` + an aggregated y collapses
+	// the detail column out of the aggregate's output and the mark
+	// encoder can't read it back.
+	for _, d := range detailEntries(enc) {
+		if d.Field == "" {
+			continue
+		}
+		entries = append(entries, entry{field: d.Field, agg: d.Aggregate})
+	}
 	// Table columns (E1) carry the same field/aggregate shape via the
 	// embedded ChannelCommon, so a table column declaring an
 	// aggregate triggers the synthetic GroupAggregateNode exactly

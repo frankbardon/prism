@@ -89,6 +89,16 @@ func presentChannels(enc *spec.Encoding) []string {
 // text-only. Sankey lives in its own tier (source/target/value per
 // D064); funnel lives in its own tier (x category + y quantity per
 // D066); sparkline mirrors line (D067).
+//
+// detail stays universal by design (E5-S1). It is a pure grouping
+// channel — it partitions a mark's rows into separate series without
+// consuming a palette slot, building a legend, or altering styling —
+// so it is never structurally invalid for a mark. Today only the
+// path-forming marks (line, area) act on it, because they are the
+// only ones whose geometry spans multiple rows; every other mark
+// already emits one mark per row, so a partition changes nothing.
+// Accepting it silently everywhere matches Vega-Lite and keeps a
+// spec portable across a mark-type switch.
 func allowedChannelsForMark(mark string) []string {
 	common := []string{"tooltip", "order", "detail", "row", "column"}
 	cartesianMark := []string{"x", "y", "x2", "y2", "color", "fill", "stroke", "opacity", "size", "shape"}

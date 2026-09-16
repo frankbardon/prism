@@ -329,6 +329,7 @@ func Encode(s *spec.Spec, tables map[plan.NodeID]*table.Table, tipID plan.NodeID
 		X:             markX,
 		Y:             markY,
 		Color:         colorChannel,
+		Detail:        detailFields(enc),
 		Opacity:       opacityChannel,
 		Layout:        layout.Plot,
 		Style:         style,
@@ -689,6 +690,33 @@ func fieldOf(ch *spec.PositionChannel) string {
 		return ""
 	}
 	return ch.Field
+}
+
+// detailFields (E5-S1) flattens encoding.detail — which decodes as
+// either a single entry or an array (spec.DetailChannel) — into the
+// ordered list of table field names marks group on. Entries without a
+// field are skipped; a nil channel yields nil, which marks.Inputs
+// treats as "no detail bound".
+//
+// Detail is a pure grouping channel: unlike color it resolves no
+// scale and no palette here, so nothing beyond the field names needs
+// to travel to the mark encoders.
+func detailFields(enc *spec.Encoding) []string {
+	if enc == nil || enc.Detail == nil {
+		return nil
+	}
+	entries := enc.Detail.Multi
+	if enc.Detail.Single != nil {
+		entries = append([]spec.DetailChannelEntry{*enc.Detail.Single}, entries...)
+	}
+	var out []string
+	for _, e := range entries {
+		if e.Field == "" {
+			continue
+		}
+		out = append(out, e.Field)
+	}
+	return out
 }
 
 // defaultMarkStyle returns the resolved default style for a mark

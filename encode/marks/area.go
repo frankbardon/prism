@@ -7,14 +7,16 @@ import (
 	"github.com/frankbardon/prism/encode/scene"
 )
 
-// encodeArea partitions rows by the bound color channel (Vega-Lite
-// semantics: color/detail on an area mark splits it into one ribbon
-// per distinct value — mirrors encodeLine) and emits one scene.Mark
-// per group, each carrying its own resolved fill color via
-// groupRowsByColor / lookupCategoryColor — the same palette
-// resolution the legend uses. Within each group, points are sorted by
-// resolved x pixel ascending so the ribbon traces left-to-right
-// rather than upstream row order.
+// encodeArea partitions rows by the bound discrete grouping channels
+// — color and/or detail (Vega-Lite semantics: either one on an area
+// mark splits it into one ribbon per distinct value — mirrors
+// encodeLine) — and emits one scene.Mark per group, each carrying its
+// own resolved fill color via groupRows / lookupCategoryColor — the
+// same palette resolution the legend uses. A detail-only split leaves
+// in.Style's fill untouched: detail groups series without consuming a
+// palette slot or producing a legend. Within each group, points are
+// sorted by resolved x pixel ascending so the ribbon traces
+// left-to-right rather than upstream row order.
 //
 // Each group's Upper is its row-by-row points and Lower is the y=0
 // baseline edge (one point per Upper x, snapped to the pixel where
@@ -23,7 +25,7 @@ import (
 // zero-crossing domains fill above and below the mid-plot zero line.
 // Stacked / streamgraph variants land in P08.
 //
-// When no color channel is bound, behavior is unchanged from before
+// When neither channel is bound, behavior is unchanged from before
 // grouping existed: a single scene.Mark ("area-0") carrying every
 // row's points in raw upstream order.
 func encodeArea(in Inputs) ([]scene.Mark, error) {
@@ -64,8 +66,8 @@ func encodeArea(in Inputs) ([]scene.Mark, error) {
 		lowerAll[i] = [2]float64{x, baseline}
 	}
 
-	grouped := in.Color != nil && in.Color.Field != ""
-	groups, err := groupRowsByColor(in, len(xs))
+	grouped := len(groupChannels(in)) > 0
+	groups, err := groupRows(in, len(xs))
 	if err != nil {
 		return nil, err
 	}
