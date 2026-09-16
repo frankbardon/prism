@@ -81,6 +81,35 @@ func sharedAxisOpts(channel scene.Channel, blocks []sharedAxisBlock, fallbackTit
 	return axisOptsFor(ch), warnings
 }
 
+// sharedAxisOrient resolves the `orient` of a *shared* position axis
+// from every contributing child's axis block, first-specified-wins —
+// the same fold sharedAxisOpts applies, so the side the padding
+// reserves and the side the axis renders on agree.
+//
+// The layout has to know the side before the axis can be built (the
+// axis is anchored to the plot rect the padding produces), so this
+// runs the fold early and discards its warnings; sharedAxisOpts runs
+// it again at axis-build time and is the one that reports conflicts,
+// which keeps PRISM_WARN_AXIS_CONFIG_CONFLICT emitted exactly once.
+func sharedAxisOrient(channel scene.Channel, blocks []sharedAxisBlock) string {
+	merged, _ := mergeSharedAxisSpec(channel, blocks)
+	if merged == nil {
+		return ""
+	}
+	return merged.Orient
+}
+
+// sharedAxisPlacement applies the folded orient of both position
+// channels to p, leaving the hidden flags the caller already set
+// untouched.
+func sharedAxisPlacement(p AxisPlacement, children []labelledEncoding) AxisPlacement {
+	p.X = AxisPositionFor(scene.ChannelX,
+		sharedAxisOrient(scene.ChannelX, sharedAxisBlocksFrom(scene.ChannelX, children)))
+	p.Y = AxisPositionFor(scene.ChannelY,
+		sharedAxisOrient(scene.ChannelY, sharedAxisBlocksFrom(scene.ChannelY, children)))
+	return p
+}
+
 // mergeSharedAxisSpec folds N per-child axis blocks into one, applying
 // the first-specified-wins rule property by property. The merge walks
 // spec.Axis reflectively so a property added to the spec type is

@@ -1335,14 +1335,21 @@ func legendHidden(ch *spec.MarkChannel) bool {
 	return ch != nil && ch.LegendHidden
 }
 
-// placementFor returns the default axis placement with each channel's
-// `"axis": null` suppression applied, so the layout reservation and
-// the axis-building guards below read the same flags.
+// placementFor returns the axis placement for a flat encoding: each
+// channel's `axis.orient` resolved into a side, with its
+// `"axis": null` suppression applied. The layout reservation and the
+// axis-building guards below read the same value, so padding always
+// follows the axis to the side it moved to.
+//
+// Orient is read through axisOptsFor, keeping that the single reader
+// of `channel.axis`.
 func placementFor(enc *spec.Encoding) AxisPlacement {
 	p := DefaultAxisPlacement()
 	if enc == nil {
 		return p
 	}
+	p.X = AxisPositionFor(scene.ChannelX, axisOptsFor(enc.X).Orient)
+	p.Y = AxisPositionFor(scene.ChannelY, axisOptsFor(enc.Y).Orient)
 	p.XHidden = axisHidden(enc.X)
 	p.YHidden = axisHidden(enc.Y)
 	return p
@@ -1399,8 +1406,9 @@ func layerAxisHidden(specs []*spec.Spec, ch scene.Channel) bool {
 }
 
 // axisOptsFor resolves AxisOpts from a PositionChannel. Reads
-// channel.axis.{title, grid, label_angle, label_overlap, format}.
-// Defaults match DefaultAxisOpts; the spec selectively overrides.
+// channel.axis.{orient, title, grid, label_angle, label_overlap,
+// format}. Defaults match DefaultAxisOpts; the spec selectively
+// overrides.
 func axisOptsFor(ch *spec.PositionChannel) AxisOpts {
 	title := ""
 	if ch != nil {
@@ -1413,6 +1421,7 @@ func axisOptsFor(ch *spec.PositionChannel) AxisOpts {
 	if ch.Axis == nil {
 		return opts
 	}
+	opts.Orient = ch.Axis.Orient
 	if t, ok := axisTitleString(ch.Axis.Title); ok {
 		opts.Title = t
 	}

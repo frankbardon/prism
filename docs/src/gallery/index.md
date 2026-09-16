@@ -1,6 +1,6 @@
 # Prism Gallery
 
-105 fixture specs across 16 categories. Each entry pairs a `*.prism.json`
+107 fixture specs across 17 categories. Each entry pairs a `*.prism.json`
 spec with a rendered `*.svg`. Browse the source to learn the spec
 shapes; open the SVGs to see what they render. The `table/` fixtures
 are one exception — a top-level `table` mark renders only through
@@ -161,6 +161,13 @@ source.
 | [band](scales/band.prism.json) | <img src="scales/band.svg" width="240"> |
 | [point](scales/point.prism.json) | <img src="scales/point.svg" width="240"> |
 | [ordinal](scales/ordinal.prism.json) | <img src="scales/ordinal.svg" width="240"> |
+
+## Axes
+
+| Spec | Preview |
+|---|---|
+| [axis_orient_top](axes/axis_orient_top.prism.json) | <img src="axes/axis_orient_top.svg" width="240"> |
+| [axis_orient_layer](axes/axis_orient_layer.prism.json) | <img src="axes/axis_orient_layer.svg" width="240"> |
 
 ## Selections
 

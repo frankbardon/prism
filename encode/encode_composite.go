@@ -94,6 +94,13 @@ func encodeLayerComposite(s *spec.Spec, composite *plan.CompositeDAG, childTable
 	placement := DefaultAxisPlacement()
 	placement.XHidden = layerAxisHidden(childSpecs, scene.ChannelX)
 	placement.YHidden = layerAxisHidden(childSpecs, scene.ChannelY)
+	// E1-S2: layers share one pair of axes, so `axis.orient` folds
+	// across them first-specified-wins exactly like every other axis
+	// property. The fold runs over *every* child (not just the ones
+	// that survive the table check below), matching layerAxisHidden:
+	// the padding reservation is decided before the layout, and a
+	// layer dropped for want of a table must not move the axes.
+	placement = sharedAxisPlacement(placement, declaredLayerEncodings(composite))
 	// Legend placement (E1-S3). Every layer resolves its own legend,
 	// so the reservation is the sum of what each layer claims on a
 	// given side — that is exactly the depth the legendStackOffset
@@ -566,6 +573,21 @@ func collectLayerDomains(live []liveChild, channel scene.Channel) ([]encresolve.
 // layerEncodings projects the surviving layers onto the labelled
 // encodings the shared-axis resolver consumes, preserving layer order
 // so "first specified wins" means the lowest-indexed layer.
+// declaredLayerEncodings labels every declared layer's encoding, live
+// or not. layerEncodings is its live-only counterpart, used once the
+// executor's tables have been checked; this one runs before the
+// layout, where no table check has happened yet.
+func declaredLayerEncodings(composite *plan.CompositeDAG) []labelledEncoding {
+	out := make([]labelledEncoding, 0, len(composite.Children))
+	for i, child := range composite.Children {
+		out = append(out, labelledEncoding{
+			Label: fmt.Sprintf("layer-%d", i),
+			Enc:   childEncoding(child.Spec),
+		})
+	}
+	return out
+}
+
 func layerEncodings(live []liveChild) []labelledEncoding {
 	out := make([]labelledEncoding, 0, len(live))
 	for _, lc := range live {

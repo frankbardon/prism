@@ -49,6 +49,7 @@ rules assume well-formed structure.
 | `PRISM_SPEC_041` scale domain shape | Semantic | An explicit `scale.domain` must match its scale family: two ascending numeric bounds on a continuous scale, two date-string / epoch-ms bounds on a time scale, a non-empty list of string categories on band/point/ordinal. Walks composition children. The family comes from `scale.type`, falling back to the channel's measure type; an unknown family no-ops and the encoder raises the same code at resolve time. |
 | `PRISM_SPEC_042` span channel supported | Semantic | A bound `x2` / `y2` must be geometry the mark can draw: `bar`, `rect` and `rule` range on either axis, `area` takes `y2` as its lower edge, every other mark is rejected instead of silently dropping the binding. Also fires when a span channel has no base channel (`x2` without `x`) or names no field. Walks layer / concat / facet / repeat children. |
 | `PRISM_SPEC_043` span channel type match | Semantic | A span channel is measured on its base channel's scale, so `x2.type` must equal `x.type` and `y2.type` must equal `y.type`. Skipped when either type is absent. |
+| `PRISM_SPEC_044` axis orient channel | Semantic | `axis.orient` must name a side the channel's axis can occupy: `bottom` / `top` on `x` (and `x2`), `left` / `right` on `y` (and `y2`). Orient moves both the axis and the padding its side reserves, so a cross-axis value is an author error rather than an inert typo. Walks layer / concat / facet / repeat children. |
 
 ## $ref resolution strategy
 

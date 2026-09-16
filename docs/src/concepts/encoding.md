@@ -35,7 +35,7 @@ The `encoding` object binds data fields to visual channels.
 | `scale` | Scale spec (`type`, `domain`, `range`, `scheme`, `padding`, ...). |
 | `axis` | Axis config (`title`, `format`, `grid`, `tick_count`, `label_angle`, ...). |
 | `legend` | Legend config (`orient`, `padding`, `offset`, `title`, `direction`, ...) — see [Legend placement](#legend-placement). |
-| `axis` | Axis config (`title`, `format`, `grid`, `tick_count`, `label_angle`, ...), or `null` to [hide the axis](#hiding-an-axis-or-legend). |
+| `axis` | Axis config (`orient`, `title`, `format`, `grid`, `tick_count`, `label_angle`, ...) — see [Axis placement](#axis-placement) — or `null` to [hide the axis](#hiding-an-axis-or-legend). |
 | `legend` | Legend config (`title`, `orient`, `direction`, ...), or `null` to [hide the legend](#hiding-an-axis-or-legend). |
 | `format` | d3-format string for label formatting. |
 | `sort` | `"ascending"` / `"descending"` / `"-y"` / `[explicit, order, ...]`. |
@@ -230,8 +230,54 @@ compared with pre-E2-S1 Prism: an extent of 3..97 now resolves to
 
 Both are auto-generated based on the encoded channels but can be
 overridden per channel. Bundled support: 4 orientations
-(bottom/left/top/right), major + minor ticks, grid toggle, label
-rotation, overlap handling, gradient + symbol legends.
+(bottom/left/top/right — see [Axis placement](#axis-placement)),
+major + minor ticks, grid toggle, label rotation, overlap handling,
+gradient + symbol legends.
+
+### Axis placement
+
+`axis.orient` on a position channel picks the side of the plot the
+axis occupies:
+
+```json
+"encoding": {
+  "x": {"field": "month", "type": "nominal", "axis": {"orient": "top"}},
+  "y": {"field": "sales", "type": "quantitative", "axis": {"orient": "right"}}
+}
+```
+
+| Channel | `orient` | Result |
+|---|---|---|
+| `x` | `bottom` | Default. Axis below the plot. |
+| `x` | `top` | Axis above the plot. |
+| `y` | `left` | Default. Axis to the left of the plot. |
+| `y` | `right` | Axis to the right of the plot. |
+
+An x axis runs horizontally and a y axis vertically, so only two of
+the four sides are meaningful per channel. The other two —
+`{"x": {"axis": {"orient": "left"}}}` — are rejected at validation
+with `PRISM_SPEC_044` rather than silently ignored.
+
+**The padding follows the axis.** The side an axis moves to reserves
+the room for its tick marks, labels and title; the side it left
+releases it and the plot rect expands into the freed space. A chart
+with `x` on top and `y` on the right therefore has the same plot size
+as the default one, mirrored. Grid lines, tick marks and the domain
+line all move with the axis.
+
+Orient composes with the rest of the axis vocabulary. `"axis": null`
+wins over it: a hidden axis reserves nothing on any side, so the
+orient is moot (see [Hiding an axis or legend](#hiding-an-axis-or-legend)).
+
+Under `layer`, the layers share one pair of axes, so `orient` folds
+across them first-specified-wins like every other axis property — the
+first layer that sets it decides the side, and a later layer asking
+for a different one raises `PRISM_WARN_AXIS_CONFIG_CONFLICT` and is
+ignored. Under `facet` and `repeat`, every cell renders the same child
+spec, so the child's `orient` places the shared axis for the whole
+grid: a top-oriented x axis anchors to the top row instead of the
+bottom, and a right-oriented y axis to the last column instead of the
+first.
 
 ### Legend placement
 

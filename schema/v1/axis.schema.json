@@ -9,7 +9,7 @@
       "description": "Axis options including title, ticks, grid, and label placement. Null suppresses the axis entirely (no domain line, ticks, labels, title or grid) and releases the padding its side reserved — omitting the `axis` key instead keeps the default axis.",
       "additionalProperties": false,
       "properties": {
-        "orient":         {"type": "string", "enum": ["top", "bottom", "left", "right"], "description": "Side of the chart on which the axis appears."},
+        "orient":         {"type": "string", "enum": ["top", "bottom", "left", "right"], "description": "Side of the plot the axis occupies, and the side its padding is reserved on. Only two of the four are meaningful per channel — `bottom` (default) or `top` on x, `left` (default) or `right` on y; the other two are rejected as PRISM_SPEC_044."},
         "title":          {"type": ["string", "null"], "description": "Axis title; null to suppress."},
         "format":         {"type": "string", "description": "Format string for tick labels."},
         "tick_count":     {"type": "integer", "minimum": 0, "description": "Suggested number of ticks."},

@@ -14,6 +14,16 @@ type AxisOpts struct {
 	LabelOverlap string // "parity" (default) | "auto" | "none"
 	MinorTicks   bool   // default true for linear
 	Format       string // d3-format spec for tick labels
+	// Orient is the spec's `axis.orient` — the side the axis sits on
+	// ("top" / "bottom" for x, "left" / "right" for y). Empty means
+	// the channel's default side. It is never consumed by
+	// BuildAxisWithOpts directly: AxisPositionFor turns it into the
+	// scene.AxisPosition that drives BOTH the layout reservation
+	// (AxisPlacement) and the position stamped on the built axis, so
+	// the padding can never sit on one side while the axis renders on
+	// another. A value invalid for the channel is rejected upstream by
+	// PRISM_SPEC_044 and falls back to the default side here.
+	Orient string
 }
 
 // DefaultAxisOpts returns the P06 defaults.

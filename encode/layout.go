@@ -133,6 +133,51 @@ func DefaultAxisPlacement() AxisPlacement {
 	return AxisPlacement{X: scene.AxisPositionBottom, Y: scene.AxisPositionLeft}
 }
 
+// DefaultAxisPosition is the side channel's axis occupies when the
+// spec sets no `axis.orient`: bottom for x, left for y. Any other
+// channel has no cartesian axis and yields the empty position, which
+// markAxis treats as "no side".
+func DefaultAxisPosition(channel scene.Channel) scene.AxisPosition {
+	switch channel {
+	case scene.ChannelX:
+		return scene.AxisPositionBottom
+	case scene.ChannelY:
+		return scene.AxisPositionLeft
+	}
+	return ""
+}
+
+// AxisPositionFor resolves a spec `axis.orient` value into the scene
+// position for channel. An x axis may sit top or bottom and a y axis
+// left or right; an empty orient, or one meaningless for the channel
+// ("left" on x), falls back to the channel's default side. The
+// meaningless case is an author error rejected by PRISM_SPEC_044
+// during validation — the fallback here only keeps the encoder total
+// for callers that skipped semantic validation.
+//
+// This is the single orient → position mapping: AxisPlacement is
+// built from it, and the placement is what both the padding
+// reservation and the built axis read.
+func AxisPositionFor(channel scene.Channel, orient string) scene.AxisPosition {
+	switch channel {
+	case scene.ChannelX:
+		switch orient {
+		case string(scene.AxisPositionTop):
+			return scene.AxisPositionTop
+		case string(scene.AxisPositionBottom):
+			return scene.AxisPositionBottom
+		}
+	case scene.ChannelY:
+		switch orient {
+		case string(scene.AxisPositionLeft):
+			return scene.AxisPositionLeft
+		case string(scene.AxisPositionRight):
+			return scene.AxisPositionRight
+		}
+	}
+	return DefaultAxisPosition(channel)
+}
+
 // Sides reports which sides this placement's axes occupy. A hidden
 // axis claims nothing.
 func (p AxisPlacement) Sides() LayoutSides {

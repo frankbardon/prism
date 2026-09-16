@@ -931,6 +931,17 @@ var Codes = map[string]CodeMetadata{
 		},
 		SeeAlso: []string{"PRISM_SPEC_042"},
 	},
+	"PRISM_SPEC_044": {
+		Code:    "PRISM_SPEC_044",
+		Message: `Axis orient {{.Orient}} is not a side the {{.Channel}} axis can occupy.`,
+		Fixups: []string{
+			`An x axis runs horizontally, so it can only sit ` + "`bottom`" + ` (the default) or ` + "`top`" + `; a y axis runs vertically, so it can only sit ` + "`left`" + ` (the default) or ` + "`right`" + `.`,
+			`To put the x axis above the plot: ` + "`{\"x\": {\"field\": \"month\", \"type\": \"nominal\", \"axis\": {\"orient\": \"top\"}}}`" + `. To put the y axis on the right: ` + "`{\"y\": {\"field\": \"sales\", \"type\": \"quantitative\", \"axis\": {\"orient\": \"right\"}}}`" + `.`,
+			`Moving an axis moves the padding its side reserves with it, so no manual spacing adjustment is needed.`,
+			`Looking for the legend instead? That is ` + "`legend.orient`" + ` on a mark channel, which accepts the four sides plus the four corners and ` + "`none`" + `.`,
+		},
+		SeeAlso: []string{"PRISM_SPEC_003", "PRISM_SPEC_010"},
+	},
 	"PRISM_WARN_NETWORK_CYCLE": {
 		Code:    "PRISM_WARN_NETWORK_CYCLE",
 		Message: `network input graph contains a cycle; force layout may produce a visually messy result.`,

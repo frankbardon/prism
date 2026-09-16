@@ -108,6 +108,11 @@ func encodeFacetComposite(s *spec.Spec, composite *plan.CompositeDAG, childTable
 	placement := DefaultAxisPlacement()
 	placement.XHidden = specAxisHidden(child.Spec, scene.ChannelX)
 	placement.YHidden = specAxisHidden(child.Spec, scene.ChannelY)
+	// E1-S2: the child spec's `axis.orient` places the shared axes and
+	// reserves the cell padding on the same side. A facet has exactly
+	// one child spec, so the shared fold can never conflict.
+	facetEncodings := []labelledEncoding{{Label: "facet-child", Enc: childEncoding(child.Spec)}}
+	placement = sharedAxisPlacement(placement, facetEncodings)
 	cellLayout := Compute(LayoutOpts{
 		Width:  cellW,
 		Height: cellH,
@@ -219,13 +224,18 @@ func encodeFacetComposite(s *spec.Spec, composite *plan.CompositeDAG, childTable
 	// E3-S5: they resolve the child's per-channel `axis` config through
 	// the same first-specified-wins path the layer composite uses; a
 	// facet has one child spec, so no conflict is possible.
-	facetEncodings := []labelledEncoding{{Label: "facet-child", Enc: childEncoding(child.Spec)}}
+	// The anchor cell follows the axis: cells are row-major, so the
+	// first cell is the top-left one and the last is the bottom-right.
+	// A bottom x axis hangs off the bottom row and a left y axis off
+	// the left column — moving either to the opposite side moves the
+	// anchor with it.
 	if xShared != nil && len(cells) > 0 && !placement.XHidden {
 		opts, axWarn := sharedAxisOpts(scene.ChannelX,
 			sharedAxisBlocksFrom(scene.ChannelX, facetEncodings),
 			facetFieldFromChildSpec(child.Spec, scene.ChannelX))
 		warnings = append(warnings, axWarn...)
-		ax := BuildAxisWithOpts(xShared, scene.ChannelX, placement.X, cells[len(cells)-1].Scene.Plot, opts)
+		ax := BuildAxisWithOpts(xShared, scene.ChannelX, placement.X,
+			facetAnchorPlot(cells, placement.X == scene.AxisPositionTop), opts)
 		doc.Grid.Shared.X = &ax
 	}
 	if yShared != nil && len(cells) > 0 && !placement.YHidden {
@@ -233,7 +243,8 @@ func encodeFacetComposite(s *spec.Spec, composite *plan.CompositeDAG, childTable
 			sharedAxisBlocksFrom(scene.ChannelY, facetEncodings),
 			facetFieldFromChildSpec(child.Spec, scene.ChannelY))
 		warnings = append(warnings, axWarn...)
-		ax := BuildAxisWithOpts(yShared, scene.ChannelY, placement.Y, cells[0].Scene.Plot, opts)
+		ax := BuildAxisWithOpts(yShared, scene.ChannelY, placement.Y,
+			facetAnchorPlot(cells, placement.Y != scene.AxisPositionRight), opts)
 		doc.Grid.Shared.Y = &ax
 	}
 	doc.Warnings = warnings
@@ -496,6 +507,16 @@ func buildSharedScaleForFacet(childSpec *spec.Spec, parts *facetPartitions, chan
 
 // childEncoding returns a spec's encoding block, tolerating a nil
 // spec (a composite facet child carries no top-level encoding).
+// facetAnchorPlot returns the plot rect a shared facet axis anchors
+// to: the first cell (top-left) when first is true, otherwise the last
+// (bottom-right). Callers guarantee cells is non-empty.
+func facetAnchorPlot(cells []scene.SceneCell, first bool) scene.Rect {
+	if first {
+		return cells[0].Scene.Plot
+	}
+	return cells[len(cells)-1].Scene.Plot
+}
+
 func childEncoding(s *spec.Spec) *spec.Encoding {
 	if s == nil {
 		return nil
