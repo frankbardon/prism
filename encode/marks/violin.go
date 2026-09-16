@@ -16,7 +16,10 @@ const ViolinResolution = 64
 // Lower arrays are symmetric around the band center, shaped by an
 // Epanechnikov KDE with Silverman bandwidth (D061).
 //
-// Orientation: vertical (x=category, y=quantitative). Same as boxplot.
+// Orientation (E9-S2) comes from MarkOrientation (orient.go), the
+// same reading boxplot takes: the category axis carries the band each
+// violin sits in and the density fans out across it, while the
+// measure axis carries the sampled value.
 func encodeViolin(in Inputs) ([]scene.Mark, error) {
 	if in.X.Field == "" || in.Y.Field == "" {
 		return nil, prismerrors.New(
@@ -25,26 +28,36 @@ func encodeViolin(in Inputs) ([]scene.Mark, error) {
 			map[string]any{"Field": "<xy>", "Source": "<encoding>", "Available": joinFieldNames(in.Table)},
 		)
 	}
-	band, ok := in.X.Scale.(BandScaler)
+	orient, err := MarkOrientation(in, "violin")
+	if err != nil {
+		return nil, err
+	}
+	category := CategoryChannel(in, orient)
+	measure := MeasureChannel(in, orient)
+	band, ok := category.Scale.(BandScaler)
 	if !ok {
 		return nil, prismerrors.New(
 			"PRISM_ENCODE_001",
 			"violin mark requires a band scale on the category axis.",
-			map[string]any{"Field": in.X.Field, "Source": "<scale>", "Available": "band"},
+			map[string]any{"Field": category.Field, "Source": "<scale>", "Available": "band"},
 		)
 	}
 	bandWidth := band.BandWidth()
+	if bandWidth < 0 {
+		bandWidth = -bandWidth
+	}
 
-	xs, err := readField(in.Table, in.X.Field)
+	xs, err := readField(in.Table, category.Field)
 	if err != nil {
 		return nil, err
 	}
-	ys, err := readField(in.Table, in.Y.Field)
+	ys, err := readField(in.Table, measure.Field)
 	if err != nil {
 		return nil, err
 	}
 	if len(xs) != len(ys) {
-		return nil, fmt.Errorf("violin: column length mismatch (x=%d, y=%d)", len(xs), len(ys))
+		return nil, fmt.Errorf("violin: column length mismatch (%s=%d, %s=%d)",
+			orient.CategoryAxis(), len(xs), orient.MeasureAxis(), len(ys))
 	}
 
 	// Group rows by category, preserving first-seen order.
@@ -56,7 +69,7 @@ func encodeViolin(in Inputs) ([]scene.Mark, error) {
 			return nil, prismerrors.New(
 				"PRISM_ENCODE_001",
 				fmt.Sprintf("violin category at row %d is not string (got %T).", i, xv),
-				map[string]any{"Field": in.X.Field, "Source": "<x>", "Available": "string"},
+				map[string]any{"Field": category.Field, "Source": "<" + orient.CategoryAxis() + ">", "Available": "string"},
 			)
 		}
 		yv, ok := toFloat64(ys[i])
@@ -64,7 +77,7 @@ func encodeViolin(in Inputs) ([]scene.Mark, error) {
 			return nil, prismerrors.New(
 				"PRISM_ENCODE_001",
 				fmt.Sprintf("violin value at row %d is not numeric (got %T).", i, ys[i]),
-				map[string]any{"Field": in.Y.Field, "Source": "<y>", "Available": "numeric"},
+				map[string]any{"Field": measure.Field, "Source": "<" + orient.MeasureAxis() + ">", "Available": "numeric"},
 			)
 		}
 		if _, seen := groupValues[cat]; !seen {
@@ -85,11 +98,17 @@ func encodeViolin(in Inputs) ([]scene.Mark, error) {
 		if len(vals) == 0 {
 			continue
 		}
-		left, err := in.X.Scale.Apply(g)
+		slotStart, err := category.Scale.Apply(g)
 		if err != nil {
 			return nil, err
 		}
-		center := left + bandWidth/2
+		// A y band runs bottom-to-top, so Apply returns the slot's far
+		// edge and the step is negative; bandWidth is already
+		// normalised positive above, so back the start up by it.
+		if band.BandWidth() < 0 {
+			slotStart -= bandWidth
+		}
+		center := slotStart + bandWidth/2
 		half := bandWidth / 2
 
 		mean := vmean(vals)
@@ -132,10 +151,12 @@ func encodeViolin(in Inputs) ([]scene.Mark, error) {
 		upper := make([][2]float64, res)
 		lower := make([][2]float64, res)
 		for i := 0; i < res; i++ {
-			y, _ := in.Y.Scale.Apply(samples[i])
+			m, _ := measure.Scale.Apply(samples[i])
 			off := (densities[i] / maxD) * half
-			upper[i] = [2]float64{center + off, y}
-			lower[i] = [2]float64{center - off, y}
+			ux, uy := OrientedPoint(orient, center+off, m)
+			lx, ly := OrientedPoint(orient, center-off, m)
+			upper[i] = [2]float64{ux, uy}
+			lower[i] = [2]float64{lx, ly}
 		}
 		out = append(out, scene.Mark{
 			Type:  scene.MarkArea,

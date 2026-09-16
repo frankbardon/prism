@@ -45,11 +45,20 @@ var orientValues = map[string]bool{
 
 // orientAwareMarks maps a mark type to the orient values its encoder
 // reads. It is the validate-side twin of the encoders themselves —
-// `encode/marks/orient.go` (bar / rect, where orient swaps the
-// category and measure axes) and `encode/marks/tree.go` (tree /
+// `encode/marks/orient.go` (the cartesian families, where orient swaps
+// the category and measure axes) and `encode/marks/tree.go` (tree /
 // dendrogram / network, where it selects the direction the layout
 // grows). A mark absent from this map draws no orientation at all, and
 // a value absent from a mark's list is not implemented for it.
+//
+// The cartesian set grew in E9-S2 to cover every mark that grows from
+// a baseline or sits in a band: area (and its sparkarea wrapper), tick,
+// boxplot, violin, winloss and sparkbar, which is a thin wrapper over
+// the bar encoder and so has honoured orient since E9-S1. `bullet` is
+// absent on purpose — it keeps its own `orientation` field, a
+// whole-mark rotation with the opposite default rather than an axis
+// swap. `heatmap` is absent too: a heatmap is banded on both axes at
+// once, so it has no category/measure split to swap.
 //
 // No entry lists "radial": nothing implements it. Keeping it out of
 // every list — rather than out of the schema enum — is what lets this
@@ -58,6 +67,13 @@ var orientValues = map[string]bool{
 var orientAwareMarks = map[string][]string{
 	"bar":        {"vertical", "horizontal"},
 	"rect":       {"vertical", "horizontal"},
+	"area":       {"vertical", "horizontal"},
+	"tick":       {"vertical", "horizontal"},
+	"boxplot":    {"vertical", "horizontal"},
+	"violin":     {"vertical", "horizontal"},
+	"winloss":    {"vertical", "horizontal"},
+	"sparkbar":   {"vertical", "horizontal"},
+	"sparkarea":  {"vertical", "horizontal"},
 	"tree":       {"vertical", "horizontal"},
 	"dendrogram": {"vertical", "horizontal"},
 	"network":    {"vertical", "horizontal"},

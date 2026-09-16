@@ -20,7 +20,7 @@ func adornSeries() [][2]float64 {
 }
 
 func TestEncodeAdornmentsNothingWhenUnset(t *testing.T) {
-	out, err := encodeAdornments(adornSeries(), &linScale{0, 100, 540, 20}, plotRect(), scene.Style{}, Adornments{})
+	out, err := encodeAdornments(adornSeries(), &linScale{0, 100, 540, 20}, OrientVertical, plotRect(), scene.Style{}, Adornments{})
 	if err != nil {
 		t.Fatalf("unexpected err: %v", err)
 	}
@@ -30,7 +30,7 @@ func TestEncodeAdornmentsNothingWhenUnset(t *testing.T) {
 }
 
 func TestEncodeAdornmentsNothingWhenEmptySeries(t *testing.T) {
-	out, err := encodeAdornments(nil, &linScale{0, 100, 540, 20}, plotRect(), scene.Style{}, Adornments{PointLast: true})
+	out, err := encodeAdornments(nil, &linScale{0, 100, 540, 20}, OrientVertical, plotRect(), scene.Style{}, Adornments{PointLast: true})
 	if err != nil {
 		t.Fatalf("unexpected err: %v", err)
 	}
@@ -40,7 +40,7 @@ func TestEncodeAdornmentsNothingWhenEmptySeries(t *testing.T) {
 }
 
 func TestEncodeAdornmentsPointLast(t *testing.T) {
-	out, err := encodeAdornments(adornSeries(), nil, plotRect(), scene.Style{}, Adornments{PointLast: true})
+	out, err := encodeAdornments(adornSeries(), nil, OrientVertical, plotRect(), scene.Style{}, Adornments{PointLast: true})
 	if err != nil {
 		t.Fatalf("unexpected err: %v", err)
 	}
@@ -57,7 +57,7 @@ func TestEncodeAdornmentsPointLast(t *testing.T) {
 }
 
 func TestEncodeAdornmentsPointExtent(t *testing.T) {
-	out, err := encodeAdornments(adornSeries(), nil, plotRect(), scene.Style{}, Adornments{PointExtent: true})
+	out, err := encodeAdornments(adornSeries(), nil, OrientVertical, plotRect(), scene.Style{}, Adornments{PointExtent: true})
 	if err != nil {
 		t.Fatalf("unexpected err: %v", err)
 	}
@@ -74,7 +74,7 @@ func TestEncodeAdornmentsPointExtent(t *testing.T) {
 }
 
 func TestEncodeAdornmentsExtentSinglePoint(t *testing.T) {
-	out, err := encodeAdornments([][2]float64{{5, 5}}, nil, plotRect(), scene.Style{}, Adornments{PointExtent: true})
+	out, err := encodeAdornments([][2]float64{{5, 5}}, nil, OrientVertical, plotRect(), scene.Style{}, Adornments{PointExtent: true})
 	if err != nil {
 		t.Fatalf("unexpected err: %v", err)
 	}
@@ -92,7 +92,7 @@ func TestEncodeAdornmentsReferenceBand(t *testing.T) {
 	// → 436, to=40 → 332. top=332, height=104. Band spans plot width.
 	ys := &linScale{0, 100, 540, 20}
 	plot := plotRect()
-	out, err := encodeAdornments(adornSeries(), ys, plot, scene.Style{}, Adornments{
+	out, err := encodeAdornments(adornSeries(), ys, OrientVertical, plot, scene.Style{}, Adornments{
 		ReferenceBand: &spec.ReferenceBand{From: 20, To: 40},
 	})
 	if err != nil {
@@ -115,7 +115,7 @@ func TestEncodeAdornmentsReferenceBand(t *testing.T) {
 }
 
 func TestEncodeAdornmentsBandIgnoredWithoutScale(t *testing.T) {
-	out, err := encodeAdornments(adornSeries(), nil, plotRect(), scene.Style{}, Adornments{
+	out, err := encodeAdornments(adornSeries(), nil, OrientVertical, plotRect(), scene.Style{}, Adornments{
 		ReferenceBand: &spec.ReferenceBand{From: 20, To: 40},
 	})
 	if err != nil {
@@ -128,7 +128,7 @@ func TestEncodeAdornmentsBandIgnoredWithoutScale(t *testing.T) {
 
 func TestEncodeAdornmentsCombinedOrder(t *testing.T) {
 	ys := &linScale{0, 100, 540, 20}
-	out, err := encodeAdornments(adornSeries(), ys, plotRect(), scene.Style{}, Adornments{
+	out, err := encodeAdornments(adornSeries(), ys, OrientVertical, plotRect(), scene.Style{}, Adornments{
 		PointLast:     true,
 		PointExtent:   true,
 		ReferenceBand: &spec.ReferenceBand{From: 20, To: 40},

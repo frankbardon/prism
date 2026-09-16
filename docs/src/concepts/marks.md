@@ -12,10 +12,10 @@ arcs, etc. Specify via top-level `mark` (shorthand string) or
 |---|---|
 | `bar` | Compare categories. The default. Stacks by segment — see [Encoding › Stacking](encoding.md#stacking). |
 | `line` | Continuous trends; ordered x-axis. |
-| `area` | Filled trends. Supports negative values, an explicit `y2` lower edge, and stacking — see [Encoding › Stacking](encoding.md#stacking). |
+| `area` | Filled trends. Supports negative values, an explicit `y2` lower edge, stacking — see [Encoding › Stacking](encoding.md#stacking) — and [`orient`](#orientation-markorient). |
 | `point` | Scatter, dot plots. |
 | `circle`, `square` | Convenience aliases for `point` with shape preset. |
-| `tick` | Strip plots, ranking dot plots. |
+| `tick` | Strip plots, ranking dot plots. Honours [`orient`](#orientation-markorient). |
 | `rect` | Heatmap cells, custom rectangular layouts. |
 | `rule` | Reference lines, benchmarks, ranges. |
 | `text` | Inline labels, annotations. Content comes from the `text` channel — see [Text](#text). |
@@ -27,8 +27,8 @@ arcs, etc. Specify via top-level `mark` (shorthand string) or
 |---|---|
 | `histogram` | `bar` + auto-bin transform. |
 | `heatmap` | `rect` + 2D bin + sequential color scale. Binds an optional field-driven `opacity` channel for per-cell shading — pair it with a crosstab `zscore_vs_margin` overlay column to fade insignificant cells (significance shading). Opacity maps the field linearly over `[min, max]` to `[0.15, 1.0]`. |
-| `boxplot` | `rect` (IQR) + `rule` (whiskers) + `point` (outliers). |
-| `violin` | `area` symmetric around centerline (Epanechnikov KDE). |
+| `boxplot` | `rect` (IQR) + `rule` (whiskers) + `point` (outliers). Honours [`orient`](#orientation-markorient). |
+| `violin` | `area` symmetric around centerline (Epanechnikov KDE). Honours [`orient`](#orientation-markorient). |
 | `pie` | `arc` with theta computed from share. |
 | `donut` | `arc` with `inner_radius_ratio > 0`. |
 
@@ -40,7 +40,7 @@ arcs, etc. Specify via top-level `mark` (shorthand string) or
 | `funnel` | Conversion funnels — stacked trapezoids. |
 | `sparkline` | Inline micro-line charts, no axes. |
 | `sparkbar` | Inline micro-column charts, no axes — bar-family sibling of `sparkline`. |
-| `winloss` | Equal-height up/down micro-bars by the sign of `y` (>0 up, <0 down, ==0 flat). Magnitude is ignored — only direction encodes. |
+| `winloss` | Equal-length micro-bars by the sign of the measured value (>0 one way, <0 the other, ==0 flat). Magnitude is ignored — only direction encodes. Honours [`orient`](#orientation-markorient). |
 | `sparkarea` | Inline filled micro-area charts, no axes — area-family sibling of `sparkline`; fill reaches the y=0 baseline. |
 | `bullet` | Compact KPI gauge — a measure bar over qualitative bands, with an optional comparative bar and target tick. Keeps its measure axis. |
 | `image` | Sprites / data-URL images at position. |
@@ -62,7 +62,7 @@ any combination on the same mark.
 |---|---|---|
 | `point_last` | boolean | Draws an emphasis dot on the final (most recent) value. |
 | `point_extent` | boolean | Draws highlight dots on the minimum and maximum values. |
-| `reference_band` | `{from, to}` | Shades a faint horizontal normal-range band, spanning the full spark width between the two value-axis bounds, behind the series. |
+| `reference_band` | `{from, to}` | Shades a faint normal-range band between the two value-axis bounds, spanning the spark's full extent across the category axis, behind the series. |
 
 Dots inherit the spark's line color; the band is a faint fill of the
 same color. `from` / `to` are data-space values on the spark's value
@@ -443,6 +443,12 @@ role is the mark's orientation.
 | `vertical` | `x` | `y` | up/down from a baseline at `y = 0` |
 | `horizontal` | `y` | `x` | right/left from a baseline at `x = 0` |
 
+The same split applies to every cartesian family, not just `bar` —
+a boxplot's band and whisker caps sit on the category axis while its
+quantiles walk the measure axis, an area's series runs along the
+category axis and fills to a baseline on the measure axis, and a tick
+draws a short segment along the measure axis at its category's centre.
+
 ### Inference
 
 **You usually do not write `orient` at all.** It is inferred from
@@ -455,6 +461,14 @@ Vega-Lite infers it:
 | continuous | band | `horizontal` |
 | band | band | `vertical` (ambiguous; the default wins) |
 | continuous | continuous | error — neither axis can host the category |
+
+The last row holds for the marks that *need* a band to sit in (`bar`,
+`rect`, `boxplot`, `violin`, `winloss`). `area` and `tick` position
+rows along an axis that is usually continuous or temporal, so two
+continuous axes are perfectly legal there and fall back to the mark's
+historic direction — `vertical` for `area`, `horizontal` for `tick`.
+An explicit `orient` still wins on those marks, and is the only way to
+draw a horizontal area.
 
 So a nominal `y` against a quantitative `x` already draws a horizontal
 bar chart:
@@ -469,10 +483,10 @@ bar chart:
 }
 ```
 
-An explicit `orient` **overrides** the inference. It cannot invent a
-band scale, though: `"orient": "horizontal"` against a continuous `y`
-fails with `PRISM_ENCODE_001` naming the axis that needs the band,
-rather than drawing something else and hoping you notice.
+An explicit `orient` **overrides** the inference. On a mark that needs
+a band it cannot invent one, though: `"orient": "horizontal"` against a
+continuous `y` fails with `PRISM_ENCODE_001` naming the axis that needs
+the band, rather than drawing something else and hoping you notice.
 
 Everything else about the mark is orientation-agnostic: the baseline,
 `corner_radius`, `color` grouping and the `x2`/`y2`
@@ -487,12 +501,28 @@ not the top. Pin an explicit order with
 
 ### Which marks read it
 
-| Mark | Meaning of `orient` |
-|---|---|
-| `bar`, `rect` | Swaps the category and measure axes, as above. |
-| `tree`, `dendrogram`, `network` | The direction the layout grows — not a category/measure swap. |
-| `bullet` | Uses its own `orientation` field instead (see [Bullet](#bullet)). |
-| everything else | Not implemented — `orient` is **rejected**, never ignored. |
+| Mark | Meaning of `orient` | Default | Needs a band on the category axis |
+|---|---|---|---|
+| `bar`, `rect` | Swaps the category and measure axes, as above. | inferred, else `vertical` | yes |
+| `boxplot`, `violin` | Swaps the axes: the band holds the box / density fan, the measure axis the quantiles or samples. | inferred, else `vertical` | yes |
+| `winloss` | Swaps the axes: the streak runs across the band and the equal-length bars grow either side of the zero baseline. | inferred, else `vertical` | yes |
+| `sparkbar` | As `bar` — `sparkbar` is a thin wrapper over the bar encoder. | inferred, else `vertical` | yes |
+| `area`, `sparkarea` | Moves the series axis and the fill baseline. A horizontal area runs bottom-to-top and fills to `x = 0`. | `vertical` | no |
+| `tick` | Moves the short segment to the other axis, centred in its category slot. | inferred, else `horizontal` | no |
+| `tree`, `dendrogram`, `network` | The direction the layout grows — not a category/measure swap. | `vertical` | n/a |
+| `bullet` | Uses its own `orientation` field instead (see [Bullet](#bullet)). | `horizontal` | n/a |
+| `heatmap` | Not implemented — a heatmap is banded on **both** axes, so there is no category/measure split to swap. | — | — |
+| everything else | Not implemented — `orient` is **rejected**, never ignored. | — | — |
+
+Two shapes are worth calling out:
+
+- `y2` supplies an area's explicit lower edge only while the area is
+  vertical. On a horizontal area the fill measures along `x`, so a
+  bound `y2` would be a second position on the series axis — that
+  combination is rejected rather than quietly dropped.
+- A horizontal `boxplot` or `violin` reads its *category* from `y` and
+  its values from `x`, so swap the two channel bindings (or set
+  `orient` explicitly) rather than only relabelling the axes.
 
 `radial` is named by the vocabulary but implemented by no mark, so it
 is rejected too. For a radial reading reach for a polar mark (`arc` /

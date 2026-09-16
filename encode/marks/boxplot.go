@@ -28,100 +28,120 @@ type BoxplotSummary struct {
 // (whisker stems), 2 RuleGeom (whisker caps), N PointGeom
 // (outliers).
 //
-// Orientation: vertical (x=category, y=quantitative). Horizontal
-// (x=quantitative, y=category) is forward-looking; v1 covers the
-// common vertical case used by the boxplot.json fixture.
+// Orientation (E9-S2) comes from MarkOrientation (orient.go): the
+// category axis carries the band the box sits in and sizes it across
+// its thickness, the measure axis carries the quantiles. `vertical`
+// (band on x) is the default and historic shape; `horizontal` (band on
+// y) lays the boxes out as rows. Every piece of the geometry — box,
+// median, stems, caps, outliers — is expressed in category/measure
+// terms and projected by OrientedRect / OrientedPoint.
 //
 // See D062 for the 1.5×IQR Tukey outlier rule + per-group Mark.ID
 // prefix scheme.
 func encodeBoxplot(in Inputs) ([]scene.Mark, error) {
+	orient, err := MarkOrientation(in, "boxplot")
+	if err != nil {
+		return nil, err
+	}
 	summaries, err := ComputeBoxplotSummaries(in)
 	if err != nil {
 		return nil, err
 	}
-	band, ok := in.X.Scale.(BandScaler)
+	category := CategoryChannel(in, orient)
+	measure := MeasureChannel(in, orient)
+	band, ok := category.Scale.(BandScaler)
 	if !ok {
 		return nil, prismerrors.New(
 			"PRISM_ENCODE_001",
 			"boxplot mark requires a band scale on the category axis.",
-			map[string]any{"Field": in.X.Field, "Source": "<scale>", "Available": "band"},
+			map[string]any{"Field": category.Field, "Source": "<scale>", "Available": "band"},
 		)
 	}
 	bandWidth := band.BandWidth()
 
 	out := make([]scene.Mark, 0, len(summaries)*7)
 	for _, s := range summaries {
-		left, err := in.X.Scale.Apply(s.Group)
+		slotStart, err := category.Scale.Apply(s.Group)
 		if err != nil {
 			return nil, err
 		}
-		right := left + bandWidth
-		center := (left + right) / 2
+		// A y band runs bottom-to-top, so its step is negative and
+		// Apply returns the slot's far edge; normalise to
+		// (start, positive length) exactly as CategorySlots does.
+		width := bandWidth
+		if width < 0 {
+			slotStart, width = slotStart+width, -width
+		}
+		slot := [2]float64{slotStart, width}
+		near, far := slotStart, slotStart+width
+		center := slotStart + width/2
 
-		y1, _ := in.Y.Scale.Apply(s.Q1)
-		yM, _ := in.Y.Scale.Apply(s.Median)
-		y3, _ := in.Y.Scale.Apply(s.Q3)
-		yLo, _ := in.Y.Scale.Apply(s.ReachLow)
-		yHi, _ := in.Y.Scale.Apply(s.ReachHi)
+		m1, _ := measure.Scale.Apply(s.Q1)
+		mM, _ := measure.Scale.Apply(s.Median)
+		m3, _ := measure.Scale.Apply(s.Q3)
+		mLo, _ := measure.Scale.Apply(s.ReachLow)
+		mHi, _ := measure.Scale.Apply(s.ReachHi)
 
-		// Box (IQR, q1 → q3). In SVG y-inverted, y3 is on top, y1 on bottom.
+		// Box (IQR, q1 → q3), normalised so the rect extent is
+		// positive whichever way the measure scale runs.
+		boxSpan := [2]float64{m3, m1 - m3}
+		if boxSpan[1] < 0 {
+			boxSpan = [2]float64{m1, m3 - m1}
+		}
+		boxRect := OrientedRect(orient, slot, boxSpan)
 		out = append(out, scene.Mark{
 			Type:  scene.MarkRect,
 			ID:    fmt.Sprintf("boxplot-%s-box", s.Group),
 			Style: in.Style,
-			Rect: &scene.RectGeom{
-				X: left,
-				Y: y3,
-				W: bandWidth,
-				H: y1 - y3,
-			},
+			Rect:  &boxRect,
 		})
 		// Median line across the box.
 		out = append(out, scene.Mark{
 			Type:  scene.MarkRule,
 			ID:    fmt.Sprintf("boxplot-%s-median", s.Group),
 			Style: in.Style,
-			Rule:  &scene.RuleGeom{X1: left, Y1: yM, X2: right, Y2: yM},
+			Rule:  orientedRule(orient, near, mM, far, mM),
 		})
 		// Upper whisker stem (q3 → reach hi).
 		out = append(out, scene.Mark{
 			Type:  scene.MarkRule,
 			ID:    fmt.Sprintf("boxplot-%s-w-stem-hi", s.Group),
 			Style: in.Style,
-			Rule:  &scene.RuleGeom{X1: center, Y1: y3, X2: center, Y2: yHi},
+			Rule:  orientedRule(orient, center, m3, center, mHi),
 		})
 		// Lower whisker stem (q1 → reach lo).
 		out = append(out, scene.Mark{
 			Type:  scene.MarkRule,
 			ID:    fmt.Sprintf("boxplot-%s-w-stem-lo", s.Group),
 			Style: in.Style,
-			Rule:  &scene.RuleGeom{X1: center, Y1: y1, X2: center, Y2: yLo},
+			Rule:  orientedRule(orient, center, m1, center, mLo),
 		})
 		// Upper whisker cap.
-		capHalf := bandWidth * 0.25
+		capHalf := width * 0.25
 		out = append(out, scene.Mark{
 			Type:  scene.MarkRule,
 			ID:    fmt.Sprintf("boxplot-%s-w-cap-hi", s.Group),
 			Style: in.Style,
-			Rule:  &scene.RuleGeom{X1: center - capHalf, Y1: yHi, X2: center + capHalf, Y2: yHi},
+			Rule:  orientedRule(orient, center-capHalf, mHi, center+capHalf, mHi),
 		})
 		// Lower whisker cap.
 		out = append(out, scene.Mark{
 			Type:  scene.MarkRule,
 			ID:    fmt.Sprintf("boxplot-%s-w-cap-lo", s.Group),
 			Style: in.Style,
-			Rule:  &scene.RuleGeom{X1: center - capHalf, Y1: yLo, X2: center + capHalf, Y2: yLo},
+			Rule:  orientedRule(orient, center-capHalf, mLo, center+capHalf, mLo),
 		})
 		// Outliers as point marks.
 		for i, v := range s.Outliers {
-			yv, _ := in.Y.Scale.Apply(v)
+			mv, _ := measure.Scale.Apply(v)
+			cx, cy := OrientedPoint(orient, center, mv)
 			out = append(out, scene.Mark{
 				Type:  scene.MarkPoint,
 				ID:    fmt.Sprintf("boxplot-%s-out-%d", s.Group, i),
 				Style: in.Style,
 				Point: &scene.PointGeom{
-					Cx:    center,
-					Cy:    yv,
+					Cx:    cx,
+					Cy:    cy,
 					R:     2.5,
 					Shape: scene.ShapeCircle,
 				},
@@ -131,10 +151,20 @@ func encodeBoxplot(in Inputs) ([]scene.Mark, error) {
 	return out, nil
 }
 
+// orientedRule builds a RuleGeom from two (category, measure) pairs,
+// projecting each onto scene-space through the mark's orientation.
+func orientedRule(o Orientation, c1, m1, c2, m2 float64) *scene.RuleGeom {
+	x1, y1 := OrientedPoint(o, c1, m1)
+	x2, y2 := OrientedPoint(o, c2, m2)
+	return &scene.RuleGeom{X1: x1, Y1: y1, X2: x2, Y2: y2}
+}
+
 // ComputeBoxplotSummaries partitions the table by the category axis
-// (in.X.Field) and computes q1/median/q3/min/max + whisker reach +
-// outliers per group. Exposed so the parity test can compare
-// summaries directly against Pulse-mapped quantiles.
+// and computes q1/median/q3/min/max + whisker reach + outliers per
+// group. Which axis is the category one follows the mark's
+// orientation, so a horizontal boxplot groups by y and summarises x.
+// Exposed so the parity test can compare summaries directly against
+// externally computed quantiles.
 func ComputeBoxplotSummaries(in Inputs) ([]BoxplotSummary, error) {
 	if in.X.Field == "" || in.Y.Field == "" {
 		return nil, prismerrors.New(
@@ -143,16 +173,23 @@ func ComputeBoxplotSummaries(in Inputs) ([]BoxplotSummary, error) {
 			map[string]any{"Field": "<xy>", "Source": "<encoding>", "Available": joinFieldNames(in.Table)},
 		)
 	}
-	xs, err := readField(in.Table, in.X.Field)
+	orient, err := MarkOrientation(in, "boxplot")
 	if err != nil {
 		return nil, err
 	}
-	ys, err := readField(in.Table, in.Y.Field)
+	category := CategoryChannel(in, orient)
+	measure := MeasureChannel(in, orient)
+	xs, err := readField(in.Table, category.Field)
+	if err != nil {
+		return nil, err
+	}
+	ys, err := readField(in.Table, measure.Field)
 	if err != nil {
 		return nil, err
 	}
 	if len(xs) != len(ys) {
-		return nil, fmt.Errorf("boxplot: column length mismatch (x=%d, y=%d)", len(xs), len(ys))
+		return nil, fmt.Errorf("boxplot: column length mismatch (%s=%d, %s=%d)",
+			orient.CategoryAxis(), len(xs), orient.MeasureAxis(), len(ys))
 	}
 
 	// Group rows by category, preserving first-seen order.
@@ -164,7 +201,7 @@ func ComputeBoxplotSummaries(in Inputs) ([]BoxplotSummary, error) {
 			return nil, prismerrors.New(
 				"PRISM_ENCODE_001",
 				fmt.Sprintf("boxplot category value at row %d is not a string (got %T).", i, xv),
-				map[string]any{"Field": in.X.Field, "Source": "<x>", "Available": "string"},
+				map[string]any{"Field": category.Field, "Source": "<" + orient.CategoryAxis() + ">", "Available": "string"},
 			)
 		}
 		yv, ok := toFloat64(ys[i])
@@ -172,7 +209,7 @@ func ComputeBoxplotSummaries(in Inputs) ([]BoxplotSummary, error) {
 			return nil, prismerrors.New(
 				"PRISM_ENCODE_001",
 				fmt.Sprintf("boxplot value at row %d is not numeric (got %T).", i, ys[i]),
-				map[string]any{"Field": in.Y.Field, "Source": "<y>", "Available": "numeric"},
+				map[string]any{"Field": measure.Field, "Source": "<" + orient.MeasureAxis() + ">", "Available": "numeric"},
 			)
 		}
 		if _, seen := groupValues[cat]; !seen {

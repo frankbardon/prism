@@ -5,6 +5,7 @@ import (
 	"sort"
 
 	"github.com/frankbardon/prism/encode/scene"
+	prismerrors "github.com/frankbardon/prism/errors"
 )
 
 // encodeArea partitions rows by the bound discrete grouping channels
@@ -40,50 +41,74 @@ import (
 // When neither channel is bound, behavior is unchanged from before
 // grouping existed: a single scene.Mark ("area-0") carrying every
 // row's points in raw upstream order.
+//
+// Orientation (E9-S2): an area has the same category/measure split a
+// bar does, except its category axis is usually continuous or temporal
+// rather than banded — so it resolves through MarkOrientationOr
+// (orient.go) with a vertical fallback. `"orient": "horizontal"` moves
+// the series axis to y and the baseline to x = 0, which is the shape a
+// horizontal ribbon needs. Everything else — grouping, ordering along
+// the series axis, curve interpolation — is orientation-agnostic.
 func encodeArea(in Inputs) ([]scene.Mark, error) {
-	xs, err := readField(in.Table, in.X.Field)
+	orient, err := MarkOrientationOr(in, "area", OrientVertical)
 	if err != nil {
 		return nil, err
 	}
-	ys, err := readField(in.Table, in.Y.Field)
+	category := CategoryChannel(in, orient)
+	measure := MeasureChannel(in, orient)
+	cats, err := readField(in.Table, category.Field)
 	if err != nil {
 		return nil, err
 	}
-	if len(xs) != len(ys) {
-		return nil, fmt.Errorf("encodeArea: column length mismatch (x=%d, y=%d)", len(xs), len(ys))
+	vals, err := readField(in.Table, measure.Field)
+	if err != nil {
+		return nil, err
 	}
-	if len(xs) == 0 {
+	if len(cats) != len(vals) {
+		return nil, fmt.Errorf("encodeArea: column length mismatch (%s=%d, %s=%d)",
+			orient.CategoryAxis(), len(cats), orient.MeasureAxis(), len(vals))
+	}
+	if len(cats) == 0 {
 		return nil, nil
 	}
-	// Baseline = pixel y where the data value = 0 (mirrors bar.go).
-	// Positive-only domains snap this to the plot bottom; zero-crossing
-	// domains land it mid-plot. Fall back to the plot bottom on apply
-	// failure (shouldn't happen for linear scales).
-	baseline, err := in.Y.Scale.Apply(float64(0))
-	if err != nil {
-		baseline = in.Layout.Bottom()
-	}
+	// Baseline = the measure axis's data-zero pixel (mirrors bar.go).
+	// Positive-only domains snap this to the plot edge; zero-crossing
+	// domains land it mid-plot.
+	baseline := BaselinePixel(in, orient)
 	// y2 (E9-S3), when bound, supplies the lower edge per row instead
 	// of the baseline. Left nil otherwise, which keeps the baseline
-	// path byte-identical.
+	// path byte-identical. y2 is the *measure* companion only while the
+	// area is vertical; on a horizontal area y2 would be a second
+	// position on the series axis, which the geometry cannot express —
+	// rejected rather than silently ignored.
 	var lows []any
 	if spanBound(in.Y2) {
+		if orient == OrientHorizontal {
+			return nil, prismerrors.New(
+				"PRISM_ENCODE_001",
+				"A horizontal area measures along x, so y2 has no lower edge to supply.",
+				map[string]any{"Field": in.Y2.Field, "Source": "<y2>", "Available": "vertical"},
+			)
+		}
 		lows, err = readField(in.Table, in.Y2.Field)
 		if err != nil {
 			return nil, err
 		}
-		if len(lows) != len(xs) {
-			return nil, fmt.Errorf("encodeArea: column length mismatch (x=%d, y2=%d)", len(xs), len(lows))
+		if len(lows) != len(cats) {
+			return nil, fmt.Errorf("encodeArea: column length mismatch (x=%d, y2=%d)", len(cats), len(lows))
 		}
 	}
-	upperAll := make([][2]float64, len(xs))
-	lowerAll := make([][2]float64, len(xs))
-	for i := range xs {
-		x, err := in.X.Scale.Apply(xs[i])
+	// seriesPos is the pixel along the category (series) axis; it is
+	// what the grouped path sorts on, in either orientation.
+	seriesPos := make([]float64, len(cats))
+	upperAll := make([][2]float64, len(cats))
+	lowerAll := make([][2]float64, len(cats))
+	for i := range cats {
+		c, err := category.Scale.Apply(cats[i])
 		if err != nil {
 			return nil, err
 		}
-		y, err := in.Y.Scale.Apply(ys[i])
+		m, err := measure.Scale.Apply(vals[i])
 		if err != nil {
 			return nil, err
 		}
@@ -93,12 +118,15 @@ func encodeArea(in Inputs) ([]scene.Mark, error) {
 				return nil, err
 			}
 		}
-		upperAll[i] = [2]float64{x, y}
-		lowerAll[i] = [2]float64{x, low}
+		seriesPos[i] = c
+		ux, uy := OrientedPoint(orient, c, m)
+		lx, ly := OrientedPoint(orient, c, low)
+		upperAll[i] = [2]float64{ux, uy}
+		lowerAll[i] = [2]float64{lx, ly}
 	}
 
 	grouped := len(groupChannels(in)) > 0
-	groups, err := groupRows(in, len(xs))
+	groups, err := groupRows(in, len(cats))
 	if err != nil {
 		return nil, err
 	}
@@ -110,7 +138,7 @@ func encodeArea(in Inputs) ([]scene.Mark, error) {
 		idxs := append([]int(nil), g.indices...)
 		if grouped {
 			sort.SliceStable(idxs, func(a, b int) bool {
-				return upperAll[idxs[a]][0] < upperAll[idxs[b]][0]
+				return seriesPos[idxs[a]] < seriesPos[idxs[b]]
 			})
 		}
 		upper := make([][2]float64, len(idxs))
