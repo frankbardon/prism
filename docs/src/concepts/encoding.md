@@ -269,6 +269,15 @@ reservation is the sum (top/bottom) or the widest (left/right) of what
 the stacked legends claim.
 ### Hiding an axis or legend
 
+> **Two legend-suppression syntaxes exist.** `"legend": null` is the
+> **canonical** form — it mirrors Vega-Lite and is symmetric with
+> `"axis": null`. `{"legend": {"orient": "none"}}` is an accepted **alias**
+> with identical behaviour. Prefer `null`; the alias exists because both
+> landed in the same release, and it is kept for compatibility rather than
+> because two spellings are desirable.
+
+### Details
+
 `"axis": null` on a position channel suppresses that axis entirely —
 domain line, ticks, tick labels, title and grid lines all go. The
 padding the axis reserved on its side of the plot is released, so the

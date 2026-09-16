@@ -10,7 +10,7 @@
       "additionalProperties": false,
       "properties": {
         "type":         {"type": "string", "enum": ["symbol", "gradient"], "description": "Legend representation kind."},
-        "orient":       {"type": "string", "enum": ["left", "right", "top", "bottom", "top-left", "top-right", "bottom-left", "bottom-right", "none"], "description": "Legend anchor. The four side values reserve margin next to the plot; the four corner values overlay the plot; none hides the legend."},
+        "orient":       {"type": "string", "enum": ["left", "right", "top", "bottom", "top-left", "top-right", "bottom-left", "bottom-right", "none"], "description": "Legend anchor. The four side values reserve margin next to the plot; the four corner values overlay the plot; none hides the legend (an alias for `\"legend\": null`, which is the canonical form)."},
         "title":        {"type": ["string", "null"], "description": "Legend title; null suppresses."},
         "direction":    {"type": "string", "enum": ["horizontal", "vertical"], "description": "Layout direction."},
         "format":       {"type": "string", "description": "Format string for legend tick labels."},
