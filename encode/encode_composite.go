@@ -220,6 +220,23 @@ func encodeLayerComposite(s *spec.Spec, composite *plan.CompositeDAG, childTable
 			)
 		}
 
+		// Same null policy as the flat encoder: rows null in a
+		// scale-bound channel leave this layer's table before its
+		// scales, colour categories and marks are built. The warning
+		// names the layer so a multi-layer spec says which one shed
+		// rows. Other layers are untouched.
+		if usesCartesianScales(markType) {
+			filtered, nullWarn, nerr := marks.DropNullRows(
+				lc.tbl, fmt.Sprintf("layer-%d", lc.idx), scaleBoundChannels(childEnc)...)
+			if nerr != nil {
+				return nil, nerr
+			}
+			lc.tbl = filtered
+			if nullWarn != nil {
+				warnings = append(warnings, *nullWarn)
+			}
+		}
+
 		// Per-layer X scale: shared one when present, else resolve per
 		// channel.
 		var xScale Scale

@@ -972,7 +972,16 @@ var Codes = map[string]CodeMetadata{
 			`Source data had {{.Count}} rows where one or more channel-bound fields were null (often from a left / outer join with no match on the right). Filter or impute those rows upstream to suppress the warning.`,
 			`See ` + "`docs/src/concepts/multi-source.md`" + ` for join null semantics.`,
 		},
-		SeeAlso: []string{"PRISM_JOIN_001"},
+		SeeAlso: []string{"PRISM_JOIN_001", "PRISM_ENCODE_NULL_ALL_ROWS"},
+	},
+	"PRISM_ENCODE_NULL_ALL_ROWS": {
+		Code:    "PRISM_ENCODE_NULL_ALL_ROWS",
+		Message: `Every one of the {{.Count}} upstream rows is null on channel(s) {{.Channels}}; there is nothing left to draw.`,
+		Fixups: []string{
+			`Rows null in a scale-bound channel are dropped with ` + "`PRISM_WARN_NULL_DROPPED`" + `; here every row qualified, so the mark would render empty. Check that {{.Fields}} is the column you meant to bind.`,
+			`A column that is null in every row infers as categorical/string with no values — confirm the upstream transform (often a left / outer join with no match) actually produced data.`,
+		},
+		SeeAlso: []string{"PRISM_WARN_NULL_DROPPED", "PRISM_JOIN_001"},
 	},
 	"PRISM_WARN_NULL_AGG_ALL": {
 		Code:    "PRISM_WARN_NULL_AGG_ALL",

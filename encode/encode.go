@@ -223,11 +223,30 @@ func Encode(s *spec.Spec, tables map[plan.NodeID]*table.Table, tipID plan.NodeID
 	// Image mark uses x/y when bound, otherwise skips — let the
 	// standard path run; the image encoder is forgiving on missing
 	// scales.
-	polarMark := markType == "arc" || markType == "pie" || markType == "donut"
-	selfScaleMark := markType == "histogram"
-	specialtyMark := markType == "sankey" || markType == "funnel" || markType == "path" ||
-		markType == "tree" || markType == "dendrogram" || markType == "network"
-	geoMark := markType == "geoshape" || markType == "geopoint"
+	polarMark := isPolarMark(markType)
+	selfScaleMark := isSelfScaleMark(markType)
+	specialtyMark := isSpecialtyMark(markType)
+	geoMark := isGeoMark(markType)
+
+	// Drop rows carrying a null in a scale-bound channel before any
+	// scale resolution runs, so the domains, the color categories and
+	// every per-row consumer downstream (marks, tooltips, datum
+	// back-references, category styles, conditions) agree on one row
+	// set. Only the cartesian x / y channels are scale-bound — the
+	// marks that skip that resolution below (polar / histogram /
+	// specialty / geo) bring their own geometry and never hand a raw
+	// field value to Scale.Apply. A null in a non-scale-bound channel
+	// (tooltip, text, color, …) is left alone.
+	if usesCartesianScales(markType) {
+		filtered, nullWarn, nerr := marks.DropNullRows(tbl, "layer-0", scaleBoundChannels(enc)...)
+		if nerr != nil {
+			return nil, nerr
+		}
+		tbl = filtered
+		if nullWarn != nil {
+			warnings = append(warnings, *nullWarn)
+		}
+	}
 
 	// Resolve x / y scales (composite caller may supply pre-computed
 	// shared overrides per P09 / D057; honour them when present so
@@ -716,6 +735,69 @@ func fieldOf(ch *spec.PositionChannel) string {
 		return ""
 	}
 	return ch.Field
+}
+
+// isPolarMark reports whether markType consumes theta + colour and
+// builds its own share-based geometry (D059) instead of cartesian
+// x / y scales.
+func isPolarMark(markType string) bool {
+	return markType == "arc" || markType == "pie" || markType == "donut"
+}
+
+// isSelfScaleMark reports whether markType builds its own synthetic
+// x / y scales inside the encoder (D060).
+func isSelfScaleMark(markType string) bool {
+	return markType == "histogram"
+}
+
+// isSpecialtyMark reports whether markType brings its own geometry
+// and needs no cartesian axes (P11 marks + the graph family).
+func isSpecialtyMark(markType string) bool {
+	switch markType {
+	case "sankey", "funnel", "path", "tree", "dendrogram", "network":
+		return true
+	}
+	return false
+}
+
+// isGeoMark reports whether markType projects lon/lat rather than
+// resolving cartesian scales (P18).
+func isGeoMark(markType string) bool {
+	return markType == "geoshape" || markType == "geopoint"
+}
+
+// usesCartesianScales reports whether markType goes through the
+// standard x / y scale resolution — and therefore whether a raw field
+// value from those channels ever reaches Scale.Apply. It is the one
+// predicate both the flat encoder and the layer-composite encoder
+// consult before dropping null rows, so the two can never disagree
+// about which channels are scale-bound.
+func usesCartesianScales(markType string) bool {
+	return !isPolarMark(markType) && !isSelfScaleMark(markType) &&
+		!isSpecialtyMark(markType) && !isGeoMark(markType)
+}
+
+// scaleBoundChannels lists the encoding channels whose raw field
+// values are handed to a resolved Scale.Apply — the only channels
+// where an upstream null becomes a hard PRISM_ENCODE_001 rather than
+// a cosmetic default. Today that is exactly the cartesian x / y pair;
+// every other channel (color, opacity, tooltip, text, detail, the
+// sankey / geo bindings) either has no scale or tolerates a null.
+//
+// Feeding marks.DropNullRows from one helper keeps the flat and
+// layer-composite encoders on the same definition of "scale-bound".
+func scaleBoundChannels(enc *spec.Encoding) []marks.NullChannel {
+	if enc == nil {
+		return nil
+	}
+	var out []marks.NullChannel
+	if f := fieldOf(enc.X); f != "" {
+		out = append(out, marks.NullChannel{Channel: "x", Field: f})
+	}
+	if f := fieldOf(enc.Y); f != "" {
+		out = append(out, marks.NullChannel{Channel: "y", Field: f})
+	}
+	return out
 }
 
 // detailFields (E5-S1) flattens encoding.detail — which decodes as

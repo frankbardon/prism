@@ -71,6 +71,8 @@ genuine measurement:
 | Inline type inference | A null carries no type. Each column takes its kind from its **first non-null value**, wherever that value sits — a leading `null` no longer decides the column. |
 | Inline column with no non-null value | Nothing to infer from, so it resolves to the categorical (string) fallback rather than erroring. Every row is flagged null, so the kind never holds a value. Declare `data.fields` if a specific kind matters. |
 | Inline column order | The union of every row's keys, alphabetical. A field that first appears in a later row still becomes a column, in the slot it would have held had row 0 carried it; the rows above it are null. |
+| Encoding: `x`, `y` (scale-bound) | The whole row is dropped before scale resolution. See below. |
+| Encoding: `color`, `opacity`, `text`, `tooltip`, `detail`, `theta`, the sankey / geo bindings | The row is kept. A null there falls back to the channel's default (default fill, empty label, empty tooltip line) rather than removing a mark. |
 
 An explicit `data.fields` declaration bypasses inference entirely and
 wins over any observed value. Inference only applies when `data.fields`
@@ -78,8 +80,45 @@ is absent, and it still rejects a genuinely mixed column — a real string
 arriving in a column inferred as numeric raises
 `PRISM_RESOLVE_INLINE_TYPE_MISMATCH` with the offending row and field.
 
-The encoder collects null rows it drops and emits
-`PRISM_WARN_NULL_DROPPED` carrying the count + offending channels.
+### Nulls at encode time
+
+A **scale-bound** channel is one whose raw field values are handed to a
+resolved scale — today exactly `x` and `y`, and only for the marks that
+go through the standard cartesian scale resolution. Polar (`arc`,
+`pie`, `donut`), self-scaling (`histogram`), specialty (`sankey`,
+`funnel`, `path`, `tree`, `dendrogram`, `network`) and geographic
+(`geoshape`, `geopoint`) marks build their own geometry and never hand
+a raw field value to a scale, so they are not filtered.
+
+Before any scale is resolved, the encoder drops every row carrying a
+null in a scale-bound channel and emits `PRISM_WARN_NULL_DROPPED`
+carrying the dropped-row count and the offending channel names. The
+surviving rows render normally:
+
+```
+WARN PRISM_WARN_NULL_DROPPED: 1 rows skipped: encoding channels y carried null values.
+```
+
+Because the filter runs on the table rather than inside each mark
+encoder, everything downstream sees one consistent row set — scale
+domains, colour categories, the `color` / `detail` row partitioner,
+tooltips, datum back-references, category styles and conditions all
+stay aligned. In a `layer` composite the policy runs per layer, and
+the warning's `layer` field names the layer that shed rows.
+
+A row that is null **only** in a non-scale-bound channel is kept — a
+missing tooltip line is not a reason to delete a mark.
+
+Dropping *some* rows is a warning; dropping *all* of them is an error.
+If a bound field is null in every row there is nothing left to draw, so
+the encoder fails with `PRISM_ENCODE_NULL_ALL_ROWS` rather than
+emitting a silently empty chart.
+
+Prism drops null rows rather than breaking a line or area into
+separate segments around the gap (Vega-Lite's behaviour). A three-point
+series with a null in the middle therefore renders as one straight
+segment from the first point to the third.
+
 An aggregate group whose every input is null returns null and
 surfaces `PRISM_WARN_NULL_AGG_ALL`.
 

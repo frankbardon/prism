@@ -57,6 +57,31 @@ func Filter(src *Table, keep []bool, partitionTag string) (*Table, error) {
 // keepCount so no reallocation happens during the walk.
 func filterColumn(src Column, keep []bool, keepCount int) Column {
 	switch c := src.(type) {
+	case NullableColumn:
+		// Nullable columns wrap a typed column plus a bitmap; both
+		// halves have to be re-indexed together or the survivors'
+		// null flags slide onto the wrong rows. Without this case the
+		// wrapper fell through to the identity return below and
+		// NewTable rejected the result on a column-length mismatch.
+		if c.Inner == nil {
+			return c
+		}
+		inner := filterColumn(c.Inner, keep, keepCount)
+		if c.Nulls == nil {
+			return NullableColumn{Inner: inner}
+		}
+		nulls := NewNullBitmap(keepCount)
+		j := 0
+		for i, k := range keep {
+			if !k {
+				continue
+			}
+			if c.Nulls.IsNull(i) {
+				nulls.Set(j)
+			}
+			j++
+		}
+		return NullableColumn{Inner: inner, Nulls: nulls}
 	case IntColumn:
 		out := make(IntColumn, 0, keepCount)
 		for i, k := range keep {

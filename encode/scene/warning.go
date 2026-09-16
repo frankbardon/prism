@@ -29,4 +29,10 @@ const (
 	// could not be parsed as a numeric series — the cell renders with
 	// no nested TableCell rather than failing the whole encode.
 	WarnTableCellUnparseable = "PRISM_WARN_TABLE_CELL_UNPARSEABLE"
+	// WarnNullDropped fires when the encoder drops upstream rows that
+	// carried a null in a scale-bound channel. Details hold the
+	// dropped-row count plus the offending channel and field names.
+	// The surviving rows still render; an all-null bound field is an
+	// error (PRISM_ENCODE_NULL_ALL_ROWS), not a warning.
+	WarnNullDropped = "PRISM_WARN_NULL_DROPPED"
 )
