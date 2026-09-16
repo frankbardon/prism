@@ -14,17 +14,17 @@
         "format":         {"type": "string", "description": "Format string for tick labels."},
         "tick_count":     {"type": "integer", "minimum": 0, "description": "Suggested number of ticks."},
         "tick_min_step":  {"type": "number", "exclusiveMinimum": 0, "description": "Minimum interval between ticks."},
-        "tick_size":      {"type": "number", "minimum": 0, "description": "Tick mark length in pixels."},
+        "tick_size":      {"type": "number", "minimum": 0, "description": "Tick mark length in pixels. Overrides the theme's --prism-axis-tick-size token; minor ticks stay proportionally shorter."},
         "values":         {"type": "array", "description": "Explicit tick values."},
         "grid":           {"type": "boolean", "description": "Whether to draw grid lines."},
-        "labels":         {"type": "boolean", "description": "Whether to draw tick labels."},
+        "labels":         {"type": "boolean", "description": "Whether to draw tick labels. False suppresses only the labels — the tick marks, domain line, grid and title stay — and releases the padding they reserved."},
         "label_angle":    {"type": "number", "description": "Rotation angle in degrees for tick labels."},
         "label_overlap":  {"type": ["boolean", "string"], "enum": [true, false, "parity", "greedy"], "description": "How to handle overlapping labels."},
-        "label_padding":  {"type": "number", "description": "Padding between axis and labels in pixels."},
-        "label_limit":    {"type": "number", "minimum": 0, "description": "Maximum allowed label pixel width before truncation."},
-        "domain":         {"type": "boolean", "description": "Whether to draw the axis domain line."},
-        "ticks":          {"type": "boolean", "description": "Whether to draw tick marks."},
-        "zindex":         {"type": "integer", "description": "Stacking order relative to other chart elements."}
+        "label_padding":  {"type": "number", "description": "Gap between the axis line and its tick labels in pixels. Overrides the theme's --prism-axis-label-padding token."},
+        "label_limit":    {"type": "number", "minimum": 0, "description": "Maximum allowed label width in pixels before the label is truncated with an ellipsis. 0 means no limit."},
+        "domain":         {"type": "boolean", "description": "Whether to draw the axis domain line. False suppresses only that line; it sits on the plot edge and reserves no padding."},
+        "ticks":          {"type": "boolean", "description": "Whether to draw tick marks. False suppresses only the marks — the labels derived from the same tick positions stay — and releases the padding they reserved."},
+        "zindex":         {"type": "integer", "minimum": 0, "description": "Stacking order relative to the marks: 0 (the default) draws the axis and its grid lines behind them, any positive value draws them in front."}
       }
     }
   }

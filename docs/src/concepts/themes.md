@@ -210,6 +210,47 @@ renders at `fill_opacity: 0.9` even under a theme declaring
 `stroke` and `corner_radius` (which the spec does not mention) still
 apply.
 
+### Axis geometry precedence
+
+Two `axis` tokens are **geometry**, not appearance: `tick_size` (the
+major tick length) and `label_padding` (the gap between the axis line
+and its tick labels). They move SVG coordinates, so unlike the colour
+and font tokens they cannot be re-styled after the fact by overriding
+a CSS variable — the variables `--prism-axis-tick-size` and
+`--prism-axis-label-padding` are emitted for reference, but the
+geometry itself is resolved before the SVG is written.
+
+Both names also exist on a position channel's `axis` block (see
+[Encoding: axis components and geometry](encoding.md#axis-components-and-geometry)).
+Where they overlap, the resolution order is fixed, highest first:
+
+1. **The spec's `axis` block** — `"axis": {"tick_size": 12}` on the
+   channel.
+2. **The theme's `axis` block** — `"axis": {"tick_size": 9}`.
+3. **Prism's built-in metric** — 5 px tick, 4 px label padding.
+
+**The spec wins.** A theme can set the house tick length for every
+chart, and an individual chart still overrides it per channel; the
+theme value applies only where the `axis` block says nothing. This
+matches [mark style precedence](#mark-style-precedence): the theme
+supplies defaults, the spec states intent.
+
+```json
+{ "axis": { "tick_size": 9, "label_padding": 10 } }
+```
+
+under a spec whose x channel carries `"axis": {"tick_size": 12}`
+renders a 12 px x tick (spec) with a 10 px label gap (theme, since the
+spec left `label_padding` alone), while the y axis — which states
+nothing — takes both theme values.
+
+Minor ticks are not separately tokenised; they render at 0.6× whatever
+major tick size resolves, so the default 5 px still yields a 3 px minor
+tick. The remaining axis knobs — `labels`, `ticks`, `domain`,
+`label_limit` and `zindex` — are spec-only: they decide *whether* a
+component is drawn and in what order, which is an authoring decision
+rather than a house style, so no theme token shadows them.
+
 ### Typography tokens
 
 `line_height` and `letter_spacing` are optional pointer-typed typography
@@ -678,6 +719,13 @@ are the one exception: they render as direct per-element attributes
 rather than `--prism-*` custom properties, so they are baked in at
 render time and are not runtime-overridable via DOM style assignment
 the way the tokens above are.
+
+`--prism-axis-tick-size` and `--prism-axis-label-padding` are emitted,
+but they are **reference only**: a CSS variable cannot move an SVG line
+endpoint or a `<text>` coordinate, so the geometry those two tokens
+describe is resolved at render time (see
+[Axis geometry precedence](#axis-geometry-precedence)). Overriding them
+in the DOM restyles nothing.
 
 ## Rendering backends
 

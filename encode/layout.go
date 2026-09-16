@@ -28,8 +28,21 @@ const (
 	// gets regardless of what chrome it carries.
 	layoutMargin = 20.0
 	// layoutAxisReserve is the extra space a side carrying an axis
-	// needs for its tick marks, labels and title.
-	layoutAxisReserve = 20.0
+	// needs for its tick marks, labels and title. It is the sum of
+	// the per-component reserves below, which is what lets a
+	// component suppressed by `axis.ticks: false` / `axis.labels:
+	// false` (E3-S2) hand its share back to the plot rect.
+	layoutAxisReserve = layoutAxisTickReserve + layoutAxisLabelReserve
+	// layoutAxisTickReserve is the share of the axis reserve the tick
+	// marks claim; layoutAxisLabelReserve is the share the tick labels
+	// claim. The split is the renderer's default tick length (5 px)
+	// against the remainder. Like every other metric here these are
+	// fixed pixels: a spec- or theme-level `tick_size` /
+	// `label_padding` larger than the default draws into the outer
+	// margin rather than growing the reservation, which is the same
+	// text-metric deferral E1-S1 recorded above.
+	layoutAxisTickReserve  = 5.0
+	layoutAxisLabelReserve = 15.0
 	// layoutTitleReserve is the extra top space a chart title needs.
 	layoutTitleReserve = 30.0
 	// layoutLegendReserve is the fallback space a side carrying an
@@ -46,8 +59,15 @@ const (
 // A side may carry both an axis and a legend, in which case the two
 // reservations add.
 type SideChrome struct {
-	Axis   bool
-	Legend bool
+	Axis bool
+	// AxisReserve is the depth the axis on this side claims, already
+	// net of any component suppressed by `axis.labels: false` /
+	// `axis.ticks: false` (E3-S2). Set it through
+	// LayoutSides.markAxis, which sources it from AxisPlacement —
+	// zero with Axis set means the axis draws nothing at all and the
+	// side keeps only the base margin.
+	AxisReserve float64
+	Legend      bool
 	// LegendExtent is the measured width (left/right) or height
 	// (top/bottom) the legend on this side claims, offset gap
 	// included. Zero with Legend set falls back to
@@ -60,7 +80,7 @@ type SideChrome struct {
 func (c SideChrome) reserve() float64 {
 	r := 0.0
 	if c.Axis {
-		r += layoutAxisReserve
+		r += c.AxisReserve
 	}
 	if c.Legend {
 		if c.LegendExtent > 0 {
@@ -80,18 +100,19 @@ type LayoutSides struct {
 	Left   SideChrome
 }
 
-// markAxis flags the side pos names as carrying an axis. An empty
-// position (no axis on that channel) flags nothing.
-func (s *LayoutSides) markAxis(pos scene.AxisPosition) {
+// markAxis flags the side pos names as carrying an axis claiming
+// reserve pixels. An empty position (no axis on that channel) flags
+// nothing.
+func (s *LayoutSides) markAxis(pos scene.AxisPosition, reserve float64) {
 	switch pos {
 	case scene.AxisPositionTop:
-		s.Top.Axis = true
+		s.Top.Axis, s.Top.AxisReserve = true, reserve
 	case scene.AxisPositionRight:
-		s.Right.Axis = true
+		s.Right.Axis, s.Right.AxisReserve = true, reserve
 	case scene.AxisPositionBottom:
-		s.Bottom.Axis = true
+		s.Bottom.Axis, s.Bottom.AxisReserve = true, reserve
 	case scene.AxisPositionLeft:
-		s.Left.Axis = true
+		s.Left.Axis, s.Left.AxisReserve = true, reserve
 	}
 }
 
@@ -125,12 +146,57 @@ type AxisPlacement struct {
 	Y       scene.AxisPosition
 	XHidden bool
 	YHidden bool
+	// XReserve / YReserve are the depths each channel's axis claims on
+	// the side it occupies (E3-S2). Nil — the zero value, and what a
+	// bare AxisPlacement literal carries — means the full
+	// layoutAxisReserve, so a caller that knows nothing about the
+	// channel's axis block still reserves what it always did. A caller
+	// that has resolved the channel's AxisOpts narrows them through
+	// ReserveFrom, so suppressing the labels or the tick marks hands
+	// that share back to the plot rect.
+	XReserve *float64
+	YReserve *float64
 }
 
 // DefaultAxisPlacement is Vega-Lite's default orientation: the x axis
-// on the bottom, the y axis on the left.
+// on the bottom, the y axis on the left, each reserving the full axis
+// depth.
 func DefaultAxisPlacement() AxisPlacement {
 	return AxisPlacement{X: scene.AxisPositionBottom, Y: scene.AxisPositionLeft}
+}
+
+// ReserveFrom narrows each channel's reservation to what its resolved
+// AxisOpts actually draws. Call it with the same opts the axis is
+// later built from, so the padding can never disagree with the
+// geometry.
+func (p *AxisPlacement) ReserveFrom(x, y AxisOpts) {
+	xr, yr := AxisSideReserve(x), AxisSideReserve(y)
+	p.XReserve, p.YReserve = &xr, &yr
+}
+
+// axisReserveOr resolves an optional per-channel reservation, falling
+// back to the full axis depth when the caller stated none.
+func axisReserveOr(v *float64) float64 {
+	if v == nil {
+		return layoutAxisReserve
+	}
+	return *v
+}
+
+// AxisSideReserve returns the padding depth an axis drawn with opts
+// needs on the side it occupies: the tick-mark share plus the label
+// share, each released when `axis.ticks` / `axis.labels` suppress the
+// component. The axis title rides inside the outer margin and is not
+// separately reserved, as it never has been.
+func AxisSideReserve(opts AxisOpts) float64 {
+	r := 0.0
+	if opts.Ticks {
+		r += layoutAxisTickReserve
+	}
+	if opts.Labels {
+		r += layoutAxisLabelReserve
+	}
+	return r
 }
 
 // Sides reports which sides this placement's axes occupy. A hidden
@@ -138,10 +204,10 @@ func DefaultAxisPlacement() AxisPlacement {
 func (p AxisPlacement) Sides() LayoutSides {
 	var s LayoutSides
 	if !p.XHidden {
-		s.markAxis(p.X)
+		s.markAxis(p.X, axisReserveOr(p.XReserve))
 	}
 	if !p.YHidden {
-		s.markAxis(p.Y)
+		s.markAxis(p.Y, axisReserveOr(p.YReserve))
 	}
 	return s
 }

@@ -108,6 +108,13 @@ func encodeFacetComposite(s *spec.Spec, composite *plan.CompositeDAG, childTable
 	placement := DefaultAxisPlacement()
 	placement.XHidden = specAxisHidden(child.Spec, scene.ChannelX)
 	placement.YHidden = specAxisHidden(child.Spec, scene.ChannelY)
+	// E3-S2: every cell renders the same child spec, so its component
+	// suppression narrows the cell reservation uniformly — the same
+	// narrowing the flat Encode path applies inside each cell.
+	facetSpecs := []*spec.Spec{child.Spec}
+	placement.ReserveFrom(
+		specSharedAxisOpts(scene.ChannelX, facetSpecs),
+		specSharedAxisOpts(scene.ChannelY, facetSpecs))
 	cellLayout := Compute(LayoutOpts{
 		Width:  cellW,
 		Height: cellH,
