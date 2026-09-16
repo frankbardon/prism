@@ -117,7 +117,7 @@ func sortInPlace(tbl *table.Table, idx []int, keys []nodes.SortKey) {
 			if cmp == 0 {
 				continue
 			}
-			if k.Order == "desc" {
+			if k.Descending() {
 				return cmp > 0
 			}
 			return cmp < 0

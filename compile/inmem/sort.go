@@ -36,7 +36,7 @@ func executeSort(_ context.Context, n *nodes.SortNode, ins []*table.Table) (*tab
 			if cmp == 0 {
 				continue
 			}
-			if k.Order == "desc" {
+			if k.Descending() {
 				return cmp > 0
 			}
 			return cmp < 0

@@ -367,6 +367,7 @@ func encodeLayerComposite(s *spec.Spec, composite *plan.CompositeDAG, childTable
 			Y2:       spanChannel(childEnc.Y2, toMarkScale(yScale)),
 			Color:    colorChannel,
 			Detail:   detailFields(childEnc),
+			Ordered:  spec.ResolveOrder(childEnc) != nil,
 			Layout:   layout.Plot,
 			Style:    style,
 			Tooltip:  childEnc.Tooltip,

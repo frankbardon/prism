@@ -99,6 +99,27 @@ func presentChannels(enc *spec.Encoding) []string {
 // already emits one mark per row, so a partition changes nothing.
 // Accepting it silently everywhere matches Vega-Lite and keeps a
 // spec portable across a mark-type switch.
+//
+// order stays universal by the same reasoning (E5-S4), and for a
+// stronger reason: it is not a mark property at all. Binding it sorts
+// the ROWS, upstream of the encoder (plan/build's
+// injectEncodingOrder), so every mark type sees it whether or not it
+// has geometry that responds. What differs per mark is only which of
+// the channel's three senses is observable:
+//
+//   - bar / area — stack order, via the StackNode's first-appearance
+//     segment ranking;
+//   - line / area — point sequence along the path, the one sense that
+//     needs encoder cooperation (marks.Inputs.Ordered suppresses the
+//     default left-to-right x-sort);
+//   - every per-row mark (point, bar, rule, text, tick, rect, …) —
+//     draw order, since marks are emitted in table order and the last
+//     one emitted paints on top.
+//
+// A mark whose geometry is row-order-independent (a single-mark type
+// such as arc, or a layout-computing mark such as sankey) simply
+// observes none of them. That is a no-op, not a structural error, so
+// rejecting the channel there would break portability for no gain.
 func allowedChannelsForMark(mark string) []string {
 	common := []string{"tooltip", "order", "detail", "row", "column"}
 	cartesianMark := []string{"x", "y", "x2", "y2", "color", "fill", "stroke", "opacity", "size", "shape"}

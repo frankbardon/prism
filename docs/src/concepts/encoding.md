@@ -9,7 +9,7 @@ The `encoding` object binds data fields to visual channels.
 | Position | `x`, `y`, `x2`, `y2` (see [Span channels](#span-channels)), `theta`, `radius` |
 | Color & opacity | `color`, `fill`, `stroke`, `opacity` |
 | Size & shape | `size`, `shape` |
-| Text & order | `text` (see [Text channel](#text-channel)), `tooltip`, `order` |
+| Text & order | `text` (see [Text channel](#text-channel)), `tooltip`, `order` — see [Order channel](#order-channel) |
 | Grouping | `detail` — see [Detail channel](#detail-channel) |
 | Facet | `row`, `column` |
 | Sankey | `source`, `target`, `value` |
@@ -625,7 +625,7 @@ Semantics:
 | Composition with `color` | Both bound produces one series per distinct (colour, detail…) pair. Every series sharing a colour keeps that colour — `detail` never advances the palette. |
 | Legend | Never. The legend is built from `color` alone, so a `color` + `detail` chart still shows one entry per colour. |
 | Emission order | Colour first-appearance order outer (so it continues to match legend order), full-tuple first-appearance order inner. Series sharing a colour are emitted contiguously. |
-| Point ordering | As with `color`, points within a series are sorted by resolved x pixel ascending, so each path traces left-to-right regardless of upstream row order. |
+| Point ordering | As with `color`, points within a series are sorted by resolved x pixel ascending, so each path traces left-to-right regardless of upstream row order — unless [`order`](#order-channel) is bound, which hands the sequence to the author. |
 | Aggregates | A `detail` field joins the implicit group-by of the synthetic aggregate an aggregated channel injects, so `detail` + `y: {"aggregate": …}` aggregates per series. |
 
 Key coercion differs slightly between the two grouping channels:
@@ -666,7 +666,7 @@ Semantics:
 |---|---|
 | Marks affected | `bar` and `area` only. Every other mark ignores `stack`. |
 | Stack key | The **other** position channel — the dimension axis. One stack per distinct value. |
-| Segment order | First-appearance order of the (colour, detail…) tuple across the whole table — the same order the mark partitioner and the legend use, so a segment sits in the same slot in every stack. |
+| Segment order | First-appearance order of the (colour, detail…) tuple across the whole table — the same order the mark partitioner and the legend use, so a segment sits in the same slot in every stack. Bind [`order`](#order-channel) to choose the order yourself. |
 | Axis domain | The stacked totals reach scale resolution, so the measure axis spans `0…sum`, not `0…max`. |
 | Negatives | Positive and negative values accumulate independently from zero, so a mixed-sign stack grows in both directions. |
 | Opt-outs | An explicit `x2` / `y2` span wins (the mark already knows both edges), as does a non-linear measure scale. |
@@ -683,6 +683,89 @@ Composition note: stacking resolves per leaf spec, so each `layer` /
 upstream pipeline once with the child encoding stripped, so a faceted
 child does not stack — the same limitation that already applies to the
 synthetic encoding aggregate.
+
+## Order channel
+
+`order` is Vega-Lite's overloaded ordering channel, and Prism honours
+all three of its senses. It binds one entry or an array of them:
+
+```json
+"order": {"field": "rank", "type": "quantitative"}
+```
+
+```json
+"order": [
+  {"field": "tier", "type": "nominal"},
+  {"field": "revenue", "type": "quantitative", "sort": "descending"}
+]
+```
+
+Array entries apply left to right, so the second key breaks ties in
+the first. Each entry takes `field`, `type` and an optional `sort`
+direction — `"ascending"` (the default) or `"descending"`, with
+`"asc"` / `"desc"` accepted as aliases. Any other spelling is rejected
+(`PRISM_SPEC_055`) rather than read as ascending.
+
+### One mechanism, three senses
+
+Binding `order` sorts the **rows**, upstream of everything that reads
+them. That single reordering produces all three behaviours the channel
+is named for:
+
+| Sense | Marks | What you see |
+|---|---|---|
+| Stack order | `bar`, `area` | Which segment sits at the bottom of each stack. The stack ranks segments by first appearance, so the first-ordered series is the baseline one. Overrides the default (colour first-appearance) order. |
+| Draw order | every per-row mark — `point`, `bar`, `rule`, `text`, `tick`, `rect`, … | Marks are emitted in row order, so a later-ordered mark paints on top of an earlier one. Bind `order` to put the series you care about above the overlap. |
+| Point sequence | `line`, `area` | The order points connect along the path. Without `order`, a grouped path is sorted left-to-right by resolved x pixel; with it, the path traces in row order — which is how you draw a connected scatterplot or a path that doubles back. |
+
+A mark whose geometry does not depend on row order (a single-mark type
+such as `arc`, or a layout-computing mark such as `sankey`) simply
+observes none of them. `order` is accepted on every mark so a spec
+stays portable across a mark-type switch.
+
+### Unbound preserves table order exactly
+
+This is the rule that makes the channel safe: **Prism reorders only
+when `order` is explicitly bound.** With it absent, no sort node is
+injected, nothing downstream changes, and the chart renders
+byte-identically to how it did before the channel existed. Vega-Lite
+behaves the same way.
+
+### Where the sort happens
+
+`order` compiles to a real `sort` node in the plan, placed after the
+synthetic encoding aggregate and before the
+[stack](#stacking) node — so an order key may name an aggregated
+output column, and the stack accumulates rows that are already in the
+author's sequence. `prism plan` shows the node; `prism execute` shows
+the reordered rows.
+
+A non-aggregated order field joins the implicit group-by of the
+synthetic aggregate (the same treatment `detail` gets), so it survives
+to the sort below it. Naming a field that another channel already
+aggregates does **not** widen the group-by — the order key reads that
+aggregate's output column instead.
+
+### `aggregate` is rejected
+
+An `aggregate` on an order entry raises `PRISM_SPEC_056`. Ordering by
+a per-series total needs a second aggregation at a different
+granularity than the chart's own, joined back onto the rows; Prism
+rejects the key rather than accepting and quietly ignoring it. Three
+supported ways to express the same intent:
+
+- precompute the total upstream with a `window` or `join` transform
+  and order by that column;
+- drop the `aggregate` key and name the field another channel already
+  aggregates, so the order key reads its output column;
+- shape row order with a [`sort` transform](spec.md#transforms) and
+  leave `order` unbound.
+
+Composition note: `order` resolves per leaf spec, so each `layer` /
+`concat` child orders independently. A `facet` parent builds its
+upstream pipeline once with the child encoding stripped, so a faceted
+child does not reorder — the same limitation that already applies to
+the synthetic encoding aggregate and to stacking.
 
 ## Further reading
 

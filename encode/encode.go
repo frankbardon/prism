@@ -385,6 +385,7 @@ func Encode(s *spec.Spec, tables map[plan.NodeID]*table.Table, tipID plan.NodeID
 		Y2:            spanChannel(enc.Y2, toMarkScale(yScale)),
 		Color:         colorChannel,
 		Detail:        detailFields(enc),
+		Ordered:       spec.ResolveOrder(enc) != nil,
 		Opacity:       opacityChannel,
 		Layout:        layout.Plot,
 		Style:         style,

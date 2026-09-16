@@ -356,7 +356,7 @@
             "required": ["field"],
             "properties": {
               "field": {"$ref": "shared.schema.json#/$defs/field_ref"},
-              "order": {"type": "string", "enum": ["ascending", "descending"], "description": "Sort direction."}
+              "order": {"type": "string", "enum": ["ascending", "descending", "asc", "desc"], "description": "Sort direction; \"ascending\" (default) or \"descending\". \"asc\" / \"desc\" are accepted aliases."}
             }
           }
         },
@@ -488,7 +488,7 @@
             "required": ["field"],
             "properties": {
               "field": {"$ref": "shared.schema.json#/$defs/field_ref"},
-              "order": {"type": "string", "enum": ["ascending", "descending"], "description": "Sort direction."}
+              "order": {"type": "string", "enum": ["ascending", "descending", "asc", "desc"], "description": "Sort direction; \"ascending\" (default) or \"descending\". \"asc\" / \"desc\" are accepted aliases."}
             }
           }
         },
@@ -583,7 +583,7 @@
 
     "stack_transform": {
       "type": "object",
-      "description": "Cumulative stacking (E5-S2): accumulate one quantitative field into per-row [start, end] bounds within each stack, so a bar / area mark can draw each segment as a span. Positives and negatives accumulate independently from zero. Segment order inside a stack is upstream row order — shape it with a preceding sort transform; a sort key here is impossible because sort is itself a transform discriminator.",
+      "description": "Cumulative stacking (E5-S2): accumulate one quantitative field into per-row [start, end] bounds within each stack, so a bar / area mark can draw each segment as a span. Positives and negatives accumulate independently from zero. Segment order inside a stack is upstream row order — shape it with a preceding sort transform, or with the encoding.order channel (E5-S4), which sorts the rows before the stack accumulates.",
       "additionalProperties": false,
       "required": ["stack"],
       "properties": {
