@@ -34,6 +34,8 @@ For live interactive rendering in a browser, see [`live.html`](live.html).
 | [area_step](basic-marks/area_step.prism.json) | <img src="basic-marks/area_step.svg" width="240"> |
 | [stacked_bar](basic-marks/stacked_bar.prism.json) | <img src="basic-marks/stacked_bar.svg" width="240"> |
 | [stacked_area_normalize](basic-marks/stacked_area_normalize.prism.json) | <img src="basic-marks/stacked_area_normalize.svg" width="240"> |
+| [area_horizontal](basic-marks/area_horizontal.prism.json) | <img src="basic-marks/area_horizontal.svg" width="240"> |
+| [tick_strip_horizontal](basic-marks/tick_strip_horizontal.prism.json) | <img src="basic-marks/tick_strip_horizontal.svg" width="240"> |
 
 ## Composite marks
 
@@ -48,6 +50,7 @@ For live interactive rendering in a browser, see [`live.html`](live.html).
 | [crosstab_significance_shading](composite-marks/crosstab_significance_shading.prism.json) | <img src="composite-marks/crosstab_significance_shading.svg" width="240"> |
 | [boxplot](composite-marks/boxplot.prism.json) | <img src="composite-marks/boxplot.svg" width="240"> |
 | [violin_score](composite-marks/violin_score.prism.json) | <img src="composite-marks/violin_score.svg" width="240"> |
+| [boxplot_horizontal](composite-marks/boxplot_horizontal.prism.json) | <img src="composite-marks/boxplot_horizontal.svg" width="240"> |
 | [pie](composite-marks/pie.prism.json) | <img src="composite-marks/pie.svg" width="240"> |
 | [donut](composite-marks/donut.prism.json) | <img src="composite-marks/donut.svg" width="240"> |
 | [donut_traffic](composite-marks/donut_traffic.prism.json) | <img src="composite-marks/donut_traffic.svg" width="240"> |

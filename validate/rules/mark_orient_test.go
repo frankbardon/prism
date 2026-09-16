@@ -24,6 +24,24 @@ func TestMarkOrientSupportedAcceptsHorizontalBar(t *testing.T) {
 	}
 }
 
+// TestMarkOrientSupportedAcceptsCartesianFamilies pins the E9-S2
+// widening: every mark whose encoder now resolves through
+// MarkOrientation accepts both directions.
+func TestMarkOrientSupportedAcceptsCartesianFamilies(t *testing.T) {
+	marks := []string{"bar", "rect", "area", "tick", "boxplot", "violin", "winloss", "sparkbar", "sparkarea"}
+	for _, mark := range marks {
+		for _, orient := range []string{"vertical", "horizontal"} {
+			if errs := (MarkOrientSupported{}).Check(markOrientSpec(mark, orient), validate.EmptyLookup{}); len(errs) != 0 {
+				t.Errorf("mark %q orient %q: expected no errors, got: %+v", mark, orient, errs)
+			}
+		}
+		errs := (MarkOrientSupported{}).Check(markOrientSpec(mark, "radial"), validate.EmptyLookup{})
+		if len(errs) != 1 || errs[0].Code != "PRISM_SPEC_046" {
+			t.Errorf("mark %q orient radial: expected one PRISM_SPEC_046, got: %+v", mark, errs)
+		}
+	}
+}
+
 func TestMarkOrientSupportedIgnoresUnsetOrient(t *testing.T) {
 	// Every pre-E9-S1 spec omits `orient`; the rule must stay silent.
 	for _, mark := range []string{"bar", "point", "line", "sankey"} {
@@ -47,7 +65,7 @@ func TestMarkOrientSupportedRejectsRadial(t *testing.T) {
 func TestMarkOrientSupportedRejectsUnorientableMark(t *testing.T) {
 	// Silently ignoring orient on these marks is the failure this rule
 	// exists to end.
-	for _, mark := range []string{"point", "line", "area", "pie", "sankey"} {
+	for _, mark := range []string{"point", "line", "pie", "sankey", "heatmap", "bullet"} {
 		errs := (MarkOrientSupported{}).Check(markOrientSpec(mark, "horizontal"), validate.EmptyLookup{})
 		if len(errs) != 1 || errs[0].Code != "PRISM_SPEC_046" {
 			t.Errorf("mark %q: expected one PRISM_SPEC_046, got: %+v", mark, errs)

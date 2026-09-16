@@ -6,22 +6,33 @@ import (
 	"github.com/frankbardon/prism/encode/scene"
 )
 
-// encodeTick emits one perpendicular tick LineGeom per table row.
-// Used for ranking / strip-plot style charts. When the X scale is a
-// band/point scale (categorical), ticks are vertical inside each
-// band; when X is quantitative and Y is categorical, ticks are
-// horizontal. tickSize defaults to 10px; mark.size override applies.
+// encodeTick emits one tick LineGeom per table row: a short segment
+// drawn *along* the measure axis at the row's value, positioned at the
+// centre of its category slot. Used for ranking / strip-plot style
+// charts. tickSize defaults to 10px; mark.size overrides it.
+//
+// Orientation comes from MarkOrientation (orient.go) in its
+// band-optional form: a band on x reads vertical, a band on y reads
+// horizontal, an explicit `mark.orient` overrides either, and two
+// continuous axes fall back to horizontal — the strip-plot shape tick
+// has always drawn when neither axis is discrete.
 func encodeTick(in Inputs) ([]scene.Mark, error) {
-	xs, err := readField(in.Table, in.X.Field)
+	orient, err := MarkOrientationOr(in, "tick", OrientHorizontal)
 	if err != nil {
 		return nil, err
 	}
-	ys, err := readField(in.Table, in.Y.Field)
+	centers, err := CategoryCenters(in, orient)
 	if err != nil {
 		return nil, err
 	}
-	if len(xs) != len(ys) {
-		return nil, fmt.Errorf("encodeTick: column length mismatch (x=%d, y=%d)", len(xs), len(ys))
+	measure := MeasureChannel(in, orient)
+	vals, err := readField(in.Table, measure.Field)
+	if err != nil {
+		return nil, err
+	}
+	if len(centers) != len(vals) {
+		return nil, fmt.Errorf("encodeTick: column length mismatch (%s=%d, %s=%d)",
+			orient.CategoryAxis(), len(centers), orient.MeasureAxis(), len(vals))
 	}
 
 	tickSize := 10.0
@@ -29,37 +40,20 @@ func encodeTick(in Inputs) ([]scene.Mark, error) {
 		tickSize = *in.Mark.Size
 	}
 
-	// Orientation: categorical X → vertical tick; categorical Y →
-	// horizontal tick; both categorical → vertical fallback.
-	_, xBand := in.X.Scale.(BandScaler)
-	marks := make([]scene.Mark, 0, len(xs))
-	for i := range xs {
-		x, err := in.X.Scale.Apply(xs[i])
+	marks := make([]scene.Mark, 0, len(centers))
+	for i := range centers {
+		m, err := measure.Scale.Apply(vals[i])
 		if err != nil {
 			return nil, err
 		}
-		y, err := in.Y.Scale.Apply(ys[i])
-		if err != nil {
-			return nil, err
-		}
-		var points [][2]float64
-		if xBand {
-			// Vertical tick centered on the band; y is the value.
-			cx := x
-			if bs, ok := in.X.Scale.(BandScaler); ok {
-				cx = x + bs.BandWidth()/2
-			}
-			points = [][2]float64{{cx, y - tickSize/2}, {cx, y + tickSize/2}}
-		} else {
-			// Horizontal tick at x; y is the category center.
-			points = [][2]float64{{x - tickSize/2, y}, {x + tickSize/2, y}}
-		}
+		x1, y1 := OrientedPoint(orient, centers[i], m-tickSize/2)
+		x2, y2 := OrientedPoint(orient, centers[i], m+tickSize/2)
 		marks = append(marks, scene.Mark{
 			Type:  scene.MarkLine,
 			ID:    fmt.Sprintf("tick-%d", i),
 			Style: in.Style,
 			Line: &scene.LineGeom{
-				Points: points,
+				Points: [][2]float64{{x1, y1}, {x2, y2}},
 				Curve:  scene.CurveLinear,
 			},
 		})
