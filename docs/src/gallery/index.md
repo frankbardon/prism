@@ -1,6 +1,6 @@
 # Prism Gallery
 
-102 fixture specs across 16 categories. Each entry pairs a `*.prism.json`
+105 fixture specs across 16 categories. Each entry pairs a `*.prism.json`
 spec with a rendered `*.svg`. Browse the source to learn the spec
 shapes; open the SVGs to see what they render. The `table/` fixtures
 are one exception — a top-level `table` mark renders only through
