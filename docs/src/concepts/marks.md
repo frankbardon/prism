@@ -422,6 +422,32 @@ annotates:
     "x": {"field": "quarter", "type": "nominal"},
     "y": {"field": "revenue", "type": "quantitative"},
     "text": {"field": "revenue", "type": "quantitative"}
+## Interpolation (`line` and `area` curves)
+
+`mark.interpolate` selects how consecutive points are joined. It
+applies to the `line` and `area` families (`sparkline` and `sparkarea`
+inherit it, since they are thin wrappers over the same encoders).
+Default is `linear`.
+
+| `interpolate` | Shape |
+|---|---|
+| `linear` | Straight segments between points. The default. |
+| `monotone` | Monotone cubic spline (Fritsch–Carlson). Smooth, and provably never overshoots the data — the safe smoothing choice. |
+| `step` | Right-angle steps with the riser midway between each pair of x values. |
+| `step-before` | Right-angle steps with the riser at the *earlier* x — the value changes before it is reached. |
+| `step-after` | Right-angle steps with the riser at the *later* x — the value holds until the next point. |
+| `cardinal` | Cardinal spline through every point. Smoother than `monotone`, but it may overshoot. |
+
+`mark.tension` (0–1) parameterises `cardinal` only; every other method
+ignores it. `0` is the default and the loosest curve; `1` collapses the
+spline back to straight segments. Values outside the range are clamped.
+
+```json
+{
+  "mark": {"type": "line", "interpolate": "monotone", "stroke_width": 2},
+  "encoding": {
+    "x": {"field": "day",  "type": "temporal"},
+    "y": {"field": "load", "type": "quantitative"}
   }
 }
 ```
@@ -449,6 +475,30 @@ large pad. `pad_angle: 0.02` (about 1.15°) is a good starting point:
 ```json
 {"mark": {"type": "donut", "pad_angle": 0.02, "inner_radius_ratio": 0.6}}
 ```
+An `area` applies its curve to **both** boundaries — the upper edge and
+the reversed lower/baseline edge — so a band keeps parallel outlines
+rather than a curved top over a straight bottom. The short connector
+between the two edges is always a straight segment.
+
+Geometry semantics match d3-shape's `curveLinear`, `curveMonotoneX`,
+`curveStep`/`curveStepBefore`/`curveStepAfter` and
+`curveCardinal.tension(t)`, so a Prism curve and the equivalent
+Vega-Lite / d3 curve trace the same path.
+
+**Out of scope.** The `basis` and `bundle` families and d3's `-open` /
+`-closed` variants are not implemented and are rejected by
+`schema/v1/mark.schema.json` at validation time rather than silently
+falling back.
+
+**Rendering.** `linear` lines emit `<polyline points="…">`; every other
+interpolation emits `<path d="…">` with the same `prism-mark-line`
+class, identity and style attributes. The split is intentional —
+`<polyline>` expresses a linear line exactly, and keeping it pins the
+byte shape of every committed linear golden and cross-impl fixture.
+Area marks were already `<path>` and stay so for every curve. All
+control points route through `render/precision.go`'s 3-decimal
+quantisation, so host Go, TinyGo-via-WASM and the browser bundle emit
+identical path data.
 
 ## Channel allowlists
 

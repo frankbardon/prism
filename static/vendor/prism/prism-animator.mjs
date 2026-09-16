@@ -64,7 +64,10 @@ const NUMERIC_ATTRS = {
   // E4-S1); they are ordinary numeric attrs and tween like x / y.
   text:     ["x", "y", "dx", "dy", "font-size", "opacity", "fill-opacity", "stroke-opacity"],
   image:    ["x", "y", "width", "height", "opacity"],
-  path:     ["opacity", "fill-opacity", "stroke-opacity"],
+  // A non-linear line curve (interpolate: monotone / step / …)
+  // renders as <path> instead of <polyline>, so path carries the
+  // polyline tween set as well as the area/arc fill attrs.
+  path:     ["stroke-width", "opacity", "fill-opacity", "stroke-opacity"],
 };
 
 // Color attrs that route through OKLab interpolation.

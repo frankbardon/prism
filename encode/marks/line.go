@@ -60,6 +60,8 @@ func encodeLine(in Inputs) ([]scene.Mark, error) {
 		return nil, err
 	}
 
+	curve, tension := curveFor(in)
+
 	marks := make([]scene.Mark, 0, len(groups))
 	for gi, g := range groups {
 		idxs := append([]int(nil), g.indices...)
@@ -82,8 +84,9 @@ func encodeLine(in Inputs) ([]scene.Mark, error) {
 			ID:    fmt.Sprintf("line-%d", gi),
 			Style: style,
 			Line: &scene.LineGeom{
-				Points: groupPts,
-				Curve:  scene.CurveLinear,
+				Points:  groupPts,
+				Curve:   curve,
+				Tension: tension,
 			},
 		})
 	}

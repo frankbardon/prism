@@ -29,6 +29,8 @@ For live interactive rendering in a browser, see [`live.html`](live.html).
 | [rect_heatmap_lite](basic-marks/rect_heatmap_lite.prism.json) | <img src="basic-marks/rect_heatmap_lite.svg" width="240"> |
 | [multi_series_line](basic-marks/multi_series_line.prism.json) | <img src="basic-marks/multi_series_line.svg" width="240"> |
 | [detail_series_line](basic-marks/detail_series_line.prism.json) | <img src="basic-marks/detail_series_line.svg" width="240"> |
+| [line_monotone](basic-marks/line_monotone.prism.json) | <img src="basic-marks/line_monotone.svg" width="240"> |
+| [area_step](basic-marks/area_step.prism.json) | <img src="basic-marks/area_step.svg" width="240"> |
 
 ## Composite marks
 

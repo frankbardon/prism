@@ -4,10 +4,12 @@ package scene
 type CurveType string
 
 const (
-	CurveLinear   CurveType = "linear"
-	CurveMonotone CurveType = "monotone"
-	CurveStep     CurveType = "step"
-	CurveCardinal CurveType = "cardinal"
+	CurveLinear     CurveType = "linear"
+	CurveMonotone   CurveType = "monotone"
+	CurveStep       CurveType = "step"
+	CurveStepBefore CurveType = "step-before"
+	CurveStepAfter  CurveType = "step-after"
+	CurveCardinal   CurveType = "cardinal"
 )
 
 // PointShape is the point mark's symbol discriminator.
@@ -51,17 +53,27 @@ type RectGeom struct {
 }
 
 // LineGeom is the geometry for a line mark (one polyline per mark).
+//
+// Tension parameterises CurveCardinal only (0–1, d3 semantics: the
+// cardinal control-point scale is (1-Tension)/6). Every other curve
+// ignores it. Zero is both the unset value and the d3/Vega-Lite
+// default, so it stays out of the JSON unless an author sets it.
 type LineGeom struct {
-	Points [][2]float64 `json:"points"`
-	Dash   []float64    `json:"dash,omitempty"`
-	Curve  CurveType    `json:"curve,omitempty"`
+	Points  [][2]float64 `json:"points"`
+	Dash    []float64    `json:"dash,omitempty"`
+	Curve   CurveType    `json:"curve,omitempty"`
+	Tension float64      `json:"tension,omitempty"`
 }
 
 // AreaGeom is the geometry for an area mark. Lower=nil → baseline 0.
+// Curve applies to both the upper and the (reversed) lower edge, so a
+// stacked band keeps parallel boundaries. Tension parameterises
+// CurveCardinal only — see LineGeom.
 type AreaGeom struct {
-	Upper [][2]float64 `json:"upper"`
-	Lower [][2]float64 `json:"lower,omitempty"`
-	Curve CurveType    `json:"curve,omitempty"`
+	Upper   [][2]float64 `json:"upper"`
+	Lower   [][2]float64 `json:"lower,omitempty"`
+	Curve   CurveType    `json:"curve,omitempty"`
+	Tension float64      `json:"tension,omitempty"`
 }
 
 // PointGeom is the geometry for a point / scatter mark.

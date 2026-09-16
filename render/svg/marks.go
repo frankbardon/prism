@@ -130,9 +130,14 @@ func renderLine(w *Writer, m scene.Mark) {
 	if len(g.Points) == 0 {
 		return
 	}
-	// Emit as a <polyline> for P05 (the design's CurveLinear default
-	// fits polyline exactly). When non-linear curves land, switch to
-	// <path> with the d= attribute.
+	// CurveLinear (and the unset zero value) stays a <polyline> — it
+	// fits the primitive exactly and every committed linear golden and
+	// cross-impl fixture pins that byte shape. Non-linear curves need
+	// Bezier / riser commands, so they take the <path> branch below.
+	if isCurved(g.Curve) {
+		renderCurvedLine(w, m)
+		return
+	}
 	w.OpenTag("polyline")
 	w.Attr("class", "prism-mark-line")
 	if m.ID != "" {
@@ -162,6 +167,34 @@ func renderLine(w *Writer, m scene.Mark) {
 	w.SelfClose()
 }
 
+// renderCurvedLine is renderLine's non-linear branch: the same class,
+// identity and style attrs, but the geometry lands in a <path d="…">
+// because <polyline> cannot express risers or Bezier segments.
+func renderCurvedLine(w *Writer, m scene.Mark) {
+	g := m.Line
+	w.OpenTag("path")
+	w.Attr("class", "prism-mark-line")
+	if m.ID != "" {
+		w.Attr("data-prism-id", m.ID)
+	}
+	writeDatumAttr(w, m)
+	writeKeyAttr(w, m)
+	w.OpenAttr("d")
+	writeSegTo(w, "M", g.Points[0][0], g.Points[0][1])
+	writeCurveBody(w, g.Points, g.Curve, g.Tension)
+	w.CloseAttr()
+	// Lines need fill="none" so they don't fill the enclosed area.
+	w.Attr("fill", "none")
+	writeStyleAttrs(w, m.Style)
+	if hasTooltip(m) {
+		w.CloseTagOpen()
+		writeTooltipChild(w, m)
+		w.EndTag("path")
+		return
+	}
+	w.SelfClose()
+}
+
 func renderArea(w *Writer, m scene.Mark) {
 	g := m.Area
 	if len(g.Upper) == 0 {
@@ -178,25 +211,23 @@ func renderArea(w *Writer, m scene.Mark) {
 	writeDatumAttr(w, m)
 	writeKeyAttr(w, m)
 	w.OpenAttr("d")
-	// Upper edge: M x0,y0 L x1,y1 L x2,y2 ...
-	w.Raw("M")
-	w.Raw(render.FormatFloat(g.Upper[0][0]))
-	w.Raw(",")
-	w.Raw(render.FormatFloat(g.Upper[0][1]))
-	for _, p := range g.Upper[1:] {
-		w.Raw(" L")
-		w.Raw(render.FormatFloat(p[0]))
-		w.Raw(",")
-		w.Raw(render.FormatFloat(p[1]))
-	}
-	// Reverse the lower (baseline) edge to close the shape. The encoder
+	// Upper edge: M x0,y0 then the curve body (" Lx,y" per point when
+	// linear — byte-identical to the pre-curve emitter).
+	writeSegTo(w, "M", g.Upper[0][0], g.Upper[0][1])
+	writeCurveBody(w, g.Upper, g.Curve, g.Tension)
+	// Reverse the lower (baseline) edge to close the shape, honouring
+	// the same curve so both boundaries stay parallel. The encoder
 	// always supplies Lower for area marks; a degenerate empty Lower
-	// closes straight back to the upper start via Z.
-	for i := len(g.Lower) - 1; i >= 0; i-- {
-		w.Raw(" L")
-		w.Raw(render.FormatFloat(g.Lower[i][0]))
-		w.Raw(",")
-		w.Raw(render.FormatFloat(g.Lower[i][1]))
+	// closes straight back to the upper start via Z. The first
+	// reversed point is always a straight connector down from the
+	// upper edge's end, then the curve body resumes from there.
+	if len(g.Lower) > 0 {
+		lower := make([][2]float64, len(g.Lower))
+		for i, p := range g.Lower {
+			lower[len(g.Lower)-1-i] = p
+		}
+		writeSegTo(w, " L", lower[0][0], lower[0][1])
+		writeCurveBody(w, lower, g.Curve, g.Tension)
 	}
 	w.Raw(" Z")
 	w.CloseAttr()

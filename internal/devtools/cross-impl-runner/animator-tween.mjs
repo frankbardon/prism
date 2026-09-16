@@ -183,6 +183,38 @@ if (channel === 127 || channel === 128) {
 probeNow = 1000;    probeFrame && probeFrame();
 await probeDone;
 
+// ----- Test 3b: <path> tweens stroke-width -----
+//
+// A line mark with a non-linear `interpolate` renders as <path>
+// instead of <polyline>, so the path tween set must cover the same
+// stroke-width the polyline set does, or curved lines would snap
+// their weight mid-transition.
+
+const pathPrev = buildSvg([
+  { tag: "path", key: "series=a", attrs: { d: "M0,0 C1,1 2,2 3,3", "stroke-width": "2", opacity: "1" } },
+]);
+const pathNext = buildSvg([
+  { tag: "path", key: "series=a", attrs: { d: "M0,0 C1,1 2,2 3,3", "stroke-width": "6", opacity: "1" } },
+]);
+let pathNow = 0;
+let pathFrame = null;
+const pathAnim = new PrismAnimator(pathPrev, pathNext, { duration_ms: 1000, easing: "linear" }, {
+  now: () => pathNow,
+  rAF: (cb) => { pathFrame = cb; return 1; },
+  cAF: () => {},
+});
+const pathDone = pathAnim.start();
+pathNow = 0;    pathFrame && pathFrame();
+pathNow = 500;  pathFrame && pathFrame();
+const midWidth = Number(pathPrev.querySelector(`[data-prism-mark-key="series=a"]`).getAttribute("stroke-width"));
+if (!(midWidth > 2 && midWidth < 6)) {
+  fail(`path stroke-width should tween 2 → 6; midpoint was ${midWidth}`);
+}
+pathNow = 1000; pathFrame && pathFrame();
+await pathDone;
+const endWidth = pathPrev.querySelector(`[data-prism-mark-key="series=a"]`).getAttribute("stroke-width");
+if (endWidth !== "6") fail(`path stroke-width = ${endWidth}, want 6 after tween`);
+
 // ----- Test 4: structurallyCompatible -----
 
 const docA = { grid: { cells: [{ scene: { layers: [{ mark: "rect" }], axes: [{}, {}] } }] } };
@@ -201,6 +233,6 @@ if (Object.keys(EASINGS).length !== 13) fail(`EASINGS has ${Object.keys(EASINGS)
 if (typeof easingFn("not_a_real_easing") !== "function") fail("easingFn should fall back to cubic_in_out for unknown names");
 if (easingFn("linear")(0.5) !== 0.5) fail("linear easing midpoint should be 0.5");
 
-console.error("PASS: partition + numeric tween + text dx/dy + paint alphas + OKLab + structurallyCompatible + reduced-motion + easings");
+console.error("PASS: partition + numeric tween + text dx/dy + paint alphas + path stroke-width + OKLab + structurallyCompatible + reduced-motion + easings");
 try { await window.happyDOM?.close(); } catch {}
 process.exit(0);

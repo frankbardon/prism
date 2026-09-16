@@ -72,6 +72,8 @@ func encodeArea(in Inputs) ([]scene.Mark, error) {
 		return nil, err
 	}
 
+	curve, tension := curveFor(in)
+
 	marks := make([]scene.Mark, 0, len(groups))
 	for gi, g := range groups {
 		idxs := append([]int(nil), g.indices...)
@@ -96,9 +98,10 @@ func encodeArea(in Inputs) ([]scene.Mark, error) {
 			ID:    fmt.Sprintf("area-%d", gi),
 			Style: style,
 			Area: &scene.AreaGeom{
-				Upper: upper,
-				Lower: lower,
-				Curve: scene.CurveLinear,
+				Upper:   upper,
+				Lower:   lower,
+				Curve:   curve,
+				Tension: tension,
 			},
 		})
 	}

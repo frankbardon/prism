@@ -345,6 +345,11 @@ the default clear-and-replace path.
    `prism-animator.mjs`) and includes the mark-def style vocabulary:
    `fill-opacity` / `stroke-opacity` on filled and stroked marks, and
    `dx` / `dy` (a text mark's anchor offset) on `<text>`.
+   The tween set is per SVG element tag; `<path>` covers
+   `stroke-width` alongside the opacity trio, because a line mark with
+   a non-linear `interpolate` ([Marks:
+   Interpolation](marks.md#interpolation-line-and-area-curves))
+   renders as `<path>` rather than `<polyline>`.
    Color attrs (`fill`, `stroke`) interpolate through OKLab via
    `oklab.mjs` for perceptually smooth transitions.
 4. At `t = 1` the previous SVG is removed and the staged SVG becomes
