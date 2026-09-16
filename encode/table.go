@@ -196,11 +196,15 @@ func buildTableSubMarkCell(markType string, series []float64, style scene.Style)
 		return nil, err
 	}
 
-	xScale, _, err := ResolveScale("quantitative", table.KindFloat, idxVals, 0, tableCellSparkWidth)
+	// A table cell's sparkline has no axis, so rounding its domain to
+	// nice bounds would only shrink the drawn series for no readable
+	// gain: keep the zero-based data extent.
+	sparkOpts := ScaleOpts{Nice: new(bool)}
+	xScale, _, err := ResolveScaleWithOpts("quantitative", table.KindFloat, idxVals, 0, tableCellSparkWidth, sparkOpts)
 	if err != nil {
 		return nil, err
 	}
-	yScale, _, err := ResolveScale("quantitative", table.KindFloat, valVals, tableCellSparkHeight, 0)
+	yScale, _, err := ResolveScaleWithOpts("quantitative", table.KindFloat, valVals, tableCellSparkHeight, 0, sparkOpts)
 	if err != nil {
 		return nil, err
 	}

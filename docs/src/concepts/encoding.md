@@ -94,6 +94,73 @@ over nominal).
 
 See the [scales gallery](../gallery/scales) for one fixture per type.
 
+### Bounding the domain — `domain`, `zero`, `nice`
+
+Three keys shape the resolved domain. They compose in a fixed
+precedence: **`domain` wins outright**, and when it is absent the data
+extent is widened by `zero` and then rounded by `nice`.
+
+| Key | Type | Default | Effect |
+|---|---|---|---|
+| `domain` | array | data extent | Pins the domain exactly. `zero` and `nice` are not applied on top of it. |
+| `zero` | boolean | `true` on `linear` / `pow` / `sqrt`; ignored on `log` and `time` | Widens a positive-only extent down to 0 (or a negative-only extent up to 0). |
+| `nice` | boolean | `true` on `linear` / `pow` / `sqrt` / `time`; `false` on `log` | Rounds the bounds outward so the axis starts and ends on a labelled tick. |
+
+```json
+"y": {
+  "field": "score", "type": "quantitative",
+  "scale": {"zero": false, "domain": [90, 130]}
+}
+```
+
+**`domain` shape by family.** A continuous scale (`linear`, `log`,
+`pow`, `sqrt`) takes exactly two ascending numeric bounds. A `time`
+scale takes two bounds, each an ISO-8601 date string or an
+epoch-millisecond number. A discrete scale (`band`, `point`,
+`ordinal`) takes the ordered category list:
+
+```json
+"x": {
+  "field": "size", "type": "nominal",
+  "scale": {"domain": ["small", "medium", "large"]}
+}
+```
+
+A discrete `domain` pins the **leading** order; any data category the
+list omits is appended after it in first-seen order, so a partial
+domain reorders without dropping rows. This is Prism's one intentional
+divergence from Vega-Lite, which treats a discrete domain as the
+complete category set.
+
+> **Retired workaround.** Explicit category order used to be reachable
+> only by arranging the layers so the desired category appeared in the
+> first layer's data — order fell out of the domain-union order. Set
+> `scale.domain` instead; layer ordering no longer affects category
+> order.
+
+A malformed `domain` — wrong arity, non-numeric bounds on a continuous
+scale, reversed or zero-width bounds, a non-string category — is
+rejected at validate time with `PRISM_SPEC_041`, and the encoder
+raises the same code for callers that skip validate.
+
+**`nice` is boolean-only.** Vega-Lite's numeric (tick-count) and
+time-interval forms of `nice` are rejected by the schema. Control tick
+density with `axis.tick_count` instead.
+
+**`log` has no zero-forcing, by design.** A log domain cannot contain
+zero, so `zero` is ignored there — including an explicit `zero: true`.
+
+> **Retired workaround.** Because zero-forcing used to be unconditional
+> on `linear`, `scale.type: "log"` was the only way to get an axis that
+> did not start at zero. That is no longer necessary: use
+> `{"zero": false}` on the linear scale, or pin `domain` outright, and
+> reach for `log` only when the data genuinely wants a logarithmic
+> mapping.
+
+`nice` defaults on, so adding no scale block at all moves axis bounds
+compared with pre-E2-S1 Prism: an extent of 3..97 now resolves to
+0..100 rather than 0..97. Set `{"nice": false}` to keep the raw extent.
+
 ## Axes & legends
 
 Both are auto-generated based on the encoded channels but can be

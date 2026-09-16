@@ -46,6 +46,7 @@ rules assume well-formed structure.
 | `PRISM_SPEC_035` regression shape | Semantic | A `regression` transform must declare `target` + at least one predictor. It accepts derived input (may follow another transform, like crosstab), so there is no chain-position constraint. |
 | `PRISM_SPEC_036` bullet bands strictly ascending | Semantic | A `bullet` mark's `bands` are cumulative range bounds from zero, so each bound must be strictly greater than its predecessor. Fires per out-of-order pair. |
 | `PRISM_SPEC_040` table requires columns | Semantic | A `table` mark has no x/y — its `encoding.columns[]` is the entire visual contract, so it must be present and non-empty. |
+| `PRISM_SPEC_041` scale domain shape | Semantic | An explicit `scale.domain` must match its scale family: two ascending numeric bounds on a continuous scale, two date-string / epoch-ms bounds on a time scale, a non-empty list of string categories on band/point/ordinal. Walks composition children. The family comes from `scale.type`, falling back to the channel's measure type; an unknown family no-ops and the encoder raises the same code at resolve time. |
 
 ## $ref resolution strategy
 

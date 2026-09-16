@@ -621,17 +621,11 @@ func resolveChannel(ch *spec.PositionChannel, tbl *table.Table, rmin, rmax float
 	// extra carries mark-supplied domain values (bullet bands / target /
 	// comparative) that must widen the data-derived domain.
 	values = append(values, extra...)
+	opts := ScaleOptsFromSpec(ch.Scale)
 	if ch.Scale != nil && ch.Scale.Type != "" {
-		opts := ScaleOpts{}
-		if ch.Scale.Base != nil {
-			opts.Base = *ch.Scale.Base
-		}
-		if ch.Scale.Exponent != nil {
-			opts.Exp = *ch.Scale.Exponent
-		}
 		return ResolveScaleTyped(scene.ScaleType(ch.Scale.Type), values, rmin, rmax, opts)
 	}
-	return ResolveScale(ch.Type, col.Kind(), values, rmin, rmax)
+	return ResolveScaleWithOpts(ch.Type, col.Kind(), values, rmin, rmax, opts)
 }
 
 // bulletMeasureExtras returns the extra measure-axis domain values a

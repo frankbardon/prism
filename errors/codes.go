@@ -890,6 +890,17 @@ var Codes = map[string]CodeMetadata{
 		},
 		SeeAlso: []string{"PRISM_SPEC_003"},
 	},
+	"PRISM_SPEC_041": {
+		Code:    "PRISM_SPEC_041",
+		Message: `Channel "{{.Channel}}" has a malformed scale.domain: {{.Reason}}.`,
+		Fixups: []string{
+			`A continuous scale (linear / log / pow / sqrt) takes exactly two ascending numeric bounds, e.g. ` + "`{\"scale\": {\"domain\": [90, 130]}}`" + `.`,
+			`A time scale takes two bounds, each an ISO-8601 date string or an epoch-millisecond number, e.g. ` + "`{\"scale\": {\"domain\": [\"2024-01-01T00:00:00Z\", \"2024-12-31T00:00:00Z\"]}}`" + `.`,
+			`A band / point / ordinal scale takes the explicit category order as a non-empty list of strings, e.g. ` + "`{\"scale\": {\"domain\": [\"small\", \"medium\", \"large\"]}}`" + `; any data category the list omits is appended after it.`,
+			`Drop ` + "`domain`" + ` to derive the domain from the data, and shape it with ` + "`zero`" + ` / ` + "`nice`" + ` instead.`,
+		},
+		SeeAlso: []string{"PRISM_SPEC_007", "PRISM_SPEC_010"},
+	},
 	"PRISM_WARN_NETWORK_CYCLE": {
 		Code:    "PRISM_WARN_NETWORK_CYCLE",
 		Message: `network input graph contains a cycle; force layout may produce a visually messy result.`,

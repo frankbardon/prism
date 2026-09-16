@@ -531,7 +531,34 @@ func resolveSharedScale(domains []encresolve.LayerDomain, live []liveChild, chan
 	if err != nil {
 		return nil, err
 	}
-	return scaleFromUnified(ty, dom, rmin, rmax)
+	// A shared scale still honours the spec's scale block: the first
+	// live layer declaring one on this channel supplies the explicit
+	// domain / zero / nice knobs, so an author-pinned domain is not
+	// silently overwritten by the union of the layers' data extents.
+	return scaleFromUnified(ty, dom, rmin, rmax, sharedScaleOpts(live, channel))
+}
+
+// sharedScaleOpts returns the ScaleOpts of the first live layer that
+// declares a scale block on the given channel.
+func sharedScaleOpts(live []liveChild, channel scene.Channel) ScaleOpts {
+	for _, lc := range live {
+		enc := lc.child.Spec.Encoding
+		if enc == nil {
+			continue
+		}
+		var ch *spec.PositionChannel
+		switch channel {
+		case scene.ChannelX:
+			ch = enc.X
+		case scene.ChannelY:
+			ch = enc.Y
+		}
+		if ch == nil || ch.Scale == nil {
+			continue
+		}
+		return ScaleOptsFromSpec(ch.Scale)
+	}
+	return ScaleOpts{}
 }
 
 // scaleFromUnified converts a (type, domain) pair from
@@ -539,9 +566,20 @@ func resolveSharedScale(domains []encresolve.LayerDomain, live []liveChild, chan
 // mark wiring. Numeric / temporal domains arrive as []any{min, max}
 // already in the right shape; categorical domains arrive as the full
 // ordered list of categories.
-func scaleFromUnified(ty scene.ScaleType, domain []any, rmin, rmax float64) (Scale, error) {
+func scaleFromUnified(ty scene.ScaleType, domain []any, rmin, rmax float64, opts ScaleOpts) (Scale, error) {
 	switch ty {
 	case scene.ScaleLinear, scene.ScaleLog, scene.ScalePow, scene.ScaleSqrt:
+		// Zero-forcing and nice rounding follow the same per-family
+		// defaults the flat encoder uses — notably log opts out of
+		// both, matching resolveLog.
+		isLog := ty == scene.ScaleLog
+		lo, hi, pinned, err := opts.numericDomain(string(ty))
+		if err != nil {
+			return nil, err
+		}
+		if pinned {
+			return &LinearScale{DomainMin: lo, DomainMax: hi, RangeMin: rmin, RangeMax: rmax}, nil
+		}
 		if len(domain) < 2 {
 			return nil, fmt.Errorf("scaleFromUnified: numeric domain needs [min,max], got %v", domain)
 		}
@@ -550,12 +588,7 @@ func scaleFromUnified(ty scene.ScaleType, domain []any, rmin, rmax float64) (Sca
 		if !ok1 || !ok2 {
 			return nil, fmt.Errorf("scaleFromUnified: numeric domain values not float64: %T %T", domain[0], domain[1])
 		}
-		if mn > 0 {
-			mn = 0
-		}
-		if mx < 0 {
-			mx = 0
-		}
+		mn, mx = opts.shapeContinuous(mn, mx, !isLog, !isLog)
 		return &LinearScale{
 			DomainMin: mn,
 			DomainMax: mx,
@@ -563,10 +596,16 @@ func scaleFromUnified(ty scene.ScaleType, domain []any, rmin, rmax float64) (Sca
 			RangeMax:  rmax,
 		}, nil
 	case scene.ScaleBand, scene.ScalePoint, scene.ScaleOrdinal:
-		cats := make([]string, 0, len(domain))
-		for _, v := range domain {
-			if s, ok := v.(string); ok {
-				cats = append(cats, s)
+		cats, err := opts.categoryDomain(domain)
+		if err != nil {
+			return nil, err
+		}
+		if len(cats) == 0 {
+			cats = make([]string, 0, len(domain))
+			for _, v := range domain {
+				if s, ok := v.(string); ok {
+					cats = append(cats, s)
+				}
 			}
 		}
 		return &BandScale{
@@ -576,6 +615,13 @@ func scaleFromUnified(ty scene.ScaleType, domain []any, rmin, rmax float64) (Sca
 			Padding:    0.1,
 		}, nil
 	case scene.ScaleTime:
+		lo, hi, pinned, err := opts.temporalDomain()
+		if err != nil {
+			return nil, err
+		}
+		if pinned {
+			return &TimeScale{Linear: &LinearScale{DomainMin: lo, DomainMax: hi, RangeMin: rmin, RangeMax: rmax}}, nil
+		}
 		if len(domain) < 2 {
 			return nil, fmt.Errorf("scaleFromUnified: time domain needs [min,max]")
 		}
@@ -583,6 +629,9 @@ func scaleFromUnified(ty scene.ScaleType, domain []any, rmin, rmax float64) (Sca
 		mx, ok2 := domain[1].(float64)
 		if !ok1 || !ok2 {
 			return nil, fmt.Errorf("scaleFromUnified: time domain values not float64: %T %T", domain[0], domain[1])
+		}
+		if opts.niceEnabled(true) {
+			mn, mx = niceTimeDomain(mn, mx)
 		}
 		lin := &LinearScale{DomainMin: mn, DomainMax: mx, RangeMin: rmin, RangeMax: rmax}
 		return &TimeScale{Linear: lin}, nil

@@ -160,6 +160,49 @@ func alignUp(t time.Time, level timeLevel) time.Time {
 	return t
 }
 
+// alignDown returns the largest calendar boundary at level <= t.
+func alignDown(t time.Time, level timeLevel) time.Time {
+	up := alignUp(t, level)
+	if up.Equal(t) {
+		return t
+	}
+	// alignUp only ever moves forward by one unit, so stepping the
+	// preceding boundary back is exact for every level (including
+	// variable-length months / years).
+	switch level {
+	case levelYear:
+		return up.AddDate(-1, 0, 0)
+	case levelMonth:
+		return up.AddDate(0, -1, 0)
+	case levelDay:
+		return up.AddDate(0, 0, -1)
+	case levelHour:
+		return up.Add(-time.Hour)
+	case levelMinute:
+		return up.Add(-time.Minute)
+	case levelSecond:
+		return up.Add(-time.Second)
+	}
+	return t
+}
+
+// niceTimeDomain rounds an epoch-ms domain outward to the calendar
+// boundary the tick generator would use for that span, so a temporal
+// axis starts and ends on a labelled tick. Returns the input unchanged
+// when the span is degenerate.
+func niceTimeDomain(mn, mx float64) (float64, float64) {
+	if !(mx > mn) {
+		return mn, mx
+	}
+	lo := time.UnixMilli(int64(mn)).UTC()
+	hi := time.UnixMilli(int64(mx)).UTC()
+	level, _ := pickTimeLevel(hi.Sub(lo))
+	if level == levelMillisecond {
+		return mn, mx
+	}
+	return float64(alignDown(lo, level).UnixMilli()), float64(alignUp(hi, level).UnixMilli())
+}
+
 // step advances t by one unit at the level's natural granularity.
 func step(t time.Time, level timeLevel) time.Time {
 	switch level {
