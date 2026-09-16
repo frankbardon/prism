@@ -4,9 +4,9 @@
   <g class="prism-scene" data-scene-id="scene-0">
     <g class="prism-plot">
       <g class="prism-layer" data-layer-id="layer-0" data-prism-layer="layer-0">
-        <path class="prism-mark-area" data-prism-id="sparkarea-area-0" data-prism-datum-row="0" d="M4,342.286 L162.4,215.429 L320.8,278.857 L479.2,130.857 L637.6,4 L796,88.571 L796,596 L637.6,596 L479.2,596 L320.8,596 L162.4,596 L4,596 Z" fill="#4c78a8"/>
-        <rect class="prism-mark-bar" data-prism-id="adornment-band" data-prism-datum-row="1" x="4" y="130.857" width="792" height="148" fill="#4c78a8" opacity="0.12"/>
-        <circle class="prism-mark-point" data-prism-id="adornment-last" data-prism-datum-row="2" cx="796" cy="88.571" r="2.5" fill="#4c78a8"/>
+        <path class="prism-mark-area" data-prism-id="sparkarea-area-0" data-prism-datum-row="0" d="M4,359.2 L162.4,240.8 L320.8,300 L479.2,161.867 L637.6,43.467 L796,122.4 L796,596 L637.6,596 L479.2,596 L320.8,596 L162.4,596 L4,596 Z" fill="#4c78a8"/>
+        <rect class="prism-mark-bar" data-prism-id="adornment-band" data-prism-datum-row="1" x="4" y="161.867" width="792" height="138.133" fill="#4c78a8" opacity="0.12"/>
+        <circle class="prism-mark-point" data-prism-id="adornment-last" data-prism-datum-row="2" cx="796" cy="122.4" r="2.5" fill="#4c78a8"/>
       </g>
     </g>
   </g>

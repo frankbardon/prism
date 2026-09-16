@@ -4,14 +4,14 @@
   <g class="prism-scene" data-scene-id="scene-0">
     <g class="prism-plot">
       <g class="prism-layer" data-layer-id="layer-0" data-prism-layer="layer-0">
-        <rect class="prism-mark-bar" data-prism-id="sparkbar-bar-0" data-prism-datum-row="0" x="10.6" y="342.286" width="118.8" height="253.714" fill="#4c78a8"/>
-        <rect class="prism-mark-bar" data-prism-id="sparkbar-bar-1" data-prism-datum-row="1" x="142.6" y="215.429" width="118.8" height="380.571" fill="#4c78a8"/>
-        <rect class="prism-mark-bar" data-prism-id="sparkbar-bar-2" data-prism-datum-row="2" x="274.6" y="278.857" width="118.8" height="317.143" fill="#4c78a8"/>
-        <rect class="prism-mark-bar" data-prism-id="sparkbar-bar-3" data-prism-datum-row="3" x="406.6" y="130.857" width="118.8" height="465.143" fill="#4c78a8"/>
-        <rect class="prism-mark-bar" data-prism-id="sparkbar-bar-4" data-prism-datum-row="4" x="538.6" y="4" width="118.8" height="592" fill="#4c78a8"/>
-        <rect class="prism-mark-bar" data-prism-id="sparkbar-bar-5" data-prism-datum-row="5" x="670.6" y="88.571" width="118.8" height="507.429" fill="#4c78a8"/>
-        <circle class="prism-mark-point" data-prism-id="adornment-max" cx="598" cy="4" r="2.5" fill="#4c78a8"/>
-        <circle class="prism-mark-point" data-prism-id="adornment-min" cx="70" cy="342.286" r="2.5" fill="#4c78a8"/>
+        <rect class="prism-mark-bar" data-prism-id="sparkbar-bar-0" data-prism-datum-row="0" x="10.6" y="359.2" width="118.8" height="236.8" fill="#4c78a8"/>
+        <rect class="prism-mark-bar" data-prism-id="sparkbar-bar-1" data-prism-datum-row="1" x="142.6" y="240.8" width="118.8" height="355.2" fill="#4c78a8"/>
+        <rect class="prism-mark-bar" data-prism-id="sparkbar-bar-2" data-prism-datum-row="2" x="274.6" y="300" width="118.8" height="296" fill="#4c78a8"/>
+        <rect class="prism-mark-bar" data-prism-id="sparkbar-bar-3" data-prism-datum-row="3" x="406.6" y="161.867" width="118.8" height="434.133" fill="#4c78a8"/>
+        <rect class="prism-mark-bar" data-prism-id="sparkbar-bar-4" data-prism-datum-row="4" x="538.6" y="43.467" width="118.8" height="552.533" fill="#4c78a8"/>
+        <rect class="prism-mark-bar" data-prism-id="sparkbar-bar-5" data-prism-datum-row="5" x="670.6" y="122.4" width="118.8" height="473.6" fill="#4c78a8"/>
+        <circle class="prism-mark-point" data-prism-id="adornment-max" cx="598" cy="43.467" r="2.5" fill="#4c78a8"/>
+        <circle class="prism-mark-point" data-prism-id="adornment-min" cx="70" cy="359.2" r="2.5" fill="#4c78a8"/>
       </g>
     </g>
   </g>

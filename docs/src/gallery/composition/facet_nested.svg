@@ -4,8 +4,8 @@
   <g class="prism-scene" data-scene-id="scene-r0-c0-0">
     <g class="prism-plot">
       <g class="prism-layer" data-layer-id="layer-0" data-prism-layer="layer-0">
-        <rect class="prism-mark-bar" data-prism-id="bar-0" data-prism-datum-row="0" x="107.5" y="91.164" width="135" height="158.836" fill="#4c78a8"/>
-        <rect class="prism-mark-bar" data-prism-id="bar-1" data-prism-datum-row="1" x="257.5" y="79.818" width="135" height="170.182" fill="#4c78a8"/>
+        <rect class="prism-mark-bar" data-prism-id="bar-0" data-prism-datum-row="0" x="107.5" y="104.4" width="135" height="145.6" fill="#4c78a8"/>
+        <rect class="prism-mark-bar" data-prism-id="bar-1" data-prism-datum-row="1" x="257.5" y="94" width="135" height="156" fill="#4c78a8"/>
       </g>
     </g>
   </g>
@@ -13,8 +13,8 @@
   <g class="prism-scene" data-scene-id="scene-r0-c0-1">
     <g class="prism-plot">
       <g class="prism-layer" data-layer-id="layer-0" data-prism-layer="layer-0">
-        <rect class="prism-mark-bar" data-prism-id="bar-0" data-prism-datum-row="0" x="487.5" y="57.127" width="135" height="192.873" fill="#4c78a8"/>
-        <rect class="prism-mark-bar" data-prism-id="bar-1" data-prism-datum-row="1" x="637.5" y="42" width="135" height="208" fill="#4c78a8"/>
+        <rect class="prism-mark-bar" data-prism-id="bar-0" data-prism-datum-row="0" x="487.5" y="73.2" width="135" height="176.8" fill="#4c78a8"/>
+        <rect class="prism-mark-bar" data-prism-id="bar-1" data-prism-datum-row="1" x="637.5" y="59.333" width="135" height="190.667" fill="#4c78a8"/>
       </g>
     </g>
   </g>
@@ -22,8 +22,8 @@
   <g class="prism-scene" data-scene-id="scene-r1-c0-0">
     <g class="prism-plot">
       <g class="prism-layer" data-layer-id="layer-0" data-prism-layer="layer-0">
-        <rect class="prism-mark-bar" data-prism-id="bar-0" data-prism-datum-row="0" x="107.5" y="436" width="135" height="124" fill="#4c78a8"/>
-        <rect class="prism-mark-bar" data-prism-id="bar-1" data-prism-datum-row="1" x="257.5" y="416" width="135" height="144" fill="#4c78a8"/>
+        <rect class="prism-mark-bar" data-prism-id="bar-0" data-prism-datum-row="0" x="107.5" y="452.533" width="135" height="107.467" fill="#4c78a8"/>
+        <rect class="prism-mark-bar" data-prism-id="bar-1" data-prism-datum-row="1" x="257.5" y="435.2" width="135" height="124.8" fill="#4c78a8"/>
       </g>
     </g>
   </g>
@@ -31,8 +31,8 @@
   <g class="prism-scene" data-scene-id="scene-r1-c0-1">
     <g class="prism-plot">
       <g class="prism-layer" data-layer-id="layer-0" data-prism-layer="layer-0">
-        <rect class="prism-mark-bar" data-prism-id="bar-0" data-prism-datum-row="0" x="487.5" y="364" width="135" height="196" fill="#4c78a8"/>
-        <rect class="prism-mark-bar" data-prism-id="bar-1" data-prism-datum-row="1" x="637.5" y="352" width="135" height="208" fill="#4c78a8"/>
+        <rect class="prism-mark-bar" data-prism-id="bar-0" data-prism-datum-row="0" x="487.5" y="390.133" width="135" height="169.867" fill="#4c78a8"/>
+        <rect class="prism-mark-bar" data-prism-id="bar-1" data-prism-datum-row="1" x="637.5" y="379.733" width="135" height="180.267" fill="#4c78a8"/>
       </g>
     </g>
   </g>

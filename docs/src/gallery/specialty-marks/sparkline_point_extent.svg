@@ -4,9 +4,9 @@
   <g class="prism-scene" data-scene-id="scene-0">
     <g class="prism-plot">
       <g class="prism-layer" data-layer-id="layer-0" data-prism-layer="layer-0">
-        <polyline class="prism-mark-line" data-prism-id="sparkline-line-0" data-prism-datum-row="0" points="4,342.286 162.4,215.429 320.8,278.857 479.2,130.857 637.6,4 796,88.571" fill="none" stroke="#4c78a8" stroke-width="1.5"/>
-        <circle class="prism-mark-point" data-prism-id="adornment-max" data-prism-datum-row="1" cx="637.6" cy="4" r="2.5" fill="#4c78a8"/>
-        <circle class="prism-mark-point" data-prism-id="adornment-min" data-prism-datum-row="2" cx="4" cy="342.286" r="2.5" fill="#4c78a8"/>
+        <polyline class="prism-mark-line" data-prism-id="sparkline-line-0" data-prism-datum-row="0" points="4,359.2 162.4,240.8 320.8,300 479.2,161.867 637.6,43.467 796,122.4" fill="none" stroke="#4c78a8" stroke-width="1.5"/>
+        <circle class="prism-mark-point" data-prism-id="adornment-max" data-prism-datum-row="1" cx="637.6" cy="43.467" r="2.5" fill="#4c78a8"/>
+        <circle class="prism-mark-point" data-prism-id="adornment-min" data-prism-datum-row="2" cx="4" cy="359.2" r="2.5" fill="#4c78a8"/>
       </g>
     </g>
   </g>

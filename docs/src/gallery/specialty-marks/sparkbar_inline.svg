@@ -4,13 +4,13 @@
   <g class="prism-scene" data-scene-id="scene-0">
     <g class="prism-plot">
       <g class="prism-layer" data-layer-id="layer-0" data-prism-layer="layer-0">
-        <rect class="prism-mark-bar" data-prism-id="sparkbar-bar-0" data-prism-datum-row="0" x="9.657" y="342.286" width="101.829" height="253.714" fill="#4c78a8"/>
-        <rect class="prism-mark-bar" data-prism-id="sparkbar-bar-1" data-prism-datum-row="1" x="122.8" y="215.429" width="101.829" height="380.571" fill="#4c78a8"/>
-        <rect class="prism-mark-bar" data-prism-id="sparkbar-bar-2" data-prism-datum-row="2" x="235.943" y="405.714" width="101.829" height="190.286" fill="#4c78a8"/>
-        <rect class="prism-mark-bar" data-prism-id="sparkbar-bar-3" data-prism-datum-row="3" x="349.086" y="130.857" width="101.829" height="465.143" fill="#4c78a8"/>
-        <rect class="prism-mark-bar" data-prism-id="sparkbar-bar-4" data-prism-datum-row="4" x="462.229" y="4" width="101.829" height="592" fill="#4c78a8"/>
-        <rect class="prism-mark-bar" data-prism-id="sparkbar-bar-5" data-prism-datum-row="5" x="575.371" y="300" width="101.829" height="296" fill="#4c78a8"/>
-        <rect class="prism-mark-bar" data-prism-id="sparkbar-bar-6" data-prism-datum-row="6" x="688.514" y="448" width="101.829" height="148" fill="#4c78a8"/>
+        <rect class="prism-mark-bar" data-prism-id="sparkbar-bar-0" data-prism-datum-row="0" x="9.657" y="359.2" width="101.829" height="236.8" fill="#4c78a8"/>
+        <rect class="prism-mark-bar" data-prism-id="sparkbar-bar-1" data-prism-datum-row="1" x="122.8" y="240.8" width="101.829" height="355.2" fill="#4c78a8"/>
+        <rect class="prism-mark-bar" data-prism-id="sparkbar-bar-2" data-prism-datum-row="2" x="235.943" y="418.4" width="101.829" height="177.6" fill="#4c78a8"/>
+        <rect class="prism-mark-bar" data-prism-id="sparkbar-bar-3" data-prism-datum-row="3" x="349.086" y="161.867" width="101.829" height="434.133" fill="#4c78a8"/>
+        <rect class="prism-mark-bar" data-prism-id="sparkbar-bar-4" data-prism-datum-row="4" x="462.229" y="43.467" width="101.829" height="552.533" fill="#4c78a8"/>
+        <rect class="prism-mark-bar" data-prism-id="sparkbar-bar-5" data-prism-datum-row="5" x="575.371" y="319.733" width="101.829" height="276.267" fill="#4c78a8"/>
+        <rect class="prism-mark-bar" data-prism-id="sparkbar-bar-6" data-prism-datum-row="6" x="688.514" y="457.867" width="101.829" height="138.133" fill="#4c78a8"/>
       </g>
     </g>
   </g>
