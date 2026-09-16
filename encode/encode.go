@@ -120,6 +120,14 @@ func Encode(s *spec.Spec, tables map[plan.NodeID]*table.Table, tipID plan.NodeID
 		)
 	}
 
+	// Stacking (E5-S2): when the plan injected a StackNode, repoint the
+	// stacked position channel at its bounds columns before anything
+	// reads the encoding. Everything downstream — domain resolution,
+	// axis building, the span-aware bar / area encoders — then treats
+	// the stack as an ordinary x→x2 / y→y2 interval. No-op for every
+	// spec that does not stack. See encode/stack.go.
+	s = rebindStack(s, tbl)
+
 	enc := s.Encoding
 	if enc == nil {
 		return nil, prismerrors.New(

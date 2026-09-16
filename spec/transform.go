@@ -19,6 +19,7 @@ type Transform struct {
 	Crosstab   *CrosstabTransform
 	Regression *RegressionTransform
 	TimeUnit   *TimeUnitTransform
+	Stack      *StackTransform
 }
 
 // FilterTransform: structured row predicate (E2-S1). The `filter` value
@@ -67,6 +68,32 @@ type BinTransform struct {
 	Field string `json:"field"`
 	As    string `json:"as"`
 	Data  string `json:"data,omitempty"`
+}
+
+// StackTransform: cumulative stacking (E5-S2).
+//
+// Computes two new columns holding the lower and upper bound of each
+// row's segment within its stack, so a bar / area mark can draw the
+// segment as a span rather than from the axis baseline. `stack` names
+// the quantitative field to accumulate; `groupby` names the fields
+// that define one stack (typically the dimension position channel);
+// `offset` selects the accumulation mode.
+//
+// There is intentionally no `sort` key: `sort` is itself a transform
+// discriminator, so a transform object carrying both would be rejected
+// as ambiguous at decode. Order the segments with a preceding
+// `{"sort": …}` transform — the stack preserves upstream row order
+// inside each group.
+//
+// `as` is the [start, end] output column pair, NOT a dataset alias —
+// like BinTransform.As and CalculateTransform.As it is never published
+// to `leafByName`. Defaults to ["<field>_start", "<field>_end"].
+type StackTransform struct {
+	Stack   string   `json:"stack"`
+	Groupby []string `json:"groupby,omitempty"`
+	Offset  string   `json:"offset,omitempty"`
+	As      []string `json:"as,omitempty"`
+	Data    string   `json:"data,omitempty"`
 }
 
 // WindowTransform: windowed aggregate / rank.

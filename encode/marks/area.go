@@ -23,7 +23,12 @@ import (
 // the data value is 0). The baseline is the scale's zero, so
 // positive-only domains fill down to the plot bottom and
 // zero-crossing domains fill above and below the mid-plot zero line.
-// Stacked / streamgraph variants land in P08.
+//
+// Stacking (E5-S2) needs no code here: the StackNode's bounds columns
+// reach this encoder as an ordinary y / y2 pair (encode/stack.go
+// rebinds the channels before scales resolve), so a stacked area is
+// just the y2 path below with a per-series lower edge. The
+// streamgraph offset lands later.
 //
 // Binding y2 (E9-S3) replaces that implicit baseline with an explicit
 // lower edge read per row from the y2 column and resolved through the
