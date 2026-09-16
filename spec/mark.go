@@ -16,6 +16,15 @@ type MarkDef struct {
 	Shape         string    `json:"shape,omitempty"`
 	Interpolate   string    `json:"interpolate,omitempty"`
 	Tension       *float64  `json:"tension,omitempty"`
+	// Clip (E2-S2) forces the plot-region clip on or off for the scene
+	// this mark belongs to. Left unset the encoder decides: the clip is
+	// armed only when a position channel pins an explicit
+	// `scale.domain`, because that is the one way a mark can land
+	// outside the plot rect. `true` always clips, `false` never does.
+	// The clip is a property of the plot rect, not of one mark, so in a
+	// layer composite a single `true` wins and a `false` otherwise
+	// disarms it for every layer.
+	Clip *bool `json:"clip,omitempty"`
 	// Orient (E9-S1) names which axis a baseline-anchored mark grows
 	// along: "vertical" (the default) puts the category on x and the
 	// measure on y, "horizontal" swaps them. Left empty the encoder

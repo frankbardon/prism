@@ -121,7 +121,7 @@ func encodeRepeatComposite(s *spec.Spec, composite *plan.CompositeDAG, childTabl
 		}
 		childScene := childDoc.Grid.Cells[0].Scene
 		offsetScene(&childScene, offsetX, offsetY)
-		childScene.ID = fmt.Sprintf("scene-%d", i)
+		renameScene(&childScene, fmt.Sprintf("scene-%d", i))
 		cells = append(cells, scene.SceneCell{
 			Row:   row,
 			Col:   col,

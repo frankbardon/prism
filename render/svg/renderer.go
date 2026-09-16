@@ -200,6 +200,14 @@ func renderAxesGroup(w *Writer, s scene.Scene, sceneTheme *scene.Theme, above bo
 // ordering predates this story and moving it would restack every
 // layered and faceted golden in the repo, so zindex is honoured only
 // for the per-scene axes renderAxesGroup handles.
+//
+// E2-S2 revisited that deferral and kept it. The plot-region clip does
+// not raise the stakes: a shared axis is emitted outside every cell's
+// prism-scene group, hence outside every prism-plot group, so no
+// Scene.ClipRef can reach it whichever side of the cells it lands on.
+// The gap is z-order fidelity alone, and paying for it means restacking
+// every layered and faceted golden — a change worth making on its own
+// terms, not as a side effect of adding a clip.
 func renderSharedAxes(w *Writer, g scene.SceneGrid, theme *scene.Theme) {
 	if g.Shared.X == nil && g.Shared.Y == nil {
 		return
@@ -399,6 +407,15 @@ func renderScene(w *Writer, s scene.Scene, sceneTheme *scene.Theme) error {
 	w.Indent(4)
 	w.OpenTag("g")
 	w.Attr("class", "prism-plot")
+	// Plot-region clip (E2-S2). The reference is carried in the Scene
+	// IR (Scene.ClipRef → Defs.Clips), never derived here, so every
+	// renderer consuming the IR clips identically. It lands on the mark
+	// container alone: the axes groups, the legends and the title are
+	// siblings of this <g>, so a mark overflowing an author-pinned
+	// domain is cut at the plot edge without any chrome being swallowed.
+	if s.ClipRef != "" {
+		w.Attr("clip-path", "url(#"+s.ClipRef+")")
+	}
 	w.CloseTagOpen()
 	w.Newline()
 	for _, layer := range s.Layers {

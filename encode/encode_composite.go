@@ -411,6 +411,10 @@ func encodeLayerComposite(s *spec.Spec, composite *plan.CompositeDAG, childTable
 			Y:       20,
 		}
 	}
+	// One plot-region clip for the whole layer stack (E2-S2): every
+	// layer shares this scene's plot rect, so the clip is resolved once
+	// across the parent spec and its layer children.
+	armPlotClip(&sceneObj, wantsPlotClip(s))
 
 	doc := scene.NewDoc()
 	doc.Theme = sceneTheme
@@ -889,7 +893,7 @@ func encodeConcatComposite(s *spec.Spec, composite *plan.CompositeDAG, childTabl
 		}
 		childScene := childDoc.Grid.Cells[0].Scene
 		offsetScene(&childScene, offsetX, offsetY)
-		childScene.ID = fmt.Sprintf("scene-%d", i)
+		renameScene(&childScene, fmt.Sprintf("scene-%d", i))
 		cells = append(cells, scene.SceneCell{
 			Row:   row,
 			Col:   col,
@@ -945,6 +949,7 @@ func offsetScene(s *scene.Scene, dx, dy float64) {
 		s.Legends[i].Frame.X += dx
 		s.Legends[i].Frame.Y += dy
 	}
+	offsetClips(s, dx, dy)
 }
 
 func offsetAxis(a *scene.Axis, dx, dy float64) {
