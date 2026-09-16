@@ -1,9 +1,12 @@
 {
   "//": "Workspace settings for the Prism repo. Wires VSCode JSON validation to the in-repo schema bundle under schema/v1/ — the same bundle prism init extracts into .prism/schemas/ for downstream projects. Edit schema/v1/spec.schema.json (and siblings) and VSCode picks up changes immediately; no init / copy step.",
+  "//urn": "CAVEAT: when a document declares its own \"$schema\", VSCode resolves THAT value and ignores the fileMatch associations below. Every committed *.prism.json declares \"$schema\": \"urn:prism:schema:v1:spec\", which VSCode cannot fetch (unknown URI scheme) — it reports 'Unable to load schema' and gives no completion. The fix is a URN shim entry in machine-level User settings (json.schemas entry with url \"urn:prism:schema:v1:spec\" and an inline schema { \"$ref\": \"file:///abs/path/to/prism/schema/v1/spec.schema.json\" }); it needs an absolute path, so it cannot live in this committed file. The associations below still cover drafts that omit $schema, plus any file whose $schema is a relative path form (the spec schema accepts ./…/spec.schema.json and file:// forms).",
   "json.schemas": [
     {
       "fileMatch": [
         "*.prism.json",
+        "**/*.prism.json",
+        ".prism/examples/*.json",
         "**/gallery/**/*.prism.json",
         "**/testdata/**/*.prism.json",
         "**/examples/**/*.prism.json"
@@ -13,5 +16,6 @@
   ],
   "files.associations": {
     "*.prism.json": "json"
-  }
+  },
+  "json.validate.enable": true
 }
