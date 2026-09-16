@@ -171,6 +171,19 @@ func collectColsFromNode(n plan.Node, out map[string]struct{}) bool {
 		// join's dependents. For the source-side view, the join only
 		// reads the join keys directly.
 		return true
+	case *nodes.StackNode:
+		// Stack passes every upstream column through and appends two
+		// derived bounds columns, so the only upstream columns it
+		// reads directly are the accumulated field plus its grouping /
+		// ordering keys.
+		out[v.Field()] = struct{}{}
+		for _, g := range v.Groupby() {
+			out[g] = struct{}{}
+		}
+		for _, g := range v.StackBy() {
+			out[g] = struct{}{}
+		}
+		return true
 	case *nodes.SourceNode:
 		return true
 	}
@@ -199,6 +212,12 @@ func rewireSingleInput(n plan.Node, oldIn, newIn plan.NodeID) plan.Node {
 			return nil
 		}
 		return nodes.NewGroupAggregate(v.ID(), newIn, v.Groupby(), v.Aggs())
+	case *nodes.StackNode:
+		if v.Inputs()[0] != oldIn {
+			return nil
+		}
+		return nodes.NewStack(v.ID(), newIn, v.Field(), v.Groupby(), v.StackBy(),
+			v.Offset(), v.StartAs(), v.EndAs())
 	case *nodes.JoinNode:
 		ins := v.Inputs()
 		l, r := ins[0], ins[1]

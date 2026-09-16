@@ -39,6 +39,7 @@ The `encoding` object binds data fields to visual channels.
 | `legend` | Legend config (`title`, `orient`, `direction`, ...), or `null` to [hide the legend](#hiding-an-axis-or-legend). |
 | `format` | d3-format string for label formatting. |
 | `sort` | `"ascending"` / `"descending"` / `"-y"` / `[explicit, order, ...]`. |
+| `stack` | Position channels only. `"zero"` / `"normalize"` / `true` to stack, `null` / `false` to opt out — see [Stacking](#stacking). |
 | `key` | `true` to mark this channel as the animation join key — see [Spec › Animation](spec.md#animation). At most one channel per encoding may set this; only valid on position channels (`x`, `y`, `x2`, `y2`, `theta`, `radius`) and mark channels (`color`, `fill`, `stroke`, `opacity`, `size`, `shape`, sankey `source`/`target`/`value`, geo `longitude`/`latitude`/`feature`). |
 
 ## Span channels
@@ -634,6 +635,56 @@ Key coercion differs slightly between the two grouping channels:
 palette entry), whereas a `detail` key is the value's string form —
 a numeric series id groups per distinct number rather than collapsing
 into one bucket.
+
+## Stacking
+
+A `bar` or `area` whose measure channel is **aggregated** and whose
+marks are split by a grouping channel (`color` or `detail`) stacks by
+default, matching Vega-Lite. Without stacking, each segment would be
+drawn from the axis baseline and the taller ones would simply cover
+the shorter ones.
+
+```json
+"encoding": {
+  "x": {"field": "quarter", "type": "nominal"},
+  "y": {"aggregate": "sum", "field": "revenue", "type": "quantitative"},
+  "color": {"field": "segment", "type": "nominal"}
+}
+```
+
+The `stack` key on the measure channel controls it explicitly:
+
+| Value | Meaning |
+|---|---|
+| absent | The default above: stack when the shape qualifies, otherwise don't. |
+| `"zero"` / `true` | Stack from the baseline. |
+| `"normalize"` | Rescale each stack onto `0…1` — the 100% stacked chart. |
+| `"center"` | Reserved for the streamgraph offset; currently resolves to **no stacking**. |
+| `null` / `false` | Opt out; every segment returns to the baseline. |
+
+Semantics:
+
+| Aspect | Behaviour |
+|---|---|
+| Marks affected | `bar` and `area` only. Every other mark ignores `stack`. |
+| Stack key | The **other** position channel — the dimension axis. One stack per distinct value. |
+| Segment order | First-appearance order of the (colour, detail…) tuple across the whole table — the same order the mark partitioner and the legend use, so a segment sits in the same slot in every stack. |
+| Axis domain | The stacked totals reach scale resolution, so the measure axis spans `0…sum`, not `0…max`. |
+| Negatives | Positive and negative values accumulate independently from zero, so a mixed-sign stack grows in both directions. |
+| Opt-outs | An explicit `x2` / `y2` span wins (the mark already knows both edges), as does a non-linear measure scale. |
+
+Stacking is not a rendering trick: it compiles to a real
+[`stack` transform](spec.md#stack-transform) node in the plan, whose
+`<field>_start` / `<field>_end` output columns are bound to the
+measure channel and its span companion before any scale resolves.
+`prism execute` shows them, and any consumer pinning the plan's JSON
+shape sees them too.
+
+Composition note: stacking resolves per leaf spec, so each `layer` /
+`concat` child stacks independently. A `facet` parent builds its
+upstream pipeline once with the child encoding stripped, so a faceted
+child does not stack — the same limitation that already applies to the
+synthetic encoding aggregate.
 
 ## Further reading
 

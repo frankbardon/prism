@@ -10,9 +10,9 @@ arcs, etc. Specify via top-level `mark` (shorthand string) or
 
 | Mark | When to use |
 |---|---|
-| `bar` | Compare categories. The default. |
+| `bar` | Compare categories. The default. Stacks by segment — see [Encoding › Stacking](encoding.md#stacking). |
 | `line` | Continuous trends; ordered x-axis. |
-| `area` | Filled trends. Supports negative values + stacks. |
+| `area` | Filled trends. Supports negative values, an explicit `y2` lower edge, and stacking — see [Encoding › Stacking](encoding.md#stacking). |
 | `point` | Scatter, dot plots. |
 | `circle`, `square` | Convenience aliases for `point` with shape preset. |
 | `tick` | Strip plots, ranking dot plots. |

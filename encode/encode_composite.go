@@ -145,6 +145,14 @@ func encodeLayerComposite(s *spec.Spec, composite *plan.CompositeDAG, childTable
 			})
 			continue
 		}
+		// Stacking (E5-S2): rebind this layer's encoding onto its
+		// StackNode bounds columns once, here, so every downstream
+		// helper that reads child.Spec.Encoding — shared-domain
+		// collection, shared-axis config, the per-layer scale
+		// resolution and the mark encoders — sees the stacked span
+		// rather than the raw measure column. No-op for a layer that
+		// does not stack.
+		child.Spec = rebindStack(child.Spec, tbl)
 		live = append(live, liveChild{idx: i, child: child, tbl: tbl})
 	}
 	if len(live) == 0 {

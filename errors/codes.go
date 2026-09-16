@@ -440,6 +440,28 @@ var Codes = map[string]CodeMetadata{
 		},
 		SeeAlso: []string{"PRISM_RESOLVE_007"},
 	},
+	// Stacking (E5-S2). Both are structural failures of the StackNode
+	// the planner injects from `encoding.<x|y>.stack` or from an
+	// explicit `stack` transform.
+	"PRISM_PLAN_STACK_FIELD_MISSING": {
+		Code:    "PRISM_PLAN_STACK_FIELD_MISSING",
+		Message: `Stack field {{.Field}} is not present in the upstream table (available: {{.Available}}).`,
+		Fixups: []string{
+			`Check the spelling of the stacked position channel's "field".`,
+			`If the field is produced by a transform, make sure the stack transform runs after it.`,
+			`Inspect the upstream columns with ` + "`prism execute <spec>`" + `.`,
+		},
+		SeeAlso: []string{"PRISM_SPEC_001", "PRISM_PLAN_STACK_OUTPUT_COLLISION"},
+	},
+	"PRISM_PLAN_STACK_OUTPUT_COLLISION": {
+		Code:    "PRISM_PLAN_STACK_OUTPUT_COLLISION",
+		Message: `Stack output column {{.Column}} already exists upstream; choose a different "as" pair.`,
+		Fixups: []string{
+			`Set "as": ["<lower>", "<upper>"] on the stack transform to names the upstream table does not already use.`,
+			`Rename or drop the colliding upstream column with a project / calculate transform.`,
+		},
+		SeeAlso: []string{"PRISM_PLAN_STACK_FIELD_MISSING"},
+	},
 	"PRISM_PLAN_004": {
 		Code:    "PRISM_PLAN_004",
 		Message: `Union input schemas disagree: {{.Diff}}.`,

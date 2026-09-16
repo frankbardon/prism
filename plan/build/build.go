@@ -129,6 +129,17 @@ func Build(s *spec.Spec, opts Options) (*plan.DAG, plan.NodeID, error) {
 		return nil, "", err
 	}
 
+	// If the encoding stacks — explicitly via `stack`, or implicitly
+	// because it is the bar/area + aggregate + grouping shape
+	// Vega-Lite stacks — inject a StackNode on top. It must run after
+	// the synthetic aggregate so it accumulates the aggregated values,
+	// and its output columns must reach the encoder, so it is the last
+	// thing before the sink.
+	tip, err = ctx.injectEncodingStack(tip, s)
+	if err != nil {
+		return nil, "", err
+	}
+
 	// Mark the tip as the DAG's sole sink. Encode stage consumes the
 	// table at this id; renderers locate it via DAG.Sinks(). D040
 	// retired the synthetic SinkNode that P03 wired here.
@@ -555,6 +566,10 @@ func transformAsName(t spec.Transform) string {
 	case t.TimeUnit != nil:
 		// TimeUnit.As is the output column name, not a dataset alias.
 		return ""
+	case t.Stack != nil:
+		// Stack.As is the [start, end] output column pair, not a
+		// dataset alias — do NOT publish.
+		return ""
 	}
 	return ""
 }
@@ -707,6 +722,21 @@ func (c *buildCtx) applyOneTransform(input plan.NodeID, t spec.Transform) (plan.
 			return "", err
 		}
 		return c.addAndReturn(node)
+	case t.Stack != nil:
+		in, err := resolveInput(t.Stack.Data)
+		if err != nil {
+			return "", err
+		}
+		id := c.nextID("stack")
+		startAs, endAs := "", ""
+		if len(t.Stack.As) > 0 {
+			startAs = t.Stack.As[0]
+		}
+		if len(t.Stack.As) > 1 {
+			endAs = t.Stack.As[1]
+		}
+		return c.addAndReturn(nodes.NewStack(
+			id, in, t.Stack.Stack, t.Stack.Groupby, nil, t.Stack.Offset, startAs, endAs))
 	case t.Regression != nil:
 		in, err := resolveInput(t.Regression.Data)
 		if err != nil {
@@ -772,15 +802,7 @@ func joinOnFields(on any) []string {
 // either a single entry or an array (spec.DetailChannel) — into a
 // flat slice, so callers don't have to re-handle both forms.
 func detailEntries(enc *spec.Encoding) []spec.DetailChannelEntry {
-	if enc == nil || enc.Detail == nil {
-		return nil
-	}
-	out := make([]spec.DetailChannelEntry, 0, len(enc.Detail.Multi)+1)
-	if enc.Detail.Single != nil {
-		out = append(out, *enc.Detail.Single)
-	}
-	out = append(out, enc.Detail.Multi...)
-	return out
+	return spec.DetailEntries(enc)
 }
 
 // injectEncodingAggregate looks at the encoding for any channel
@@ -892,6 +914,26 @@ func (c *buildCtx) injectEncodingAggregate(tip plan.NodeID, enc *spec.Encoding) 
 	}
 	id := c.nextID("enc-ga")
 	return c.addAndReturn(nodes.NewGroupAggregate(id, tip, groupby, aggs))
+}
+
+// injectEncodingStack appends a StackNode when spec.ResolveStack says
+// the leaf spec stacks. The resolution lives in spec/stack.go so the
+// encoder — which has to rebind the position channels onto the node's
+// output columns — reaches exactly the same verdict from the same
+// spec, with no plan → encode side channel.
+//
+// Grouping is derived, not re-derived: StackBinding.StackBy comes from
+// spec.StackByFields, which walks colour-then-detail in the same order
+// encode/marks/group.go's groupChannels does, so the stack's segment
+// order and the mark partitioner's group order agree.
+func (c *buildCtx) injectEncodingStack(tip plan.NodeID, s *spec.Spec) (plan.NodeID, error) {
+	st := spec.ResolveStack(s)
+	if st == nil {
+		return tip, nil
+	}
+	id := c.nextID("enc-stack")
+	return c.addAndReturn(nodes.NewStack(
+		id, tip, st.Field, st.Groupby, st.StackBy, st.Offset, st.StartAs, st.EndAs))
 }
 
 // missingDatasetErr formats a PRISM_PLAN_003 with the available leaf

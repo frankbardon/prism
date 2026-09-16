@@ -458,6 +458,63 @@ every Prism transform, composes anywhere in a chain.
 `day_of_week` and other component-extraction units (which return an
 ordinal, not a date) land in a follow-up.
 
+## Stack transform
+
+The `stack` transform accumulates one quantitative field into per-row
+`[start, end]` bounds inside each stack, so a bar or area mark can draw
+each segment as a span instead of anchoring every segment on the axis
+baseline. It is the Vega-Lite `stack` transform, and it is what the
+implicit stacking described in
+[Encoding → Stacking](encoding.md#stacking) compiles down to.
+
+```json
+{
+  "transform": [
+    {"stack": "users", "groupby": ["stage"], "offset": "zero", "as": ["users_lo", "users_hi"]}
+  ],
+  "mark": "bar",
+  "encoding": {
+    "x":  {"field": "stage", "type": "nominal"},
+    "y":  {"field": "users_lo", "type": "quantitative"},
+    "y2": {"field": "users_hi", "type": "quantitative"},
+    "color": {"field": "plan", "type": "nominal"}
+  }
+}
+```
+
+| Field | Required | Notes |
+|---|---|---|
+| `stack`   | yes | Quantitative field to accumulate. |
+| `groupby` | no  | Fields delimiting one stack — typically the dimension position channel. Omitted stacks the whole table as one group. |
+| `offset`  | no  | `zero` (default) accumulates from the baseline; `normalize` rescales each stack onto `0…1`. |
+| `as`      | no  | Output column pair `[start, end]`. Defaults to `["<field>_start", "<field>_end"]`. These are **column names**, not a dataset alias — `stack` publishes no alias, exactly like `bin` and `calculate`. |
+| `data`    | no  | Optional input alias. |
+
+Semantics:
+
+- Positive and negative values accumulate on **independent cursors**
+  from zero, so a stack holding both grows up *and* down from the
+  baseline rather than cancelling.
+- `normalize` rescales each stack over its own extent
+  (`(v − lo) / (hi − lo)`), which reduces to `v / total` for
+  all-positive data. A stack whose values are all zero normalises to
+  zero rather than dividing by zero.
+- A null or non-numeric cell contributes nothing: it gets a
+  zero-height `[cursor, cursor]` bound and the cursor does not move.
+- Segment order inside a stack is **upstream row order**. There is
+  intentionally no `sort` key on this transform — `sort` is itself a
+  transform discriminator, so an object carrying both keys is
+  ambiguous and rejected at decode. Order the rows with a preceding
+  `{"sort": …}` transform instead.
+- The output columns must not collide with existing ones;
+  `PRISM_PLAN_STACK_OUTPUT_COLLISION` names the offender. A `stack`
+  field the upstream table does not carry raises
+  `PRISM_PLAN_STACK_FIELD_MISSING`.
+
+Like every other transform, `stack` accepts **any** upstream table — a
+leaf, inline values, or the output of an earlier transform — so it
+composes anywhere in the chain.
+
 ## Strict by default
 
 - Unknown fields error (typos like `xfield` vs `x.field` caught at parse).

@@ -32,6 +32,8 @@ For live interactive rendering in a browser, see [`live.html`](live.html).
 | [detail_series_line](basic-marks/detail_series_line.prism.json) | <img src="basic-marks/detail_series_line.svg" width="240"> |
 | [line_monotone](basic-marks/line_monotone.prism.json) | <img src="basic-marks/line_monotone.svg" width="240"> |
 | [area_step](basic-marks/area_step.prism.json) | <img src="basic-marks/area_step.svg" width="240"> |
+| [stacked_bar](basic-marks/stacked_bar.prism.json) | <img src="basic-marks/stacked_bar.svg" width="240"> |
+| [stacked_area_normalize](basic-marks/stacked_area_normalize.prism.json) | <img src="basic-marks/stacked_area_normalize.svg" width="240"> |
 
 ## Composite marks
 
@@ -148,6 +150,7 @@ source.
 |---|---|
 | [filter_structured](transforms/filter_structured.prism.json) | <img src="transforms/filter_structured.svg" width="240"> |
 | [calculate_structured](transforms/calculate_structured.prism.json) | <img src="transforms/calculate_structured.svg" width="240"> |
+| [stack_explicit](transforms/stack_explicit.prism.json) | <img src="transforms/stack_explicit.svg" width="240"> |
 
 ## Scales
 
