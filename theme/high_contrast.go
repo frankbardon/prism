@@ -40,11 +40,18 @@ func highContrastTheme() *Theme {
 			"area":       {Fill: "#000000", Opacity: f(0.85)},
 			"point":      {Fill: "#000000", Stroke: "#ffffff", StrokeWidth: f(1.5), Size: f(100)},
 			"bar":        {Fill: "#000000", Stroke: "#000000", StrokeWidth: f(0), CornerRadius: f(0)},
-			"text":       {Fill: "#000000", FontSize: f(13), FontWeight: "600"},
-			"tick":       {Stroke: "#000000", StrokeWidth: f(1.5), Fill: "transparent"},
-			"geoshape":   {Fill: "#ffffff", Stroke: "#000000", StrokeWidth: f(1)},
-			"geopoint":   {Fill: "#000000", Stroke: "#ffffff", StrokeWidth: f(1.5), Size: f(64)},
-			"arc":        {Stroke: "#ffffff", StrokeWidth: f(2)},
+			"progress":   {Fill: "#000000", Stroke: "#000000", StrokeWidth: f(0), CornerRadius: f(0)},
+			// This theme's grid colour is pure black, so the derived
+			// default every other theme is happy with would paint a
+			// black track under a black value bar and hide the
+			// reading entirely. An outlined white track keeps both
+			// halves legible at contrast extremes.
+			"progress_track": {Fill: "#ffffff", Stroke: "#000000", StrokeWidth: f(1.5)},
+			"text":           {Fill: "#000000", FontSize: f(13), FontWeight: "600"},
+			"tick":           {Stroke: "#000000", StrokeWidth: f(1.5), Fill: "transparent"},
+			"geoshape":       {Fill: "#ffffff", Stroke: "#000000", StrokeWidth: f(1)},
+			"geopoint":       {Fill: "#000000", Stroke: "#ffffff", StrokeWidth: f(1.5), Size: f(64)},
+			"arc":            {Stroke: "#ffffff", StrokeWidth: f(2)},
 		},
 		Axis: &AxisStyle{
 			DomainColor:     "#000000",

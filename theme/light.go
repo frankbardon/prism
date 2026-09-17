@@ -40,11 +40,16 @@ func lightTheme() *Theme {
 			"area":       {Fill: "#4c78a8", Opacity: f(0.7)},
 			"point":      {Fill: "#4c78a8", StrokeWidth: f(0), Size: f(64)},
 			"bar":        {Fill: "#4c78a8", CornerRadius: f(0)},
-			"text":       {Fill: "#111827", FontSize: f(11)},
-			"tick":       {Stroke: "#4c78a8", StrokeWidth: f(1), Fill: "transparent"},
-			"geoshape":   {Fill: "#cbd5e1", Stroke: "#ffffff", StrokeWidth: f(0.5)},
-			"geopoint":   {Fill: "#4c78a8", StrokeWidth: f(0), Size: f(36)},
-			"arc":        {Stroke: "#ffffff", StrokeWidth: f(1)},
+			"progress":   {Fill: "#4c78a8", CornerRadius: f(0)},
+			// The track is chrome, not a second series: it reads as
+			// the plot's own ground, so it takes the same value the
+			// grid lines do.
+			"progress_track": {Fill: "#e5e7eb"},
+			"text":           {Fill: "#111827", FontSize: f(11)},
+			"tick":           {Stroke: "#4c78a8", StrokeWidth: f(1), Fill: "transparent"},
+			"geoshape":       {Fill: "#cbd5e1", Stroke: "#ffffff", StrokeWidth: f(0.5)},
+			"geopoint":       {Fill: "#4c78a8", StrokeWidth: f(0), Size: f(36)},
+			"arc":            {Stroke: "#ffffff", StrokeWidth: f(1)},
 		},
 		Axis: &AxisStyle{
 			DomainColor:   "#6b7280",

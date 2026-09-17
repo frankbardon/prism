@@ -30,7 +30,7 @@
         "marks":  {
           "type": "object",
           "additionalProperties": {"$ref": "#/$defs/mark_style"},
-          "description": "Per-mark-type defaults keyed by mark type (bar, line, area, point, ...)."
+          "description": "Per-mark-type defaults keyed by mark type (bar, line, area, point, ...). A mark family that draws more than one element per row also claims an <mark>_<element> key for the extra element: `progress_track` styles the unfilled track a `progress` mark draws behind its value bar, and is the only such key today. It is not a mark type — `mark.type` cannot be set to it."
         },
         "axis":   {"$ref": "#/$defs/axis_style", "description": "Axis token overrides applying to both cartesian axes."},
         "axis_x": {"$ref": "#/$defs/axis_style", "description": "x-axis token overrides, layered over `axis` per property. Also themes the vertical grid lines, which the x axis emits."},

@@ -214,3 +214,33 @@ func TestPrismEncodeProgressRejectsUndrawableOrient(t *testing.T) {
 		t.Fatal("want an error for a progress mark with no band scale on either axis")
 	}
 }
+
+// Both halves of a row are scene.MarkRect, so the renderer's
+// geom-derived class would make them indistinguishable
+// (prism-mark-bar for each). Distinct Class values are what let a
+// stylesheet — and the theme's two marks keys — address them apart.
+func TestPrismEncodeProgressClassesTrackAndBarApart(t *testing.T) {
+	in := progressInputs(t)
+	in.Mark = &spec.MarkDef{Type: "progress", Total: float64(100)}
+
+	got, _, err := Encode("progress", in)
+	if err != nil {
+		t.Fatalf("Encode: %v", err)
+	}
+	if len(got) != 6 {
+		t.Fatalf("len(marks) = %d, want 6 (3 tracks + 3 bars)", len(got))
+	}
+	for i := 0; i < 3; i++ {
+		if got[i].Class != ProgressTrackClass {
+			t.Errorf("marks[%d].Class = %q, want %q", i, got[i].Class, ProgressTrackClass)
+		}
+	}
+	for i := 3; i < 6; i++ {
+		if got[i].Class != ProgressClass {
+			t.Errorf("marks[%d].Class = %q, want %q", i, got[i].Class, ProgressClass)
+		}
+	}
+	if ProgressClass == ProgressTrackClass {
+		t.Fatal("the two halves must not share a class")
+	}
+}

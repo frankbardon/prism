@@ -56,7 +56,12 @@ type Theme struct {
 
 	// v2 nested blocks. Each block is a pointer so JSON merges
 	// remain sparse.
-	Mark  *MarkStyle            `json:"mark,omitempty"`
+	Mark *MarkStyle `json:"mark,omitempty"`
+	// Marks is keyed by mark type (bar, line, point, …) with one
+	// intentional exception: a mark family that draws more than one
+	// element per row claims an extra key per element, named
+	// <mark>_<element>. MarksKeyProgressTrack is the first — see its
+	// doc comment for why that beats a dedicated block on Theme.
 	Marks map[string]*MarkStyle `json:"marks,omitempty"`
 	// Axis is the shared axis block: every token set here applies to
 	// both cartesian axes. AxisX / AxisY layer over it **per property**
@@ -333,6 +338,34 @@ func (t *Theme) Clone() *Theme {
 	out.CategoryStyles = cloneCategoryStyles(t.CategoryStyles)
 	return &out
 }
+
+// Marks keys that are not mark types.
+//
+// A progress mark draws two elements per row — the value bar and the
+// unfilled track behind it — and they need independent paint: a track
+// that inherits the bar's fill is invisible, and a track hardcoded in
+// the encoder is the bulletBandShade mistake (encode/marks/bullet.go
+// interpolates fixed greys no theme can reach).
+//
+// The track therefore claims its own Marks key rather than a new
+// block on Theme. Marks is already map[string]*MarkStyle, so the key
+// inherits the whole existing pipeline unchanged — Clone, Merge,
+// ApplyOverride, Validate, the theme.schema.json additionalProperties
+// map, and the --prism-mark-progress_track-* CSS variables css.go
+// emits for every entry. A dedicated block would have to re-earn all
+// of it.
+const (
+	// MarksKeyProgress styles a progress mark's value bar.
+	MarksKeyProgress = "progress"
+	// MarksKeyProgressTrack styles a progress mark's unfilled track.
+	// Unlike MarksKeyProgress it is NOT a mark type: no spec can set
+	// mark.type to it (the schema's mark_type enum does not list it),
+	// and encode never looks it up through MarkDefault, because the
+	// theme.Mark global default is the data-mark fill and folding it
+	// in is exactly how the track would end up the same colour as the
+	// bar. The key is read directly; see encode.progressTrackStyle.
+	MarksKeyProgressTrack = "progress_track"
+)
 
 // MarkDefault returns the effective MarkStyle for markType after
 // folding theme.Mark (global default) with theme.Marks[markType]

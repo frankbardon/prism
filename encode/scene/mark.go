@@ -53,7 +53,21 @@ type Mark struct {
 	// "region=west") materialised from whichever encoding channel
 	// declared `key: true` in the spec. Empty when no animation is in
 	// play; the SVG renderer ignores it.
-	Key     string   `json:"key,omitempty"`
+	Key string `json:"key,omitempty"`
+	// Class overrides the CSS class the renderer would otherwise
+	// derive from the mark's geometry. Empty (the default) keeps the
+	// geom-derived class, so every mark authored before this field
+	// existed emits byte-identical markup and gains no scene-JSON key.
+	//
+	// It exists because the geom-derived class answers "what shape is
+	// this?", and a mark family that draws several shapes per row needs
+	// to answer "which part of the row is this?" as well. A progress
+	// mark draws its track and its value bar as two rects; both would
+	// class as prism-mark-bar, leaving downstream CSS unable to scope
+	// to one of them (encode/marks/progress.go sets
+	// ProgressTrackClass / ProgressClass here). Carries the full class
+	// attribute value, not a suffix — a renderer emits it verbatim.
+	Class   string   `json:"class,omitempty"`
 	Style   Style    `json:"style,omitempty"`
 	Tooltip *Tooltip `json:"tooltip,omitempty"`
 	Datum   *Datum   `json:"datum,omitempty"`
