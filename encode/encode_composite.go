@@ -416,12 +416,22 @@ func encodeLayerComposite(s *spec.Spec, composite *plan.CompositeDAG, childTable
 			applyMarkDef(lc.child.Spec.Mark.Def, &style)
 		}
 
+		// Offset position channels (E1-S4) resolve per LAYER, off that
+		// layer's own encoding and its own table, exactly as the span
+		// channels above do. Filling this at the flat site alone would
+		// leave the channel dead inside layer / facet / repeat.
+		offsetBind, err := resolveOffsetBinding(childEnc, lc.tbl, toMarkScale(xScale), toMarkScale(yScale))
+		if err != nil {
+			return nil, err
+		}
+
 		markInputs := marks.Inputs{
 			Table:    lc.tbl,
 			X:        marks.Channel{Field: fieldOf(childEnc.X), Scale: toMarkScale(xScale)},
 			Y:        marks.Channel{Field: fieldOf(childEnc.Y), Scale: toMarkScale(yScale)},
 			X2:       spanChannel(childEnc.X2, toMarkScale(xScale)),
 			Y2:       spanChannel(childEnc.Y2, toMarkScale(yScale)),
+			Offset:   offsetBind,
 			Color:    colorChannel,
 			Detail:   detailFields(childEnc),
 			Ordered:  spec.ResolveOrder(childEnc) != nil,

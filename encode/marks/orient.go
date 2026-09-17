@@ -184,9 +184,16 @@ func bandOf(ch Channel) (BandScaler, bool) {
 // and therefore has a negative step, so the normalisation is what
 // makes a horizontal bar drawable at all.
 //
+// When an offset channel is bound on the category axis (E1-S4) the
+// pair returned is the SUB-band the row's offset value names inside
+// that slot, not the whole slot — which is how a grouped (dodged) bar
+// gets its geometry. The subdivision is signed exactly as the parent
+// slot is, and rides the same normalisation.
+//
 // It delegates to rectAxisExtent (the span-channel normaliser added in
-// E9-S3) with no span bound, so both orientations and both the ranged
-// and baseline-anchored paths share one implementation.
+// E9-S3) with no span bound, so both orientations, both the ranged and
+// baseline-anchored paths, and the offset subdivision share one
+// implementation.
 func CategorySlots(in Inputs, o Orientation) ([][2]float64, error) {
 	name := o.CategoryAxis()
 	ch := in.X

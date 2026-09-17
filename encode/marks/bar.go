@@ -17,6 +17,14 @@ import (
 // (orient.go) resolves it from `mark.orient` when set and infers it
 // from which axis carries the band otherwise.
 //
+// When an offset channel is bound on the category axis (E1-S4) the
+// bar takes a sub-band of its category's slot rather than the whole
+// slot, so rows sharing a category render side by side — the grouped
+// (dodged) bar. The bar encoder needs no offset-specific code for
+// that: CategorySlots hands back the sub-band extent in place of the
+// full one, in whichever orientation the mark resolved, and the rest
+// of the geometry is unchanged.
+//
 // When either span channel is bound (E9-S3) the bar is ranged
 // instead: encodeBarSpan replaces the baseline anchor on that axis
 // with the x→x2 / y→y2 interval. Unranged specs never reach that

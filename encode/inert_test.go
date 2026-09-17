@@ -326,24 +326,29 @@ func TestPrismInertTableColumnFormatOnlyDeadUnderSubMark(t *testing.T) {
 	}
 }
 
-// TestPrismInertOffsetChannelReported pins E1-S1's honesty clause: the
-// x_offset / y_offset wire surface landed ahead of the bar geometry
-// that draws it, so binding one today says so instead of silently
-// dodging no bars. Both deadChannels entries come out when the encoder
-// lands (E1-S3 / E1-S4) and this test inverts with them.
-func TestPrismInertOffsetChannelReported(t *testing.T) {
-	got := inertPaths(t, `{
-	  "$schema": "urn:prism:schema:v1:spec",
-	  "data": {"values": [{"a": 1, "b": 2, "c": 3}]},
-	  "mark": {"type": "bar"},
-	  "encoding": {
-	    "x": {"field": "a", "type": "nominal"},
-	    "y": {"field": "b", "type": "quantitative"},
-	    "x_offset": {"field": "c", "type": "nominal"}
-	  }
-	}`)
-	if len(got) != 1 || got[0] != "encoding.x_offset" {
-		t.Fatalf("want [encoding.x_offset], got %v", got)
+// TestPrismInertOffsetChannelHonoured is E1-S1's honesty clause,
+// inverted by E1-S4 as planned. The x_offset / y_offset wire surface
+// landed ahead of the geometry that draws it, so until the bar encoder
+// subdivided its band slot a bound offset reported itself as inert.
+// The encoder reads it now — encode.resolveOffsetBinding builds the
+// nested band scale and rectAxisExtent hands the bar its sub-band — so
+// the same warning on a working feature would be a false positive, the
+// one thing this file exists to prevent.
+func TestPrismInertOffsetChannelHonoured(t *testing.T) {
+	for _, channel := range []string{"x_offset", "y_offset"} {
+		got := inertPaths(t, `{
+		  "$schema": "urn:prism:schema:v1:spec",
+		  "data": {"values": [{"a": 1, "b": 2, "c": 3}]},
+		  "mark": {"type": "bar"},
+		  "encoding": {
+		    "x": {"field": "a", "type": "nominal"},
+		    "y": {"field": "b", "type": "quantitative"},
+		    "`+channel+`": {"field": "c", "type": "nominal"}
+		  }
+		}`)
+		if len(got) != 0 {
+			t.Fatalf("%s: want no warnings, got %v", channel, got)
+		}
 	}
 }
 

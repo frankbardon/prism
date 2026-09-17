@@ -268,13 +268,6 @@ var deadChannels = map[string]string{
 	"stroke": "no mark encoder reads the stroke channel; use mark_def.stroke for a constant",
 	"size":   "no mark encoder reads the size channel; mark_def.size sets a constant symbol size",
 	"shape":  "no mark encoder reads the shape channel — every point renders as a circle",
-	// E1-S1 added the x_offset / y_offset wire surface ahead of the
-	// encoder that draws it. Until the bar encoder subdivides its band
-	// slot (E1-S3 / E1-S4) the binding decodes, validates and reaches
-	// nothing, so it says so rather than silently dodging no bars.
-	// Both entries come back out when the encoder lands.
-	"x_offset": "nothing reads the x_offset channel yet — the grouped (dodged) bar geometry it selects is not implemented, so bars sharing an x category still overlap",
-	"y_offset": "nothing reads the y_offset channel yet — the grouped (dodged) bar geometry it selects is not implemented, so bars sharing a y category still overlap",
 }
 
 func inertEncoding(enc *spec.Encoding, markType, path string, out *[]scene.Warning) {
@@ -323,24 +316,6 @@ func inertEncoding(enc *spec.Encoding, markType, path string, out *[]scene.Warni
 		}
 		chPath := joinInertPath(encPath, pc.name)
 		inertChannelCommon(&pc.ch.ChannelCommon, pc.name, chPath, out)
-	}
-
-	// The offset channels carry no ChannelCommon (they are kept
-	// narrow — field / type / sort / scale only), so they are reported
-	// on their own rather than through inertChannelCommon.
-	offsets := []struct {
-		name string
-		ch   *spec.OffsetChannel
-	}{
-		{"x_offset", enc.XOffset}, {"y_offset", enc.YOffset},
-	}
-	for _, oc := range offsets {
-		if oc.ch == nil {
-			continue
-		}
-		if reason, dead := deadChannels[oc.name]; dead {
-			appendChannelInert(out, joinInertPath(encPath, oc.name), oc.name, markType, reason)
-		}
 	}
 
 	// Table columns carry the same channel shape. `title` IS read
