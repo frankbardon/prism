@@ -325,3 +325,41 @@ func TestPrismInertTableColumnFormatOnlyDeadUnderSubMark(t *testing.T) {
 		t.Fatalf("want a single sub-mark column warning, got %v", got)
 	}
 }
+
+// TestPrismInertOffsetChannelReported pins E1-S1's honesty clause: the
+// x_offset / y_offset wire surface landed ahead of the bar geometry
+// that draws it, so binding one today says so instead of silently
+// dodging no bars. Both deadChannels entries come out when the encoder
+// lands (E1-S3 / E1-S4) and this test inverts with them.
+func TestPrismInertOffsetChannelReported(t *testing.T) {
+	got := inertPaths(t, `{
+	  "$schema": "urn:prism:schema:v1:spec",
+	  "data": {"values": [{"a": 1, "b": 2, "c": 3}]},
+	  "mark": {"type": "bar"},
+	  "encoding": {
+	    "x": {"field": "a", "type": "nominal"},
+	    "y": {"field": "b", "type": "quantitative"},
+	    "x_offset": {"field": "c", "type": "nominal"}
+	  }
+	}`)
+	if len(got) != 1 || got[0] != "encoding.x_offset" {
+		t.Fatalf("want [encoding.x_offset], got %v", got)
+	}
+}
+
+// TestPrismInertOffsetChannelUnboundIsSilent keeps every pre-E1-S1
+// spec warning-free: an absent offset channel must report nothing.
+func TestPrismInertOffsetChannelUnboundIsSilent(t *testing.T) {
+	got := inertPaths(t, `{
+	  "$schema": "urn:prism:schema:v1:spec",
+	  "data": {"values": [{"a": 1, "b": 2}]},
+	  "mark": {"type": "bar"},
+	  "encoding": {
+	    "x": {"field": "a", "type": "nominal"},
+	    "y": {"field": "b", "type": "quantitative"}
+	  }
+	}`)
+	if len(got) != 0 {
+		t.Fatalf("want no warnings, got %v", got)
+	}
+}

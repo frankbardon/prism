@@ -15,6 +15,8 @@ type Encoding struct {
 	Y         *PositionChannel `json:"y,omitempty"`
 	X2        *PositionChannel `json:"x2,omitempty"`
 	Y2        *PositionChannel `json:"y2,omitempty"`
+	XOffset   *OffsetChannel   `json:"x_offset,omitempty"`
+	YOffset   *OffsetChannel   `json:"y_offset,omitempty"`
 	Theta     *PositionChannel `json:"theta,omitempty"`
 	Radius    *PositionChannel `json:"radius,omitempty"`
 	Color     *MarkChannel     `json:"color,omitempty"`
@@ -443,6 +445,56 @@ func (c *DetailChannel) UnmarshalJSON(data []byte) error {
 		return fmt.Errorf("detail: %w", err)
 	}
 	c.Single = &single
+	return nil
+}
+
+// OffsetChannel binds the field that subdivides a band slot, so rows
+// sharing one category value render side by side instead of on top of
+// one another — the grouped (dodged) bar primitive. Keyed x_offset /
+// y_offset (snake_case, this repo's convention; Vega-Lite spells them
+// xOffset / yOffset).
+//
+// The shape is intentionally NARROW: field, type, sort, scale and
+// nothing else. Reusing PositionChannel would admit axis, stack,
+// condition, key, aggregate, format, bin, value and title — nine keys
+// nothing on the offset path reads. They would decode, validate and
+// then do nothing, and internal/gates/spec_field_consumer_test.go
+// could not catch it, because x / y already consume those same struct
+// fields. That silent-no-op is the failure class this repo has
+// shipped three times (sort: "descending", label_overlap: "greedy",
+// scale.zero); the narrow type is how it is avoided here.
+//
+// Sort is typed any to match ChannelCommon.Sort: a direction string
+// ("ascending" / "descending" / "asc" / "desc", per
+// SortDirectionValid), an explicit category array, or null. Scale is
+// a real *Scale — the offset scale is a band scale in its own right
+// and takes band padding config.
+type OffsetChannel struct {
+	Field string `json:"field,omitempty"`
+	Type  string `json:"type,omitempty"`
+	Sort  any    `json:"sort,omitempty"`
+	Scale *Scale `json:"scale,omitempty"`
+}
+
+// UnmarshalJSON decodes the channel with unknown keys rejected.
+//
+// A custom UnmarshalJSON does not inherit spec.Decode's
+// DisallowUnknownFields (Go hands the method raw bytes), so the decode
+// is routed through strictUnmarshal to re-arm strictness — the same
+// contract every other hand-written decoder in this package keeps, and
+// the one internal/gates/spec_strict_decode_test.go enforces. Without
+// it an unknown key written inside an x_offset / y_offset object would
+// be dropped silently for any caller using spec.Decode without the
+// JSON Schema shape stage.
+func (c *OffsetChannel) UnmarshalJSON(data []byte) error {
+	// alias drops the method set so strictUnmarshal cannot recurse
+	// back into this decoder.
+	type alias OffsetChannel
+	var aux alias
+	if err := strictUnmarshal(data, &aux); err != nil {
+		return fmt.Errorf("offset channel: %w", err)
+	}
+	*c = OffsetChannel(aux)
 	return nil
 }
 

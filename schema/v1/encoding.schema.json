@@ -180,6 +180,23 @@
       ],
       "description": "Detail channel for grouping marks without visual encoding."
     },
+    "offset_channel": {
+      "type": "object",
+      "additionalProperties": false,
+      "description": "Offset (dodge) channel. Subdivides the band slot its base position channel occupies among the distinct values of the bound field, so rows sharing one category render side by side instead of overlapping — the grouped (dodged) bar primitive. Intentionally narrow: field, type, sort and scale only, because nothing on the offset path reads an axis, stack, condition, aggregate, format, bin, value or title.",
+      "properties": {
+        "field": {"type": "string", "minLength": 1, "description": "Field whose distinct values subdivide the band slot."},
+        "type":  {"$ref": "shared.schema.json#/$defs/measure_type"},
+        "sort":  {
+          "oneOf": [
+            {"type": "string", "enum": ["ascending", "descending", "asc", "desc"], "description": "Sub-band order; \"ascending\" (default) or \"descending\". \"asc\" / \"desc\" are accepted aliases."},
+            {"type": "array", "items": {"type": ["string", "number"]}, "description": "Explicit sub-band order, leading values first."},
+            {"type": "null", "description": "Leave the sub-band order as encountered."}
+          ]
+        },
+        "scale": {"$ref": "scale.schema.json#/$defs/scale"}
+      }
+    },
     "facet_channel": {
       "type": "object",
       "description": "Facet channel for row/column small multiples.",
@@ -239,6 +256,8 @@
         "y":       {"$ref": "encoding.schema.json#/$defs/position_channel", "description": "Primary vertical position channel."},
         "x2":      {"$ref": "encoding.schema.json#/$defs/position_channel", "description": "Secondary horizontal position: spans x -> x2. Measured on x's scale, so x2.type must equal x.type. Drawn by bar, rect and rule; rejected on every other mark (PRISM_SPEC_041)."},
         "y2":      {"$ref": "encoding.schema.json#/$defs/position_channel", "description": "Secondary vertical position: spans y -> y2. Measured on y's scale, so y2.type must equal y.type. Drawn by bar, rect, rule, and area (as its explicit lower edge); rejected on every other mark (PRISM_SPEC_041)."},
+        "x_offset": {"$ref": "encoding.schema.json#/$defs/offset_channel", "description": "Horizontal offset (dodge): subdivides x's band slot among the distinct values of the bound field, so rows sharing an x category render side by side. Drawn by bar."},
+        "y_offset": {"$ref": "encoding.schema.json#/$defs/offset_channel", "description": "Vertical offset (dodge): subdivides y's band slot among the distinct values of the bound field, so rows sharing a y category render side by side. Drawn by bar."},
         "theta":   {"$ref": "encoding.schema.json#/$defs/position_channel", "description": "Angle position for arc/pie/donut."},
         "radius":  {"$ref": "encoding.schema.json#/$defs/position_channel", "description": "Radial position for arc/pie/donut."},
         "color":   {"$ref": "encoding.schema.json#/$defs/mark_channel", "description": "Color encoding."},
