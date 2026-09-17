@@ -38,9 +38,21 @@ type RenderOpts struct {
 	// "canvas-json"). The CLI rejects formats the runtime cannot
 	// produce with PRISM_RENDER_FORMAT_UNAVAILABLE.
 	Format string
-	// Width overrides the scene's natural width. 0 = use the scene's.
+	// Width sets the DISPLAYED width in pixels: it writes the SVG's
+	// `width` attribute and leaves the viewBox at the scene's natural
+	// size, so the drawing is scaled, not re-laid-out. 0 omits the
+	// attribute, leaving the SVG responsive to its container.
+	//
+	// This is presentation, not layout. Nothing here re-runs encoding,
+	// so tick positions, label-overlap thinning and every other
+	// geometric decision were already made against the scene's natural
+	// size. Rendering an 800x600 scene at 200x150 shrinks labels the
+	// overlap pass measured as clear into labels that visibly collide.
+	// To lay out AT a size, pass encode.EncodeOpts{Width, Height}
+	// through CompileOptions.Encode instead.
 	Width float64
-	// Height overrides the scene's natural height. 0 = use the scene's.
+	// Height sets the DISPLAYED height in pixels. See Width — same
+	// scaling semantics, and the same reason it is not a layout knob.
 	Height float64
 	// Theme overrides SceneDoc.Theme. nil = use the doc's.
 	Theme *scene.Theme

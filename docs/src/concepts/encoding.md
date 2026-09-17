@@ -653,6 +653,16 @@ matter how much room there was; the visible result was a horizontal bar
 chart naming only every other bar, and y axes labelled `0 / 0.4 / 0.8`
 where all five ticks had room. Fixed in v0.15.1.
 
+**Overlap is measured in layout space, at encode time.** The pass compares
+labels against the plot size the scene was *encoded* at, which is not
+necessarily the size it is *displayed* at. `RenderOpts.Width` / `Height`
+set the SVG's `width` / `height` attributes and leave the viewBox alone,
+so they scale the finished drawing rather than re-running layout — render
+an 800x600 scene into a 200x150 box and labels the pass measured as clear
+at 13.5px are ~3px apart on screen, with nothing thinned. If the display
+size is known, lay out at it (`encode.EncodeOpts{Width, Height}` via
+`CompileOptions.Encode`) instead of scaling afterwards.
+
 A label hidden this way is gone from the drawing with nothing marking its
 absence. On a *continuous* axis that costs precision a reader can
 interpolate back; on a **band** axis it costs identity they cannot
