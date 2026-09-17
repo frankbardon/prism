@@ -105,6 +105,12 @@ var markDefOwners = map[string][]string{
 	"baseline":  {"text"},
 	"angle":     {"text"},
 	"font_size": {"text"},
+	// Null handling — encode/invalid.go resolves the mode and the
+	// listed encoders consult marks.Inputs.Skip. Any other mark
+	// REJECTS "break" at validate (PRISM_SPEC_062) rather than
+	// reaching here, so this list and invalidAwareMarks in
+	// validate/rules/mark_invalid.go must stay in step.
+	"invalid": {"line", "area", "point", "bar", "rule", "text"},
 	// Curve interpolation — encode/marks/curve.go, reached by the
 	// line / area encoders and the spark marks that wrap them.
 	"interpolate": {"line", "area", "sparkline", "sparkarea"},
@@ -167,6 +173,7 @@ func markDefSet(def *spec.MarkDef) []string {
 		"baseline":           def.Baseline != "",
 		"angle":              def.Angle != nil,
 		"font_size":          def.FontSize != nil,
+		"invalid":            def.Invalid != "",
 		"interpolate":        def.Interpolate != "",
 		"tension":            def.Tension != nil,
 		"corner_radius":      def.CornerRadius != nil,

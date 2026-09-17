@@ -184,6 +184,23 @@ type Inputs struct {
 	// and the boxplot encoder falls back to StrokeStyleFor(Style),
 	// which is the same treatment its whiskers get.
 	MedianStyle scene.Style
+	// Skip (v0.16) marks rows that must not be DRAWN but that are
+	// still present in Table — the mark.invalid:"break" mode. nil, the
+	// default and the whole of "filter" mode, means every row draws.
+	//
+	// Length always equals Table.NumRows() when non-nil, so an index
+	// into the table indexes this directly. That is the point of the
+	// mode: unlike "filter", which shortens the table, "break" leaves
+	// every index meaning what it meant, so scale domains, tooltips,
+	// datum back-references and category styles stay aligned with no
+	// second row set in flight.
+	//
+	// A per-row mark simply emits nothing for a skipped row. A PATH
+	// mark (line, area) must additionally split: the skipped row ends
+	// the current segment and the next drawable row starts a new one,
+	// which is the difference between showing a gap and asserting
+	// continuity across it.
+	Skip []bool
 	// ColorRegistry (E4-S3) accumulates light/dark resolved mark-color
 	// pairs for the "auto light/dark in one SVG" feature. nil — the
 	// default, and the entire state whenever the active theme has no

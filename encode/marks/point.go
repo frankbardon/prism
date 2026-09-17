@@ -41,6 +41,9 @@ func encodePoint(in Inputs) ([]scene.Mark, error) {
 
 	marks := make([]scene.Mark, 0, len(xs))
 	for i := range xs {
+		if skipRow(in, i) {
+			continue
+		}
 		x, err := PointPixel(in.X, xs[i])
 		if err != nil {
 			return nil, err

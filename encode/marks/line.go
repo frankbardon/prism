@@ -46,6 +46,13 @@ func encodeLine(in Inputs) ([]scene.Mark, error) {
 
 	pts := make([][2]float64, len(xs))
 	for i := range xs {
+		// A row masked by mark.invalid:"break" carries a null in x or
+		// y, so it has no pixel at all — resolving it would hard-error
+		// in Scale.Apply. Leave its slot zero; it is never read,
+		// because segmentRuns excludes it from every run.
+		if skipRow(in, i) {
+			continue
+		}
 		x, err := PointPixel(in.X, xs[i])
 		if err != nil {
 			return nil, err
@@ -76,25 +83,64 @@ func encodeLine(in Inputs) ([]scene.Mark, error) {
 				return pts[idxs[a]][0] < pts[idxs[b]][0]
 			})
 		}
-		groupPts := make([][2]float64, len(idxs))
-		for j, idx := range idxs {
-			groupPts[j] = pts[idx]
-		}
 		style := in.Style
 		if g.color != nil || g.varName != "" {
 			style.Stroke = g.color
 			style.StrokeVar = g.varName
 		}
-		marks = append(marks, scene.Mark{
-			Type:  scene.MarkLine,
-			ID:    fmt.Sprintf("line-%d", gi),
-			Style: style,
-			Line: &scene.LineGeom{
-				Points:  groupPts,
-				Curve:   curve,
-				Tension: tension,
-			},
-		})
+		// One polyline per unbroken run. Without mark.invalid:"break"
+		// there is exactly one run per group and the ID keeps its
+		// historic "line-<group>" spelling, so nothing moves.
+		runs := segmentRuns(in, idxs)
+		for si, run := range runs {
+			groupPts := make([][2]float64, len(run))
+			for j, idx := range run {
+				groupPts[j] = pts[idx]
+			}
+			id := fmt.Sprintf("line-%d", gi)
+			if len(runs) > 1 {
+				id = fmt.Sprintf("line-%d-%d", gi, si)
+			}
+			// A run of ONE is a measurement stranded between two
+			// gaps. A one-point polyline draws nothing, so emitting
+			// one would make mark.invalid:"break" hide a row the
+			// author explicitly asked to keep — worse than the
+			// "filter" mode it was chosen over, which at least drew
+			// that row as part of the line. Emit a dot instead, sized
+			// off the stroke so it reads as the line's own vertex.
+			// Only reachable in "break" mode: with no mask there is
+			// one run per group and it holds every point.
+			if len(groupPts) == 1 {
+				r := style.StrokeWidth
+				if r <= 0 {
+					r = 1
+				}
+				dot := style
+				dot.Fill = style.Stroke
+				dot.FillVar = style.StrokeVar
+				marks = append(marks, scene.Mark{
+					Type:  scene.MarkPoint,
+					ID:    id,
+					Style: dot,
+					Point: &scene.PointGeom{
+						Cx: groupPts[0][0],
+						Cy: groupPts[0][1],
+						R:  r * 1.5,
+					},
+				})
+				continue
+			}
+			marks = append(marks, scene.Mark{
+				Type:  scene.MarkLine,
+				ID:    id,
+				Style: style,
+				Line: &scene.LineGeom{
+					Points:  groupPts,
+					Curve:   curve,
+					Tension: tension,
+				},
+			})
+		}
 	}
 	return marks, nil
 }

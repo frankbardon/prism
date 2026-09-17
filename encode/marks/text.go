@@ -95,6 +95,9 @@ func encodeText(in Inputs) ([]scene.Mark, error) {
 
 	marks := make([]scene.Mark, 0, rowCount)
 	for i := 0; i < rowCount; i++ {
+		if skipRow(in, i) {
+			continue
+		}
 		x := in.Layout.CenterX()
 		if xBound {
 			if x, err = PointPixel(in.X, xs[i]); err != nil {

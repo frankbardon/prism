@@ -110,6 +110,12 @@ func encodeArea(in Inputs) ([]scene.Mark, error) {
 	upperAll := make([][2]float64, len(cats))
 	lowerAll := make([][2]float64, len(cats))
 	for i := range cats {
+		// Masked by mark.invalid:"break": the row carries a null in a
+		// scale-bound channel and has no pixel. Its slots stay zero
+		// and segmentRuns keeps it out of every run.
+		if skipRow(in, i) {
+			continue
+		}
 		c, err := PointPixel(category, cats[i])
 		if err != nil {
 			return nil, err
@@ -150,28 +156,38 @@ func encodeArea(in Inputs) ([]scene.Mark, error) {
 				return seriesPos[idxs[a]] < seriesPos[idxs[b]]
 			})
 		}
-		upper := make([][2]float64, len(idxs))
-		lower := make([][2]float64, len(idxs))
-		for j, idx := range idxs {
-			upper[j] = upperAll[idx]
-			lower[j] = lowerAll[idx]
-		}
 		style := in.Style
 		if g.color != nil || g.varName != "" {
 			style.Fill = g.color
 			style.FillVar = g.varName
 		}
-		marks = append(marks, scene.Mark{
-			Type:  scene.MarkArea,
-			ID:    fmt.Sprintf("area-%d", gi),
-			Style: style,
-			Area: &scene.AreaGeom{
-				Upper:   upper,
-				Lower:   lower,
-				Curve:   curve,
-				Tension: tension,
-			},
-		})
+		// One filled band per unbroken run. With no mask there is
+		// exactly one run per group and the ID keeps its historic
+		// "area-<group>" spelling, so nothing moves.
+		runs := segmentRuns(in, idxs)
+		for si, run := range runs {
+			upper := make([][2]float64, len(run))
+			lower := make([][2]float64, len(run))
+			for j, idx := range run {
+				upper[j] = upperAll[idx]
+				lower[j] = lowerAll[idx]
+			}
+			id := fmt.Sprintf("area-%d", gi)
+			if len(runs) > 1 {
+				id = fmt.Sprintf("area-%d-%d", gi, si)
+			}
+			marks = append(marks, scene.Mark{
+				Type:  scene.MarkArea,
+				ID:    id,
+				Style: style,
+				Area: &scene.AreaGeom{
+					Upper:   upper,
+					Lower:   lower,
+					Curve:   curve,
+					Tension: tension,
+				},
+			})
+		}
 	}
 	return marks, nil
 }
