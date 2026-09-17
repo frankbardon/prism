@@ -40,6 +40,12 @@ type EncodeOpts struct {
 	OverrideYScale Scale
 }
 
+// flatSceneID is the id the flat encoder stamps on the single scene
+// it builds. A composite caller renumbers it through renameScene,
+// which also re-keys anything filed under it in Defs (the plot clip,
+// and a gradient legend's <linearGradient>).
+const flatSceneID = "scene-0"
+
 // sparkMarks is the single source of truth for "spark" marks —
 // compact marks that render without axes, legend, or title and use
 // the tight 4-px-pad layout (ComputeSparkline). Adding a spark mark
@@ -163,27 +169,28 @@ func Encode(s *spec.Spec, tables map[plan.NodeID]*table.Table, tipID plan.NodeID
 	// the plot rect has to shrink for. Corner orients (the default
 	// top-right included) overlay the plot and reserve nothing, which
 	// is what keeps default placement byte-identical.
-	legendPl, legendEnabled := ResolveLegendPlacement(legendSpecOf(enc), scene.LegendTopRight)
-	// Legend content (E3-S3) resolves alongside it, because the band a
-	// side orient reserves is measured from the *shown* entries and
-	// the label budget — both of which legend.values, legend.title
-	// and legend.label_limit move.
+	//
+	// Legend content (E3-S3) resolves first, because the band a side
+	// orient reserves is measured from the *shown* entries and the
+	// label budget — both of which legend.values, legend.title and
+	// legend.label_limit move — and because legend.type, read here,
+	// decides which KIND of legend is coming (E3-S4). The kind in
+	// turn picks the default anchor: a symbol legend keeps the
+	// top-right corner, a gradient bar defaults to the right side so
+	// it reserves margin instead of lying over the cells it describes.
 	legendContent := ResolveLegendContent(legendSpecOf(enc))
+	legendKind := ResolveLegendKind(enc.Color, legendContent)
+	legendPl, legendEnabled := ResolveLegendPlacement(legendSpecOf(enc), DefaultLegendPosition(legendKind))
 	sides := placement.Sides()
 	reservedLegendSide := false
 	if legendEnabled && !isSparkMark(markType) && IsSideLegend(legendPl.Position) {
-		// Entries are counted up front: a top/bottom band's depth
-		// grows with the entry count, and a channel with fewer than
-		// two categories builds no legend at all, so it must not
-		// reserve an empty band either.
-		if n := legendEntryCount(enc, tbl); n > 0 {
-			sides.MarkLegend(legendPl.Position, LegendBox{
-				Entries:  n,
-				RowH:     legendSymbolRowH,
-				Padding:  legendPl.Padding,
-				MaxChars: legendContent.MaxChars(),
-				HasTitle: legendTitle(enc.Color.Field, legendContent) != "",
-			}.SideExtent(legendPl.Position, legendPl.Offset))
+		// The box is measured up front: a top/bottom band's depth
+		// grows with the entry count, and a channel that builds no
+		// legend at all (fewer than two categories, or a gradient
+		// over a column with no numeric cell) must not reserve an
+		// empty band either.
+		if box, ok := legendReserveBox(legendKind, enc, tbl, legendPl, legendContent, colorLegendTitle(enc)); ok {
+			sides.MarkLegend(legendPl.Position, box.SideExtent(legendPl.Position, legendPl.Offset))
 			reservedLegendSide = true
 		}
 	}
@@ -542,7 +549,7 @@ func Encode(s *spec.Spec, tables map[plan.NodeID]*table.Table, tipID plan.NodeID
 				axisOptsForTitled(enc.Y, "count").withWarnings(&warnings)))
 		}
 		finalizeAutoDarkCSS(sceneTheme, fullTheme, colorReg, isThemeOwner)
-		return buildSceneDoc(s, layout, axes, hr.Marks, markType, colorChannel, enc, sceneTheme, warnings, hasTitle, legendPl, legendEnabled, legendContent), nil
+		return buildSceneDoc(s, layout, axes, hr.Marks, markType, colorChannel, enc, sceneTheme, warnings, hasTitle, legendPl, legendEnabled, legendContent, legendKind, tbl), nil
 	}
 
 	markList, markWarn, err := marks.Encode(markType, markInputs)
@@ -569,7 +576,10 @@ func Encode(s *spec.Spec, tables map[plan.NodeID]*table.Table, tipID plan.NodeID
 	// suppresses legends entirely, and so does an explicit
 	// `"legend": null` on the color channel.
 	var legends []scene.Legend
-	if legendEnabled && !isSparkMark(markType) && !legendHidden(enc.Color) && colorChannel != nil && len(colorChannel.Categories) > 1 {
+	var legendGradient *scene.Gradient
+	legendGradientKey := ""
+	if legendEnabled && !isSparkMark(markType) && !legendHidden(enc.Color) && colorChannel != nil &&
+		(len(colorChannel.Categories) > 1 || legendKind == LegendKindGradient) {
 		// Sankey populates colorChannel from source ∪ target nodes when
 		// no explicit color binding exists (D064); use colorChannel.Field
 		// as the legend title in that case.
@@ -577,21 +587,30 @@ func Encode(s *spec.Spec, tables map[plan.NodeID]*table.Table, tipID plan.NodeID
 		if enc.Color != nil && enc.Color.Field != "" {
 			title = enc.Color.Field
 		}
-		legend := BuildSymbolLegend(LegendInputs{
+		legendGradientKey = LegendGradientID(flatSceneID, scene.ChannelColor)
+		legend, grad := buildColorLegend(colorLegendInputs{
+			Kind:       legendKind,
+			SceneID:    flatSceneID,
 			Channel:    scene.ChannelColor,
 			Title:      title,
+			Field:      colorChannel.Field,
+			Format:     colorChannelFormat(enc),
 			Categories: colorChannel.Categories,
 			Palette:    colorChannel.Palette,
+			Sequential: colorChannel.SequentialPalette,
+			Table:      tbl,
 			Placement:  legendPl,
 			Content:    legendContent,
-		}, layout.Plot)
+			Plot:       layout.Plot,
+		})
 		if legend != nil {
 			legends = append(legends, *legend)
+			legendGradient = grad
 		}
 	}
 
 	sceneObj := scene.Scene{
-		ID:         "scene-0",
+		ID:         flatSceneID,
 		Frame:      layout.Frame,
 		Plot:       layout.Plot,
 		Axes:       axes,
@@ -607,6 +626,7 @@ func Encode(s *spec.Spec, tables map[plan.NodeID]*table.Table, tipID plan.NodeID
 			Y:       20,
 		}
 	}
+	registerSceneGradient(&sceneObj, legendGradientKey, legendGradient)
 	// Plot-region clip (E2-S2). Armed only when a position scale pins
 	// an explicit domain, or `mark_def.clip` asks for it outright.
 	armPlotClip(&sceneObj, wantsPlotClip(s))
@@ -632,6 +652,7 @@ func buildSceneDoc(
 	markType string, colorChannel *marks.ColorChannel, enc *spec.Encoding,
 	sceneTheme *scene.Theme, warnings []scene.Warning, hasTitle bool,
 	legendPl LegendPlacement, legendEnabled bool, legendContent LegendContent,
+	legendKind LegendKind, tbl *table.Table,
 ) *scene.SceneDoc {
 	layer := scene.SceneLayer{
 		ID:    "layer-0",
@@ -639,22 +660,32 @@ func buildSceneDoc(
 		Marks: markList,
 	}
 	var legends []scene.Legend
-	if legendEnabled && !legendHidden(enc.Color) && colorChannel != nil && len(colorChannel.Categories) > 1 {
-		title := enc.Color.Field
-		legend := BuildSymbolLegend(LegendInputs{
+	var legendGradient *scene.Gradient
+	legendGradientKey := LegendGradientID(flatSceneID, scene.ChannelColor)
+	if legendEnabled && !legendHidden(enc.Color) && colorChannel != nil &&
+		(len(colorChannel.Categories) > 1 || legendKind == LegendKindGradient) {
+		legend, grad := buildColorLegend(colorLegendInputs{
+			Kind:       legendKind,
+			SceneID:    flatSceneID,
 			Channel:    scene.ChannelColor,
-			Title:      title,
+			Title:      enc.Color.Field,
+			Field:      colorChannel.Field,
+			Format:     colorChannelFormat(enc),
 			Categories: colorChannel.Categories,
 			Palette:    colorChannel.Palette,
+			Sequential: colorChannel.SequentialPalette,
+			Table:      tbl,
 			Placement:  legendPl,
 			Content:    legendContent,
-		}, layout.Plot)
+			Plot:       layout.Plot,
+		})
 		if legend != nil {
 			legends = append(legends, *legend)
+			legendGradient = grad
 		}
 	}
 	sceneObj := scene.Scene{
-		ID:         "scene-0",
+		ID:         flatSceneID,
 		Frame:      layout.Frame,
 		Plot:       layout.Plot,
 		Axes:       axes,
@@ -670,6 +701,7 @@ func buildSceneDoc(
 			Y:       20,
 		}
 	}
+	registerSceneGradient(&sceneObj, legendGradientKey, legendGradient)
 	armPlotClip(&sceneObj, wantsPlotClip(s))
 	doc := scene.NewDoc()
 	doc.Theme = sceneTheme

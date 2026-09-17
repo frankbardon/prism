@@ -34,7 +34,7 @@ The `encoding` object binds data fields to visual channels.
 | `aggregate` | Friendly alias: `mean`, `sum`, `count`, `null_count`, `median`, `q1`, `q3`, `min`, `max`, `range`, `stdev`, `variance`, `skewness`, `kurtosis`, `ci0`, `ci1`, `distinct`, `mode`, `frequency`, plus `wmean`, `ratio`, `lift`, `share`. `count`, `distinct`, `mode`, `frequency`, and `null_count` work on any field type; numeric aggregates require a quantitative or temporal field. `frequency` is the scalar companion to `mode` — it returns the modal count (how many times the most frequent value occurs), whereas `mode` returns the value itself. |
 | `scale` | Scale spec (`type`, `domain`, `range`, `scheme`, `padding`, ...). |
 | `axis` | Axis config (`orient`, `title`, `format`, `grid`, `tick_count`, `label_angle`, ...) — see [Axis placement](#axis-placement) — or `null` to [hide the axis](#hiding-an-axis-or-legend). |
-| `legend` | Legend config — placement (`orient`, `padding`, `offset`; see [Legend placement](#legend-placement)) and content (`title`, `values`, `format`, `tick_count`, `label_limit`; see [Legend content](#legend-content)) — or `null` to [hide the legend](#hiding-an-axis-or-legend). |
+| `legend` | Legend config — placement (`orient`, `padding`, `offset`; see [Legend placement](#legend-placement)), content (`title`, `values`, `format`, `tick_count`, `label_limit`; see [Legend content](#legend-content)) and layout (`type`, `direction`, `symbol_type`, `symbol_size`; see [Symbol or gradient](#symbol-or-gradient--type)) — or `null` to [hide the legend](#hiding-an-axis-or-legend). |
 | `format` | d3-format string for label formatting. |
 | `sort` | `"ascending"` / `"descending"` / `"-y"` / `[explicit, order, ...]`. |
 | `stack` | Position channels only. `"zero"` / `"normalize"` / `"center"` / `true` to stack, `null` / `false` to opt out — see [Stacking](#stacking). |
@@ -707,6 +707,60 @@ a quantitative `color` channel. It defaults to 5 evenly spaced stops
 across the colour domain; `1` labels the minimum alone and `0` leaves
 a bare bar. Setting `values` instead pins the stops outright, dropping
 any value outside the domain.
+
+### Symbol or gradient — `type`
+
+A legend takes one of two forms, and the channel's own `type` chooses
+it:
+
+| Channel `type` | Legend form | What it draws |
+|---|---|---|
+| `quantitative` | **Gradient** | One continuous colour bar with `tick_count` labelled stops running down it, spanning the bound field's numeric range. |
+| `nominal`, `ordinal`, `temporal` | **Symbol** | One swatch + label per category. |
+
+The inference is enough for almost every chart — a `heatmap` coloured
+by `count` gets a gradient bar, a bar chart coloured by `region` gets
+swatches — and neither form needs `legend.type` written at all.
+
+`legend.type` overrides it explicitly:
+
+```json
+"color": {"field": "count", "type": "quantitative", "legend": {"type": "gradient"}}
+```
+
+An override the channel cannot fill is **rejected**, not ignored: a
+`gradient` needs a numeric domain to run between and a `symbol` legend
+needs categories to name, so `gradient` on a discrete channel (or
+`symbol` on a quantitative one) raises `PRISM_SPEC_051`. To show a
+continuous field as discrete swatches, make it discrete first with a
+`bin` transform and declare the channel `"type": "ordinal"`.
+
+**A gradient legend defaults to the `right` side, not a corner.** The
+bar is 130 px tall with labels running alongside it, so a corner
+anchor would lie over the cells it describes. It anchors to the right
+*side* instead, which reserves a margin band and shrinks the plot
+clear of it. A symbol legend keeps its `top-right` corner default. An
+explicit `orient` wins over either.
+
+### Legend layout — `direction`, `symbol_type`, `symbol_size`
+
+| Key | Effect |
+|---|---|
+| `direction` | `vertical` (the default) stacks entries down a column; `horizontal` lays them out across a single row. The frame follows, and so does the reserved band — a horizontal legend on a `top` / `bottom` orient is one row deep however many entries it carries, so it costs far less plot height. A gradient legend draws one bar and ignores it. |
+| `symbol_type` | The swatch shape: `circle`, `square`, `triangle`, `cross` or `diamond`. Absent, the swatch is the default filled square. An unrecognised name raises `PRISM_SPEC_052`. |
+| `symbol_size` | Swatch size in pixels — the side of a solid square, or the bounding-box diameter of a shaped symbol. Defaults are 12 px solid, 10 px symbol. A symbol wider than the 12-px swatch column widens the legend box so the label still clears it. |
+
+```json
+"color": {
+  "field": "region", "type": "nominal",
+  "legend": {"orient": "bottom", "direction": "horizontal", "symbol_type": "diamond", "symbol_size": 14}
+}
+```
+
+**`symbol_type` is the point mark's own shape vocabulary**, and a
+legend swatch and a `point` mark of the same shape are drawn by the
+same emitter — a diamond in the legend is geometrically the diamond in
+the plot, not a second approximation of one.
 
 ### Hiding an axis or legend
 

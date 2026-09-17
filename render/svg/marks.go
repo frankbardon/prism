@@ -243,21 +243,25 @@ func renderArea(w *Writer, m scene.Mark) {
 
 func renderPoint(w *Writer, m scene.Mark) {
 	g := m.Point
-	w.OpenTag("circle")
+	// Shape geometry is shared with the legend's shaped swatches
+	// (render/svg/symbols.go) — there is exactly one emitter for the
+	// scene.PointShape vocabulary. A circle (the only shape any
+	// encoder produces today) still emits <circle cx cy r>, which is
+	// what keeps every committed point golden byte-identical.
+	tag := symbolTag(g.Shape)
+	w.OpenTag(tag)
 	w.Attr("class", "prism-mark-point")
 	if m.ID != "" {
 		w.Attr("data-prism-id", m.ID)
 	}
 	writeDatumAttr(w, m)
 	writeKeyAttr(w, m)
-	w.AttrFloat("cx", g.Cx)
-	w.AttrFloat("cy", g.Cy)
-	w.AttrFloat("r", g.R)
+	writeSymbolGeom(w, g.Shape, g.Cx, g.Cy, g.R)
 	writeStyleAttrs(w, m.Style)
 	if hasTooltip(m) {
 		w.CloseTagOpen()
 		writeTooltipChild(w, m)
-		w.EndTag("circle")
+		w.EndTag(tag)
 		return
 	}
 	w.SelfClose()

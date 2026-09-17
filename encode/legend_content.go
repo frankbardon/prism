@@ -5,6 +5,7 @@ import (
 	"strconv"
 
 	"github.com/frankbardon/prism/encode/format"
+	"github.com/frankbardon/prism/encode/scene"
 	"github.com/frankbardon/prism/spec"
 )
 
@@ -14,13 +15,12 @@ import (
 // truncated. It is the companion of LegendPlacement, which resolves
 // the *placement* half (E1-S3).
 //
-// Everything that reads a spec.Legend content field goes through this
-// type, and every frame / margin measurement goes through LegendBox.
-// Those two are the seam a follow-up extends: E3-S4's `direction`
-// belongs on LegendBox (which already feeds the frame, both builders
-// and the side reservation from one place), and `type` /
-// `symbol_type` / `symbol_size` belong here alongside Format and
-// Values.
+// Everything that reads a spec.Legend field goes through this type,
+// and every frame / margin measurement goes through LegendBox. E3-S4
+// added the presentation half — `type`, `direction`, `symbol_type`
+// and `symbol_size` — here alongside Format and Values, and feeds
+// Direction / SymbolSize through to LegendBox so the frame and the
+// side reservation follow from one measurement.
 type LegendContent struct {
 	// Title is the resolved title. It is only meaningful when
 	// TitleSet is true — otherwise the caller's derived title (the
@@ -45,6 +45,51 @@ type LegendContent struct {
 	// LabelLimit is legend.label_limit: the maximum label width in
 	// pixels. Nil or non-positive means unlimited.
 	LabelLimit *float64
+	// Kind is legend.type: an explicit override of the legend form,
+	// or "" to infer it from the channel (see ResolveLegendKind).
+	Kind LegendKind
+	// Direction is legend.direction: which way entries flow. "" reads
+	// as scene.LegendVertical, the pre-E3-S4 column.
+	Direction scene.LegendDirection
+	// SymbolType is legend.symbol_type: the point-mark shape a symbol
+	// legend draws its swatches with. "" leaves the solid square
+	// swatch every legend drew before E3-S4.
+	SymbolType scene.PointShape
+	// SymbolSize is legend.symbol_size in pixels. Nil or
+	// non-positive leaves the renderer's own default.
+	SymbolSize *float64
+}
+
+// LegendKind discriminates the two forms a channel's legend takes: a
+// column of category swatches, or a continuous gradient bar. It is
+// the resolved `legend.type`, and ResolveLegendKind is the single
+// place the decision is made.
+type LegendKind string
+
+const (
+	LegendKindSymbol   LegendKind = "symbol"
+	LegendKindGradient LegendKind = "gradient"
+)
+
+// ResolveLegendKind decides which form a channel's legend takes.
+//
+// `legend.type` overrides outright. With no override the channel's
+// declared type decides: a quantitative channel reads as a continuous
+// ramp and gets a gradient bar, everything else gets category
+// swatches. Prism requires `type` on every channel, so there is no
+// inference fallback to guess at.
+//
+// A gradient still needs a numeric domain to label, so the caller
+// checks that separately (legendGradientFor) and falls back to a
+// symbol legend when the bound column carries no numbers.
+func ResolveLegendKind(ch *spec.MarkChannel, c LegendContent) LegendKind {
+	if c.Kind != "" {
+		return c.Kind
+	}
+	if ch != nil && ch.Type == "quantitative" {
+		return LegendKindGradient
+	}
+	return LegendKindSymbol
 }
 
 // ResolveLegendContent reads the content fields off a channel's
@@ -76,7 +121,53 @@ func ResolveLegendContent(lg *spec.Legend) LegendContent {
 		l := *lg.LabelLimit
 		c.LabelLimit = &l
 	}
+	// Presentation half (E3-S4). Each field is read verbatim; the
+	// JSON Schema constrains all three enums, so an unrecognised
+	// value never reaches a validated spec and is treated as unset
+	// here rather than failing the encode.
+	switch LegendKind(lg.Type) {
+	case LegendKindSymbol, LegendKindGradient:
+		c.Kind = LegendKind(lg.Type)
+	}
+	if lg.Direction == string(scene.LegendHorizontal) {
+		c.Direction = scene.LegendHorizontal
+	}
+	if legendSymbolShapeKnown(scene.PointShape(lg.SymbolType)) {
+		c.SymbolType = scene.PointShape(lg.SymbolType)
+	}
+	if lg.SymbolSize != nil && *lg.SymbolSize > 0 {
+		sz := *lg.SymbolSize
+		c.SymbolSize = &sz
+	}
 	return c
+}
+
+// legendSymbolShapeKnown reports whether s names a shape the swatch
+// emitter can draw. The vocabulary is the point mark's own
+// (scene.PointShapes) because the two are drawn by the same emitter,
+// render/svg/symbols.go.
+func legendSymbolShapeKnown(s scene.PointShape) bool {
+	for _, k := range scene.PointShapes {
+		if s == k {
+			return true
+		}
+	}
+	return false
+}
+
+// swatchFor builds the swatch one symbol-legend entry draws: the
+// solid square every legend drew before E3-S4, or — once
+// legend.symbol_type names a shape — a shaped symbol carrying the
+// same colour. legend.symbol_size sizes either form.
+func (c LegendContent) swatchFor(color *scene.Color) scene.SwatchSpec {
+	sw := scene.SwatchSpec{Type: scene.SwatchSolid, Color: color}
+	if c.SymbolType != "" {
+		sw.Type, sw.Shape = scene.SwatchSymbol, c.SymbolType
+	}
+	if c.SymbolSize != nil {
+		sw.Size = *c.SymbolSize
+	}
+	return sw
 }
 
 // legendTitleString accepts the polymorphic legend.title field — a
