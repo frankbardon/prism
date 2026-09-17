@@ -593,7 +593,7 @@ var Codes = map[string]CodeMetadata{
 
 	"PRISM_WARN_LEGEND_NOT_BUILT": {
 		Code:    "PRISM_WARN_LEGEND_NOT_BUILT",
-		Message: `{{.Path}}: a {{.Type}} colour channel renders with no legend at all, so the colour encoding has no key.`,
+		Message: `{{.Path}}: a {{.Type}} colour channel builds a gradient legend, but the {{.Mark}} mark never reads the colour ramp.`,
 		Fixups: []string{
 			`The symbol legend is built from discrete colour categories; a continuous colour channel needs a gradient legend.`,
 			`Bin the field ("bin": true) or declare it "nominal" / "ordinal" to get a symbol legend.`,

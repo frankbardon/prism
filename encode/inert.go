@@ -293,7 +293,7 @@ func inertEncoding(enc *spec.Encoding, markType, path string, out *[]scene.Warni
 				"only the heatmap encoder reads a field-driven opacity channel; every other mark ignores it (mark_def.opacity sets a constant)")
 		}
 		inertChannelCommon(&mc.ch.ChannelCommon, mc.name, chPath, out)
-		inertLegend(mc.ch, mc.name, chPath, out)
+		inertLegend(mc.ch, mc.name, markType, chPath, out)
 	}
 
 	positions := []struct {
@@ -537,23 +537,38 @@ func inertScale(sc *spec.Scale, channelType, channel, chPath string, out *[]scen
 // the typed-consumer analysis, so a detector entry cannot outlive the
 // gap it describes, and it asserts that every `legend` schema property
 // still has a consumer.
-func inertLegend(ch *spec.MarkChannel, channel, chPath string, out *[]scene.Warning) {
+func inertLegend(ch *spec.MarkChannel, channel, markType, chPath string, out *[]scene.Warning) {
 	if ch == nil {
 		return
 	}
-	if channel == "color" && isContinuousChannelType(ch.Type) && !ch.LegendHidden {
+	if channel == "color" && isContinuousChannelType(ch.Type) && !ch.LegendHidden &&
+		!consumesSequentialPalette(markType) {
 		*out = append(*out, scene.Warning{
 			Code: scene.WarnLegendNotBuilt,
 			Message: fmt.Sprintf(
-				"%s: a %s colour channel renders with no legend — the symbol legend needs discrete categories and no code path builds a gradient legend, so the colour encoding has no key.",
-				chPath, ch.Type),
+				"%s: a %s colour channel builds a gradient legend, but the %s mark never reads the colour ramp — the key describes a scale the marks do not use.",
+				chPath, ch.Type, markType),
 			Details: map[string]any{
 				"Path":    chPath,
 				"Channel": channel,
 				"Type":    ch.Type,
+				"Mark":    markType,
 			},
 		})
 	}
+}
+
+// consumesSequentialPalette reports whether a mark encoder actually
+// interpolates marks.Inputs.SequentialPalette.
+//
+// E3-S4 wired the gradient legend, so a quantitative colour channel
+// now always gets a key — what can still go wrong is the key
+// describing a ramp the marks ignore. Today heatmap is the only
+// encoder that reads it (encode/marks/heatmap.go); rect, for one,
+// takes a quantitative colour in the playground corpus and paints a
+// flat fill.
+func consumesSequentialPalette(markType string) bool {
+	return markType == "heatmap"
 }
 
 func isContinuousChannelType(t string) bool {

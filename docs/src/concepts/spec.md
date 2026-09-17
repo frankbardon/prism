@@ -605,7 +605,7 @@ plus the mark or channel it was written on:
 | `PRISM_WARN_MARK_DEF_INERT` | a `mark_def` property is set on a mark that never reads it — `pad_angle` on a bar, `dx` on a rect — or on a property no mark reads at all (`shape`, `tooltip`, `layout`) |
 | `PRISM_WARN_CHANNEL_INERT` | a channel binding reaches no encoder: `fill`, `stroke`, `size`, `shape` (no mark reads them), `opacity` on anything but `heatmap`, or a `format` on a table column that also binds a sub-`mark` (that column draws geometry, not text) |
 | `PRISM_WARN_SCALE_FIELD_INERT` | a `scale` property does not apply to the family the channel resolves to — `padding_inner` on a linear scale, `base` on anything but `log`, `zero` on a log / time / discrete scale |
-| `PRISM_WARN_LEGEND_NOT_BUILT` | a **quantitative or temporal** `color` channel is bound and no legend is produced for it, so the chart renders with no colour key |
+| `PRISM_WARN_LEGEND_NOT_BUILT` | a **quantitative or temporal** `color` channel builds a gradient legend, but the mark never reads the colour ramp (only `heatmap` consumes a sequential palette today), so the key describes a scale the marks do not use |
 | `PRISM_WARN_FACET_CHILD_SKIPPED` | a facet child's encoding asks for a channel-level `aggregate`, a `stack`, or an `order` — the child encoding is stripped before the plan is built, so none of the three is injected |
 
 Silence is intentional for three groups, and none of them warns: a key
