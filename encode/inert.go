@@ -318,6 +318,23 @@ func inertEncoding(enc *spec.Encoding, markType, path string, out *[]scene.Warni
 		inertChannelCommon(&pc.ch.ChannelCommon, pc.name, chPath, out)
 	}
 
+	// The offset channels are walked for their `scale` block only.
+	// The channel itself is honoured (E1-S4 reads it), so it must
+	// never reappear in deadChannels — what is reported here are the
+	// scale keys the sub-band scale ignores.
+	offsets := []struct {
+		name string
+		ch   *spec.OffsetChannel
+	}{
+		{"x_offset", enc.XOffset}, {"y_offset", enc.YOffset},
+	}
+	for _, oc := range offsets {
+		if oc.ch == nil {
+			continue
+		}
+		inertOffsetScale(oc.ch, oc.name, joinInertPath(encPath, oc.name), out)
+	}
+
 	// Table columns carry the same channel shape. `title` IS read
 	// there (it becomes the column header) and, since E7-S4, so is
 	// `format` — encode/table.go runs it through the encode/format d3
@@ -425,21 +442,27 @@ func inertScale(sc *spec.Scale, channelType, channel, chPath string, out *[]scen
 	if sc == nil {
 		return
 	}
+	inertScaleFamily(sc, scaleFamilyOf(sc, channelType), channel, chPath, out)
+}
+
+// inertScaleFamily is inertScale with the family supplied rather than
+// inferred from `scale.type` / the channel's declared data type.
+//
+// Every channel but one infers it. The offset channels (E6-S3) pass
+// "band" outright, because an offset scale is ALWAYS a band scale
+// subdividing the parent slot and its `scale.type` is never consulted
+// — inferring would take a `"type": "linear"` written there as fact
+// and then report `padding` / `align` (which the offset scale really
+// does read) as inert, the false positive this file exists to prevent.
+// Supplying the family is what lets the offset channels reuse this one
+// set of band rules instead of growing a second copy of them.
+func inertScaleFamily(sc *spec.Scale, family, channel, chPath string, out *[]scene.Warning) {
+	if sc == nil {
+		return
+	}
 	scPath := joinInertPath(chPath, "scale")
-	family := scaleFamilyOf(sc, channelType)
 	report := func(prop, reason string) {
-		*out = append(*out, scene.Warning{
-			Code: scene.WarnScaleFieldInert,
-			Message: fmt.Sprintf("%s: scale %q is not read — %s.",
-				joinInertPath(scPath, prop), prop, reason),
-			Details: map[string]any{
-				"Path":     joinInertPath(scPath, prop),
-				"Property": prop,
-				"Channel":  channel,
-				"Family":   family,
-				"Reason":   reason,
-			},
-		})
+		reportScaleInert(out, scPath, prop, channel, family, reason)
 	}
 
 	// Palette keys are colour-only.
@@ -526,6 +549,61 @@ func inertScale(sc *spec.Scale, channelType, channel, chPath string, out *[]scen
 			report("zero", "zero-forcing is not applied to a time domain")
 		}
 	}
+}
+
+// reportScaleInert appends one PRISM_WARN_SCALE_FIELD_INERT. One
+// warning per offending key is the shape every other channel already
+// reports in, so the offset channels join it rather than collapsing
+// their keys into a single per-channel message.
+func reportScaleInert(out *[]scene.Warning, scPath, prop, channel, family, reason string) {
+	*out = append(*out, scene.Warning{
+		Code: scene.WarnScaleFieldInert,
+		Message: fmt.Sprintf("%s: scale %q is not read — %s.",
+			joinInertPath(scPath, prop), prop, reason),
+		Details: map[string]any{
+			"Path":     joinInertPath(scPath, prop),
+			"Property": prop,
+			"Channel":  channel,
+			"Family":   family,
+			"Reason":   reason,
+		},
+	})
+}
+
+// inertOffsetScale reports the keys an offset channel's `scale` block
+// decodes and nothing reads (E6-S3).
+//
+// The offset channels carry no ChannelCommon — OffsetChannel is narrow
+// on purpose (field / type / sort / scale and nothing else), which is
+// what keeps nine keys x and y consume off the wire — so they never
+// reach inertChannelCommon and the per-family scale rules above never
+// saw them. Four keys describing a non-band scale decoded, validated
+// and vanished in silence: the exact class this detector exists to
+// end, sitting inside the feature that shipped it.
+//
+// What an offset scale reads is a short list, and it is read off
+// encode/offset.go rather than assumed: `domain` (offsetCategories
+// pins the sub-band order from it), `padding` / `padding_inner` /
+// `padding_outer` / `align` (offsetScaleOpts passes them through, only
+// seeding the zero padding defaults when the author wrote none), and
+// `round` / `reverse` (NewBandScale copies both onto the band). Every
+// one of those must stay silent. The rest — `zero`, `nice`, `clamp`,
+// `base`, `exponent`, `scheme`, `range`, `interpolate` — is what the
+// band family already reports, reached here by naming the family
+// instead of inferring it.
+//
+// `type` is the one key the shared rules cannot answer, because on
+// every other channel it SELECTS the family and is therefore read. An
+// offset scale has no family to select, so it is reported here.
+func inertOffsetScale(ch *spec.OffsetChannel, channel, chPath string, out *[]scene.Warning) {
+	if ch == nil || ch.Scale == nil {
+		return
+	}
+	if ch.Scale.Type != "" {
+		reportScaleInert(out, joinInertPath(chPath, "scale"), "type", channel, "band",
+			"an offset scale is always a band scale cutting the parent band's slot into sub-bands, so a declared scale type is never consulted")
+	}
+	inertScaleFamily(ch.Scale, "band", channel, chPath, out)
 }
 
 // --- legend --------------------------------------------------------

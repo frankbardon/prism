@@ -368,3 +368,105 @@ func TestPrismInertOffsetChannelUnboundIsSilent(t *testing.T) {
 		t.Fatalf("want no warnings, got %v", got)
 	}
 }
+
+// TestPrismInertOffsetScaleKeysReported is E6-S3's repro. An offset
+// channel carries no ChannelCommon, so its `scale` block never reached
+// the per-family rules: these four keys decoded, validated and then
+// did nothing, with nothing said.
+func TestPrismInertOffsetScaleKeysReported(t *testing.T) {
+	for _, channel := range []string{"x_offset", "y_offset"} {
+		got := inertPaths(t, `{
+		  "$schema": "urn:prism:schema:v1:spec",
+		  "data": {"values": [{"a": 1, "b": 2, "s": "one"}]},
+		  "mark": {"type": "bar"},
+		  "encoding": {
+		    "x": {"field": "a", "type": "nominal"},
+		    "y": {"field": "b", "type": "quantitative"},
+		    "`+channel+`": {"field": "s", "type": "nominal",
+		      "scale": {"type": "linear", "zero": true, "nice": true, "scheme": "viridis"}}
+		  }
+		}`)
+		want := []string{
+			"encoding." + channel + ".scale.type",
+			"encoding." + channel + ".scale.scheme",
+			"encoding." + channel + ".scale.zero",
+			"encoding." + channel + ".scale.nice",
+		}
+		if len(got) != len(want) {
+			t.Fatalf("%s: want %v, got %v", channel, want, got)
+		}
+		for _, w := range want {
+			if !containsString(got, w) {
+				t.Errorf("%s: missing %s (got %v)", channel, w, got)
+			}
+		}
+	}
+}
+
+// TestPrismInertOffsetScaleReportsOnePerKey pins the warning shape and
+// the code, both of which match what every other channel's scale block
+// already reports.
+func TestPrismInertOffsetScaleReportsOnePerKey(t *testing.T) {
+	got := inertCodes(t, `{
+	  "$schema": "urn:prism:schema:v1:spec",
+	  "data": {"values": [{"a": 1, "b": 2, "s": "one"}]},
+	  "mark": {"type": "bar"},
+	  "encoding": {
+	    "x": {"field": "a", "type": "nominal"},
+	    "y": {"field": "b", "type": "quantitative"},
+	    "x_offset": {"field": "s", "type": "nominal",
+	      "scale": {"clamp": true, "base": 2, "exponent": 0.5, "interpolate": "lab"}}
+	  }
+	}`)
+	if len(got) != 4 {
+		t.Fatalf("want one warning per offending key, got %v", got)
+	}
+	for _, code := range got {
+		if code != scene.WarnScaleFieldInert {
+			t.Fatalf("want %s, got %v", scene.WarnScaleFieldInert, got)
+		}
+	}
+}
+
+// TestPrismInertOffsetScaleReadKeysStaySilent is the half that matters
+// most: every key encode/offset.go genuinely reads must report
+// nothing. A false positive on a working knob trains authors to ignore
+// the whole warning family.
+func TestPrismInertOffsetScaleReadKeysStaySilent(t *testing.T) {
+	for _, channel := range []string{"x_offset", "y_offset"} {
+		got := inertPaths(t, `{
+		  "$schema": "urn:prism:schema:v1:spec",
+		  "data": {"values": [{"a": 1, "b": 2, "s": "one"}]},
+		  "mark": {"type": "bar"},
+		  "encoding": {
+		    "x": {"field": "a", "type": "nominal"},
+		    "y": {"field": "b", "type": "quantitative"},
+		    "`+channel+`": {"field": "s", "type": "nominal",
+		      "scale": {"domain": ["one", "two"], "padding": 0.1,
+		                "padding_inner": 0.2, "padding_outer": 0.05,
+		                "align": 0.5, "round": true, "reverse": true}}
+		  }
+		}`)
+		if len(got) != 0 {
+			t.Fatalf("%s: honoured offset scale keys warned: %v", channel, got)
+		}
+	}
+}
+
+// TestPrismInertOffsetNoScaleBlockIsSilent keeps a bound offset with no
+// `scale` block reporting nothing at all.
+func TestPrismInertOffsetNoScaleBlockIsSilent(t *testing.T) {
+	got := inertPaths(t, `{
+	  "$schema": "urn:prism:schema:v1:spec",
+	  "data": {"values": [{"a": 1, "b": 2, "s": "one"}]},
+	  "mark": {"type": "bar"},
+	  "encoding": {
+	    "x": {"field": "a", "type": "nominal"},
+	    "y": {"field": "b", "type": "quantitative"},
+	    "x_offset": {"field": "s", "type": "nominal"}
+	  }
+	}`)
+	if len(got) != 0 {
+		t.Fatalf("want no warnings, got %v", got)
+	}
+}
