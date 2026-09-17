@@ -78,6 +78,14 @@ type Axis struct {
 	// non-nil value here is never reconciled against the theme.
 	TickSize     *float64 `json:"tick_size,omitempty"`
 	LabelPadding *float64 `json:"label_padding,omitempty"`
+	// TitlePadding carries the spec-level `axis.title_padding`
+	// override (E8-S2), in pixels: the gap between the axis's tick
+	// labels and its title. Nil means the spec said nothing, and the
+	// renderer falls back to the theme token
+	// (scene.Theme.AxisX/AxisY.TitlePadding, then
+	// scene.Theme.AxisTitlePadding) and finally to its built-in
+	// metric. Same spec-wins-by-construction rule as TickSize above.
+	TitlePadding *float64 `json:"title_padding,omitempty"`
 	// Zindex is the axis stacking order relative to the marks (E3-S2):
 	// 0 (the default) draws the axis and its grid lines behind the
 	// marks, any positive value draws them in front. The above-marks

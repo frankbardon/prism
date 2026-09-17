@@ -99,6 +99,13 @@ type Theme struct {
 	// these apply only where the axis states nothing.
 	AxisTickSize     *float64 `json:"axis_tick_size,omitempty"`
 	AxisLabelPadding *float64 `json:"axis_label_padding,omitempty"`
+	// AxisTitlePadding is the same story for the theme's
+	// `axis.title_padding` token (E8-S2). --prism-axis-title-padding
+	// was emitted from the very first theme but nothing read it: the
+	// axis title's coordinate was hard-coded, so the token was dead in
+	// exactly the way tick_size and label_padding were before E3-S2.
+	// A CSS variable cannot move a <text> x/y, so the value rides here.
+	AxisTitlePadding *float64 `json:"axis_title_padding,omitempty"`
 	// AxisX / AxisY carry the theme's per-axis `axis_x` / `axis_y`
 	// overrides (E8-S1), narrowed to the tokens that cannot ride a CSS
 	// variable. Colour and stroke tokens are *not* here: theme/css.go
@@ -124,6 +131,7 @@ type Theme struct {
 type AxisTokens struct {
 	TickSize           *float64 `json:"tick_size,omitempty"`
 	LabelPadding       *float64 `json:"label_padding,omitempty"`
+	TitlePadding       *float64 `json:"title_padding,omitempty"`
 	LabelLineHeight    *float64 `json:"label_line_height,omitempty"`
 	LabelLetterSpacing *float64 `json:"label_letter_spacing,omitempty"`
 	TitleLineHeight    *float64 `json:"title_line_height,omitempty"`

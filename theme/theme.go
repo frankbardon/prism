@@ -185,6 +185,11 @@ func (t *Theme) ToSceneTheme() *scene.Theme {
 		// geometry in render/svg, not just the CSS-variable manifest.
 		out.AxisTickSize = copyFloat(t.Axis.TickSize)
 		out.AxisLabelPadding = copyFloat(t.Axis.LabelPadding)
+		// E8-S2: title_padding joins them. It was emitted as
+		// --prism-axis-title-padding from the start but never read —
+		// the title coordinate was hard-coded — so it is the same
+		// species of dead geometry token the two above used to be.
+		out.AxisTitlePadding = copyFloat(t.Axis.TitlePadding)
 	}
 	// E8-S1: the per-axis `axis_x` / `axis_y` overrides, narrowed to
 	// the tokens a CSS variable cannot express. The colour/stroke half
@@ -240,6 +245,7 @@ func sceneAxisTokens(a *AxisStyle) *scene.AxisTokens {
 	out := &scene.AxisTokens{
 		TickSize:           copyFloat(a.TickSize),
 		LabelPadding:       copyFloat(a.LabelPadding),
+		TitlePadding:       copyFloat(a.TitlePadding),
 		LabelLineHeight:    copyFloat(a.LabelLineHeight),
 		LabelLetterSpacing: copyFloat(a.LabelLetterSpacing),
 		TitleLineHeight:    copyFloat(a.TitleLineHeight),

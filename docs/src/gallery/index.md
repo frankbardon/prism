@@ -251,6 +251,7 @@ below is identical; only the rendering theme differs.
 | [bar_pattern](themes/bar_pattern.prism.json) | <img src="themes/bar_pattern.svg" width="240"> |
 | [bar_dark_variant](themes/bar_dark_variant.prism.json) | <img src="themes/bar_dark_variant.svg" width="240"> |
 | [bar_category_styles](themes/bar_category_styles.prism.json) | <img src="themes/bar_category_styles.svg" width="240"> |
+| [bar_per_axis_grid](themes/bar_per_axis_grid.prism.json) | <img src="themes/bar_per_axis_grid.svg" width="240"> |
 
 `bar_dark_variant` is different from the row above it: its spec sets
 `theme: {"dark_variant": "dark"}` instead of picking a theme with
@@ -278,6 +279,17 @@ color automatically — no spec-level `condition` block at all. See
 [Category styles](../concepts/themes.md#category-styles) for the
 field→value→style shape and how a spec-level `condition` on the same
 field/value would win if one were present.
+
+`bar_per_axis_grid` demonstrates `theme.axis_x` / `theme.axis_y`: the
+shared `axis` block sets one grid colour, then each per-axis block
+overrides it for one orientation only — the vertical grid lines (drawn
+by the **x** axis) become dashed amber, the horizontal ones (drawn by
+the **y** axis) stay slate. It also exercises the axis-title gap: the
+y channel's spec-level `axis.title_padding` outranks the
+`axis_y.title_padding` the theme asks for, while the x axis, which
+nobody configures, keeps the built-in 8 px. See [Per-axis
+blocks](../concepts/themes.md#per-axis-blocks) and [Axis geometry
+precedence](../concepts/themes.md#axis-geometry-precedence).
 
 ## Animation
 

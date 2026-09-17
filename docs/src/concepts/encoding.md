@@ -495,7 +495,8 @@ block on a position channel controls each one separately:
   "field": "day", "type": "nominal",
   "axis": {
     "labels": true, "ticks": true, "domain": true,
-    "tick_size": 5, "label_padding": 4, "label_limit": 0, "zindex": 0
+    "tick_size": 5, "label_padding": 4, "title_padding": 8,
+    "label_limit": 0, "zindex": 0
   }
 }
 ```
@@ -507,6 +508,7 @@ block on a position channel controls each one separately:
 | `domain` | `true` | Draws the axis line along the plot edge. `false` suppresses **only** that line. |
 | `tick_size` | `5` | Major tick length in pixels. Minor ticks stay proportionally shorter (0.6×). |
 | `label_padding` | `4` | The gap between the axis line and its tick labels. Added to a fixed per-side text allowance, so `0` puts the labels as close as the baseline permits. |
+| `title_padding` | `8` | The gap between the tick labels and the axis title. Added to a fixed per-side text allowance, so `0` puts the title as close as the labels permit. |
 | `label_limit` | `0` (no limit) | Maximum label width in pixels. A wider label is truncated with an ellipsis (`Engineering` → `Engi…`). A limit too small to hold even the ellipsis drops the label. |
 | `zindex` | `0` | `0` draws the axis and its grid lines **behind** the marks; any positive value draws them **in front**. |
 
@@ -522,9 +524,9 @@ side of the plot is the sum of a tick-mark share and a label share, so
 `"ticks": false` or `"labels": false` hands that share back and the
 plot rect expands into it. The domain line rides on the plot edge and
 reserves nothing, so hiding it moves nothing. Reservations are fixed
-pixel metrics rather than measured text: a `tick_size` or
-`label_padding` far larger than the default draws into the outer
-margin instead of growing the reservation.
+pixel metrics rather than measured text: a `tick_size`,
+`label_padding` or `title_padding` far larger than the default draws
+into the outer margin instead of growing the reservation.
 
 **`zindex` and clipping.** An above-marks axis is emitted as a sibling
 of the mark container, not a child, so it is never subject to the
@@ -544,13 +546,16 @@ measurement pass; `label_limit` (like overlap detection) estimates 6 px
 per character. Truncation happens once, at encode time, so the label
 text in the Scene IR is already shortened and every renderer agrees.
 
-**Spec beats theme.** `tick_size` and `label_padding` also exist as the
-theme tokens `--prism-axis-tick-size` and `--prism-axis-label-padding`.
-The `axis` block wins outright wherever it states a value; the theme
-token applies only where it says nothing, and Prism's built-in metric
-is the floor. See [Themes](./themes.md#axis-geometry-precedence).
+**Spec beats theme.** `tick_size`, `label_padding` and `title_padding`
+also exist as the theme tokens `--prism-axis-tick-size`,
+`--prism-axis-label-padding` and `--prism-axis-title-padding` — and, as
+[`axis_x` / `axis_y`](./themes.md#per-axis-blocks), per axis. The
+`axis` block wins outright wherever it states a value; the per-axis
+theme block comes next, then the shared theme block, and Prism's
+built-in metric is the floor. See
+[Themes](./themes.md#axis-geometry-precedence).
 
-All seven keys survive composition. Under `layer` and `facet` with the
+All eight keys survive composition. Under `layer` and `facet` with the
 default (shared) resolve mode they are folded from the children with
 the same first-specified-wins rule as every other `axis` property —
 see [Composition](./composition.md).

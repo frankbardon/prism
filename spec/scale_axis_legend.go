@@ -35,6 +35,11 @@ type Axis struct {
 	LabelOverlap any      `json:"label_overlap,omitempty"`
 	LabelPadding *float64 `json:"label_padding,omitempty"`
 	LabelLimit   *float64 `json:"label_limit,omitempty"`
+	// TitlePadding is the gap in pixels between the axis's tick labels
+	// and its title (E8-S2). Nil defers to the theme's
+	// `axis_x`/`axis_y` block, then the shared `axis` block
+	// (--prism-axis-title-padding), then the renderer's built-in 8 px.
+	TitlePadding *float64 `json:"title_padding,omitempty"`
 	Domain       *bool    `json:"domain,omitempty"`
 	Ticks        *bool    `json:"ticks,omitempty"`
 	Zindex       *int     `json:"zindex,omitempty"`
