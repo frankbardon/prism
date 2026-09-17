@@ -371,6 +371,17 @@ const (
 	// in is exactly how the track would end up the same colour as the
 	// bar. The key is read directly; see encode.progressTrackStyle.
 	MarksKeyProgressTrack = "progress_track"
+	// MarksKeyBoxplotMedian styles the median line a boxplot draws
+	// ACROSS its box. Like MarksKeyProgressTrack it is not a mark
+	// type and is read directly rather than through MarkDefault --
+	// and for the same reason, sharpened: the global theme.Mark fill
+	// is the box's own colour, so folding it in paints the median the
+	// colour of the shape it is drawn on top of, which is invisible
+	// in a different way than having no stroke at all. The whiskers
+	// and caps do NOT use this key; they sit outside the box, where
+	// the box's colour is the correct and legible choice, and they
+	// get it from marks.StrokeStyleFor.
+	MarksKeyBoxplotMedian = "boxplot_median"
 )
 
 // MarkDefault returns the effective MarkStyle for markType after

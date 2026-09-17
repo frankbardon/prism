@@ -9,10 +9,10 @@
     </g>
     <g class="prism-plot">
       <g class="prism-layer" data-layer-id="layer-0" data-prism-layer="layer-0">
-        <circle class="prism-mark-point" data-prism-id="point-0" data-prism-datum-row="0" cx="58.5" cy="234.8" r="5.352" fill="#4c78a8"/>
-        <circle class="prism-mark-point" data-prism-id="point-1" data-prism-datum-row="1" cx="58.5" cy="345.68" r="5.352" fill="#f58518"/>
-        <circle class="prism-mark-point" data-prism-id="point-2" data-prism-datum-row="2" cx="428.5" cy="123.92" r="5.352" fill="#4c78a8"/>
-        <circle class="prism-mark-point" data-prism-id="point-3" data-prism-datum-row="3" cx="428.5" cy="271.76" r="5.352" fill="#f58518"/>
+        <circle class="prism-mark-point" data-prism-id="point-0" data-prism-datum-row="0" cx="225" cy="234.8" r="5.352" fill="#4c78a8"/>
+        <circle class="prism-mark-point" data-prism-id="point-1" data-prism-datum-row="1" cx="225" cy="345.68" r="5.352" fill="#f58518"/>
+        <circle class="prism-mark-point" data-prism-id="point-2" data-prism-datum-row="2" cx="595" cy="123.92" r="5.352" fill="#4c78a8"/>
+        <circle class="prism-mark-point" data-prism-id="point-3" data-prism-datum-row="3" cx="595" cy="271.76" r="5.352" fill="#f58518"/>
       </g>
     </g>
     <g class="prism-legends"><g class="prism-legend prism-legend-color" data-prism-legend-id="legend-color"><text class="prism-legend-title" x="44" y="530">channel</text><path class="prism-legend-symbol" d="M43,541 L57,541 L57,555 L43,555 Z" fill="#4c78a8"/><text class="prism-legend-label" x="64" y="552">Direct</text><path class="prism-legend-symbol" d="M149,541 L163,541 L163,555 L149,555 Z" fill="#f58518"/><text class="prism-legend-label" x="170" y="552">Referral</text></g></g>

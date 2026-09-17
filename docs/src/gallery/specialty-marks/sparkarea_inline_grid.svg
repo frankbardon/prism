@@ -4,7 +4,7 @@
   <g class="prism-scene" data-scene-id="scene-0">
     <g class="prism-plot">
       <g class="prism-layer" data-layer-id="layer-0" data-prism-layer="layer-0">
-        <path class="prism-mark-area" data-prism-id="sparkarea-area-0" data-prism-datum-row="0" d="M9.657,118.857 L122.8,80.571 L235.943,106.095 L349.086,42.286 L462.229,67.81 L575.371,4 L688.514,29.524 L688.514,182.667 L575.371,182.667 L462.229,182.667 L349.086,182.667 L235.943,182.667 L122.8,182.667 L9.657,182.667 Z" fill="#4c78a8"/>
+        <path class="prism-mark-area" data-prism-id="sparkarea-area-0" data-prism-datum-row="0" d="M60.571,118.857 L173.714,80.571 L286.857,106.095 L400,42.286 L513.143,67.81 L626.286,4 L739.429,29.524 L739.429,182.667 L626.286,182.667 L513.143,182.667 L400,182.667 L286.857,182.667 L173.714,182.667 L60.571,182.667 Z" fill="#4c78a8"/>
       </g>
     </g>
   </g>
@@ -12,7 +12,7 @@
   <g class="prism-scene" data-scene-id="scene-1">
     <g class="prism-plot">
       <g class="prism-layer" data-layer-id="layer-0" data-prism-layer="layer-0">
-        <path class="prism-mark-area" data-prism-id="sparkarea-area-0" data-prism-datum-row="0" d="M9.657,232.107 L122.8,253.547 L235.943,210.667 L349.086,246.4 L462.229,217.813 L575.371,260.693 L688.514,224.96 L688.514,389.333 L575.371,389.333 L462.229,389.333 L349.086,389.333 L235.943,389.333 L122.8,389.333 L9.657,389.333 Z" fill="#4c78a8"/>
+        <path class="prism-mark-area" data-prism-id="sparkarea-area-0" data-prism-datum-row="0" d="M60.571,232.107 L173.714,253.547 L286.857,210.667 L400,246.4 L513.143,217.813 L626.286,260.693 L739.429,224.96 L739.429,389.333 L626.286,389.333 L513.143,389.333 L400,389.333 L286.857,389.333 L173.714,389.333 L60.571,389.333 Z" fill="#4c78a8"/>
       </g>
     </g>
   </g>
@@ -20,7 +20,7 @@
   <g class="prism-scene" data-scene-id="scene-2">
     <g class="prism-plot">
       <g class="prism-layer" data-layer-id="layer-0" data-prism-layer="layer-0">
-        <path class="prism-mark-area" data-prism-id="sparkarea-area-0" data-prism-datum-row="0" d="M9.657,506.667 L122.8,497.733 L235.943,511.133 L349.086,488.8 L462.229,479.867 L575.371,484.333 L688.514,466.467 L688.514,596 L575.371,596 L462.229,596 L349.086,596 L235.943,596 L122.8,596 L9.657,596 Z" fill="#4c78a8"/>
+        <path class="prism-mark-area" data-prism-id="sparkarea-area-0" data-prism-datum-row="0" d="M60.571,506.667 L173.714,497.733 L286.857,511.133 L400,488.8 L513.143,479.867 L626.286,484.333 L739.429,466.467 L739.429,596 L626.286,596 L513.143,596 L400,596 L286.857,596 L173.714,596 L60.571,596 Z" fill="#4c78a8"/>
       </g>
     </g>
   </g>

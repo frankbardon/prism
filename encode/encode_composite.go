@@ -422,7 +422,8 @@ func encodeLayerComposite(s *spec.Spec, composite *plan.CompositeDAG, childTable
 			// A progress mark inside a layer still needs its track to
 			// paint; the track's Style is theme-resolved, not derived
 			// from the layer's own mark style (E10-S1).
-			TrackStyle: progressTrackStyle(fullTheme),
+			TrackStyle:  progressTrackStyle(fullTheme),
+			MedianStyle: boxplotMedianStyle(fullTheme, style),
 		}
 		if lc.child.Spec.Mark != nil {
 			markInputs.Mark = lc.child.Spec.Mark.Def

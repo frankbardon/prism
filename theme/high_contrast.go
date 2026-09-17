@@ -52,6 +52,11 @@ func highContrastTheme() *Theme {
 			"geoshape":       {Fill: "#ffffff", Stroke: "#000000", StrokeWidth: f(1)},
 			"geopoint":       {Fill: "#000000", Stroke: "#ffffff", StrokeWidth: f(1.5), Size: f(64)},
 			"arc":            {Stroke: "#ffffff", StrokeWidth: f(2)},
+			// The median sits ON the box, so it takes the same
+			// separator colour this theme gives an arc, for the same
+			// reason. The whiskers are outside the box and keep the
+			// box colour instead.
+			"boxplot_median": {Stroke: "#ffffff", StrokeWidth: f(2)},
 		},
 		Axis: &AxisStyle{
 			DomainColor:     "#000000",

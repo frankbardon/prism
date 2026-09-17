@@ -110,7 +110,7 @@ func encodeArea(in Inputs) ([]scene.Mark, error) {
 	upperAll := make([][2]float64, len(cats))
 	lowerAll := make([][2]float64, len(cats))
 	for i := range cats {
-		c, err := category.Scale.Apply(cats[i])
+		c, err := PointPixel(category, cats[i])
 		if err != nil {
 			return nil, err
 		}

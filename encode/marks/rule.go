@@ -36,7 +36,7 @@ func encodeRule(in Inputs) ([]scene.Mark, error) {
 		}
 		marks := make([]scene.Mark, 0, len(ys))
 		for i, v := range ys {
-			y, err := in.Y.Scale.Apply(v)
+			y, err := PointPixel(in.Y, v)
 			if err != nil {
 				return nil, err
 			}
@@ -63,7 +63,7 @@ func encodeRule(in Inputs) ([]scene.Mark, error) {
 		}
 		marks := make([]scene.Mark, 0, len(xs))
 		for i, v := range xs {
-			x, err := in.X.Scale.Apply(v)
+			x, err := PointPixel(in.X, v)
 			if err != nil {
 				return nil, err
 			}
@@ -98,11 +98,11 @@ func encodeRule(in Inputs) ([]scene.Mark, error) {
 	}
 	marks := make([]scene.Mark, 0, len(xs))
 	for i := range xs {
-		x, err := in.X.Scale.Apply(xs[i])
+		x, err := PointPixel(in.X, xs[i])
 		if err != nil {
 			return nil, err
 		}
-		y, err := in.Y.Scale.Apply(ys[i])
+		y, err := PointPixel(in.Y, ys[i])
 		if err != nil {
 			return nil, err
 		}
@@ -166,22 +166,22 @@ func encodeRuleSpan(in Inputs) ([]scene.Mark, error) {
 
 	marks := make([]scene.Mark, 0, len(xs))
 	for i := range xs {
-		x1, err := in.X.Scale.Apply(xs[i])
+		x1, err := PointPixel(in.X, xs[i])
 		if err != nil {
 			return nil, err
 		}
-		y1, err := in.Y.Scale.Apply(ys[i])
+		y1, err := PointPixel(in.Y, ys[i])
 		if err != nil {
 			return nil, err
 		}
 		x2, y2 := x1, y1
 		if i < len(x2s) {
-			if x2, err = in.X2.Scale.Apply(x2s[i]); err != nil {
+			if x2, err = PointPixel(in.X2, x2s[i]); err != nil {
 				return nil, err
 			}
 		}
 		if i < len(y2s) {
-			if y2, err = in.Y2.Scale.Apply(y2s[i]); err != nil {
+			if y2, err = PointPixel(in.Y2, y2s[i]); err != nil {
 				return nil, err
 			}
 		}

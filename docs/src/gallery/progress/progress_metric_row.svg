@@ -15,10 +15,10 @@
         <rect class="prism-mark-progress" data-prism-id="progress-3" data-prism-datum-row="3" x="40" y="82.194" width="165.76" height="63.113" rx="3" fill="#4c78a8"/>
       </g>
       <g class="prism-layer" data-layer-id="layer-1" data-prism-layer="layer-1">
-        <text class="prism-mark-text" data-prism-id="text-0" data-prism-datum-row="0" x="753.36" y="553.625" dx="6" text-anchor="start" font-size="11" font-weight="700" fill="#111827">4,820</text>
-        <text class="prism-mark-text" data-prism-id="text-1" data-prism-datum-row="1" x="506.2" y="426.125" dx="6" text-anchor="start" font-size="11" font-weight="700" fill="#111827">3,150</text>
-        <text class="prism-mark-text" data-prism-id="text-2" data-prism-datum-row="2" x="327.12" y="298.625" dx="6" text-anchor="start" font-size="11" font-weight="700" fill="#111827">1,940</text>
-        <text class="prism-mark-text" data-prism-id="text-3" data-prism-datum-row="3" x="205.76" y="171.125" dx="6" text-anchor="start" font-size="11" font-weight="700" fill="#111827">1,120</text>
+        <text class="prism-mark-text" data-prism-id="text-0" data-prism-datum-row="0" x="753.36" y="496.25" dx="6" text-anchor="start" font-size="11" font-weight="700" fill="#111827">4,820</text>
+        <text class="prism-mark-text" data-prism-id="text-1" data-prism-datum-row="1" x="506.2" y="368.75" dx="6" text-anchor="start" font-size="11" font-weight="700" fill="#111827">3,150</text>
+        <text class="prism-mark-text" data-prism-id="text-2" data-prism-datum-row="2" x="327.12" y="241.25" dx="6" text-anchor="start" font-size="11" font-weight="700" fill="#111827">1,940</text>
+        <text class="prism-mark-text" data-prism-id="text-3" data-prism-datum-row="3" x="205.76" y="113.75" dx="6" text-anchor="start" font-size="11" font-weight="700" fill="#111827">1,120</text>
       </g>
     </g>
   </g>

@@ -97,13 +97,13 @@ func encodeText(in Inputs) ([]scene.Mark, error) {
 	for i := 0; i < rowCount; i++ {
 		x := in.Layout.CenterX()
 		if xBound {
-			if x, err = in.X.Scale.Apply(xs[i]); err != nil {
+			if x, err = PointPixel(in.X, xs[i]); err != nil {
 				return nil, err
 			}
 		}
 		y := in.Layout.CenterY()
 		if yBound {
-			if y, err = in.Y.Scale.Apply(ys[i]); err != nil {
+			if y, err = PointPixel(in.Y, ys[i]); err != nil {
 				return nil, err
 			}
 		}

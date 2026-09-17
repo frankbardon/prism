@@ -9,9 +9,9 @@
     </g>
     <g class="prism-plot">
       <g class="prism-layer" data-layer-id="layer-0" data-prism-layer="layer-0">
-        <text class="prism-mark-text" data-prism-id="text-0" data-prism-datum-row="0" x="52.333" y="292.25" text-anchor="start" font-size="14" fill="#111827">0.42</text>
-        <text class="prism-mark-text" data-prism-id="text-1" data-prism-datum-row="1" x="299" y="107.375" text-anchor="start" font-size="14" fill="#111827">0.71</text>
-        <text class="prism-mark-text" data-prism-id="text-2" data-prism-datum-row="2" x="545.667" y="190.25" text-anchor="start" font-size="14" fill="#111827">0.58</text>
+        <text class="prism-mark-text" data-prism-id="text-0" data-prism-datum-row="0" x="163.333" y="292.25" text-anchor="start" font-size="14" fill="#111827">0.42</text>
+        <text class="prism-mark-text" data-prism-id="text-1" data-prism-datum-row="1" x="410" y="107.375" text-anchor="start" font-size="14" fill="#111827">0.71</text>
+        <text class="prism-mark-text" data-prism-id="text-2" data-prism-datum-row="2" x="656.667" y="190.25" text-anchor="start" font-size="14" fill="#111827">0.58</text>
       </g>
     </g>
   </g>
