@@ -227,9 +227,11 @@ func writeResolvedVars(b *strings.Builder, resolved []ResolvedColorVar, dark boo
 // theme that sets neither block writes nothing — which is what keeps
 // output byte-identical to a pre-E8-S1 theme.
 //
-// Geometry (tick_size, label_padding) and the SVG-attribute
-// typography tokens cannot be carried this way; they ride the Scene
-// IR via scene.Theme.AxisX / AxisY instead.
+// Geometry (tick_size, label_padding, title_padding) and the
+// SVG-attribute typography tokens cannot be carried this way; they
+// ride the Scene IR via scene.Theme.AxisX / AxisY instead. The
+// variables are still emitted here for a host stylesheet that wants
+// to read them, but the rendered coordinates come off the IR.
 func writeAxisScopeVars(b *strings.Builder, t *Theme) {
 	if t == nil {
 		return

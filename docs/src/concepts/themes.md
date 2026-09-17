@@ -263,11 +263,11 @@ Custom properties inherit, so the scoped declaration shadows the
 cascade — nothing is pre-folded, and the same post-hoc restyling that
 works on `--prism-grid-color` works on the scoped variable.
 
-Tokens that move SVG coordinates (`tick_size`, `label_padding`) or
-that are emitted as SVG attributes rather than CSS
+Tokens that move SVG coordinates (`tick_size`, `label_padding`,
+`title_padding`) or that are emitted as SVG attributes rather than CSS
 (`label_line_height`, `label_letter_spacing`, `title_line_height`,
 `title_letter_spacing`) cannot travel that way — a CSS variable cannot
-move a line endpoint. Those ride the Scene IR instead, on
+move a line endpoint or a text coordinate. Those ride the Scene IR instead, on
 `scene.Theme.axis_x` / `axis_y`, and the renderer falls back to the
 shared `axis` value property by property. `filter` lands on the axis's
 own group and composes with the shared block's filter on the enclosing
@@ -278,15 +278,17 @@ before the blocks existed: this is purely additive.
 
 ### Axis geometry precedence
 
-Two `axis` tokens are **geometry**, not appearance: `tick_size` (the
-major tick length) and `label_padding` (the gap between the axis line
-and its tick labels). They move SVG coordinates, so unlike the colour
-and font tokens they cannot be re-styled after the fact by overriding
-a CSS variable — the variables `--prism-axis-tick-size` and
-`--prism-axis-label-padding` are emitted for reference, but the
-geometry itself is resolved before the SVG is written.
+Three `axis` tokens are **geometry**, not appearance: `tick_size` (the
+major tick length), `label_padding` (the gap between the axis line and
+its tick labels) and `title_padding` (the gap between those labels and
+the axis title). They move SVG coordinates, so unlike the colour and
+font tokens they cannot be re-styled after the fact by overriding a
+CSS variable — the variables `--prism-axis-tick-size`,
+`--prism-axis-label-padding` and `--prism-axis-title-padding` are
+emitted for reference, but the geometry itself is resolved before the
+SVG is written.
 
-Both names also exist on a position channel's `axis` block (see
+All three names also exist on a position channel's `axis` block (see
 [Encoding: axis components and geometry](encoding.md#axis-components-and-geometry)).
 Where they overlap, the resolution order is fixed, highest first:
 
@@ -295,7 +297,8 @@ Where they overlap, the resolution order is fixed, highest first:
 2. **The theme's `axis_x` / `axis_y` block** — the per-axis override
    (see [Per-axis blocks](#per-axis-blocks)).
 3. **The theme's `axis` block** — `"axis": {"tick_size": 9}`.
-4. **Prism's built-in metric** — 5 px tick, 4 px label padding.
+4. **Prism's built-in metric** — 5 px tick, 4 px label padding, 8 px
+   title padding.
 
 This is the one precedence chain every axis token follows, geometry or
 not; only the machinery differs (the CSS cascade for colour and font
@@ -316,6 +319,14 @@ under a spec whose x channel carries `"axis": {"tick_size": 12}`
 renders a 12 px x tick (spec) with a 10 px label gap (theme, since the
 spec left `label_padding` alone), while the y axis — which states
 nothing — takes both theme values.
+
+**`title_padding` is measured from the tick labels, not from the plot
+edge**, and it is added to a fixed per-side text allowance rather than
+replacing it, so the 8 px every built-in theme states reproduces the
+title position Prism has always drawn. Note that a padding larger than
+the default draws into the outer margin: the layout reserves a fixed
+depth per side and does not grow it to follow a token, the same
+text-metric deferral `tick_size` and `label_padding` are subject to.
 
 Minor ticks are not separately tokenised; they render at 0.6× whatever
 major tick size resolves, so the default 5 px still yields a 3 px minor
@@ -802,6 +813,7 @@ without re-rendering.
 --prism-color-bg          --prism-font-sans      --prism-font-mono
 
 --prism-axis-domain-color --prism-axis-tick-size --prism-axis-label-color
+--prism-axis-label-padding --prism-axis-title-padding
 --prism-grid-color        --prism-grid-width     --prism-grid-dash
 
 --prism-mark-fill         --prism-mark-bar-fill  --prism-mark-line-stroke
@@ -836,10 +848,11 @@ rather than `--prism-*` custom properties, so they are baked in at
 render time and are not runtime-overridable via DOM style assignment
 the way the tokens above are.
 
-`--prism-axis-tick-size` and `--prism-axis-label-padding` are emitted,
-but they are **reference only**: a CSS variable cannot move an SVG line
-endpoint or a `<text>` coordinate, so the geometry those two tokens
-describe is resolved at render time (see
+`--prism-axis-tick-size`, `--prism-axis-label-padding` and
+`--prism-axis-title-padding` are emitted, but they are **reference
+only**: a CSS variable cannot move an SVG line endpoint or a `<text>`
+coordinate, so the geometry those three tokens describe is resolved at
+render time (see
 [Axis geometry precedence](#axis-geometry-precedence)). Overriding them
 in the DOM restyles nothing.
 

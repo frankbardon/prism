@@ -121,29 +121,38 @@ func renderAxis(w *Writer, a scene.Axis, plot scene.Rect, theme *scene.Theme) {
 		}
 	}
 
-	// Title (one per axis).
+	// Title (one per axis). Its distance from the plot edge follows
+	// the same precedence chain as the tick metrics above (E8-S2):
+	// `axis.title_padding` > theme `axis_x`/`axis_y` > theme `axis`
+	// (--prism-axis-title-padding) > the built-in 8 px. The per-side
+	// titleDrop* constants are the fixed text allowance the padding is
+	// added to, chosen so the built-in padding reproduces the
+	// historical 34 / 28 / 30 px offsets exactly.
 	if a.Title != "" {
+		titlePad := resolveAxisMetric(a.TitlePadding, themeTitlePadding(theme, a.Channel), defaultTitlePadding)
 		w.OpenTag("text")
 		w.Attr("class", "prism-axis-title")
 		switch a.Position {
 		case scene.AxisPositionBottom:
 			w.AttrFloat("x", plot.CenterX())
-			w.AttrFloat("y", plot.Bottom()+34)
+			w.AttrFloat("y", plot.Bottom()+titleDropBottom+titlePad)
 			w.Attr("text-anchor", "middle")
 		case scene.AxisPositionTop:
 			w.AttrFloat("x", plot.CenterX())
-			w.AttrFloat("y", plot.Y-28)
+			w.AttrFloat("y", plot.Y-titleDropTop-titlePad)
 			w.Attr("text-anchor", "middle")
 		case scene.AxisPositionLeft:
-			w.AttrFloat("x", plot.X-30)
+			x := plot.X - titleDropSide - titlePad
+			w.AttrFloat("x", x)
 			w.AttrFloat("y", plot.CenterY())
 			w.Attr("text-anchor", "middle")
-			w.Attr("transform", rotateAttr(plot.X-30, plot.CenterY()))
+			w.Attr("transform", rotateAttr(x, plot.CenterY()))
 		case scene.AxisPositionRight:
-			w.AttrFloat("x", plot.Right()+30)
+			x := plot.Right() + titleDropSide + titlePad
+			w.AttrFloat("x", x)
 			w.AttrFloat("y", plot.CenterY())
 			w.Attr("text-anchor", "middle")
-			w.Attr("transform", rotateAttr90(plot.Right()+30, plot.CenterY()))
+			w.Attr("transform", rotateAttr90(x, plot.CenterY()))
 		}
 		writeTypographyAttrs(w, titleLH, titleLS)
 		w.CloseTagOpen()
@@ -174,17 +183,31 @@ const (
 	// historical 18 / 8 px offsets.
 	baselineDropBottom = 14.0
 	baselineDropOther  = 4.0
+	// defaultTitlePadding is the gap between an axis's tick labels and
+	// its title, matching theme/css.go's --prism-axis-title-padding
+	// and the 8 px every built-in theme states.
+	defaultTitlePadding = 8.0
+	// titleDropBottom / titleDropTop / titleDropSide are the fixed
+	// text allowances the axis title needs on top of the padding, one
+	// per side. defaultTitlePadding added to each reproduces the
+	// historical hard-coded 34 / 28 / 30 px offsets exactly, which is
+	// what keeps every committed golden byte-identical for a theme
+	// stating the default 8.
+	titleDropBottom = 26.0
+	titleDropTop    = 20.0
+	titleDropSide   = 22.0
 )
 
 // resolveAxisMetric applies the axis-metric precedence chain: the
 // spec-level value wins, the theme token fills in where the spec is
 // silent, and the built-in metric is the floor. This is the single
-// place the rule is expressed, so `tick_size` and `label_padding`
-// cannot drift apart.
+// place the rule is expressed, so `tick_size`, `label_padding` and
+// `title_padding` cannot drift apart.
 //
 // themeVal has already had the per-axis `axis_x` / `axis_y` block
 // folded over the shared `axis` one by themeTickSize /
-// themeLabelPadding (E8-S1), so the full chain this participates in is
+// themeLabelPadding / themeTitlePadding (E8-S1, E8-S2), so the full
+// chain this participates in is
 // spec > theme.axis_x|axis_y > theme.axis > built-in.
 func resolveAxisMetric(specVal, themeVal *float64, builtin float64) float64 {
 	if specVal != nil {
@@ -196,8 +219,9 @@ func resolveAxisMetric(specVal, themeVal *float64, builtin float64) float64 {
 	return builtin
 }
 
-// themeTickSize / themeLabelPadding read the resolved axis geometry
-// tokens off a possibly-nil scene.Theme, for one channel. The
+// themeTickSize / themeLabelPadding / themeTitlePadding read the
+// resolved axis geometry tokens off a possibly-nil scene.Theme, for
+// one channel. The
 // channel's own `axis_x` / `axis_y` block wins over the shared `axis`
 // one (E8-S1); a nil there falls through to the shared value, which is
 // what makes the theme layer merge per property rather than
@@ -221,6 +245,18 @@ func themeLabelPadding(t *scene.Theme, ch scene.Channel) *float64 {
 		return per.LabelPadding
 	}
 	return t.AxisLabelPadding
+}
+
+// themeTitlePadding is the same per-axis-then-shared fall-through for
+// the axis title's gap (E8-S2).
+func themeTitlePadding(t *scene.Theme, ch scene.Channel) *float64 {
+	if t == nil {
+		return nil
+	}
+	if per := t.AxisTokensFor(ch); per != nil && per.TitlePadding != nil {
+		return per.TitlePadding
+	}
+	return t.AxisTitlePadding
 }
 
 // firstFloat is the same per-property fall-through applied to the

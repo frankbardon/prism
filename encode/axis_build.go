@@ -33,12 +33,13 @@ type AxisOpts struct {
 	Labels bool
 	Ticks  bool
 	Domain bool
-	// TickSize / LabelPadding are the spec-level pixel overrides. Nil
-	// defers to the theme's --prism-axis-tick-size /
-	// --prism-axis-label-padding tokens, and then to the renderer's
-	// built-in metrics.
+	// TickSize / LabelPadding / TitlePadding are the spec-level pixel
+	// overrides. Nil defers to the theme's --prism-axis-tick-size /
+	// --prism-axis-label-padding / --prism-axis-title-padding tokens,
+	// and then to the renderer's built-in metrics.
 	TickSize     *float64
 	LabelPadding *float64
+	TitlePadding *float64
 	// LabelLimit is the maximum label width in pixels before the label
 	// is truncated with an ellipsis. Nil or non-positive means no
 	// limit. Truncation happens here, at encode time, so every
@@ -142,6 +143,7 @@ func BuildAxisWithOpts(scale Scale, channel scene.Channel, position scene.AxisPo
 		HideDomain:   !opts.Domain,
 		TickSize:     opts.TickSize,
 		LabelPadding: opts.LabelPadding,
+		TitlePadding: opts.TitlePadding,
 		Zindex:       opts.Zindex,
 	}
 

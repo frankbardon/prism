@@ -1497,6 +1497,7 @@ func axisOptsFor(ch *spec.PositionChannel) AxisOpts {
 	}
 	opts.TickSize = ch.Axis.TickSize
 	opts.LabelPadding = ch.Axis.LabelPadding
+	opts.TitlePadding = ch.Axis.TitlePadding
 	opts.LabelLimit = ch.Axis.LabelLimit
 	if ch.Axis.Zindex != nil {
 		opts.Zindex = *ch.Axis.Zindex
