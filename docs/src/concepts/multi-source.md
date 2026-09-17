@@ -119,6 +119,30 @@ separate segments around the gap (Vega-Lite's behaviour). A three-point
 series with a null in the middle therefore renders as one straight
 segment from the first point to the third.
 
+**The dropped row leaves the axis too, not only the path.** The filter
+runs before any scale resolves, so a discrete domain is built from the
+surviving rows and the missing category never existed as far as the
+scale is concerned. Four quarters with `FY2026 Q1` unmeasured render
+three evenly spaced points labelled `FY2025 Q3`, `FY2025 Q4`,
+`FY2026 Q2` — there is no blank slot, no wider gap, nothing in the
+drawing from which a reader could recover that a period is missing.
+
+That is a chosen semantic, and it is a sharper one for `line` and
+`area` than for the rest. A bar or a point that is simply absent omits
+a fact; a continuous path drawn across the hole *asserts* that the
+series runs uninterrupted, which is a stronger and different claim.
+
+**`PRISM_WARN_NULL_DROPPED` is the only signal, so a consumer has to
+read it.** `prism plot` and `prism scene` print it to stderr, but a
+library caller rendering `CompiledPlan.Scene` directly will not see it
+unless it inspects `SceneDoc.Warnings` (surfaced as
+`CompiledPlan.Diagnostics`). The warning names the channels, the
+fields and the row count, which is enough to annotate the chart or
+refuse to draw it — but nothing in the rendered output will do that for
+you. The whole-chart case stays loud (`PRISM_ENCODE_NULL_ALL_ROWS` is
+an error); it is the *partial* case that goes quiet, and it is the
+harder one to notice precisely because the chart still looks right.
+
 An aggregate group whose every input is null returns null and
 surfaces `PRISM_WARN_NULL_AGG_ALL`.
 
