@@ -1,0 +1,31 @@
+{
+  "$schema": "urn:prism:schema:v1:spec",
+  "title": "Brand tracker: wide metrics reshaped, then dodged by series",
+  "data": {
+    "values": [
+      {"series": "Northwind",        "awareness": 68, "consideration": 47, "familiarity": 61, "trust": 72},
+      {"series": "Category average", "awareness": 54, "consideration": 51, "familiarity": 57, "trust": 58}
+    ]
+  },
+  "transform": [
+    {
+      "unpivot": ["awareness", "consideration", "familiarity", "trust"],
+      "as": ["metric", "score"]
+    }
+  ],
+  "mark": "bar",
+  "encoding": {
+    "x": {"field": "metric", "type": "nominal"},
+    "y": {"field": "score", "type": "quantitative"},
+    "x_offset": {
+      "field": "series",
+      "type": "nominal",
+      "scale": {"domain": ["Northwind", "Category average"]}
+    },
+    "color": {
+      "field": "series",
+      "type": "nominal",
+      "scale": {"domain": ["Northwind", "Category average"]}
+    }
+  }
+}

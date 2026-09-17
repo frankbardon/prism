@@ -509,6 +509,89 @@ value column (numeric), in that order.
   name that collides with a carried column is refused the same way —
   rename through `as`.
 
+### Worked example: wide → long → grouped bar
+
+The usual reason to reshape is that the stored table is **wide** — one
+row per series, one *column* per metric, because in the source schema
+a metric is a column and not a dimension. A grouped bar wants the
+opposite: the metric on the category axis, the series dodged inside
+each slot. `unpivot` is the step between the two, and the
+[`x_offset` channel](encoding.md#offset-channels-x_offset--y_offset)
+is what dodges the result.
+
+Start from the wide table:
+
+| series           | awareness | consideration | familiarity | trust |
+|---|---|---|---|---|
+| Northwind        | 68 | 47 | 61 | 72 |
+| Category average | 54 | 51 | 57 | 58 |
+
+```json
+{
+  "$schema": "urn:prism:schema:v1:spec",
+  "data": {"values": [
+    {"series": "Northwind",        "awareness": 68, "consideration": 47, "familiarity": 61, "trust": 72},
+    {"series": "Category average", "awareness": 54, "consideration": 51, "familiarity": 57, "trust": 58}
+  ]},
+  "transform": [
+    {"unpivot": ["awareness", "consideration", "familiarity", "trust"],
+     "as": ["metric", "score"]}
+  ],
+  "mark": "bar",
+  "encoding": {
+    "x": {"field": "metric", "type": "nominal"},
+    "y": {"field": "score", "type": "quantitative"},
+    "x_offset": {
+      "field": "series",
+      "type": "nominal",
+      "scale": {"domain": ["Northwind", "Category average"]}
+    },
+    "color": {
+      "field": "series",
+      "type": "nominal",
+      "scale": {"domain": ["Northwind", "Category average"]}
+    }
+  }
+}
+```
+
+The transform turns 2 rows × 4 measures into 8 long rows — `series`
+carried through untouched, `metric` naming the source column, `score`
+carrying its value:
+
+| series | metric | score |
+|---|---|---|
+| Northwind | awareness | 68 |
+| Northwind | consideration | 47 |
+| Northwind | familiarity | 61 |
+| Northwind | trust | 72 |
+| Category average | awareness | 54 |
+| … | … | … |
+
+Four things are worth reading off that spec:
+
+- **`series` survives because it is not named in `unpivot`.** Every
+  column the transform does not stack is repeated on each output row,
+  which is what leaves a dimension for the offset channel to dodge on.
+- **The x axis order is the `unpivot` declaration order.** Output is
+  row-major, so the first input row emits its measures in the order
+  they are listed, and the band scale assigns slots first-seen from
+  there. Reordering the `unpivot` list reorders the axis.
+- **`x_offset` and `color` bind the same field, and both pin the same
+  `scale.domain`.** Pinning is what keeps the legend order and the
+  sub-band order in agreement, and what keeps a template's pair order
+  from moving when the underlying category set changes between
+  renders — see
+  [Encoding › Ordering the sub-bands](encoding.md#ordering-the-sub-bands).
+- **The bars dodge, they do not stack.** Every bar keeps its own
+  baseline; the offset scale subdivides the metric's band slot and its
+  padding defaults to zero, so the pair touches and together fills the
+  slot.
+
+The rendered result is the
+[`unpivot_grouped_bar`](../gallery/transforms/unpivot_grouped_bar.prism.json)
+gallery fixture.
+
 ## Stack transform
 
 The `stack` transform accumulates one quantitative field into per-row

@@ -1,6 +1,6 @@
 # Prism Gallery
 
-128 fixture specs across 18 categories. Each entry pairs a `*.prism.json`
+129 fixture specs across 18 categories. Each entry pairs a `*.prism.json`
 spec with a rendered `*.svg`. Browse the source to learn the spec
 shapes; open the SVGs to see what they render. The `table/` fixtures
 are one exception — a top-level `table` mark renders only through
@@ -171,6 +171,7 @@ source.
 | [filter_structured](transforms/filter_structured.prism.json) | <img src="transforms/filter_structured.svg" width="240"> |
 | [calculate_structured](transforms/calculate_structured.prism.json) | <img src="transforms/calculate_structured.svg" width="240"> |
 | [stack_explicit](transforms/stack_explicit.prism.json) | <img src="transforms/stack_explicit.svg" width="240"> |
+| [unpivot_grouped_bar](transforms/unpivot_grouped_bar.prism.json) | <img src="transforms/unpivot_grouped_bar.svg" width="240"> |
 
 ## Scales
 
