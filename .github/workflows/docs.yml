@@ -1,5 +1,19 @@
 name: Deploy Documentation
 
+# The published site is CUMULATIVE: /prism/latest/ plus one directory
+# per released tag. A Pages deployment replaces the whole site, so a
+# run that uploaded only its own slug deleted every other version —
+# which is exactly what happened up to v0.16.0 (versions.json listed
+# 20 versions, all of them 404).
+#
+# Fix: a `gh-pages` branch is the durable store. Each run restores the
+# published tree from that branch, drops its freshly built book into
+# its own slug directory, regenerates versions.json from the slugs that
+# are actually present, pushes the merged tree back, and uploads THAT
+# as the Pages artifact. The branch is storage only — Pages still
+# builds from this workflow (build_type: workflow), so the repo's Pages
+# source setting stays as it is.
+
 on:
   push:
     branches: [main]
@@ -20,9 +34,14 @@ on:
     tags:
       - "v*.*.*"
   workflow_dispatch:
+    inputs:
+      rebuild_tag:
+        description: "Rebuild one already-released tag (e.g. v0.15.2) into its own slug. Leave empty to publish `latest` from the default branch."
+        required: false
+        type: string
 
 permissions:
-  contents: read
+  contents: write # push the merged site to the gh-pages storage branch
   pages: write
   id-token: write
 
@@ -30,13 +49,53 @@ concurrency:
   group: pages
   cancel-in-progress: false
 
+env:
+  PAGES_BRANCH: gh-pages
+
 jobs:
   build:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7
         with:
-          fetch-depth: 0  # need all tags for the versions manifest.
+          fetch-depth: 0 # need all tags for the versions manifest.
+
+      # Determine the deploy slug BEFORE any checkout of a tag, so the
+      # rebuild path and the push paths agree on one value.
+      - name: Determine deploy slug
+        id: slug
+        env:
+          REBUILD_TAG: ${{ inputs.rebuild_tag }}
+        run: |
+          set -euo pipefail
+          if [[ "${GITHUB_REF}" == refs/tags/v* ]]; then
+            slug="${GITHUB_REF#refs/tags/}"
+          elif [[ -n "${REBUILD_TAG}" ]]; then
+            if ! git rev-parse -q --verify "refs/tags/${REBUILD_TAG}" >/dev/null; then
+              echo "rebuild_tag '${REBUILD_TAG}' is not an existing tag" >&2
+              exit 1
+            fi
+            slug="${REBUILD_TAG}"
+          else
+            slug="latest"
+          fi
+          echo "slug=${slug}" >> "$GITHUB_OUTPUT"
+          echo "Deploy slug: ${slug}"
+
+      # The staging scripts must come from the DEFAULT branch even when
+      # the build below checks out an old tag — an older tag carries an
+      # older manifest script, and the manifest format is a property of
+      # the site, not of the release being rebuilt.
+      - name: Stash staging scripts
+        run: |
+          set -euo pipefail
+          mkdir -p "${RUNNER_TEMP}/scripts"
+          cp scripts/build-versions-manifest.sh scripts/build-root-redirect.sh "${RUNNER_TEMP}/scripts/"
+          chmod +x "${RUNNER_TEMP}/scripts/"*.sh
+
+      - name: Check out tag being rebuilt
+        if: ${{ inputs.rebuild_tag != '' && !startsWith(github.ref, 'refs/tags/') }}
+        run: git checkout --detach "refs/tags/${{ inputs.rebuild_tag }}"
 
       - name: Set up Go
         uses: actions/setup-go@v7
@@ -59,26 +118,85 @@ jobs:
       - name: Build prism + compile gallery scenes + render mdBook
         run: make docs
 
-      - name: Determine deploy slug
-        id: slug
+      # Restore the currently published tree. A missing branch is the
+      # first-run case, not an error — start an empty site instead.
+      - name: Restore published site
+        env:
+          GH_TOKEN: ${{ github.token }}
         run: |
-          if [[ "${GITHUB_REF}" == refs/tags/v* ]]; then
-            echo "slug=${GITHUB_REF#refs/tags/}" >> "$GITHUB_OUTPUT"
+          set -euo pipefail
+          if git ls-remote --exit-code --heads origin "${PAGES_BRANCH}" >/dev/null 2>&1; then
+            git clone --depth 1 --branch "${PAGES_BRANCH}" \
+              "https://x-access-token:${GH_TOKEN}@github.com/${GITHUB_REPOSITORY}.git" site
+            echo "Restored $(find site -mindepth 1 -maxdepth 1 -type d -not -name .git | wc -l) published slug(s)."
           else
-            echo "slug=latest" >> "$GITHUB_OUTPUT"
+            echo "No ${PAGES_BRANCH} branch yet — starting a fresh site."
+            mkdir site
+            git -C site init -q
+            git -C site checkout -q -b "${PAGES_BRANCH}"
+            git -C site remote add origin \
+              "https://x-access-token:${GH_TOKEN}@github.com/${GITHUB_REPOSITORY}.git"
           fi
 
-      - name: Stage versioned tree + manifest + root redirect
+      # Replace THIS slug wholesale (so deleted pages disappear) and
+      # leave every other slug untouched.
+      - name: Merge this build into the site
+        env:
+          SLUG: ${{ steps.slug.outputs.slug }}
         run: |
-          mkdir -p deploy/${{ steps.slug.outputs.slug }}
-          cp -r docs/book/* deploy/${{ steps.slug.outputs.slug }}/
-          ./scripts/build-versions-manifest.sh > deploy/versions.json
-          ./scripts/build-root-redirect.sh > deploy/index.html
+          set -euo pipefail
+          rm -rf "site/${SLUG}"
+          mkdir -p "site/${SLUG}"
+          cp -r docs/book/* "site/${SLUG}/"
+          "${RUNNER_TEMP}/scripts/build-versions-manifest.sh" site > site/versions.json
+          "${RUNNER_TEMP}/scripts/build-root-redirect.sh" > site/index.html
+          touch site/.nojekyll
+          echo "Site now carries:"
+          find site -mindepth 1 -maxdepth 1 -type d -not -name .git -printf '  %f\n' | sort
+          cat site/versions.json
+
+      # Push the merged tree so the NEXT run inherits it. The
+      # concurrency group serialises runs, but a push can still lose a
+      # race against a manual branch edit — retry once from a fresh
+      # clone rather than force-pushing over someone else's commit.
+      - name: Publish to the storage branch
+        env:
+          GH_TOKEN: ${{ github.token }}
+          SLUG: ${{ steps.slug.outputs.slug }}
+        run: |
+          set -euo pipefail
+          cd site
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          if git diff --cached --quiet; then
+            echo "No site changes to publish."
+          else
+            git commit -q -m "docs: publish ${SLUG} from ${GITHUB_SHA::12}"
+            if ! git push -q origin "HEAD:${PAGES_BRANCH}"; then
+              echo "Push rejected — refetching ${PAGES_BRANCH} and replaying this slug."
+              git fetch -q origin "${PAGES_BRANCH}"
+              git reset -q --soft "origin/${PAGES_BRANCH}"
+              git checkout -q "origin/${PAGES_BRANCH}" -- . || true
+              rm -rf "${SLUG}"
+              mkdir -p "${SLUG}"
+              cp -r ../docs/book/* "${SLUG}/"
+              "${RUNNER_TEMP}/scripts/build-versions-manifest.sh" . > versions.json
+              git add -A
+              git commit -q -m "docs: publish ${SLUG} from ${GITHUB_SHA::12} (replayed)"
+              git push -q origin "HEAD:${PAGES_BRANCH}"
+            fi
+          fi
+
+      # .git must not ship to Pages — it is the storage mechanism, not
+      # site content.
+      - name: Drop VCS metadata from the artifact
+        run: rm -rf site/.git
 
       - name: Upload Pages artifact
         uses: actions/upload-pages-artifact@v5
         with:
-          path: deploy
+          path: site
 
   deploy:
     needs: build

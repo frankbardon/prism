@@ -151,11 +151,17 @@ docs-clean:
 # Local rehearsal of the GitHub Pages deploy: stage docs/book at
 # deploy/latest/ + render versions.json + root redirect. Mirrors the
 # CI workflow so a contributor can sanity-check before pushing.
+#
+# CI merges its slug into the published tree restored from the
+# gh-pages storage branch, so its manifest lists every released
+# version; this local ./deploy carries `latest` alone and the manifest
+# says so. Both read the same directory listing — the manifest
+# describes what is staged, never what has been tagged.
 docs-deploy-latest: docs
 	@rm -rf deploy
 	@mkdir -p deploy/latest
 	@cp -r docs/book/* deploy/latest/
-	@./scripts/build-versions-manifest.sh > deploy/versions.json
+	@./scripts/build-versions-manifest.sh deploy > deploy/versions.json
 	@./scripts/build-root-redirect.sh > deploy/index.html
 	@echo "docs-deploy-latest: staged at ./deploy/ (open deploy/index.html to test)"
 
