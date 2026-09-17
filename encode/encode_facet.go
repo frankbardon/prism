@@ -145,13 +145,34 @@ func encodeFacetComposite(s *spec.Spec, composite *plan.CompositeDAG, childTable
 		}
 	}
 
+	// E3-S1: the offset (dodge) sub-band order is resolved once for
+	// the whole grid, not per cell, and handed to every cell below.
+	// `resolve: {"scale": {"x_offset": "independent"}}` opts out and
+	// each cell divides its slot from its own partition.
+	var offsetShared *OffsetDomain
+	var offsetWarnings []scene.Warning
+	for _, offCh := range []scene.Channel{scene.ChannelXOffset, scene.ChannelYOffset} {
+		if resolution[offCh].Scale != encresolve.ModeShared {
+			continue
+		}
+		od, offWarns, offErr := buildSharedOffsetForFacet(child.Spec, partitions, offCh)
+		if offErr != nil {
+			return nil, offErr
+		}
+		offsetWarnings = append(offsetWarnings, offWarns...)
+		if od != nil {
+			offsetShared = od
+			break
+		}
+	}
+
 	// Walk partitions row-major. Each partition runs the per-cell
 	// encode path: if the child spec is itself composite, recurse;
 	// otherwise dispatch to flat Encode. The flat Encode would build
 	// its own scales; we override the position channels' scales when
 	// shared.
 	var cells []scene.SceneCell
-	var warnings []scene.Warning
+	warnings := offsetWarnings
 	for ri := 0; ri < rows; ri++ {
 		for ci := 0; ci < cols; ci++ {
 			partTbl, ok := partitions.Tables[[2]int{ri, ci}]
@@ -165,6 +186,7 @@ func encodeFacetComposite(s *spec.Spec, composite *plan.CompositeDAG, childTable
 			cellOpts.Height = cellH
 			cellOpts.OverrideXScale = xShared
 			cellOpts.OverrideYScale = yShared
+			cellOpts.OverrideOffset = offsetShared
 			// E5-S2: layer this cell's sparse theme override (if any)
 			// on top of the chart's resolved base theme. Cross-layer
 			// scale resolution above (xShared/yShared) is computed
@@ -465,10 +487,34 @@ func buildSharedScaleForFacet(childSpec *spec.Spec, parts *facetPartitions, chan
 		span = nil
 	}
 
-	// Union the per-partition values into one big slice in a stable
-	// row-major iteration order over (rowIdx, colIdx) so the
-	// resulting shared scale is byte-deterministic across runs (map
-	// iteration order otherwise floats unification + golden SVGs).
+	var extra func(*table.Table) []any
+	if span != nil {
+		extra = func(tbl *table.Table) []any { return spanDomainValues(span, tbl) }
+	}
+	allValues, firstCol := facetPartitionValues(parts, ch.Field, extra)
+	if len(allValues) == 0 || firstCol == nil {
+		return nil, nil
+	}
+	opts := ScaleOptsFromSpec(ch.Scale)
+	if ch.Scale != nil && ch.Scale.Type != "" {
+		sc, _, err := ResolveScaleTyped(scene.ScaleType(ch.Scale.Type), allValues, rmin, rmax, opts)
+		return sc, err
+	}
+	sc, _, err := ResolveScaleWithOpts(ch.Type, firstCol.Kind(), allValues, rmin, rmax, opts)
+	return sc, err
+}
+
+// facetPartitionValues unions one field's values across every facet
+// partition, walking row-major over (rowIdx, colIdx) so the result is
+// byte-deterministic across runs (map iteration order would otherwise
+// float unification and the golden SVGs with it). extra, when
+// non-nil, contributes further values per partition — the span
+// channel's, which share the base channel's scale.
+//
+// The first column seen comes back alongside so a caller that needs
+// the column KIND to infer a scale family has it without a second
+// walk.
+func facetPartitionValues(parts *facetPartitions, field string, extra func(*table.Table) []any) ([]any, table.Column) {
 	var allValues []any
 	var firstCol table.Column
 	rows := len(parts.RowValues)
@@ -485,7 +531,7 @@ func buildSharedScaleForFacet(childSpec *spec.Spec, parts *facetPartitions, chan
 			if !ok || tbl == nil {
 				continue
 			}
-			col, ok := tbl.Column(ch.Field)
+			col, ok := tbl.Column(field)
 			if !ok {
 				continue
 			}
@@ -495,21 +541,35 @@ func buildSharedScaleForFacet(childSpec *spec.Spec, parts *facetPartitions, chan
 			for i := 0; i < col.Len(); i++ {
 				allValues = append(allValues, col.ValueAt(i))
 			}
-			if span != nil {
-				allValues = append(allValues, spanDomainValues(span, tbl)...)
+			if extra != nil {
+				allValues = append(allValues, extra(tbl)...)
 			}
 		}
 	}
-	if len(allValues) == 0 || firstCol == nil {
-		return nil, nil
+	return allValues, firstCol
+}
+
+// buildSharedOffsetForFacet resolves ONE sub-band order across every
+// facet partition (E3-S1).
+//
+// Resolving per cell would be visibly wrong: a series present in only
+// some cells gives those cells fewer sub-bands, so the same series
+// draws at a different width from one cell to the next and the cells
+// stop being comparable — which is the whole reason a facet exists.
+// The union is therefore computed here, once, and handed down through
+// EncodeOpts.OverrideOffset.
+//
+// A facet has exactly one child spec, so the offset block cannot
+// conflict across cells; the fold still runs so this path and the
+// layer path resolve the order through the same code.
+func buildSharedOffsetForFacet(childSpec *spec.Spec, parts *facetPartitions, channel scene.Channel) (*OffsetDomain, []scene.Warning, error) {
+	och := offsetChannelFor(childEncoding(childSpec), channel)
+	if och == nil || och.Field == "" {
+		return nil, nil, nil
 	}
-	opts := ScaleOptsFromSpec(ch.Scale)
-	if ch.Scale != nil && ch.Scale.Type != "" {
-		sc, _, err := ResolveScaleTyped(scene.ScaleType(ch.Scale.Type), allValues, rmin, rmax, opts)
-		return sc, err
-	}
-	sc, _, err := ResolveScaleWithOpts(ch.Type, firstCol.Kind(), allValues, rmin, rmax, opts)
-	return sc, err
+	values, _ := facetPartitionValues(parts, och.Field, nil)
+	blocks := []offsetBlock{{Label: "facet-child", Ch: och}}
+	return sharedOffsetDomain(channel, blocks, values, offsetSharedScaleOpts(channel, blocks))
 }
 
 // childEncoding returns a spec's encoding block, tolerating a nil

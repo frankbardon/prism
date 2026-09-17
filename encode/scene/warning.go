@@ -62,6 +62,21 @@ const (
 	// channel / field names it was read from.
 	WarnOffsetCollision = "PRISM_WARN_OFFSET_COLLISION"
 
+	// WarnOffsetConfigConflict (E3-S1) fires when two composition
+	// children disagree about how their SHARED offset scale is
+	// configured — a `sort` direction or category list, or any
+	// property of the offset channel's own `scale` block.
+	//
+	// Shared is the default for x_offset / y_offset, exactly as it is
+	// for x / y, because children that divide one band slot
+	// differently produce marks that do not line up. Resolution is
+	// first-specified-wins per property, the same rule a shared axis
+	// uses (PRISM_WARN_AXIS_CONFIG_CONFLICT), and a disagreement is
+	// reported rather than silently settled. Details carry the
+	// channel, the property, the value kept, the value ignored, and
+	// which child supplied each.
+	WarnOffsetConfigConflict = "PRISM_WARN_OFFSET_CONFIG_CONFLICT"
+
 	// The E7-S1 inert-field family. Each fires when a spec key
 	// decodes cleanly, passes validation, and then reaches no
 	// consumer — the silent no-op this effort exists to eliminate.

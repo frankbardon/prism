@@ -217,6 +217,36 @@ func encodeLayerComposite(s *spec.Spec, composite *plan.CompositeDAG, childTable
 		ySharedTitle = firstFieldName(live, scene.ChannelY)
 	}
 
+	// Offset scales fold across children exactly as x / y do (E3-S1):
+	// shared by default, so every layer divides its band slot into the
+	// same sub-bands and dodged marks line up across the stack. What
+	// is shared is the sub-band ORDER, not a scale — the range is each
+	// layer's own parent band width. Resolved once here and handed to
+	// every layer below; `resolve: {"scale": {"x_offset":
+	// "independent"}}` leaves it nil and each layer reads its own
+	// table, as it did before this fold existed.
+	//
+	// A parent that already resolved one (a facet handing its cells a
+	// grid-wide order) wins outright: its union is the wider of the
+	// two, and recomputing here would narrow it back to this cell.
+	offsetShared := opts.OverrideOffset
+	if offsetShared == nil {
+		for _, offCh := range []scene.Channel{scene.ChannelXOffset, scene.ChannelYOffset} {
+			if resolution[offCh].Scale != encresolve.ModeShared {
+				continue
+			}
+			od, offWarnings, offErr := resolveSharedOffsetDomain(live, offCh)
+			if offErr != nil {
+				return nil, offErr
+			}
+			warnings = append(warnings, offWarnings...)
+			if od != nil {
+				offsetShared = od
+				break
+			}
+		}
+	}
+
 	// Third pass: encode each layer's marks using either the shared
 	// scale or a freshly resolved per-layer scale. Independent-axis
 	// layers append their axes into per-cell axes; shared axes are
@@ -421,7 +451,7 @@ func encodeLayerComposite(s *spec.Spec, composite *plan.CompositeDAG, childTable
 		// layer's own encoding and its own table, exactly as the span
 		// channels above do. Filling this at the flat site alone would
 		// leave the channel dead inside layer / facet / repeat.
-		offsetBind, err := resolveOffsetBinding(childEnc, lc.tbl, toMarkScale(xScale), toMarkScale(yScale))
+		offsetBind, err := resolveOffsetBinding(childEnc, lc.tbl, toMarkScale(xScale), toMarkScale(yScale), offsetShared)
 		if err != nil {
 			return nil, err
 		}
@@ -651,6 +681,35 @@ func collectLayerDomains(live []liveChild, channel scene.Channel) ([]encresolve.
 		if enc == nil {
 			continue
 		}
+		// Offset channels carry no PositionChannel — their whole
+		// shape is field / type / sort / scale — so they collect
+		// their column straight off the layer's table. Type is always
+		// band: a sub-band division is a band scale by construction.
+		if isOffsetChannel(channel) {
+			och := offsetChannelFor(enc, channel)
+			if och == nil || och.Field == "" {
+				continue
+			}
+			col, ok := lc.tbl.Column(och.Field)
+			if !ok {
+				return nil, prismerrors.New(
+					"PRISM_ENCODE_001",
+					fmt.Sprintf("Layer %d channel %s field %q not present in upstream table.", lc.idx, channel, och.Field),
+					map[string]any{"Field": och.Field, "Source": "<layer-table>", "Available": joinTableFields(lc.tbl)},
+				)
+			}
+			values := make([]any, col.Len())
+			for i := 0; i < col.Len(); i++ {
+				values[i] = col.ValueAt(i)
+			}
+			out = append(out, encresolve.LayerDomain{
+				LayerID: fmt.Sprintf("layer-%d", lc.idx),
+				Channel: channel,
+				Type:    scene.ScaleBand,
+				Values:  values,
+			})
+			continue
+		}
 		var ch *spec.PositionChannel
 		switch channel {
 		case scene.ChannelX:
@@ -829,9 +888,51 @@ func resolveSharedScale(domains []encresolve.LayerDomain, live []liveChild, chan
 	return scaleFromUnified(ty, dom, rmin, rmax, sharedScaleOpts(live, channel))
 }
 
+// resolveSharedOffsetDomain resolves ONE sub-band order across every
+// live layer that binds the offset channel.
+//
+// It is the offset twin of resolveSharedScale and sits beside it
+// rather than inside it, because the two answer different questions:
+// a position channel needs a Scale (domain AND pixel range), while an
+// offset channel's range is the parent band width of whichever layer
+// is being drawn. Only the domain can be resolved once.
+//
+// The union goes through collectLayerDomains — the same per-layer
+// column collection the position channels use — and then through
+// sharedOffsetDomain, which owns the ordering. Note it does NOT pass
+// through encode/resolve.Unify: Unify's categorical arm returns a
+// first-seen union, and an offset's default order is the distinct
+// values ascending precisely so it does not move when rows move.
+func resolveSharedOffsetDomain(live []liveChild, channel scene.Channel) (*OffsetDomain, []scene.Warning, error) {
+	domains, err := collectLayerDomains(live, channel)
+	if err != nil {
+		return nil, nil, err
+	}
+	if len(domains) == 0 {
+		return nil, nil, nil
+	}
+	var values []any
+	for _, d := range domains {
+		values = append(values, d.Values...)
+	}
+	return sharedOffsetDomain(channel,
+		offsetBlocksFrom(channel, layerEncodings(live)),
+		values,
+		sharedScaleOpts(live, channel))
+}
+
 // sharedScaleOpts returns the ScaleOpts of the first live layer that
 // declares a scale block on the given channel.
 func sharedScaleOpts(live []liveChild, channel scene.Channel) ScaleOpts {
+	// An offset channel's knobs are folded across every binding child
+	// first-specified-wins, not taken wholesale from the first one:
+	// two layers that disagree about the sub-band padding must be
+	// reported, not silently settled. offsetSharedScaleOpts discards
+	// the fold's warnings; sharedOffsetDomain re-runs it and is the
+	// one reporter.
+	if isOffsetChannel(channel) {
+		return offsetSharedScaleOpts(channel, offsetBlocksFrom(channel, layerEncodings(live)))
+	}
 	for _, lc := range live {
 		enc := lc.child.Spec.Encoding
 		if enc == nil {

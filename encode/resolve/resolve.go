@@ -43,6 +43,10 @@ type ChannelResolution struct {
 //
 // Defaults:
 //   - x / y: Scale shared, Axis shared (one set of axes across layers)
+//   - x_offset / y_offset: Scale shared (one sub-band domain across
+//     children, so their dodged marks line up). The Axis half is
+//     carried for uniformity and read by nobody — an offset scale
+//     draws no axis and no legend.
 //   - color / size / shape / opacity: Scale independent, Axis
 //     independent (per-layer legends; "axis" is read as "legend" for
 //     these channels via design/04-multi-source.md).
@@ -52,6 +56,8 @@ func Defaults() map[scene.Channel]ChannelResolution {
 		scene.ChannelY:       {Scale: ModeShared, Axis: ModeShared},
 		scene.ChannelX2:      {Scale: ModeShared, Axis: ModeShared},
 		scene.ChannelY2:      {Scale: ModeShared, Axis: ModeShared},
+		scene.ChannelXOffset: {Scale: ModeShared, Axis: ModeShared},
+		scene.ChannelYOffset: {Scale: ModeShared, Axis: ModeShared},
 		scene.ChannelColor:   {Scale: ModeIndependent, Axis: ModeIndependent},
 		scene.ChannelSize:    {Scale: ModeIndependent, Axis: ModeIndependent},
 		scene.ChannelShape:   {Scale: ModeIndependent, Axis: ModeIndependent},
@@ -91,6 +97,8 @@ func applyChannelMap(out map[scene.Channel]ChannelResolution, m *spec.ResolveCha
 	}{
 		{scene.ChannelX, m.X},
 		{scene.ChannelY, m.Y},
+		{scene.ChannelXOffset, m.XOffset},
+		{scene.ChannelYOffset, m.YOffset},
 		{scene.ChannelX2, m.X2},
 		{scene.ChannelY2, m.Y2},
 		{scene.ChannelColor, m.Color},

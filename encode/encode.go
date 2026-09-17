@@ -38,6 +38,14 @@ type EncodeOpts struct {
 	ThemeName      string
 	OverrideXScale Scale
 	OverrideYScale Scale
+	// OverrideOffset hands this child the offset (dodge) sub-band
+	// order its composition parent resolved once across every child
+	// (E3-S1). Nil — the flat path, and any child resolving its
+	// offset independently — leaves the child to resolve its own from
+	// its own table. It carries a domain rather than a Scale because
+	// an offset scale's range is the parent band width of the cell
+	// being drawn, which only the child can know.
+	OverrideOffset *OffsetDomain
 }
 
 // flatSceneID is the id the flat encoder stamps on the single scene
@@ -449,7 +457,7 @@ func encodeLeaf(s *spec.Spec, tables map[plan.NodeID]*table.Table, tipID plan.No
 	// subdivides a category's slot into sub-bands. The zero binding —
 	// which is what an offset-free spec gets — leaves the band
 	// arithmetic exactly as it was.
-	offsetBind, err := resolveOffsetBinding(enc, tbl, toMarkScale(xScale), toMarkScale(yScale))
+	offsetBind, err := resolveOffsetBinding(enc, tbl, toMarkScale(xScale), toMarkScale(yScale), opts.OverrideOffset)
 	if err != nil {
 		return nil, err
 	}

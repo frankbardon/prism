@@ -13,16 +13,26 @@ import (
 // `y_offset` must sit on a mark that can actually dodge.
 //
 // The offset channels subdivide one category's band slot so the rows
-// sharing that category draw side by side. Only `bar` implements that
-// geometry. Every other band-seated mark draws one shape per category
-// and reaches the same CategorySlots helper, so an offset there would
-// be accepted, decoded, and then change nothing — the silent-no-op
-// class this repo has already shipped three times.
+// sharing that category draw side by side. Only `bar` documents that
+// geometry — but every band-seated mark reaches the same
+// CategorySlots / rectAxisExtent helpers, and marks.Inputs.Offset is
+// filled for every mark type, so an offset bound on any of them
+// genuinely DODGES. A `tick` with `x_offset` over 4 rows / 2 series
+// at the default width moves from x = 225/225/595/595 to
+// 141.75/308.25/511.75/678.25.
 //
-// The encoder is intentionally total on this question (it yields the
-// zero binding and draws the undodged mark), which is what makes this
-// rule the only reporter: a second decision point at encode would give
-// the two stages two chances to disagree.
+// That makes this rule load-bearing rather than tidy-minded. Without
+// it `rect`, `heatmap`, `boxplot`, `violin`, `winloss`, `progress`
+// and the spark adornments would each quietly draw dodged geometry
+// that no mark documents, and an author would have no way to tell
+// whether what they were looking at was a feature.
+//
+// The encoder stays TOTAL on the question — it raises no error of its
+// own and renders whatever the geometry comes out as — which is what
+// makes this rule the only reporter: a second decision point at
+// encode would give the two stages two chances to disagree.
+// encode.TestPrismOffsetOnUnsupportedMarkStillEncodes pins that the
+// encoder keeps producing a scene rather than failing.
 type OffsetMarkSupported struct{}
 
 // Code returns PRISM_SPEC_063.

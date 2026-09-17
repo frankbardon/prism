@@ -108,9 +108,13 @@ func encodeRepeatComposite(s *spec.Spec, composite *plan.CompositeDAG, childTabl
 		cellScene, cellFull := resolveCellTheme(sceneTheme, fullTheme, findCellThemeOverride(s.Repeat.CellOverrides, row, col))
 		childOpts.Theme = cellScene
 		childOpts.FullTheme = cellFull
-		// No shared-scale override under independent defaults.
+		// No shared-scale override under independent defaults. The
+		// offset sub-band order follows the position scales it
+		// subdivides (E3-S1): each repeat cell is its own chart with
+		// its own band, so it resolves its own sub-bands too.
 		childOpts.OverrideXScale = nil
 		childOpts.OverrideYScale = nil
+		childOpts.OverrideOffset = nil
 
 		childDoc, err := encodeLeaf(child.Spec, childTables[i], child.Tip, childOpts)
 		if err != nil {

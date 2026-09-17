@@ -69,7 +69,20 @@ const (
 // and a `sort` spelling nothing acts on. Those would otherwise be
 // silent no-ops, the failure class this repo has already shipped three
 // times.
-func resolveOffsetBinding(enc *spec.Encoding, tbl *table.Table, xScale, yScale marks.Scale) (marks.OffsetBinding, error) {
+//
+// shared carries a composition parent's already-resolved sub-band
+// order (E3-S1), or nil for the flat path and for a child that
+// resolves its offset independently. When it names this binding's
+// axis it replaces the categories and the band-geometry options —
+// never the range, which is this child's own parent band width — so
+// every child divides its slot into the same sub-bands and their
+// marks line up.
+//
+// The child's OWN block is still resolved first even when a shared
+// domain will replace it. That is what keeps a declared type nothing
+// can subdivide, and a `sort` spelling nothing acts on, an error on
+// the child that wrote it rather than a no-op absolved by a sibling.
+func resolveOffsetBinding(enc *spec.Encoding, tbl *table.Table, xScale, yScale marks.Scale, shared *OffsetDomain) (marks.OffsetBinding, error) {
 	bind := spec.ResolveOffset(enc)
 	if bind == nil || tbl == nil {
 		return marks.OffsetBinding{}, nil
@@ -112,6 +125,9 @@ func resolveOffsetBinding(enc *spec.Encoding, tbl *table.Table, xScale, yScale m
 	cats, err := offsetCategories(values, bind.Offset, opts, channel)
 	if err != nil {
 		return marks.OffsetBinding{}, err
+	}
+	if shared != nil && shared.Axis == bind.Channel && len(shared.Categories) > 0 {
+		cats, opts = shared.Categories, shared.Opts
 	}
 	return marks.OffsetBinding{
 		Axis:  bind.Channel,

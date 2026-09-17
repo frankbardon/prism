@@ -1147,6 +1147,17 @@ var Codes = map[string]CodeMetadata{
 		},
 		SeeAlso: []string{"PRISM_SPEC_064", "PRISM_WARN_NULL_DROPPED"},
 	},
+
+	"PRISM_WARN_OFFSET_CONFIG_CONFLICT": {
+		Code:    "PRISM_WARN_OFFSET_CONFIG_CONFLICT",
+		Message: `Shared {{.Channel}} scale: {{.Winner}} already set {{.Property}}; {{.Loser}} disagrees and is ignored.`,
+		Fixups: []string{
+			`Set "{{.Property}}" identically on every child that binds {{.Channel}}, or on only one of them — the first child that specifies a property wins, so the value kept is {{.Kept}} and {{.Ignored}} was dropped.`,
+			`Children share one offset scale by default so their sub-bands line up. To let each child divide its band slot its own way, opt out with "resolve": {"scale": {"{{.Channel}}": "independent"}}.`,
+			`The sub-band order is resolved once for the whole chart: "scale": {"domain": [...]} pins it outright, then a "sort" naming categories, then a "sort" direction, then the distinct values ascending.`,
+		},
+		SeeAlso: []string{"PRISM_WARN_AXIS_CONFIG_CONFLICT", "PRISM_WARN_OFFSET_COLLISION"},
+	},
 	"PRISM_SPEC_061": {
 		Code:    "PRISM_SPEC_061",
 		Message: `Progress mark structure is invalid: {{.Path}}.`,

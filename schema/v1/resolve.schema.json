@@ -14,8 +14,10 @@
       "description": "Per-channel resolve modes.",
       "additionalProperties": false,
       "properties": {
-        "x":       {"$ref": "resolve.schema.json#/$defs/resolve_mode"},
-        "y":       {"$ref": "resolve.schema.json#/$defs/resolve_mode"},
+        "x":        {"$ref": "resolve.schema.json#/$defs/resolve_mode"},
+        "y":        {"$ref": "resolve.schema.json#/$defs/resolve_mode"},
+        "x_offset": {"$ref": "resolve.schema.json#/$defs/resolve_mode", "description": "Offset (dodge) sub-band scale on the x band. Shared by default, like x."},
+        "y_offset": {"$ref": "resolve.schema.json#/$defs/resolve_mode", "description": "Offset (dodge) sub-band scale on the y band. Shared by default, like y."},
         "x2":      {"$ref": "resolve.schema.json#/$defs/resolve_mode"},
         "y2":      {"$ref": "resolve.schema.json#/$defs/resolve_mode"},
         "theta":   {"$ref": "resolve.schema.json#/$defs/resolve_mode"},

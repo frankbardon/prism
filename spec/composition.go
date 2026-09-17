@@ -52,8 +52,17 @@ type Resolve struct {
 
 // ResolveChannelMap holds per-channel "shared" or "independent" tokens.
 type ResolveChannelMap struct {
-	X       string `json:"x,omitempty"`
-	Y       string `json:"y,omitempty"`
+	X string `json:"x,omitempty"`
+	Y string `json:"y,omitempty"`
+	// XOffset / YOffset resolve the offset (dodge) sub-band scale
+	// across composition children (E3-S1). They default to "shared"
+	// like x / y do, because two children binding the same offset
+	// field but resolving their own sub-band domains would divide one
+	// band slot differently and their marks would not line up — a
+	// misalignment that reads as a rendering fault rather than a
+	// configuration one.
+	XOffset string `json:"x_offset,omitempty"`
+	YOffset string `json:"y_offset,omitempty"`
 	X2      string `json:"x2,omitempty"`
 	Y2      string `json:"y2,omitempty"`
 	Theta   string `json:"theta,omitempty"`
