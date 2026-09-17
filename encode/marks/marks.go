@@ -174,6 +174,16 @@ type Inputs struct {
 	// resolution behind it to a first-class theme token. A zero Style
 	// paints nothing, which is what a mark other than progress gets.
 	TrackStyle scene.Style
+	// MedianStyle is the theme-resolved Style for the median line a
+	// boxplot draws across its box. It exists for the same reason
+	// TrackStyle does: the element is chrome drawn ON a filled data
+	// shape, so it cannot take that shape's own paint and stay
+	// readable. Resolved by encode from the active theme's
+	// MarksKeyBoxplotMedian entry (see encode.boxplotMedianStyle) --
+	// never from a constant here. A zero Style means no theme opinion,
+	// and the boxplot encoder falls back to StrokeStyleFor(Style),
+	// which is the same treatment its whiskers get.
+	MedianStyle scene.Style
 	// ColorRegistry (E4-S3) accumulates light/dark resolved mark-color
 	// pairs for the "auto light/dark in one SVG" feature. nil — the
 	// default, and the entire state whenever the active theme has no

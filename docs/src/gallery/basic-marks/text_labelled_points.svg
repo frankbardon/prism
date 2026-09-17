@@ -5,16 +5,16 @@
     <text class="prism-title" x="410" y="20" text-anchor="middle">Labelled points</text>
     <g class="prism-plot">
       <g class="prism-layer" data-layer-id="layer-0" data-prism-layer="layer-0">
-        <circle class="prism-mark-point" data-prism-id="point-0" data-prism-datum-row="0" cx="49.25" cy="292.25" r="5.352" fill="#4c78a8"/>
-        <circle class="prism-mark-point" data-prism-id="point-1" data-prism-datum-row="1" cx="234.25" cy="107.375" r="5.352" fill="#4c78a8"/>
-        <circle class="prism-mark-point" data-prism-id="point-2" data-prism-datum-row="2" cx="419.25" cy="190.25" r="5.352" fill="#4c78a8"/>
-        <circle class="prism-mark-point" data-prism-id="point-3" data-prism-datum-row="3" cx="604.25" cy="139.25" r="5.352" fill="#4c78a8"/>
+        <circle class="prism-mark-point" data-prism-id="point-0" data-prism-datum-row="0" cx="132.5" cy="292.25" r="5.352" fill="#4c78a8"/>
+        <circle class="prism-mark-point" data-prism-id="point-1" data-prism-datum-row="1" cx="317.5" cy="107.375" r="5.352" fill="#4c78a8"/>
+        <circle class="prism-mark-point" data-prism-id="point-2" data-prism-datum-row="2" cx="502.5" cy="190.25" r="5.352" fill="#4c78a8"/>
+        <circle class="prism-mark-point" data-prism-id="point-3" data-prism-datum-row="3" cx="687.5" cy="139.25" r="5.352" fill="#4c78a8"/>
       </g>
       <g class="prism-layer" data-layer-id="layer-1" data-prism-layer="layer-1">
-        <text class="prism-mark-text" data-prism-id="text-0" data-prism-datum-row="0" x="49.25" y="292.25" text-anchor="middle" font-size="12" fill="#111827">42%</text>
-        <text class="prism-mark-text" data-prism-id="text-1" data-prism-datum-row="1" x="234.25" y="107.375" text-anchor="middle" font-size="12" fill="#111827">71%</text>
-        <text class="prism-mark-text" data-prism-id="text-2" data-prism-datum-row="2" x="419.25" y="190.25" text-anchor="middle" font-size="12" fill="#111827">58%</text>
-        <text class="prism-mark-text" data-prism-id="text-3" data-prism-datum-row="3" x="604.25" y="139.25" text-anchor="middle" font-size="12" fill="#111827">66%</text>
+        <text class="prism-mark-text" data-prism-id="text-0" data-prism-datum-row="0" x="132.5" y="292.25" text-anchor="middle" font-size="12" fill="#111827">42%</text>
+        <text class="prism-mark-text" data-prism-id="text-1" data-prism-datum-row="1" x="317.5" y="107.375" text-anchor="middle" font-size="12" fill="#111827">71%</text>
+        <text class="prism-mark-text" data-prism-id="text-2" data-prism-datum-row="2" x="502.5" y="190.25" text-anchor="middle" font-size="12" fill="#111827">58%</text>
+        <text class="prism-mark-text" data-prism-id="text-3" data-prism-datum-row="3" x="687.5" y="139.25" text-anchor="middle" font-size="12" fill="#111827">66%</text>
       </g>
     </g>
   </g>

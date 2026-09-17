@@ -27,7 +27,7 @@ arcs, etc. Specify via top-level `mark` (shorthand string) or
 |---|---|
 | `histogram` | `bar` + auto-bin transform. |
 | `heatmap` | `rect` + 2D bin + sequential color scale. Binds an optional field-driven `opacity` channel for per-cell shading — pair it with a crosstab `zscore_vs_margin` overlay column to fade insignificant cells (significance shading). Opacity maps the field linearly over `[min, max]` to `[0.15, 1.0]`. |
-| `boxplot` | `rect` (IQR) + `rule` (whiskers) + `point` (outliers). Honours [`orient`](#orientation-markorient). |
+| `boxplot` | `rect` (IQR) + `rule` (median, whiskers, caps) + `point` (outliers). Honours [`orient`](#orientation-markorient). The whiskers take the box colour; the median is drawn *on* the box, so it takes the theme's [`boxplot_median`](themes.md#multi-element-marks) key and carries its own `prism-mark-boxplot-median` class. |
 | `violin` | `area` symmetric around centerline (Epanechnikov KDE). Honours [`orient`](#orientation-markorient). |
 | `pie` | `arc` with theta computed from share. |
 | `donut` | `arc` with `inner_radius_ratio > 0`. |

@@ -440,6 +440,7 @@ func encodeLeaf(s *spec.Spec, tables map[plan.NodeID]*table.Table, tipID plan.No
 		Style:         style,
 		LabelStyle:    defaultMarkStyleAuto(fullTheme, darkTheme, colorReg, "text"),
 		TrackStyle:    progressTrackStyle(fullTheme),
+		MedianStyle:   boxplotMedianStyle(fullTheme, style),
 		Tooltip:       enc.Tooltip,
 		Text:          enc.Text,
 		KeyField:      keyFieldFromEncoding(enc),

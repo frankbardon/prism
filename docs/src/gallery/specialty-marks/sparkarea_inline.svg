@@ -4,7 +4,7 @@
   <g class="prism-scene" data-scene-id="scene-0">
     <g class="prism-plot">
       <g class="prism-layer" data-layer-id="layer-0" data-prism-layer="layer-0">
-        <path class="prism-mark-area" data-prism-id="sparkarea-area-0" data-prism-datum-row="0" d="M9.657,359.2 L122.8,240.8 L235.943,418.4 L349.086,161.867 L462.229,43.467 L575.371,319.733 L688.514,457.867 L688.514,596 L575.371,596 L462.229,596 L349.086,596 L235.943,596 L122.8,596 L9.657,596 Z" fill="#4c78a8"/>
+        <path class="prism-mark-area" data-prism-id="sparkarea-area-0" data-prism-datum-row="0" d="M60.571,359.2 L173.714,240.8 L286.857,418.4 L400,161.867 L513.143,43.467 L626.286,319.733 L739.429,457.867 L739.429,596 L626.286,596 L513.143,596 L400,596 L286.857,596 L173.714,596 L60.571,596 Z" fill="#4c78a8"/>
       </g>
     </g>
   </g>

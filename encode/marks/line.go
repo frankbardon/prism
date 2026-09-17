@@ -46,11 +46,11 @@ func encodeLine(in Inputs) ([]scene.Mark, error) {
 
 	pts := make([][2]float64, len(xs))
 	for i := range xs {
-		x, err := in.X.Scale.Apply(xs[i])
+		x, err := PointPixel(in.X, xs[i])
 		if err != nil {
 			return nil, err
 		}
-		y, err := in.Y.Scale.Apply(ys[i])
+		y, err := PointPixel(in.Y, ys[i])
 		if err != nil {
 			return nil, err
 		}

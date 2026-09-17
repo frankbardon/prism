@@ -11,10 +11,10 @@
         <rect class="prism-mark-bar" data-prism-id="bar-3" data-prism-datum-row="3" x="604.25" y="81.875" width="166.5" height="478.125" fill="#f58518"/>
       </g>
       <g class="prism-layer" data-layer-id="layer-1" data-prism-layer="layer-1">
-        <circle class="prism-mark-point" data-prism-id="point-0" data-prism-datum-row="0" cx="49.25" cy="419.75" r="4" fill="#4c78a8"/>
-        <circle class="prism-mark-point" data-prism-id="point-1" data-prism-datum-row="1" cx="234.25" cy="445.25" r="4" fill="#4c78a8"/>
-        <circle class="prism-mark-point" data-prism-id="point-2" data-prism-datum-row="2" cx="419.25" cy="502.625" r="4" fill="#f58518"/>
-        <circle class="prism-mark-point" data-prism-id="point-3" data-prism-datum-row="3" cx="604.25" cy="470.75" r="4" fill="#f58518"/>
+        <circle class="prism-mark-point" data-prism-id="point-0" data-prism-datum-row="0" cx="132.5" cy="419.75" r="4" fill="#4c78a8"/>
+        <circle class="prism-mark-point" data-prism-id="point-1" data-prism-datum-row="1" cx="317.5" cy="445.25" r="4" fill="#4c78a8"/>
+        <circle class="prism-mark-point" data-prism-id="point-2" data-prism-datum-row="2" cx="502.5" cy="502.625" r="4" fill="#f58518"/>
+        <circle class="prism-mark-point" data-prism-id="point-3" data-prism-datum-row="3" cx="687.5" cy="470.75" r="4" fill="#f58518"/>
       </g>
     </g>
     <g class="prism-legends"><g class="prism-legend prism-legend-color" data-prism-legend-id="legend-color"><text class="prism-legend-title" x="680" y="64">layer-0: team</text><rect class="prism-legend-swatch" x="680" y="76" width="12" height="12" fill="#4c78a8"/><text class="prism-legend-label" x="698" y="86">alpha</text><rect class="prism-legend-swatch" x="680" y="94" width="12" height="12" fill="#f58518"/><text class="prism-legend-label" x="698" y="104">beta</text></g><g class="prism-legend prism-legend-color" data-prism-legend-id="legend-color"><text class="prism-legend-title" x="680" y="112">layer-1: category</text><rect class="prism-legend-swatch" x="680" y="124" width="12" height="12" fill="#4c78a8"/><text class="prism-legend-label" x="698" y="134">premium</text><rect class="prism-legend-swatch" x="680" y="142" width="12" height="12" fill="#f58518"/><text class="prism-legend-label" x="698" y="152">standard</text></g></g>

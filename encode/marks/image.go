@@ -43,7 +43,7 @@ func encodeImage(in Inputs) ([]scene.Mark, error) {
 			return nil, err
 		}
 		if len(xs) > 0 {
-			xv, err := in.X.Scale.Apply(xs[0])
+			xv, err := PointPixel(in.X, xs[0])
 			if err == nil {
 				x = xv
 			}
@@ -55,7 +55,7 @@ func encodeImage(in Inputs) ([]scene.Mark, error) {
 			return nil, err
 		}
 		if len(ys) > 0 {
-			yv, err := in.Y.Scale.Apply(ys[0])
+			yv, err := PointPixel(in.Y, ys[0])
 			if err == nil {
 				y = yv
 			}

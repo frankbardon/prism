@@ -46,6 +46,11 @@ func darkTheme() *Theme {
 			"geoshape":       {Fill: "#334155", Stroke: "#0b1220", StrokeWidth: f(0.5)},
 			"geopoint":       {Fill: primary, StrokeWidth: f(0), Size: f(36)},
 			"arc":            {Stroke: "#0b1220", StrokeWidth: f(1)},
+			// The median sits ON the box, so it takes the same
+			// separator colour this theme gives an arc, for the same
+			// reason. The whiskers are outside the box and keep the
+			// box colour instead.
+			"boxplot_median": {Stroke: "#0b1220", StrokeWidth: f(1)},
 		},
 		Axis: &AxisStyle{
 			DomainColor:   "#9ca3af",

@@ -38,6 +38,18 @@ type BoxplotSummary struct {
 //
 // See D062 for the 1.5×IQR Tukey outlier rule + per-group Mark.ID
 // prefix scheme.
+// medianStyle paints the median line. The median is drawn ON the box,
+// so unlike the whiskers it cannot use the box's own colour. encode
+// resolves the theme's opinion into Inputs.MedianStyle; a zero value
+// means the theme named none and the whisker treatment applies.
+func medianStyle(in Inputs) scene.Style {
+	m := in.MedianStyle
+	if m.Stroke != nil || m.StrokeRef != "" || m.StrokeVar != "" {
+		return m
+	}
+	return StrokeStyleFor(in.Style)
+}
+
 func encodeBoxplot(in Inputs) ([]scene.Mark, error) {
 	orient, err := MarkOrientation(in, "boxplot")
 	if err != nil {
@@ -95,25 +107,31 @@ func encodeBoxplot(in Inputs) ([]scene.Mark, error) {
 			Style: in.Style,
 			Rect:  &boxRect,
 		})
-		// Median line across the box.
+		// Median line across the box. It carries its own class so a
+		// consumer can select it apart from the whiskers -- which are
+		// also prism-mark-rule -- and so the theme's
+		// --prism-mark-boxplot_median-* variables survive the CSS
+		// narrowing, which keys off the classes a scene actually
+		// stamps. Same mechanism progress-track uses.
 		out = append(out, scene.Mark{
 			Type:  scene.MarkRule,
 			ID:    fmt.Sprintf("boxplot-%s-median", s.Group),
-			Style: in.Style,
+			Class: "prism-mark-boxplot-median",
+			Style: medianStyle(in),
 			Rule:  orientedRule(orient, near, mM, far, mM),
 		})
 		// Upper whisker stem (q3 → reach hi).
 		out = append(out, scene.Mark{
 			Type:  scene.MarkRule,
 			ID:    fmt.Sprintf("boxplot-%s-w-stem-hi", s.Group),
-			Style: in.Style,
+			Style: StrokeStyleFor(in.Style),
 			Rule:  orientedRule(orient, center, m3, center, mHi),
 		})
 		// Lower whisker stem (q1 → reach lo).
 		out = append(out, scene.Mark{
 			Type:  scene.MarkRule,
 			ID:    fmt.Sprintf("boxplot-%s-w-stem-lo", s.Group),
-			Style: in.Style,
+			Style: StrokeStyleFor(in.Style),
 			Rule:  orientedRule(orient, center, m1, center, mLo),
 		})
 		// Upper whisker cap.
@@ -121,14 +139,14 @@ func encodeBoxplot(in Inputs) ([]scene.Mark, error) {
 		out = append(out, scene.Mark{
 			Type:  scene.MarkRule,
 			ID:    fmt.Sprintf("boxplot-%s-w-cap-hi", s.Group),
-			Style: in.Style,
+			Style: StrokeStyleFor(in.Style),
 			Rule:  orientedRule(orient, center-capHalf, mHi, center+capHalf, mHi),
 		})
 		// Lower whisker cap.
 		out = append(out, scene.Mark{
 			Type:  scene.MarkRule,
 			ID:    fmt.Sprintf("boxplot-%s-w-cap-lo", s.Group),
-			Style: in.Style,
+			Style: StrokeStyleFor(in.Style),
 			Rule:  orientedRule(orient, center-capHalf, mLo, center+capHalf, mLo),
 		})
 		// Outliers as point marks.

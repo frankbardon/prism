@@ -146,7 +146,7 @@ prism plot bar.json --theme=colorblind > bar-cb.svg
 |---|---|
 | `mark`     | Default style applied to every mark unless `marks.<type>` overrides. |
 | `marks.<type>` | Per-mark-type defaults. Key matches the spec's `mark.type` (bar, line, area, point, rule, text, tick, rect, arc, geoshape, geopoint, ...). |
-| `marks.<type>_<element>` | Defaults for one *element* of a mark family that draws several per row. `progress_track` is the only one today — see [Multi-element marks](#multi-element-marks). |
+| `marks.<type>_<element>` | Defaults for one *element* of a mark family that draws several per row — `progress_track` and `boxplot_median` today. See [Multi-element marks](#multi-element-marks). |
 | `axis`     | Axis domain, ticks, grid, labels, titles — applied to **both** cartesian axes. |
 | `axis_x` / `axis_y` | Same token set as `axis`, layered over it **per property** for one axis only (see [Per-axis blocks](#per-axis-blocks)). Because the x axis draws the vertical grid lines and the y axis the horizontal ones, these are also how grid lines are themed per orientation. |
 | `legend`   | Legend fills, symbols, labels, padding. |
@@ -225,15 +225,29 @@ encoder, check whether the receiver is a `theme.MarkStyle` or a
 ### Multi-element marks
 
 Most marks draw one shape per row, so one `marks.<type>` key styles
-the whole thing. A [`progress`](marks.md#progress) mark draws **two**:
-the value bar, and the unfilled track behind it that shows how much
-distance is left. They need independent paint — a track that inherits
-the bar's fill is invisible — so the track claims its own key:
+the whole thing. Some families draw several, and an element painted
+with the family's own colour can be invisible — so those elements claim
+their own key:
 
 | Key | Styles |
 |---|---|
-| `marks.progress` | The value bar. Behaves like any other `marks.<type>` block. |
+| `marks.progress` | A `progress` mark's value bar. Behaves like any other `marks.<type>` block. |
 | `marks.progress_track` | The unfilled track behind it. |
+| `marks.boxplot_median` | The median line a `boxplot` draws **across** its box. |
+
+A [`progress`](marks.md#progress) mark draws a value bar and the
+unfilled track behind it showing how much distance is left; a track
+that inherits the bar's fill is invisible.
+
+A [`boxplot`](marks.md#boxplot) draws a box, a median, two whisker
+stems and two caps. The whiskers sit *outside* the box, where the box's
+own colour is the right and legible choice, so they take it. The median
+is drawn *on* the box, so it is the one element that colour cannot
+serve — a median stroked in the box's fill is exactly as unreadable as
+a median with no stroke at all. Every bundled theme already answers
+this question for `arc`, whose wedge separators face the same problem,
+so the shipped `boxplot_median` defaults mirror each theme's own `arc`
+stroke rather than inventing a second convention.
 
 `progress_track` takes the full `MarkStyle` shape, so the track
 honours `fill`, `stroke`, `stroke_width`, `opacity`, a `filter`, and
@@ -251,19 +265,23 @@ honours `fill`, `stroke`, `stroke_width`, `opacity`, a `filter`, and
 }
 ```
 
-Two things about `progress_track` differ from a normal per-type block,
-both on purpose:
+Two things about these element keys differ from a normal per-type
+block, both on purpose:
 
-- **It is not a mark type.** `mark.type` cannot be set to
-  `progress_track`; it names an element, not something you can draw on
-  its own.
-- **It does not inherit the global `mark` block.** Every other
+- **They are not mark types.** `mark.type` cannot be set to
+  `progress_track` or `boxplot_median`; each names an element, not
+  something you can draw on its own.
+- **They do not inherit the global `mark` block.** Every other
   `marks.<type>` key layers over `mark`, but `mark.fill` is the *data*
-  fill, and a track that inherited it would come out the same colour
-  as the bar sitting on it. A theme that sets no `progress_track`
-  falls back to its own grid colour instead, so a custom theme that
-  never heard of `progress` still tints the track as chrome rather
-  than as a second series.
+  fill — the very value that makes these elements vanish. A track that
+  inherited it would come out the same colour as the bar sitting on it,
+  and a median the same colour as the box it crosses. A theme that sets
+  neither key falls back to a derived default instead: the grid colour
+  for a track, and the whisker treatment for a median.
+
+The median also carries its own `prism-mark-boxplot-median` class, so
+it can be selected apart from the whiskers, which are
+`prism-mark-rule` like any other line.
 
 Every bundled theme states both keys. `high_contrast` is the one that
 diverges from the grid-colour default: its grid colour is pure black,
