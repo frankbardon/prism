@@ -592,6 +592,54 @@ The rendered result is the
 [`unpivot_grouped_bar`](../gallery/transforms/unpivot_grouped_bar.prism.json)
 gallery fixture.
 
+## Pivot transform — parses, does not execute
+
+`pivot` is the long → wide counterpart of `unpivot`, and it is the **one
+transform the spec grammar accepts that no backend can run**. It decodes,
+it has a JSON Schema variant, it builds a plan node — and nothing
+implements that node's execution.
+
+Rather than let it fail mid-pipeline, validate refuses it up front:
+
+```
+PRISM_SPEC_067: Transform "pivot" at transform[0] is accepted by the spec
+grammar but no backend can execute it.
+```
+
+This moved an existing failure earlier; it did not create one. Before the
+rule, a `pivot` spec validated cleanly and then died inside execute as
+`PRISM_COMPILE_001`, naming an internal node kind (`PivotNode`) the
+author never wrote. Every other transform variant executes — `filter`,
+`calculate`, `aggregate`, `bin`, `window`, `join`, `union`, `unpivot`,
+`sample`, `sort`, `limit`, `crosstab`, `regression`, `timeunit`, `stack`.
+That list is not a promise typed into a doc: `validate/rules/transform_executable.go`
+states it, and a repo gate drives one minimal spec per variant through
+the real planner and the real in-memory backend, failing just as loudly
+when a transform named there stops working as when one omitted there
+starts.
+
+**Use [`crosstab`](#crosstab-transform) for the same long → wide shape.**
+It spreads the distinct values of one field across columns and does
+execute:
+
+```json
+{
+  "transform": [
+    {"crosstab": {
+      "rows":    [{"field": "region"}],
+      "columns": [{"field": "quarter"}],
+      "cell":    {"aggregate": "sum", "field": "revenue"}
+    }}
+  ]
+}
+```
+
+The general answer, when a reshape is outside what the built-in
+transforms express, is the same one Prism gives everywhere: it consumes
+already-materialized rows, so do the reshape upstream and hand it the
+finished table — inline as `data.values`, through the `datasets` block,
+or at runtime via a `DataResolver` and a `data: {"ref": …}` binding.
+
 ## Stack transform
 
 The `stack` transform accumulates one quantitative field into per-row

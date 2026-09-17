@@ -146,12 +146,14 @@ var Codes = map[string]CodeMetadata{
 	},
 	"PRISM_COMPILE_001": {
 		Code:    "PRISM_COMPILE_001",
-		Message: `Node type {{.NodeType}} is not implemented yet (lands in {{.Phase}}).`,
+		Message: `Plan node {{.NodeType}} has no execution implementation.`,
 		Fixups: []string{
-			`This node is a P03 placeholder; the real Execute body ships in {{.Phase}}.`,
-			`Until then the DAG builds and the rest of the pipeline runs — only this node fails.`,
-			`Track progress: ` + "`prism errors lookup PRISM_COMPILE_001`" + ` or .planning/ROADMAP.md.`,
+			`The DAG built and every other node ran — this one alone failed, so the rest of the plan diagnostic is trustworthy. Inspect it with ` + "`prism plan --format json`" + `.`,
+			"`PivotNode`" + ` is the only node kind that still reaches this from an ordinary spec, and the ` + "`pivot`" + ` transform behind it is now refused at validate as PRISM_SPEC_067 before a plan is ever built. Use ` + "`crosstab`" + ` for the same long → wide reshape, or do the reshape upstream and hand Prism the finished rows.`,
+			`Any other node kind here means a transform was wired only halfway: executing a node needs both an implementation (a compile/inmem executor, or an Execute body on the node itself) AND, for the backend-routed kinds, the SetBackend wiring that reaches it. An executor with no wiring is unreachable and the node fails exactly like an unimplemented one.`,
+			`This code is also the catch-all plan.Execute stamps on a node error that carries no PRISM_* code of its own, so a message that does not read as "not implemented" is an untyped failure inside that node — the node id in the diagnostic names it.`,
 		},
+		SeeAlso: []string{"PRISM_SPEC_067", "PRISM_COMPILE_002"},
 	},
 	"PRISM_COMPILE_002": {
 		Code:    "PRISM_COMPILE_002",
