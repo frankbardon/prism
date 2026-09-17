@@ -33,8 +33,8 @@ type Backend struct{}
 func New() *Backend { return &Backend{} }
 
 // Compile dispatches one node to its per-op helper. Unsupported node
-// kinds (Join, Union, Pivot, Unpivot — deferred to P07/P09/P10)
-// return PRISM_COMPILE_001 so behaviour matches the P03 stubs.
+// kinds (Join, Union, Pivot — deferred to P07/P09/P10) return
+// PRISM_COMPILE_001 so behaviour matches the P03 stubs.
 func (b *Backend) Compile(ctx context.Context, node plan.Node, ins []*table.Table) (*table.Table, error) {
 	if err := ctx.Err(); err != nil {
 		return nil, err
@@ -66,6 +66,8 @@ func (b *Backend) Compile(ctx context.Context, node plan.Node, ins []*table.Tabl
 		return executeRegression(ctx, n, ins)
 	case *nodes.StackNode:
 		return executeStack(ctx, n, ins)
+	case *nodes.UnpivotNode:
+		return executeUnpivot(ctx, n, ins)
 	}
 	return nil, notImplemented(node)
 }

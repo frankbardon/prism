@@ -784,7 +784,7 @@ func (c *buildCtx) addAndReturn(n plan.Node) (plan.NodeID, error) {
 
 // backendWired is the duck-typed interface every linear node
 // satisfies (FilterNode, ProjectNode, etc.). Stub nodes that have
-// not migrated (Join, Union, Pivot, Unpivot) do not satisfy it, so
+// not migrated (Join, Union, Pivot) do not satisfy it, so
 // the type assertion skips them without effect.
 type backendWired interface {
 	SetBackend(plan.Backend)

@@ -458,6 +458,57 @@ every Prism transform, composes anywhere in a chain.
 `day_of_week` and other component-extraction units (which return an
 ordinal, not a date) land in a follow-up.
 
+## Unpivot transform
+
+The `unpivot` transform reshapes wide → long: one input row carrying N
+measure columns becomes N output rows, each repeating the untouched
+remaining columns, naming the measure in a key column and carrying its
+value in a value column. It is the Vega-Lite `fold` analogue, and the
+usual way to get several wide metric columns onto one categorical
+axis (colour or dodge by the key column).
+
+```json
+{
+  "data": {"values": [
+    {"region": "east", "q1": 1, "q2": 2},
+    {"region": "west", "q1": 3, "q2": 4}
+  ]},
+  "transform": [{"unpivot": ["q1", "q2"], "as": ["quarter", "amount"]}],
+  "mark": "bar",
+  "encoding": {
+    "x": {"field": "region", "type": "nominal"},
+    "y": {"field": "amount", "type": "quantitative"},
+    "color": {"field": "quarter", "type": "nominal"}
+  }
+}
+```
+
+| Field | Required | Notes |
+|---|---|---|
+| `unpivot` | yes | Columns to stack. Each must be numeric — the value column is `f64`. |
+| `as`      | no  | `[key_column, value_column]` output names. Defaults to `["key", "value"]`. |
+| `data`    | no  | Optional input alias, like every other transform. |
+
+Output schema is the input schema minus the unpivoted fields, plus the
+key column (categorical, carrying the source **column name**) and the
+value column (numeric), in that order.
+
+- **Row count** is `input_rows × len(unpivot)`. The reshape multiplies
+  rows, so the product is checked against `PRISM_TABLE_MAX_ROWS` before
+  anything is materialised; an overflow is `PRISM_RESOLVE_007`.
+- **Row order** is row-major: every measure of input row 0 in `unpivot`
+  declaration order, then every measure of input row 1, and so on. A
+  source row's outputs stay adjacent.
+- **Nulls** survive. A null measure cell produces an output row whose
+  value is null — the row is not dropped and the value is never
+  coerced to zero. What happens to it next is the encode-time null
+  policy (see [Multi-source](multi-source.md)).
+- **Types.** A categorical, boolean or date column cannot fill a
+  numeric value column; naming one in `unpivot` is refused with
+  `PRISM_COMPILE_002` rather than yielding zeros or NaN. A key / value
+  name that collides with a carried column is refused the same way —
+  rename through `as`.
+
 ## Stack transform
 
 The `stack` transform accumulates one quantitative field into per-row

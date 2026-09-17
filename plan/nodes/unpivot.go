@@ -9,16 +9,22 @@ import (
 	"github.com/frankbardon/prism/table"
 )
 
-// UnpivotNode reshapes wide → long. P03 stub.
+// UnpivotNode reshapes wide → long.
 //
 // Output schema is the input minus the unpivoted fields, plus two new
 // fields: a categorical key column (named as[0], default "key") and a
 // numeric value column (named as[1], default "value").
+//
+// Execute routes through the injected backend (compile/inmem owns the
+// reshape); it falls back to PRISM_COMPILE_001 when no backend is
+// wired, preserving the P03 stub behaviour for callers that construct
+// the node by hand.
 type UnpivotNode struct {
 	id      plan.NodeID
 	input   plan.NodeID
 	unpivot []string
 	as      []string
+	backend plan.Backend
 }
 
 // NewUnpivot constructs an UnpivotNode.
@@ -72,10 +78,19 @@ func (n *UnpivotNode) Schema(in []*table.Schema) (*table.Schema, error) {
 	return out, nil
 }
 
-// Execute implements plan.Node. P03 stub.
-func (n *UnpivotNode) Execute(_ context.Context, _ []*table.Table) (*table.Table, error) {
-	return nil, notImplementedErr("UnpivotNode")
+// Execute implements plan.Node. Routes through the injected backend
+// when one is wired; returns PRISM_COMPILE_001 otherwise.
+func (n *UnpivotNode) Execute(ctx context.Context, in []*table.Table) (*table.Table, error) {
+	if n.backend == nil {
+		return nil, notImplementedErr("UnpivotNode")
+	}
+	return n.backend.Compile(ctx, n, in)
 }
+
+// SetBackend wires the compile backend that powers Execute. The
+// builder calls this after construction so node constructors keep
+// their P03 signatures stable. See D033.
+func (n *UnpivotNode) SetBackend(b plan.Backend) { n.backend = b }
 
 // Fingerprint implements plan.Node.
 func (n *UnpivotNode) Fingerprint() string {
