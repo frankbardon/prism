@@ -866,6 +866,24 @@ func (c *buildCtx) injectEncodingAggregate(tip plan.NodeID, enc *spec.Encoding) 
 		}
 		entries = append(entries, entry{field: d.Field, agg: d.Aggregate})
 	}
+	// The offset channels (E1-S3) subdivide a band slot, so the column
+	// they read has to reach the encoder for there to be anything to
+	// subdivide by. Like detail, an offset is a pure grouping binding
+	// — spec.OffsetChannel carries no `aggregate` key by construction,
+	// so an offset field always joins the groupby and never becomes an
+	// AggOp. Without this, the canonical grouped-bar spec (a nominal
+	// x, an aggregated y, x_offset naming the series) collapses the
+	// offset column out of the synthetic aggregate's output and the
+	// mark encoder has nothing to dodge along.
+	//
+	// The question is asked through spec.ResolveOffset so the planner
+	// and the encoder cannot disagree about which axis is offset or
+	// which field it reads; re-deriving it from enc.XOffset != nil
+	// here would be exactly the plan → encode drift that resolver
+	// exists to prevent.
+	if off := spec.ResolveOffset(enc); off != nil {
+		entries = append(entries, entry{field: off.Field})
+	}
 	// The text channel (E4-S4) carries the same field/aggregate pair
 	// on its slimmer struct, so a text mark labelling aggregated
 	// values ({"text": {"aggregate": "mean", "field": "score"}})
