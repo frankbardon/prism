@@ -1,6 +1,8 @@
 package rules
 
 import (
+	"strconv"
+
 	"github.com/frankbardon/prism/encode/format"
 	"github.com/frankbardon/prism/errors"
 	"github.com/frankbardon/prism/spec"
@@ -8,15 +10,15 @@ import (
 )
 
 // FormatStringValid implements PRISM_SPEC_011: every channel.format,
-// axis.format, and legend.format must parse as a valid d3-format
-// specifier (subset supported in encode/format).
+// axis.format, legend.format and table columns[].format must parse as
+// a valid d3-format specifier (subset supported in encode/format).
 type FormatStringValid struct{}
 
 // Code returns PRISM_SPEC_011.
 func (FormatStringValid) Code() string { return "PRISM_SPEC_011" }
 
 // Check walks every channel inspecting Format strings + nested axis /
-// legend format strings.
+// legend format strings + each table column's own format string.
 func (FormatStringValid) Check(s *spec.Spec, _ validate.SchemaLookup) []*errors.AppError {
 	if s == nil || s.Encoding == nil {
 		return nil
@@ -64,6 +66,16 @@ func (FormatStringValid) Check(s *spec.Spec, _ validate.SchemaLookup) []*errors.
 	checkMark("shape", enc.Shape)
 	if enc.Text != nil {
 		check(enc.Text.Format, "text.format")
+	}
+	// Table columns (E7-S4). encoding.columns[] carries the same
+	// ChannelCommon shape as every other channel, and encode/table.go
+	// now applies the specifier through the same encode/format subset
+	// this rule parses with — so an unparseable one has to be rejected
+	// here rather than silently degrading to the raw value at render
+	// time. Un-walked until E7-S4, which is how `$,.0f` (no currency
+	// prefix in the subset) reached two committed fixtures.
+	for i, col := range enc.Columns {
+		check(col.Format, "columns["+strconv.Itoa(i)+"].format")
 	}
 	return out
 }

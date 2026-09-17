@@ -430,13 +430,21 @@ Column fields (`encoding.columns[]`, one object per column):
 - `mark` — optional sub-mark rendering this column's cells (e.g.
   `"sparkline"`). Omit to render the column as formatted text.
 
+`format` is a d3-format specifier from the
+[supported subset](encoding.md#table-columns) and is applied to the
+column's cell text at encode time. The raw value is kept alongside the
+formatted text, so a client-side header sort still compares numbers,
+not the formatted strings. A `format` on a column that also binds a
+`mark` has no text to shape and is reported as
+`PRISM_WARN_CHANNEL_INERT`.
+
 ```json
 {
   "mark": {"type": "table", "page_size": 50},
   "encoding": {
     "columns": [
       {"field": "name", "type": "nominal", "title": "Account"},
-      {"field": "revenue", "type": "quantitative", "aggregate": "sum", "format": "$,.0f"},
+      {"field": "revenue", "type": "quantitative", "aggregate": "sum", "format": ",.0f"},
       {"field": "trend", "type": "quantitative", "mark": "sparkline"}
     ]
   }
@@ -510,11 +518,19 @@ thing, the **mark def wins**; see
 | `fill` | filled marks | Fill color, `#RRGGBB` / `#RRGGBBAA`. |
 | `stroke` | all | Stroke color. |
 | `stroke_width` | all | Stroke width in pixels. |
-| `stroke_dash` | line-family | Dash pattern, `[on, off, …]` pixels. |
+| `stroke_dash` | all stroked marks | Dash pattern, `[on, off, …]` pixels. Emits `stroke-dasharray`. |
 | `opacity` | all | Overall element opacity, `[0, 1]`. |
 | `fill_opacity` | filled marks | Fill-paint alpha, `[0, 1]`. |
 | `stroke_opacity` | stroked marks | Stroke-paint alpha, `[0, 1]`. |
 | `corner_radius` | `bar` / `rect` | Corner rounding in pixels. |
+
+`stroke_dash` is a whole-pattern override, not a merge: a mark def
+that names it replaces the theme `mark` block's `stroke_dash` outright,
+and one that omits it keeps the theme's. An empty array reads the same
+as an absent key, so to draw solid over a dashed theme token, drop the
+`stroke_dash` from the theme rather than writing `[]` in the spec. A
+pattern of all zeros is treated as unset — some renderers draw an
+all-zero dash as an invisible stroke rather than a solid one.
 
 `opacity`, `fill_opacity` and `stroke_opacity` are **independent and
 multiplicative** — none overrides another. This matches Vega-Lite,

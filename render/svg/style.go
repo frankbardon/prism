@@ -84,6 +84,7 @@ func writeStyleAttrs(w *Writer, s scene.Style) {
 	if s.StrokeWidth > 0 {
 		w.AttrFloat("stroke-width", s.StrokeWidth)
 	}
+	writeStrokeDashAttr(w, s.StrokeDash)
 	// fill-opacity / stroke-opacity (E4-S1) are per-paint alphas that
 	// compose multiplicatively with the element-level opacity below —
 	// SVG's own compositing rule, and the same one Vega's canvas
@@ -104,6 +105,37 @@ func writeStyleAttrs(w *Writer, s scene.Style) {
 	}
 	writeTypographyAttrs(w, s.LineHeight, s.LetterSpacing)
 	writeFilterAttr(w, s.Filter)
+}
+
+// writeStrokeDashAttr emits stroke-dasharray="<on> <off> …" for the
+// dash pattern carried by scene.Style.StrokeDash (E7-S4 — the spec's
+// mark_def.stroke_dash and the theme mark block's stroke_dash token
+// both land there, via encode.applyMarkDef / applyThemeMarkStyle).
+// Nil or empty emits nothing, which is what keeps every mark that
+// declares no dash byte-identical to its pre-E7-S4 golden.
+//
+// Lengths route through render.FormatFloat like every other numeric
+// SVG output so the pinned 3-decimal precision contract (and with it
+// host↔TinyGo cross-impl parity) holds for dash patterns too. A
+// pattern of all zeros would make the stroke invisible in some
+// renderers rather than solid, so it is skipped as if unset; the
+// schema already floors each entry at 0.
+func writeStrokeDashAttr(w *Writer, dash []float64) {
+	if len(dash) == 0 {
+		return
+	}
+	parts := make([]string, 0, len(dash))
+	positive := false
+	for _, d := range dash {
+		if d > 0 {
+			positive = true
+		}
+		parts = append(parts, render.FormatFloat(d))
+	}
+	if !positive {
+		return
+	}
+	w.JoinAttr("stroke-dasharray", parts)
 }
 
 // writeFontAttrs emits the font-family / font-weight / font-style

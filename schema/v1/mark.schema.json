@@ -46,7 +46,7 @@
         "stroke_dash":   {
           "type": "array",
           "items": {"type": "number", "minimum": 0},
-          "description": "Dash pattern as an array of on/off pixel lengths."
+          "description": "Dash pattern as an array of on/off pixel lengths, emitted as stroke-dasharray. Replaces the theme mark block's stroke_dash outright rather than merging with it; an empty array reads the same as an absent key."
         },
         "opacity":       {"type": "number", "minimum": 0, "maximum": 1, "description": "Overall element opacity. Composes multiplicatively with fill_opacity / stroke_opacity; it does not override them."},
         "fill_opacity":  {"type": "number", "minimum": 0, "maximum": 1, "description": "Fill-paint alpha, independent of opacity. Effective fill alpha is opacity * fill_opacity."},

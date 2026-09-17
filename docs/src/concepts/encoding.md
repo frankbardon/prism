@@ -35,7 +35,7 @@ The `encoding` object binds data fields to visual channels.
 | `scale` | Scale spec (`type`, `domain`, `range`, `scheme`, `padding`, ...). |
 | `axis` | Axis config (`orient`, `title`, `format`, `grid`, `tick_count`, `label_angle`, ...) — see [Axis placement](#axis-placement) — or `null` to [hide the axis](#hiding-an-axis-or-legend). |
 | `legend` | Legend config — placement (`orient`, `padding`, `offset`; see [Legend placement](#legend-placement)), content (`title`, `values`, `format`, `tick_count`, `label_limit`; see [Legend content](#legend-content)) and layout (`type`, `direction`, `symbol_type`, `symbol_size`; see [Symbol or gradient](#symbol-or-gradient--type)) — or `null` to [hide the legend](#hiding-an-axis-or-legend). |
-| `format` | d3-format string for label formatting. |
+| `format` | d3-format string for label formatting. Read on the [`text`](#text-channel) and [`tooltip`](#tooltip-channel) channels and on a [table column](#table-columns); on any other channel it is validated and then unread — put it on `axis.format` / `legend.format` instead, and see [Spec › Warnings](spec.md#warnings--and-the-fields-that-do-nothing) for the diagnostic that says so. |
 | `sort` | `"ascending"` / `"descending"` / `"-y"` / `[explicit, order, ...]`. |
 | `stack` | Position channels only. `"zero"` / `"normalize"` / `"center"` / `true` to stack, `null` / `false` to opt out — see [Stacking](#stacking). |
 | `key` | `true` to mark this channel as the animation join key — see [Spec › Animation](spec.md#animation). At most one channel per encoding may set this; only valid on position channels (`x`, `y`, `x2`, `y2`, `theta`, `radius`) and mark channels (`color`, `fill`, `stroke`, `opacity`, `size`, `shape`, sankey `source`/`target`/`value`, geo `longitude`/`latitude`/`feature`). |
@@ -867,6 +867,40 @@ node-oriented while the channel is row-oriented:
 
 See [Marks › Tree / dendrogram / network](marks.md#tree--dendrogram--network)
 for where the labels land relative to each node.
+
+## Table columns
+
+The `table` mark replaces the position channels with
+`encoding.columns[]` — one object per column, each carrying the same
+channel shape as any other encoding plus an optional `mark` naming a
+sub-mark to draw in the cells.
+
+```json
+"columns": [
+  {"field": "name",    "type": "nominal",      "title": "Account"},
+  {"field": "revenue", "type": "quantitative", "format": ",.0f"},
+  {"field": "trend",   "type": "quantitative", "mark": "sparkline"}
+]
+```
+
+| Key | Effect on a table column |
+|---|---|
+| `title` | The column header. Falls back to the field name. |
+| `format` | d3-format specifier applied to the cell text — `,.0f` renders `120000` as `120,000`, `.1%` renders `0.4213` as `42.1%`. Same subset every other format string uses; invalid specifiers are rejected at validate time with `PRISM_SPEC_011`. |
+| `mark` | Sub-mark drawn in each cell (e.g. `"sparkline"`) instead of text. |
+
+Formatting happens at encode time, but the **raw** value is carried
+alongside the formatted text in the Scene IR, so a client-side header
+sort compares numbers rather than the formatted strings — `120,000`
+and `80,500` still order correctly. A `format` on a column that also
+binds a `mark` shapes nothing (that column draws geometry, not text)
+and is reported as `PRISM_WARN_CHANNEL_INERT`.
+
+Note the subset has **no currency prefix**: write `,.0f`, not
+`$,.0f`. The latter is rejected by `PRISM_SPEC_011`. Prefix a literal
+symbol in the `title`, or precompute the string upstream.
+
+See [Marks › Table](marks.md#table) for the mark-side rules.
 
 ## Tooltip channel
 

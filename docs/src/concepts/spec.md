@@ -583,13 +583,13 @@ Where they surface:
 
 The **inert-field** family reports a key that decoded, passed
 validation, and then reached no consumer. Each one names the exact
-path (`layer[1].mark.stroke_dash`, `encoding.y.scale.padding_inner`)
+path (`layer[1].mark.tooltip`, `encoding.y.scale.padding_inner`)
 plus the mark or channel it was written on:
 
 | Code | Fires when |
 |---|---|
-| `PRISM_WARN_MARK_DEF_INERT` | a `mark_def` property is set on a mark that never reads it — `pad_angle` on a bar, `dx` on a rect — or on a property no mark reads at all (`stroke_dash`, `shape`, `tooltip`, `layout`) |
-| `PRISM_WARN_CHANNEL_INERT` | a channel binding reaches no encoder: `fill`, `stroke`, `size`, `shape` (no mark reads them), `opacity` on anything but `heatmap`, or a table column's `format` |
+| `PRISM_WARN_MARK_DEF_INERT` | a `mark_def` property is set on a mark that never reads it — `pad_angle` on a bar, `dx` on a rect — or on a property no mark reads at all (`shape`, `tooltip`, `layout`) |
+| `PRISM_WARN_CHANNEL_INERT` | a channel binding reaches no encoder: `fill`, `stroke`, `size`, `shape` (no mark reads them), `opacity` on anything but `heatmap`, or a `format` on a table column that also binds a sub-`mark` (that column draws geometry, not text) |
 | `PRISM_WARN_SCALE_FIELD_INERT` | a `scale` property does not apply to the family the channel resolves to — `padding_inner` on a linear scale, `base` on anything but `log`, `zero` on a log / time / discrete scale |
 | `PRISM_WARN_LEGEND_FIELD_INERT` | a `legend` property has no consumer: `type`, `direction`, `symbol_type`, `symbol_size`, `tick_count` |
 | `PRISM_WARN_LEGEND_NOT_BUILT` | a **quantitative or temporal** `color` channel is bound — the symbol legend needs discrete categories and no gradient legend is produced, so the chart renders with no colour key |
@@ -601,7 +601,11 @@ that **is** honoured; a key that is **rejected** outright at validate
 channel → `PRISM_SPEC_045`, `bar` + `stack: "center"` →
 `PRISM_SPEC_053` — a rejection is already visible); and a key that is
 inert *by design* — the `json:"-"` internal bindings, and
-`axis.format` / `legend.format`, which a validation rule reads. A
+`axis.format` / `legend.format`, which a validation rule reads.
+Universal style properties (`fill`, `stroke`, `stroke_width`,
+`stroke_dash`, `opacity`, …) are never reported either: every mark
+carries them into its Scene IR style, so no mark type can render them
+inert. A
 channel carrying a `condition` is likewise never reported: the
 condition pass evaluates it whatever the channel.
 

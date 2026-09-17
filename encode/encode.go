@@ -1168,6 +1168,18 @@ func applyMarkDef(def *spec.MarkDef, style *scene.Style) {
 	if def.StrokeWidth != nil {
 		style.StrokeWidth = *def.StrokeWidth
 	}
+	// stroke_dash (E7-S4) is a whole-pattern override, not a merge:
+	// a spec dash replaces the theme MarkStyle.StrokeDash applyThemeMarkStyle
+	// may already have written, the same all-or-nothing rule every
+	// other field here follows. Copied rather than aliased so a later
+	// mutation of the spec slice cannot reach into the Scene IR.
+	// An explicit empty array is indistinguishable from absent on the
+	// wire (both decode to a zero-length slice), so it leaves the
+	// theme value alone — to draw solid over a dashed theme, omit the
+	// key and set stroke_dash on the theme's mark block instead.
+	if len(def.StrokeDash) > 0 {
+		style.StrokeDash = append([]float64(nil), def.StrokeDash...)
+	}
 	if def.Opacity != nil {
 		style.Opacity = *def.Opacity
 	}

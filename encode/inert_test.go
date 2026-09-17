@@ -67,21 +67,19 @@ func TestPrismInertMarkDefHonouredFieldStaysSilent(t *testing.T) {
 	}
 }
 
-func TestPrismInertMarkDefStrokeDashIsDeadEverywhere(t *testing.T) {
+// TestPrismInertMarkDefStrokeDashIsSilent is the inverse of the check
+// E7-S1 landed: stroke_dash was dead on every mark until E7-S4 wired
+// applyMarkDef -> scene.Style.StrokeDash -> stroke-dasharray, so it is
+// now a universal style property and must never be reported.
+func TestPrismInertMarkDefStrokeDashIsSilent(t *testing.T) {
 	ws := InertFieldWarnings(decodeInertSpec(t, `{
 	  "$schema": "urn:prism:schema:v1:spec",
 	  "data": {"values": [{"a": "x", "b": 1}]},
 	  "mark": {"type": "line", "stroke_dash": [4, 4]},
 	  "encoding": {"x": {"field": "a", "type": "nominal"}, "y": {"field": "b", "type": "quantitative"}}
 	}`))
-	if len(ws) != 1 || ws[0].Code != scene.WarnMarkDefInert {
-		t.Fatalf("want one mark-def warning, got %+v", ws)
-	}
-	if owners, _ := ws[0].Details["Owners"].(string); !strings.Contains(owners, "no mark encoder") {
-		t.Fatalf("stroke_dash should report no owner, got %q", owners)
-	}
-	if !strings.Contains(ws[0].Message, "stroke_dash") || !strings.Contains(ws[0].Message, "line") {
-		t.Fatalf("message must name the property and the mark: %q", ws[0].Message)
+	if len(ws) != 0 {
+		t.Fatalf("honoured stroke_dash warned: %+v", ws)
 	}
 }
 
@@ -282,11 +280,11 @@ func TestPrismInertReportedOncePerCompositionChild(t *testing.T) {
 	  "data": {"values": [{"a": "x", "b": 1}]},
 	  "layer": [
 	    {"mark": {"type": "bar"}, "encoding": {"x": {"field": "a", "type": "nominal"}, "y": {"field": "b", "type": "quantitative"}}},
-	    {"mark": {"type": "rule", "stroke_dash": [4, 4]}, "encoding": {"y": {"field": "b", "type": "quantitative"}}}
+	    {"mark": {"type": "rule", "tooltip": true}, "encoding": {"y": {"field": "b", "type": "quantitative"}}}
 	  ]
 	}`)
-	if len(got) != 1 || got[0] != "layer[1].mark.stroke_dash" {
-		t.Fatalf("want a single layer[1].mark.stroke_dash warning, got %v", got)
+	if len(got) != 1 || got[0] != "layer[1].mark.tooltip" {
+		t.Fatalf("want a single layer[1].mark.tooltip warning, got %v", got)
 	}
 }
 
@@ -324,5 +322,35 @@ func TestPrismFormatTickUsesD3Subset(t *testing.T) {
 	}
 	if got := formatTick(12.5, "!!not-a-format"); got != "12.5" {
 		t.Fatalf("unparseable formatTick = %q", got)
+	}
+}
+
+// TestPrismInertTableColumnFormatOnlyDeadUnderSubMark pins the
+// narrowed columns[].format check (E7-S4): a text column's format is
+// applied by buildTable, so it must be silent; the same key on a
+// column bound to a sub-mark still has no text to shape and is
+// reported.
+func TestPrismInertTableColumnFormatOnlyDeadUnderSubMark(t *testing.T) {
+	silent := inertPaths(t, `{
+	  "$schema": "urn:prism:schema:v1:spec",
+	  "data": {"values": [{"a": "x", "b": 1}]},
+	  "mark": {"type": "table"},
+	  "encoding": {"columns": [{"field": "b", "type": "quantitative", "format": ",.0f"}]}
+	}`)
+	if len(silent) != 0 {
+		t.Fatalf("honoured columns[].format warned: %v", silent)
+	}
+
+	got := inertPaths(t, `{
+	  "$schema": "urn:prism:schema:v1:spec",
+	  "data": {"values": [{"a": "x", "trend": "[1,2,3]"}]},
+	  "mark": {"type": "table"},
+	  "encoding": {"columns": [
+	    {"field": "a", "type": "nominal"},
+	    {"field": "trend", "type": "quantitative", "mark": "sparkline", "format": ",.0f"}
+	  ]}
+	}`)
+	if len(got) != 1 || got[0] != "encoding.columns[1].format" {
+		t.Fatalf("want a single sub-mark column warning, got %v", got)
 	}
 }

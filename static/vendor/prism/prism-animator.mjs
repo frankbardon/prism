@@ -70,6 +70,13 @@ const NUMERIC_ATTRS = {
   path:     ["stroke-width", "opacity", "fill-opacity", "stroke-opacity"],
 };
 
+// stroke-dasharray (E7-S4) is absent from both tables on purpose.
+// It is a *list* of lengths ("4 2"), not a scalar, so the numeric
+// tween would parse only the first entry and rewrite the whole
+// pattern from it — a visibly wrong dash mid-transition. It is a
+// discrete attribute: the incoming scene's value applies on swap, the
+// same way font-family and stroke-linecap already behave.
+
 // Color attrs that route through OKLab interpolation.
 const COLOR_ATTRS = ["fill", "stroke"];
 

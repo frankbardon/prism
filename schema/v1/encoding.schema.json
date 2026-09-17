@@ -61,8 +61,8 @@
         "aggregate": {"$ref": "transform.schema.json#/$defs/aggregate_op"},
         "scale":     {"$ref": "scale.schema.json#/$defs/scale"},
         "axis":      {"$ref": "axis.schema.json#/$defs/axis", "description": "Axis configuration for the position channel. Null hides the axis; an absent key keeps the default axis."},
-        "title":     {"type": "string"},
-        "format":    {"type": "string"},
+        "title":     {"type": "string", "description": "Column header text. Falls back to the field name."},
+        "format":    {"type": "string", "description": "d3-format specifier applied to this column's cell text (the subset in encode/format — no currency prefix, so write \",.0f\" not \"$,.0f\"). Validated by PRISM_SPEC_011. Ignored on a column that also binds a sub-mark, which draws geometry rather than text."},
         "bin":       {"type": ["boolean", "object"]},
         "sort":      {
           "oneOf": [

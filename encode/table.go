@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 
+	"github.com/frankbardon/prism/encode/format"
 	"github.com/frankbardon/prism/encode/marks"
 	"github.com/frankbardon/prism/encode/scale"
 	"github.com/frankbardon/prism/encode/scene"
@@ -96,6 +97,24 @@ func buildTable(s *spec.Spec, tbl *table.Table, enc *spec.Encoding, fullTheme *t
 		pageSize = *s.Mark.Def.PageSize
 	}
 
+	// Column format specifiers (E7-S4). Parsed once per column, not
+	// per cell, through the same encode/format d3 subset PRISM_SPEC_011
+	// validates `columns[].format` against — the precedent E7-S1 set
+	// for axis.format. A column bound to a sub-mark renders geometry,
+	// not text, so its format has nothing to apply to and is skipped
+	// (InertFieldWarnings still reports that combination). A specifier
+	// the parser rejects (validate would already have refused it)
+	// leaves the column unformatted rather than emitting broken text.
+	colFormats := map[string]*format.Spec{}
+	for _, c := range enc.Columns {
+		if c.Format == "" || c.Mark != "" {
+			continue
+		}
+		if sp, err := format.Parse(c.Format); err == nil {
+			colFormats[c.Field] = sp
+		}
+	}
+
 	cols := make([]scene.TableColumn, 0, len(enc.Columns))
 	for _, c := range enc.Columns {
 		if _, ok := tbl.Column(c.Field); !ok {
@@ -130,6 +149,14 @@ func buildTable(s *spec.Spec, tbl *table.Table, enc *spec.Encoding, fullTheme *t
 			}
 			raw := col.ValueAt(i)
 			row.Values[c.Field] = raw
+			// Values keeps the raw scalar (the client-side sort reads
+			// it); the formatted text rides alongside in Display.
+			if sp, ok := colFormats[c.Field]; ok && raw != nil {
+				if row.Display == nil {
+					row.Display = make(map[string]string, 1)
+				}
+				row.Display[c.Field] = sp.Apply(raw)
+			}
 			if c.Mark == "" {
 				continue
 			}

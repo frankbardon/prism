@@ -59,10 +59,21 @@ type TableColumn struct {
 // sub-mark, that column's own encoded Scene IR subtree for this row
 // (e.g. a sparkline column's per-row line geometry), keyed by the
 // same field name; a row with no sub-mark columns leaves Cells nil.
+// Display (E7-S4) carries the pre-formatted display text for the
+// columns whose spec binding set a `format` string, keyed by field
+// name — the result of running the d3-format subset (encode/format)
+// over Values[field] at encode time. A render backend shows
+// Display[field] when present and falls back to its own default
+// rendering of Values[field] otherwise, so a column without a format
+// is byte-identical to its pre-E7-S4 output. Values is left holding
+// the raw scalar on purpose: it is what a client-side sort must
+// compare (FR-11), and formatted text sorts lexically, not
+// numerically.
 type TableRow struct {
-	ID     int64                 `json:"id"`
-	Values map[string]any        `json:"values"`
-	Cells  map[string]*TableCell `json:"cells,omitempty"`
+	ID      int64                 `json:"id"`
+	Values  map[string]any        `json:"values"`
+	Display map[string]string     `json:"display,omitempty"`
+	Cells   map[string]*TableCell `json:"cells,omitempty"`
 }
 
 // TableCell carries one sub-mark's encoded Scene IR for a single

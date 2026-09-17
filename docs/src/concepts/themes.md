@@ -212,6 +212,16 @@ renders at `fill_opacity: 0.9` even under a theme declaring
 `stroke` and `corner_radius` (which the spec does not mention) still
 apply.
 
+`stroke_dash` follows the same per-field rule, with one wrinkle worth
+stating: it is a list, and the override is **whole-pattern** rather
+than element-wise. A spec `"stroke_dash": [6, 3]` replaces a theme's
+`[2, 2]` outright; an omitted key keeps the theme's; and an empty
+array reads as omitted, so a mark cannot go solid by writing `[]` —
+drop the token from the theme instead. Both sides spell the field
+`stroke_dash` on the wire and `StrokeDash` in Go, so when reading the
+encoder, check whether the receiver is a `theme.MarkStyle` or a
+`spec.MarkDef` before concluding which one a line applies.
+
 ### Multi-element marks
 
 Most marks draw one shape per row, so one `marks.<type>` key styles

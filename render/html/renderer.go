@@ -259,6 +259,12 @@ func renderTableMarkup(doc *scene.SceneDoc, tbl *scene.Table, sceneID, layerID s
 					return "", err
 				}
 				w.Write(svgFrag)
+			} else if text, ok := row.Display[col.Field]; ok {
+				// E7-S4: the column's spec `format` was applied at
+				// encode time (encode/table.go, via the encode/format
+				// d3 subset). data-prism-sort-value above still carries
+				// the raw scalar, so sorting stays numeric.
+				w.WriteString(gohtml.EscapeString(text))
 			} else {
 				w.WriteString(gohtml.EscapeString(formatCellValue(row.Values[col.Field])))
 			}

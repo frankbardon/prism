@@ -12,7 +12,7 @@
   "encoding": {
     "columns": [
       {"field": "name", "type": "nominal", "title": "Account"},
-      {"field": "revenue", "type": "quantitative", "title": "Revenue", "format": "$,.0f"},
+      {"field": "revenue", "type": "quantitative", "title": "Revenue", "format": ",.0f"},
       {"field": "trend", "type": "quantitative", "mark": "sparkline", "title": "Trend"}
     ]
   }

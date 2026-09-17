@@ -138,10 +138,15 @@ var markDefOwners = map[string][]string{
 	"url":               {"image"},
 	"path":              {"path"},
 	// Declared, schema-advertised, read by nothing anywhere.
-	"shape":       {},
-	"stroke_dash": {},
-	"tooltip":     {},
-	"layout":      {},
+	"shape":   {},
+	"tooltip": {},
+	"layout":  {},
+	// stroke_dash is ABSENT on purpose (E7-S4): applyMarkDef now
+	// folds it into scene.Style.StrokeDash for every mark type and
+	// render/svg emits stroke-dasharray, so it belongs with the other
+	// universal style properties (fill, stroke, stroke_width, opacity,
+	// fill_opacity, …) that this allowlist never names precisely
+	// because no mark type can render them inert.
 }
 
 // markDefSet lists the mark_def properties this spec actually sets,
@@ -189,7 +194,6 @@ func markDefSet(def *spec.MarkDef) []string {
 		"url":                def.URL != "",
 		"path":               def.Path != "",
 		"shape":              def.Shape != "",
-		"stroke_dash":        len(def.StrokeDash) > 0,
 		"tooltip":            def.Tooltip != nil,
 		"layout":             def.Layout != "",
 	}
@@ -307,13 +311,18 @@ func inertEncoding(enc *spec.Encoding, markType, path string, out *[]scene.Warni
 		inertChannelCommon(&pc.ch.ChannelCommon, pc.name, chPath, out)
 	}
 
-	// Table columns carry the same channel shape; `title` IS read
-	// there (it becomes the column header), `format` is not.
+	// Table columns carry the same channel shape. `title` IS read
+	// there (it becomes the column header) and, since E7-S4, so is
+	// `format` — encode/table.go runs it through the encode/format d3
+	// subset into scene.TableRow.Display. The one surviving dead
+	// combination is a format on a column bound to a sub-mark: that
+	// column renders geometry, so there is no text for a specifier to
+	// shape.
 	for i, col := range enc.Columns {
 		colPath := fmt.Sprintf("%s.columns[%d]", encPath, i)
-		if col.Format != "" {
+		if col.Format != "" && col.Mark != "" {
 			appendChannelInert(out, joinInertPath(colPath, "format"), "columns", markType,
-				"a table column renders its raw cell value; the column format string is parsed by validate (PRISM_SPEC_011) and then read by nothing")
+				fmt.Sprintf("a table column bound to the %q sub-mark renders geometry, not text, so its format string is parsed by validate (PRISM_SPEC_011) and then read by nothing", col.Mark))
 		}
 	}
 }
