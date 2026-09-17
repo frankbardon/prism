@@ -1029,6 +1029,18 @@ var Codes = map[string]CodeMetadata{
 		},
 		SeeAlso: []string{"PRISM_SPEC_042"},
 	},
+	"PRISM_SPEC_054": {
+		Code:    "PRISM_SPEC_054",
+		Message: `An "encoding" block on {{.Path}} sits beside "{{.Operator}}", where nothing reads it.`,
+		Fixups: []string{
+			`A composition parent passes only ` + "`data`" + `, ` + "`datasets`" + ` and ` + "`$schema`" + ` down to its children — ` + "`encoding`" + `, ` + "`mark`" + `, ` + "`transform`" + ` and ` + "`title`" + ` are not inherited, because each layer / panel is a self-contained chart. A parent-level block is read by no code path, so the chart renders exactly as if it were absent.`,
+			`Move the channels into each child under ` + "`{{.Child}}`" + `, e.g. ` + "`{\"layer\": [{\"mark\": \"bar\", \"encoding\": {\"x\": {\"field\": \"month\", \"type\": \"ordinal\"}}}, {\"mark\": \"line\", \"encoding\": {\"x\": {\"field\": \"month\", \"type\": \"ordinal\"}}}]}`" + `.`,
+			`On a ` + "`facet`" + ` or ` + "`repeat`" + ` parent the chart lives under the ` + "`spec`" + ` key — put the encoding there: ` + "`{\"facet\": {\"column\": {\"field\": \"region\", \"type\": \"nominal\"}}, \"spec\": {\"mark\": \"bar\", \"encoding\": {…}}}`" + `.`,
+			`With a single child, drop the composition operator and write a flat spec instead — ` + "`mark`" + ` plus ` + "`encoding`" + ` at the root is the same chart with nothing to inherit.`,
+			`To make layers agree on one axis or legend, repeat the per-channel ` + "`axis`" + ` / ` + "`legend`" + ` block on each child and leave ` + "`resolve`" + ` at its default ("shared"); the encoder folds the children's blocks and reports a disagreement as PRISM_WARN_AXIS_CONFIG_CONFLICT rather than silently dropping one.`,
+		},
+		SeeAlso: []string{"PRISM_WARN_AXIS_CONFIG_CONFLICT", "PRISM_SPEC_012"},
+	},
 	"PRISM_SPEC_055": {
 		Code:    "PRISM_SPEC_055",
 		Message: `Order entry {{.Entry}} is malformed.`,
