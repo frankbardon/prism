@@ -35,6 +35,18 @@ import (
 // goldens stay byte-identical because the 1×1 single-layer case is
 // preserved.
 func EncodeComposite(s *spec.Spec, composite *plan.CompositeDAG, childTables []map[plan.NodeID]*table.Table, opts EncodeOpts) (*scene.SceneDoc, error) {
+	doc, err := encodeComposite(s, composite, childTables, opts)
+	if err != nil {
+		return nil, err
+	}
+	doc.Warnings = append(doc.Warnings, InertFieldWarnings(s)...)
+	return doc, nil
+}
+
+// encodeComposite is EncodeComposite without the top-of-tree
+// inert-field pass (E7-S1); see Encode / encodeLeaf for why the two
+// are split.
+func encodeComposite(s *spec.Spec, composite *plan.CompositeDAG, childTables []map[plan.NodeID]*table.Table, opts EncodeOpts) (*scene.SceneDoc, error) {
 	if s == nil {
 		return nil, fmt.Errorf("encode: nil spec")
 	}
@@ -908,7 +920,7 @@ func encodeConcatComposite(s *spec.Spec, composite *plan.CompositeDAG, childTabl
 
 		// Each concat child is a flat chart (D050 forbids nested
 		// composition in v1); call Encode directly.
-		childDoc, err := Encode(child.Spec, childTables[i], child.Tip, childOpts)
+		childDoc, err := encodeLeaf(child.Spec, childTables[i], child.Tip, childOpts)
 		if err != nil {
 			return nil, fmt.Errorf("concat child %d: %w", i, err)
 		}

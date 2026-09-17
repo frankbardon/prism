@@ -107,15 +107,28 @@ func TestPrismPlotRejectsPDFFormat(t *testing.T) {
 	}
 }
 
-// stripLeadingWarnings drops any `WARN PRISM_WARN_*` lines at the
-// top of the buffer so the XML parser sees the SVG bytes directly.
-// In the CLI test harness stderr is merged into the output buffer.
+// stripLeadingWarnings drops every `WARN PRISM_WARN_*` line at either
+// end of the buffer so the XML parser — and the golden writer — see
+// the rendered bytes alone. In the CLI test harness stderr is merged
+// into the output buffer, and `prism plot` prints its warnings AFTER
+// writing the document, so trailing lines matter as much as leading
+// ones; before E7-S1 no gallery fixture warned, so only the leading
+// case was handled and a warned-on fixture appended the diagnostic to
+// its golden.
 func stripLeadingWarnings(s string) string {
 	for {
 		nl := strings.IndexByte(s, '\n')
 		if nl < 0 || !strings.HasPrefix(s, "WARN ") {
-			return s
+			break
 		}
 		s = s[nl+1:]
+	}
+	for {
+		trimmed := strings.TrimRight(s, "\n")
+		nl := strings.LastIndexByte(trimmed, '\n')
+		if nl < 0 || !strings.HasPrefix(trimmed[nl+1:], "WARN ") {
+			return s
+		}
+		s = trimmed[:nl+1]
 	}
 }

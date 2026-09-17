@@ -44,4 +44,41 @@ const (
 	// The surviving rows still render; an all-null bound field is an
 	// error (PRISM_ENCODE_NULL_ALL_ROWS), not a warning.
 	WarnNullDropped = "PRISM_WARN_NULL_DROPPED"
+
+	// The E7-S1 inert-field family. Each fires when a spec key
+	// decodes cleanly, passes validation, and then reaches no
+	// consumer — the silent no-op this effort exists to eliminate.
+	// They are reported once per spec by encode.InertFieldWarnings,
+	// which runs at the top of the tree so a composition child is
+	// never reported twice. None of them stops the chart rendering.
+
+	// WarnMarkDefInert fires when a mark_def property is set on a
+	// mark whose encoder never reads it (e.g. "pad_angle" on a bar),
+	// or when no encoder reads the property at all. Details carry the
+	// property, the mark type and the marks that DO read it.
+	WarnMarkDefInert = "PRISM_WARN_MARK_DEF_INERT"
+	// WarnChannelInert fires when an encoding channel (or a
+	// channel-level key such as `title` / `format`) is bound but no
+	// encoder consumes it for the spec's mark type.
+	WarnChannelInert = "PRISM_WARN_CHANNEL_INERT"
+	// WarnScaleFieldInert fires when a `scale` block property does
+	// not apply to the scale family the channel resolves to — a
+	// `padding_inner` on a linear scale, a `base` on anything but
+	// log. Details carry the resolved family.
+	WarnScaleFieldInert = "PRISM_WARN_SCALE_FIELD_INERT"
+	// WarnLegendFieldInert fires when a `legend` block property has
+	// no consumer in the legend builder.
+	WarnLegendFieldInert = "PRISM_WARN_LEGEND_FIELD_INERT"
+	// WarnLegendNotBuilt fires when a continuous (quantitative /
+	// temporal) color channel is bound: the symbol legend builder
+	// needs discrete categories and the gradient legend has no
+	// producer yet, so the chart renders with no color key at all and
+	// the whole `legend` block is inert.
+	WarnLegendNotBuilt = "PRISM_WARN_LEGEND_NOT_BUILT"
+	// WarnFacetChildSkipped fires when a facet child's encoding asks
+	// for a channel-level aggregate, a stack or an `order` sort:
+	// plan/build strips the child encoding before Build, so none of
+	// the three synthetic nodes is injected and the request is
+	// silently dropped.
+	WarnFacetChildSkipped = "PRISM_WARN_FACET_CHILD_SKIPPED"
 )
