@@ -119,7 +119,47 @@ separate segments around the gap (Vega-Lite's behaviour). A three-point
 series with a null in the middle therefore renders as one straight
 segment from the first point to the third.
 
-**The dropped row leaves the axis too, not only the path.** The filter
+### Choosing what happens — `mark.invalid`
+
+`mark.invalid` picks between the two behaviours. It defaults to
+`"filter"`, which is what every version before v0.16 did.
+
+| Value | Effect |
+|---|---|
+| `"filter"` | Drop the row. Its category leaves the scale domain with it, so the axis never mentions it and a line closes over the hole. The default. |
+| `"break"` | Keep the row. Its category holds its slot on the axis, no mark is drawn for it, and a line or area splits into separate segments either side of the gap. |
+
+```json
+{"mark": {"type": "line", "invalid": "break"}}
+```
+
+Four quarters with `FY26 Q1` unmeasured:
+
+```
+"filter"                      "break"
+axis:  Q3   Q4   Q2           axis:  Q3   Q4   Q1   Q2
+line:  *----*----*            line:  *----*         *
+       (asserts continuity)                gap at Q1
+```
+
+A measurement stranded between two gaps is drawn as a **dot**. A
+one-point path renders nothing, so emitting one would make `"break"`
+hide a row the author explicitly asked to keep — worse than the
+`"filter"` it was chosen over, which at least drew that row as part of
+the line.
+
+`"break"` is implemented by `line`, `area`, `point`, `bar`, `rule` and
+`text`. On any other mark it is **rejected** with `PRISM_SPEC_062`
+rather than quietly falling back to `"filter"`. Marks that bring their
+own geometry — the polar, histogram, specialty and geographic families
+— never hand a raw field value to a scale, so the null policy does not
+reach them and neither mode means anything there.
+
+Both modes emit `PRISM_WARN_NULL_DROPPED`; the message says which
+behaviour applied.
+
+**Under the default, the dropped row leaves the axis too, not only the
+path.** The filter
 runs before any scale resolves, so a discrete domain is built from the
 surviving rows and the missing category never existed as far as the
 scale is concerned. Four quarters with `FY2026 Q1` unmeasured render
@@ -127,8 +167,8 @@ three evenly spaced points labelled `FY2025 Q3`, `FY2025 Q4`,
 `FY2026 Q2` — there is no blank slot, no wider gap, nothing in the
 drawing from which a reader could recover that a period is missing.
 
-That is a chosen semantic, and it is a sharper one for `line` and
-`area` than for the rest. A bar or a point that is simply absent omits
+That is the default, and it is a sharper one for `line` and `area`
+than for the rest — which is what `"break"` above exists to answer. A bar or a point that is simply absent omits
 a fact; a continuous path drawn across the hole *asserts* that the
 series runs uninterrupted, which is a stronger and different claim.
 

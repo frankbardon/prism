@@ -117,6 +117,24 @@ type MarkDef struct {
 	// ProgressThicknessDefault.
 	Thickness *float64 `json:"thickness,omitempty"`
 
+	// Invalid decides what a mark does with a row carrying a null in
+	// a scale-bound channel (x / y). Empty means MarkInvalidFilter,
+	// the historic behaviour, which is what keeps every pre-v0.16
+	// chart byte-identical.
+	//
+	//   "filter" — drop the row outright. Its category leaves the
+	//              scale domain with it, so the axis never mentions
+	//              it and a line closes over the hole.
+	//   "break"  — keep the row. Its category stays on the axis and
+	//              holds its slot, no mark is drawn for it, and a
+	//              line or area splits into separate segments either
+	//              side of the gap.
+	//
+	// A mark whose encoder cannot honour "break" REJECTS it
+	// (PRISM_SPEC_062) rather than silently filtering instead — see
+	// validate/rules/mark_invalid.go.
+	Invalid string `json:"invalid,omitempty"`
+
 	// Spark adornments (E4) are opt-in, default-off embellishments for
 	// the compact spark marks (sparkline / sparkbar / sparkarea). The
 	// zero value of every field means "no adornment", so existing spark
@@ -157,6 +175,23 @@ type MarkDef struct {
 // TablePageSizeDefault is the number of rows rendered per page for a
 // table mark whose mark_def omits page_size. Documented in
 // docs/src/concepts/marks.md; keep both in sync.
+// Null-handling modes for MarkDef.Invalid.
+const (
+	// MarkInvalidFilter drops a row null in a scale-bound channel,
+	// taking its category out of the scale domain with it. The
+	// default, and the only behaviour before v0.16.
+	MarkInvalidFilter = "filter"
+	// MarkInvalidBreak keeps the row in the domain, draws no mark for
+	// it, and splits a path mark either side of it.
+	MarkInvalidBreak = "break"
+)
+
+// MarkInvalidValid reports whether v is a null-handling mode this
+// version understands. Empty is valid and means MarkInvalidFilter.
+func MarkInvalidValid(v string) bool {
+	return v == "" || v == MarkInvalidFilter || v == MarkInvalidBreak
+}
+
 const TablePageSizeDefault = 25
 
 // ProgressThicknessDefault is the fraction of the category band a

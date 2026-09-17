@@ -36,6 +36,9 @@ func encodeRule(in Inputs) ([]scene.Mark, error) {
 		}
 		marks := make([]scene.Mark, 0, len(ys))
 		for i, v := range ys {
+			if skipRow(in, i) {
+				continue
+			}
 			y, err := PointPixel(in.Y, v)
 			if err != nil {
 				return nil, err
@@ -63,6 +66,9 @@ func encodeRule(in Inputs) ([]scene.Mark, error) {
 		}
 		marks := make([]scene.Mark, 0, len(xs))
 		for i, v := range xs {
+			if skipRow(in, i) {
+				continue
+			}
 			x, err := PointPixel(in.X, v)
 			if err != nil {
 				return nil, err
@@ -98,6 +104,9 @@ func encodeRule(in Inputs) ([]scene.Mark, error) {
 	}
 	marks := make([]scene.Mark, 0, len(xs))
 	for i := range xs {
+		if skipRow(in, i) {
+			continue
+		}
 		x, err := PointPixel(in.X, xs[i])
 		if err != nil {
 			return nil, err
@@ -166,6 +175,9 @@ func encodeRuleSpan(in Inputs) ([]scene.Mark, error) {
 
 	marks := make([]scene.Mark, 0, len(xs))
 	for i := range xs {
+		if skipRow(in, i) {
+			continue
+		}
 		x1, err := PointPixel(in.X, xs[i])
 		if err != nil {
 			return nil, err

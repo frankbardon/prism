@@ -266,15 +266,32 @@ func encodeLayerComposite(s *spec.Spec, composite *plan.CompositeDAG, childTable
 		// scales, colour categories and marks are built. The warning
 		// names the layer so a multi-layer spec says which one shed
 		// rows. Other layers are untouched.
+		// mark.invalid is resolved per LAYER, from that layer's own
+		// mark def: a layer drawing a line may want "break" while a
+		// bar layer beside it keeps the default.
+		var skipRows []bool
 		if usesCartesianScales(markType) {
-			filtered, nullWarn, nerr := marks.DropNullRows(
-				lc.tbl, fmt.Sprintf("layer-%d", lc.idx), scaleBoundChannels(childEnc)...)
-			if nerr != nil {
-				return nil, nerr
-			}
-			lc.tbl = filtered
-			if nullWarn != nil {
-				warnings = append(warnings, *nullWarn)
+			layerID := fmt.Sprintf("layer-%d", lc.idx)
+			if invalidMode(lc.child.Spec) == spec.MarkInvalidBreak {
+				mask, nullWarn, nerr := breakNullRows(
+					lc.tbl, layerID, scaleBoundChannels(childEnc)...)
+				if nerr != nil {
+					return nil, nerr
+				}
+				skipRows = mask
+				if nullWarn != nil {
+					warnings = append(warnings, *nullWarn)
+				}
+			} else {
+				filtered, nullWarn, nerr := marks.DropNullRows(
+					lc.tbl, layerID, scaleBoundChannels(childEnc)...)
+				if nerr != nil {
+					return nil, nerr
+				}
+				lc.tbl = filtered
+				if nullWarn != nil {
+					warnings = append(warnings, *nullWarn)
+				}
 			}
 		}
 
@@ -424,6 +441,7 @@ func encodeLayerComposite(s *spec.Spec, composite *plan.CompositeDAG, childTable
 			// from the layer's own mark style (E10-S1).
 			TrackStyle:  progressTrackStyle(fullTheme),
 			MedianStyle: boxplotMedianStyle(fullTheme, style),
+			Skip:        skipRows,
 		}
 		if lc.child.Spec.Mark != nil {
 			markInputs.Mark = lc.child.Spec.Mark.Def

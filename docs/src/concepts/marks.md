@@ -796,6 +796,30 @@ control points route through `render/precision.go`'s 3-decimal
 quantisation, so host Go, TinyGo-via-WASM and the browser bundle emit
 identical path data.
 
+## Nulls (`mark.invalid`)
+
+A row carrying a null in a scale-bound channel (`x` / `y`) cannot be
+positioned, and `mark.invalid` decides what happens to it.
+
+| Value | Effect |
+|---|---|
+| `"filter"` | Drop the row. Its category leaves the scale domain with it, so the axis never mentions it and a path closes over the hole. The default, and the only behaviour before v0.16. |
+| `"break"` | Keep the row. Its category holds its slot on the axis, no mark is drawn for it, and `line` / `area` split into separate segments either side of the gap. |
+
+Supported by `line`, `area`, `point`, `bar`, `rule` and `text`. Any
+other mark **rejects** `"break"` with `PRISM_SPEC_062` rather than
+silently filtering instead — the polar, histogram, specialty and
+geographic families build their own geometry and never hand a raw field
+value to a scale, so neither mode means anything there.
+
+A lone measurement between two gaps is drawn as a dot, because a
+one-point path renders nothing and `"break"` must not hide a row the
+author asked to keep.
+
+See [Nulls at encode time](multi-source.md#nulls-at-encode-time) for the
+full policy, including which channels are scale-bound and what happens
+when every row is null.
+
 ## Channel allowlists
 
 Not every channel is valid for every mark — `theta` only makes sense

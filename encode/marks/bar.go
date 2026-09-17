@@ -57,6 +57,9 @@ func encodeBar(in Inputs) ([]scene.Mark, error) {
 
 	marks := make([]scene.Mark, 0, len(category))
 	for i := range category {
+		if skipRow(in, i) {
+			continue
+		}
 		style := in.Style
 		if i < len(colorVals) {
 			cat, ok := colorVals[i].(string)

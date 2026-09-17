@@ -41,3 +41,48 @@ func PointPixel(ch Channel, v any) (float64, error) {
 	}
 	return p, nil
 }
+
+// skipRow reports whether row i must not be drawn (mark.invalid:
+// "break"). A nil mask — "filter" mode, and every chart with no nulls
+// — draws everything, which is what keeps the default path allocation-
+// free and byte-identical.
+func skipRow(in Inputs, i int) bool {
+	return i >= 0 && i < len(in.Skip) && in.Skip[i]
+}
+
+// segmentRuns splits an ordered index list into the maximal runs of
+// consecutive DRAWABLE rows, which is how a path mark turns
+// mark.invalid:"break" into visible gaps.
+//
+// A skipped row terminates the run it interrupts and the next drawable
+// row opens a new one; leading and trailing skipped rows contribute no
+// run at all. A run of one point is kept: a lone measurement between
+// two gaps is real data, and dropping it would hide a row the author
+// asked to keep. The renderer draws a one-point polyline as nothing
+// visible, which is a rendering limitation rather than a reason to
+// discard the point from the IR.
+//
+// With no mask — every chart today — this returns the input unchanged
+// as a single run, so callers emit exactly one mark per group and no
+// existing output moves.
+func segmentRuns(in Inputs, idxs []int) [][]int {
+	if len(in.Skip) == 0 {
+		return [][]int{idxs}
+	}
+	var runs [][]int
+	var cur []int
+	for _, idx := range idxs {
+		if skipRow(in, idx) {
+			if len(cur) > 0 {
+				runs = append(runs, cur)
+				cur = nil
+			}
+			continue
+		}
+		cur = append(cur, idx)
+	}
+	if len(cur) > 0 {
+		runs = append(runs, cur)
+	}
+	return runs
+}

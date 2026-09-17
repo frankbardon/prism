@@ -1082,6 +1082,17 @@ var Codes = map[string]CodeMetadata{
 		},
 		SeeAlso: []string{"PRISM_SPEC_041", "PRISM_SPEC_045"},
 	},
+	"PRISM_SPEC_062": {
+		Code:    "PRISM_SPEC_062",
+		Message: `Mark property "invalid" is not honoured as written: {{.Path}}.`,
+		Fixups: []string{
+			"`invalid`" + ` decides what a mark does with a row carrying a null in a scale-bound channel (` + "`x`" + ` / ` + "`y`" + `). ` + "`\"filter\"`" + ` — the default — drops the row, which also removes its category from the scale domain, so the axis never mentions it and a line closes over the hole. ` + "`\"break\"`" + ` keeps the row: its category holds its slot on the axis, no mark is drawn for it, and a line or area splits into segments either side of the gap.`,
+			`Only some marks implement ` + "`\"break\"`" + `: {{.Allowed}}. On any other mark it is rejected rather than quietly falling back to ` + "`\"filter\"`" + `, because a spec that says one thing and draws another is the failure this check exists to prevent.`,
+			`Marks that bring their own geometry — the polar, histogram, specialty and geographic families — never hand a raw field value to a scale, so the null policy does not reach them and neither mode means anything there.`,
+			`Leave ` + "`invalid`" + ` off to take the default. Nulls in a NON-scale-bound channel (` + "`color`" + `, ` + "`text`" + `, ` + "`tooltip`" + `, ` + "`detail`" + `) never remove a mark under either mode.`,
+		},
+		SeeAlso: []string{"PRISM_WARN_NULL_DROPPED", "PRISM_ENCODE_NULL_ALL_ROWS", "PRISM_SPEC_046"},
+	},
 	"PRISM_SPEC_061": {
 		Code:    "PRISM_SPEC_061",
 		Message: `Progress mark structure is invalid: {{.Path}}.`,

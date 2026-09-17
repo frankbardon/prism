@@ -280,14 +280,32 @@ func encodeLeaf(s *spec.Spec, tables map[plan.NodeID]*table.Table, tipID plan.No
 	// specialty / geo) bring their own geometry and never hand a raw
 	// field value to Scale.Apply. A null in a non-scale-bound channel
 	// (tooltip, text, color, …) is left alone.
+	// mark.invalid picks between the two: "filter" (the default)
+	// removes the rows, so the table shortens and the category leaves
+	// the scale domain with them; "break" keeps every row and carries
+	// a draw mask instead, so the category holds its slot on the axis
+	// and a path mark splits at the gap. Exactly one of the two is
+	// ever in play, which is what keeps a single row set in flight.
+	var skipRows []bool
 	if usesCartesianScales(markType) {
-		filtered, nullWarn, nerr := marks.DropNullRows(tbl, "layer-0", scaleBoundChannels(enc)...)
-		if nerr != nil {
-			return nil, nerr
-		}
-		tbl = filtered
-		if nullWarn != nil {
-			warnings = append(warnings, *nullWarn)
+		if invalidMode(s) == spec.MarkInvalidBreak {
+			mask, nullWarn, nerr := breakNullRows(tbl, "layer-0", scaleBoundChannels(enc)...)
+			if nerr != nil {
+				return nil, nerr
+			}
+			skipRows = mask
+			if nullWarn != nil {
+				warnings = append(warnings, *nullWarn)
+			}
+		} else {
+			filtered, nullWarn, nerr := marks.DropNullRows(tbl, "layer-0", scaleBoundChannels(enc)...)
+			if nerr != nil {
+				return nil, nerr
+			}
+			tbl = filtered
+			if nullWarn != nil {
+				warnings = append(warnings, *nullWarn)
+			}
 		}
 	}
 
@@ -441,6 +459,7 @@ func encodeLeaf(s *spec.Spec, tables map[plan.NodeID]*table.Table, tipID plan.No
 		LabelStyle:    defaultMarkStyleAuto(fullTheme, darkTheme, colorReg, "text"),
 		TrackStyle:    progressTrackStyle(fullTheme),
 		MedianStyle:   boxplotMedianStyle(fullTheme, style),
+		Skip:          skipRows,
 		Tooltip:       enc.Tooltip,
 		Text:          enc.Text,
 		KeyField:      keyFieldFromEncoding(enc),
