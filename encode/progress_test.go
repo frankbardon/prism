@@ -3,6 +3,8 @@ package encode
 import (
 	"testing"
 
+	"github.com/frankbardon/prism/encode/scene"
+
 	"github.com/frankbardon/prism/spec"
 	"github.com/frankbardon/prism/table"
 	"github.com/frankbardon/prism/theme"
@@ -84,9 +86,12 @@ func TestPrismProgressMeasureAxisFollowsMarkOrient(t *testing.T) {
 	}
 }
 
-// The track's colour is theme-derived, never a constant baked into the
-// mark encoder — that is what lets E10-S2 promote it to a token.
-func TestPrismProgressTrackStyleComesFromTheme(t *testing.T) {
+// Without a progress_track token the track still comes from the
+// theme rather than a constant baked into the mark encoder — the grid
+// colour, because the track is chrome rather than a second series.
+// This is the fallback path a custom theme that never heard of
+// progress takes.
+func TestPrismProgressTrackStyleFallsBackToGridColour(t *testing.T) {
 	custom := &theme.Theme{Axis: &theme.AxisStyle{GridColor: "#123456"}}
 	got := progressTrackStyle(custom)
 	if got.Fill == nil {
@@ -102,12 +107,86 @@ func TestPrismProgressTrackStyleComesFromTheme(t *testing.T) {
 	if legacy.Fill == nil || legacy.Fill.R != 0xab {
 		t.Errorf("legacy grid fill = %+v, want #abcdef", legacy.Fill)
 	}
+}
 
-	// Every built-in theme supplies its own value rather than falling
-	// through to the last-resort constant.
+// The token is the point of E10-S2: a theme that states
+// marks.progress_track gets that value, not the grid-derived guess.
+func TestPrismProgressTrackTokenWinsOverGridColour(t *testing.T) {
+	f := func(v float64) *float64 { return &v }
+	custom := &theme.Theme{
+		Axis: &theme.AxisStyle{GridColor: "#123456"},
+		Marks: map[string]*theme.MarkStyle{
+			theme.MarksKeyProgressTrack: {Fill: "#fedcba", Stroke: "#010203", StrokeWidth: f(2)},
+		},
+	}
+	got := progressTrackStyle(custom)
+	if got.Fill == nil || got.Fill.R != 0xfe || got.Fill.G != 0xdc || got.Fill.B != 0xba {
+		t.Errorf("track fill = %+v, want the token's #fedcba", got.Fill)
+	}
+	// The whole MarkStyle surface reaches the track, not just a fill —
+	// that is what a full theme.Marks key buys over a colour-only slot.
+	if got.Stroke == nil || got.Stroke.R != 0x01 {
+		t.Errorf("track stroke = %+v, want the token's #010203", got.Stroke)
+	}
+	if got.StrokeWidth != 2 {
+		t.Errorf("track stroke_width = %v, want 2", got.StrokeWidth)
+	}
+}
+
+// The global theme.Mark block carries the *data* fill. Folding it into
+// the track (which t.MarkDefault would do) paints the track the same
+// colour as the value bar sitting on it and erases the reading, so
+// progressTrackStyle reads t.Marks directly. Guards that choice.
+func TestPrismProgressTrackIgnoresGlobalMarkBlock(t *testing.T) {
+	custom := &theme.Theme{
+		Mark: &theme.MarkStyle{Fill: "#4c78a8"},
+		Axis: &theme.AxisStyle{GridColor: "#123456"},
+	}
+	got := progressTrackStyle(custom)
+	if got.Fill == nil {
+		t.Fatal("track style has no fill")
+	}
+	if got.Fill.R == 0x4c && got.Fill.G == 0x78 && got.Fill.B == 0xa8 {
+		t.Error("track inherited theme.Mark's data fill; it must not fold the global mark block")
+	}
+}
+
+// Every bundled theme resolves a track, and the bundled values differ
+// across themes rather than all collapsing onto the last-resort
+// constant.
+func TestPrismProgressTrackStyleComesFromTheme(t *testing.T) {
 	light := progressTrackStyle(theme.MustGet("light"))
 	dark := progressTrackStyle(theme.MustGet("dark"))
 	if light.Fill == nil || dark.Fill == nil || *light.Fill == *dark.Fill {
 		t.Errorf("light (%+v) and dark (%+v) tracks should differ", light.Fill, dark.Fill)
+	}
+
+	// Preserved from E10-S1 on purpose: light's track is still its grid
+	// colour, so promoting the derivation to a token moved no pixels.
+	want, err := scene.ColorFromHex("#e5e7eb")
+	if err != nil {
+		t.Fatalf("ColorFromHex: %v", err)
+	}
+	if *light.Fill != *want {
+		t.Errorf("light track fill = %+v, want the pre-token #e5e7eb", light.Fill)
+	}
+
+	// high_contrast is the theme whose grid colour (pure black) would
+	// have hidden its own black value bar, so it states a different
+	// track. Checks the token is actually reachable per theme.
+	hc := progressTrackStyle(theme.MustGet("high_contrast"))
+	if hc.Fill == nil {
+		t.Fatal("high_contrast track has no fill")
+	}
+	if hc.Fill.R == 0 && hc.Fill.G == 0 && hc.Fill.B == 0 {
+		t.Error("high_contrast track resolved to black, hiding its own value bar")
+	}
+}
+
+// A nil theme still draws something rather than an unpainted rect.
+func TestPrismProgressTrackStyleNilTheme(t *testing.T) {
+	got := progressTrackStyle(nil)
+	if got.Fill == nil {
+		t.Fatal("nil theme produced an unpainted track")
 	}
 }

@@ -57,6 +57,19 @@ func hasTooltip(m scene.Mark) bool {
 	return m.Tooltip != nil && len(m.Tooltip.Lines) > 0
 }
 
+// writeMarkClass writes the mark's class attribute: m.Class verbatim
+// when the encoder set one, otherwise the geom-derived default. Only
+// marks that need to distinguish parts of a multi-shape row set Class
+// (encode/marks/progress.go), so every other mark keeps the class it
+// has always emitted and every committed golden stays byte-identical.
+func writeMarkClass(w *Writer, m scene.Mark, geomClass string) {
+	if m.Class != "" {
+		w.Attr("class", m.Class)
+		return
+	}
+	w.Attr("class", geomClass)
+}
+
 // writeDatumAttr writes data-prism-datum-row="<row-id>" when the mark
 // carries a Datum back-reference (D077). Marks without Datum (composite
 // helpers, e.g. boxplot whisker pairs) get no attribute and the JS
@@ -102,7 +115,7 @@ func writeTooltipChild(w *Writer, m scene.Mark) {
 func renderRect(w *Writer, m scene.Mark) {
 	g := m.Rect
 	w.OpenTag("rect")
-	w.Attr("class", "prism-mark-bar")
+	writeMarkClass(w, m, "prism-mark-bar")
 	if m.ID != "" {
 		w.Attr("data-prism-id", m.ID)
 	}
@@ -139,7 +152,7 @@ func renderLine(w *Writer, m scene.Mark) {
 		return
 	}
 	w.OpenTag("polyline")
-	w.Attr("class", "prism-mark-line")
+	writeMarkClass(w, m, "prism-mark-line")
 	if m.ID != "" {
 		w.Attr("data-prism-id", m.ID)
 	}
@@ -173,7 +186,7 @@ func renderLine(w *Writer, m scene.Mark) {
 func renderCurvedLine(w *Writer, m scene.Mark) {
 	g := m.Line
 	w.OpenTag("path")
-	w.Attr("class", "prism-mark-line")
+	writeMarkClass(w, m, "prism-mark-line")
 	if m.ID != "" {
 		w.Attr("data-prism-id", m.ID)
 	}
@@ -204,7 +217,7 @@ func renderArea(w *Writer, m scene.Mark) {
 	// the reversed lower edge, Z to close. The encoder supplies Lower
 	// as the y=0 baseline edge (one point per Upper x).
 	w.OpenTag("path")
-	w.Attr("class", "prism-mark-area")
+	writeMarkClass(w, m, "prism-mark-area")
 	if m.ID != "" {
 		w.Attr("data-prism-id", m.ID)
 	}
@@ -250,7 +263,7 @@ func renderPoint(w *Writer, m scene.Mark) {
 	// what keeps every committed point golden byte-identical.
 	tag := symbolTag(g.Shape)
 	w.OpenTag(tag)
-	w.Attr("class", "prism-mark-point")
+	writeMarkClass(w, m, "prism-mark-point")
 	if m.ID != "" {
 		w.Attr("data-prism-id", m.ID)
 	}
@@ -270,7 +283,7 @@ func renderPoint(w *Writer, m scene.Mark) {
 func renderTextMark(w *Writer, m scene.Mark) {
 	g := m.Text
 	w.OpenTag("text")
-	w.Attr("class", "prism-mark-text")
+	writeMarkClass(w, m, "prism-mark-text")
 	if m.ID != "" {
 		w.Attr("data-prism-id", m.ID)
 	}
@@ -321,7 +334,7 @@ func renderTextMark(w *Writer, m scene.Mark) {
 func renderArc(w *Writer, m scene.Mark) {
 	g := m.Arc
 	w.OpenTag("path")
-	w.Attr("class", "prism-mark-arc")
+	writeMarkClass(w, m, "prism-mark-arc")
 	if m.ID != "" {
 		w.Attr("data-prism-id", m.ID)
 	}
@@ -424,7 +437,7 @@ func sin(a float64) float64 { return math.Sin(a) }
 func renderPath(w *Writer, m scene.Mark) {
 	g := m.Path
 	w.OpenTag("path")
-	w.Attr("class", "prism-mark-path")
+	writeMarkClass(w, m, "prism-mark-path")
 	if m.ID != "" {
 		w.Attr("data-prism-id", m.ID)
 	}
@@ -463,7 +476,7 @@ func renderPath(w *Writer, m scene.Mark) {
 func renderImage(w *Writer, m scene.Mark) {
 	g := m.Image
 	w.OpenTag("image")
-	w.Attr("class", "prism-mark-image")
+	writeMarkClass(w, m, "prism-mark-image")
 	if m.ID != "" {
 		w.Attr("data-prism-id", m.ID)
 	}
@@ -487,7 +500,7 @@ func renderImage(w *Writer, m scene.Mark) {
 func renderRule(w *Writer, m scene.Mark) {
 	g := m.Rule
 	w.OpenTag("line")
-	w.Attr("class", "prism-mark-rule")
+	writeMarkClass(w, m, "prism-mark-rule")
 	if m.ID != "" {
 		w.Attr("data-prism-id", m.ID)
 	}

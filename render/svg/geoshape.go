@@ -18,7 +18,7 @@ func renderGeoshape(w *Writer, m scene.Mark) {
 		return
 	}
 	w.OpenTag("path")
-	w.Attr("class", "prism-mark-geoshape")
+	writeMarkClass(w, m, "prism-mark-geoshape")
 	if m.ID != "" {
 		w.Attr("data-prism-id", m.ID)
 	}

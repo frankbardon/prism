@@ -27,7 +27,12 @@ import (
 //     track ends at the plot edge instead of running past it.
 //   - The track is a **separate, named scene mark** ("progress-track-N")
 //     carrying its own Style (Inputs.TrackStyle), not a backdrop fused
-//     into the bar's geometry, so it can be themed independently.
+//     into the bar's geometry, so it can be themed independently — via
+//     theme.Marks["progress_track"], resolved by
+//     encode.progressTrackStyle. The two halves also carry distinct CSS
+//     classes (ProgressClass / ProgressTrackClass) so downstream CSS
+//     can scope to one of them; both are scene.MarkRect, which the
+//     renderer would otherwise class identically as prism-mark-bar.
 //
 // Orientation comes from the shared primitive in orient.go —
 // MarkOrientation plus CategorySlots / BaselinePixel / MeasureSpans /
@@ -35,6 +40,17 @@ import (
 // per-mark orientation field: the canonical metric-row spec binds a
 // nominal y against a quantitative x, which MarkOrientation already
 // infers as horizontal, and `mark.orient` overrides that inference.
+
+// ProgressClass / ProgressTrackClass are the CSS classes the two
+// halves of a progress row carry (scene.Mark.Class). They are what
+// makes theme.Marks["progress"] and theme.Marks["progress_track"]
+// addressable from a stylesheet as well as from theme JSON, and they
+// mirror those key names on purpose: a reader who has seen one knows
+// the other. Without them both rects would render as prism-mark-bar.
+const (
+	ProgressClass      = "prism-mark-progress"
+	ProgressTrackClass = "prism-mark-progress-track"
+)
 
 // encodeProgress emits 2N scene marks for an N-row table: N track
 // rects first (so they paint behind), then N value bars.
@@ -94,6 +110,7 @@ func encodeProgress(in Inputs) ([]scene.Mark, error) {
 		tracks = append(tracks, scene.Mark{
 			Type:  scene.MarkRect,
 			ID:    fmt.Sprintf("progress-track-%d", i),
+			Class: ProgressTrackClass,
 			Style: in.TrackStyle,
 			Rect:  &track,
 		})
@@ -112,6 +129,7 @@ func encodeProgress(in Inputs) ([]scene.Mark, error) {
 		values = append(values, scene.Mark{
 			Type:  scene.MarkRect,
 			ID:    fmt.Sprintf("progress-%d", i),
+			Class: ProgressClass,
 			Style: style,
 			Rect:  &bar,
 		})

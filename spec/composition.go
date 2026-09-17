@@ -89,7 +89,12 @@ type ThemeOverride struct {
 	Padding     *Padding `json:"padding,omitempty"`
 
 	// v2 nested blocks. Each is a pointer so JSON merges sparsely.
-	Mark  *MarkStyle            `json:"mark,omitempty"`
+	Mark *MarkStyle `json:"mark,omitempty"`
+	// Marks mirrors theme.Theme.Marks: keyed by mark type, plus a
+	// <mark>_<element> key per extra element for a mark family that
+	// draws several per row (theme.MarksKeyProgressTrack is the only
+	// one today). theme.ApplyOverride copies the map key-for-key, so
+	// nothing here needs to know which kind a key is.
 	Marks map[string]*MarkStyle `json:"marks,omitempty"`
 	// Axis mirrors theme.Theme.Axis — the shared block applying to both
 	// cartesian axes. AxisX / AxisY mirror theme.Theme.AxisX / AxisY

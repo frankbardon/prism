@@ -291,9 +291,11 @@ Two things make it more than a bar with a background rect:
   bound sits above the data range.
 - **The track is a separate scene mark.** Each row emits a
   `progress-track-N` rect *and* a `progress-N` value rect, in that
-  order, rather than one rect with a painted backdrop. Both carry the
-  row's `data-prism-datum-row` back-reference, so a hover on the filled
-  part of a row behaves like a hover on its remainder.
+  order, rather than one rect with a painted backdrop. That is what
+  makes the track independently themeable and independently
+  selectable in CSS. Both carry the row's `data-prism-datum-row`
+  back-reference, so a hover on the filled part of a row behaves like
+  a hover on its remainder.
 
 Channel bindings:
 
@@ -331,10 +333,25 @@ clipped — over-attainment stays visible.
 }
 ```
 
-The track's colour comes from the active theme's grid colour, so it
-tracks light / dark / print without per-chart configuration. Set the
-value bar's colour with `mark.fill`, a `color` channel, or the theme's
-`marks.progress` block.
+The two halves are themed independently, through two keys rather than
+one (see [Themes: multi-element marks](themes.md#multi-element-marks)):
+
+| Key | Styles |
+|---|---|
+| `marks.progress` | The value bar. `mark.fill` and a `color` channel still shadow it, in that order. |
+| `marks.progress_track` | The unfilled track. There is no `mark_def` equivalent — the track is styled through the theme. |
+
+Both take the full `MarkStyle` shape, so a track can carry a stroke, an
+opacity or a pattern fill, not just a colour. Every bundled theme sets
+both, so a progress chart tracks light / dark / print with no per-chart
+configuration; a custom theme that sets neither falls back to its own
+grid colour for the track, which keeps it reading as chrome rather than
+as a second series.
+
+In the rendered SVG the halves carry distinct classes —
+`prism-mark-progress` and `prism-mark-progress-track` — so a stylesheet
+can scope to either. Marks are otherwise classed by geometry, and both
+of these are rects.
 
 Right-hand value and delta labels ("92.4", "+14.3 vs category") are not
 part of the mark — layer a `text` mark over it.

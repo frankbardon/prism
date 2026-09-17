@@ -146,6 +146,7 @@ prism plot bar.json --theme=colorblind > bar-cb.svg
 |---|---|
 | `mark`     | Default style applied to every mark unless `marks.<type>` overrides. |
 | `marks.<type>` | Per-mark-type defaults. Key matches the spec's `mark.type` (bar, line, area, point, rule, text, tick, rect, arc, geoshape, geopoint, ...). |
+| `marks.<type>_<element>` | Defaults for one *element* of a mark family that draws several per row. `progress_track` is the only one today — see [Multi-element marks](#multi-element-marks). |
 | `axis`     | Axis domain, ticks, grid, labels, titles — applied to **both** cartesian axes. |
 | `axis_x` / `axis_y` | Same token set as `axis`, layered over it **per property** for one axis only (see [Per-axis blocks](#per-axis-blocks)). Because the x axis draws the vertical grid lines and the y axis the horizontal ones, these are also how grid lines are themed per orientation. |
 | `legend`   | Legend fills, symbols, labels, padding. |
@@ -210,6 +211,59 @@ renders at `fill_opacity: 0.9` even under a theme declaring
 `"marks": {"area": {"fill_opacity": 0.3}}`, while that theme's
 `stroke` and `corner_radius` (which the spec does not mention) still
 apply.
+
+### Multi-element marks
+
+Most marks draw one shape per row, so one `marks.<type>` key styles
+the whole thing. A [`progress`](marks.md#progress) mark draws **two**:
+the value bar, and the unfilled track behind it that shows how much
+distance is left. They need independent paint — a track that inherits
+the bar's fill is invisible — so the track claims its own key:
+
+| Key | Styles |
+|---|---|
+| `marks.progress` | The value bar. Behaves like any other `marks.<type>` block. |
+| `marks.progress_track` | The unfilled track behind it. |
+
+`progress_track` takes the full `MarkStyle` shape, so the track
+honours `fill`, `stroke`, `stroke_width`, `opacity`, a `filter`, and
+`url(#name)` gradient / pattern refs exactly as a bar does:
+
+```json
+{
+  "theme": {
+    "name": "light",
+    "marks": {
+      "progress": {"fill": "#2563eb", "corner_radius": 4},
+      "progress_track": {"fill": "#eef2ff", "stroke": "#c7d2fe", "stroke_width": 1}
+    }
+  }
+}
+```
+
+Two things about `progress_track` differ from a normal per-type block,
+both on purpose:
+
+- **It is not a mark type.** `mark.type` cannot be set to
+  `progress_track`; it names an element, not something you can draw on
+  its own.
+- **It does not inherit the global `mark` block.** Every other
+  `marks.<type>` key layers over `mark`, but `mark.fill` is the *data*
+  fill, and a track that inherited it would come out the same colour
+  as the bar sitting on it. A theme that sets no `progress_track`
+  falls back to its own grid colour instead, so a custom theme that
+  never heard of `progress` still tints the track as chrome rather
+  than as a second series.
+
+Every bundled theme states both keys. `high_contrast` is the one that
+diverges from the grid-colour default: its grid colour is pure black,
+which would paint a black track under a black value bar, so it uses a
+white track with a black outline.
+
+The two elements also carry distinct CSS classes in the rendered SVG —
+`prism-mark-progress` and `prism-mark-progress-track` — so downstream
+stylesheets can scope to either half. Every other mark is classed by
+its geometry (both of these would otherwise be `prism-mark-bar`).
 
 ### Per-axis blocks
 
@@ -818,12 +872,18 @@ without re-rendering.
 
 --prism-mark-fill         --prism-mark-bar-fill  --prism-mark-line-stroke
 --prism-mark-bar-corner-radius --prism-mark-point-size
+--prism-mark-progress-fill     --prism-mark-progress_track-fill
 
 --prism-legend-padding    --prism-legend-symbol-size --prism-title-font-size
 --prism-view-bg           --prism-view-padding
 
 --prism-selected-opacity  --prism-deselected-opacity
 ```
+
+Every `marks.<key>` block emits one variable per token it sets, named
+`--prism-mark-<key>-<token>` — the key verbatim, so the
+[multi-element](#multi-element-marks) `progress_track` block emits
+`--prism-mark-progress_track-fill` with its underscore intact.
 
 The full set scales with the tokens the active theme defines —
 unset tokens omit the variable so renderers fall back to hard-coded

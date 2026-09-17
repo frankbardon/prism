@@ -20,39 +20,69 @@ import (
 //     with a band bound above its data range.
 //  2. progressTrackStyle resolves the track's paint from the active
 //     theme. The track is a distinct scene mark, so it takes a distinct
-//     Style; its colour is theme-derived rather than a constant in the
-//     marks package (see marks.Inputs.TrackStyle). E10-S2 replaces the
-//     derivation below with a first-class theme token.
+//     Style; since E10-S2 that Style comes from a first-class theme
+//     token, theme.Marks["progress_track"] (see marks.Inputs.TrackStyle).
 
-// progressTrackFallbackFill is the track colour used only when there is
-// no theme at all to derive one from — the same last-resort posture as
-// hardcodedDefaultStyle. Any loaded theme, built-in or custom, supplies
-// its own value through the grid colour.
+// progressTrackFallbackFill is the track colour of last resort: no
+// theme at all, or a theme that sets neither the progress_track token
+// nor a grid colour. Same posture as hardcodedDefaultStyle — it exists
+// so a nil theme still draws a readable chart, not as the default.
+// Every built-in theme states its own value.
 const progressTrackFallbackFill = "#e5e7eb"
 
 // progressTrackStyle resolves the Style of a progress mark's unfilled
 // track from t.
 //
-// The track is chrome, not data: it reads as the axis's own ground
-// rather than as a second series, so it takes the theme's grid colour —
-// the token every built-in theme already tunes for exactly that role
-// (light #e5e7eb, dark #374151, print #cccccc). The nested axis block
-// wins over the legacy flat field, matching how the rest of the
-// encoder reads axis tokens.
+// Resolution order, widest fallback first:
+//
+//  1. progressTrackFallbackFill — the nil-theme last resort above.
+//  2. The theme's grid colour (nested axis block, then the legacy flat
+//     field). The track is chrome rather than a second series: it
+//     reads as the plot's own ground, so a theme that never heard of
+//     progress still tints it in the right family.
+//  3. theme.Marks["progress_track"] — the token, folded in through the
+//     same applyThemeMarkStyle every other mark's theme style goes
+//     through, so the track honours fill / stroke / stroke_width /
+//     opacity / gradient / pattern refs exactly as a bar does.
+//
+// theme.Mark (the global data-mark default) is intentionally NOT folded
+// in, which is why this reads t.Marks directly instead of calling
+// t.MarkDefault. theme.Mark carries the data fill — light's is
+// #4c78a8 — and inheriting it would paint the track the same colour as
+// the value bar sitting on it, erasing the reading. The track is
+// chrome; the global mark default is not addressed to it.
+//
+// The spec-side escape hatch is unchanged and still wins: mark_def
+// styling applies to the value bar only, so a caller restyling the
+// track does it through the theme, which is the point of the token.
 func progressTrackStyle(t *theme.Theme) scene.Style {
-	hex := progressTrackFallbackFill
-	if t != nil {
-		if t.Axis != nil && t.Axis.GridColor != "" {
-			hex = t.Axis.GridColor
-		} else if t.GridColor != "" {
-			hex = t.GridColor
-		}
-	}
 	style := scene.Style{}
-	if c, err := scene.ColorFromHex(hex); err == nil {
+	if c, err := scene.ColorFromHex(progressTrackDerivedFill(t)); err == nil {
 		style.Fill = c
 	}
+	if t == nil {
+		return style
+	}
+	if ms := t.Marks[theme.MarksKeyProgressTrack]; ms != nil {
+		applyThemeMarkStyle(&style, ms, t, nil, nil)
+	}
 	return style
+}
+
+// progressTrackDerivedFill returns the pre-token fill a theme implies
+// for the track: its grid colour, nested block first, then the legacy
+// flat field, then the last-resort constant.
+func progressTrackDerivedFill(t *theme.Theme) string {
+	if t == nil {
+		return progressTrackFallbackFill
+	}
+	if t.Axis != nil && t.Axis.GridColor != "" {
+		return t.Axis.GridColor
+	}
+	if t.GridColor != "" {
+		return t.GridColor
+	}
+	return progressTrackFallbackFill
 }
 
 // progressMeasureIsX reports whether a progress mark's measure axis is
