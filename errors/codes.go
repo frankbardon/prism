@@ -576,26 +576,30 @@ var Codes = map[string]CodeMetadata{
 		SeeAlso: []string{"PRISM_SPEC_041", "PRISM_SPEC_045"},
 	},
 
+	// Retired in E7-S3. E7-S1 added this warning and E3-S4 landed its
+	// consumers in the same wave, so it fired on specs the encoder was
+	// in fact honouring: ResolveLegendContent reads type / direction /
+	// symbol_type / symbol_size / tick_count. The code stays in the
+	// catalogue so an archived envelope still resolves through
+	// `prism errors lookup`.
 	"PRISM_WARN_LEGEND_FIELD_INERT": {
 		Code:    "PRISM_WARN_LEGEND_FIELD_INERT",
-		Message: `{{.Path}}: legend "{{.Property}}" is not read by the legend builder.`,
+		Message: `Retired code: the legend presentation keys are read by the legend builder.`,
 		Fixups: []string{
-			`{{.Reason}}.`,
-			`"title", "values", "format", "label_limit", "orient", "offset" and "padding" are the legend keys that do take effect.`,
-			`Remove the key rather than relying on it — it round-trips through the spec unchanged and changes nothing.`,
+			`"type", "direction", "symbol_type", "symbol_size" and "tick_count" all take effect — see docs/src/concepts/encoding.md (Legend placement / content).`,
 		},
-		SeeAlso: []string{"PRISM_WARN_LEGEND_NOT_BUILT"},
+		SeeAlso: []string{"PRISM_SPEC_051", "PRISM_SPEC_052"},
 	},
 
 	"PRISM_WARN_LEGEND_NOT_BUILT": {
 		Code:    "PRISM_WARN_LEGEND_NOT_BUILT",
 		Message: `{{.Path}}: a {{.Type}} colour channel renders with no legend at all, so the colour encoding has no key.`,
 		Fixups: []string{
-			`The symbol legend is built from discrete colour categories; a continuous colour channel needs a gradient legend, which no code path produces yet.`,
-			`Bin the field ("bin": true) or declare it "nominal" / "ordinal" to get a symbol legend today.`,
+			`The symbol legend is built from discrete colour categories; a continuous colour channel needs a gradient legend.`,
+			`Bin the field ("bin": true) or declare it "nominal" / "ordinal" to get a symbol legend.`,
 			`Suppress the warning on purpose with "legend": null on the channel if the chart is meant to carry no key.`,
 		},
-		SeeAlso: []string{"PRISM_WARN_LEGEND_FIELD_INERT"},
+		SeeAlso: []string{"PRISM_SPEC_051"},
 	},
 
 	"PRISM_WARN_FACET_CHILD_SKIPPED": {

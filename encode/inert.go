@@ -523,25 +523,24 @@ func inertScale(sc *spec.Scale, channelType, channel, chPath string, out *[]scen
 
 // --- legend --------------------------------------------------------
 
-// deadLegendProps are `legend` block keys with no consumer in
-// encode/legend_build.go or encode/legend_content.go.
-var deadLegendProps = map[string]string{
-	"type":        "symbol / gradient selection is not implemented — the builder always emits a symbol legend",
-	"direction":   "legend entries always stack vertically; the direction key is read by nothing",
-	"symbol_type": "every swatch renders as the solid square scene.SwatchSolid draws; the swatch shape is read by nothing",
-	"symbol_size": "swatch geometry is fixed by the legend box metrics; the symbol size is read by nothing",
-	"tick_count":  "tick counts apply to a continuous (gradient) legend, and no code path produces one",
-}
-
+// inertLegend reports a colour channel that gets no legend at all.
+//
+// The per-property half of this check is gone. E7-S1 shipped a
+// deadLegendProps table (type / direction / symbol_type / symbol_size /
+// tick_count) and E3-S4 landed the consumers for every one of them in
+// the same wave: ResolveLegendContent reads all five. The table had
+// become a false positive — warning that a key does nothing while the
+// rendered SVG obeyed it — so it is retired along with
+// PRISM_WARN_LEGEND_FIELD_INERT (see errors/codes.go).
+// internal/gates/inert_table_sync_test.go is what catches this class
+// now: it cross-checks the properties the detector calls dead against
+// the typed-consumer analysis, so a detector entry cannot outlive the
+// gap it describes, and it asserts that every `legend` schema property
+// still has a consumer.
 func inertLegend(ch *spec.MarkChannel, channel, chPath string, out *[]scene.Warning) {
 	if ch == nil {
 		return
 	}
-	// A continuous colour channel gets no legend at all: the symbol
-	// builder needs discrete categories, and scene.Defs.Gradients has
-	// no producer, so BuildGradientLegend is never called. Report the
-	// state once per channel — the whole block is inert, so the
-	// per-property checks below would only add noise.
 	if channel == "color" && isContinuousChannelType(ch.Type) && !ch.LegendHidden {
 		*out = append(*out, scene.Warning{
 			Code: scene.WarnLegendNotBuilt,
@@ -552,39 +551,6 @@ func inertLegend(ch *spec.MarkChannel, channel, chPath string, out *[]scene.Warn
 				"Path":    chPath,
 				"Channel": channel,
 				"Type":    ch.Type,
-			},
-		})
-		return
-	}
-	if ch.Legend == nil {
-		return
-	}
-	lg := ch.Legend
-	set := map[string]bool{
-		"type":        lg.Type != "",
-		"direction":   lg.Direction != "",
-		"symbol_type": lg.SymbolType != "",
-		"symbol_size": lg.SymbolSize != nil,
-		"tick_count":  lg.TickCount != nil,
-	}
-	props := make([]string, 0, len(set))
-	for prop, present := range set {
-		if present {
-			props = append(props, prop)
-		}
-	}
-	sort.Strings(props)
-	for _, prop := range props {
-		reason := deadLegendProps[prop]
-		path := joinInertPath(joinInertPath(chPath, "legend"), prop)
-		*out = append(*out, scene.Warning{
-			Code:    scene.WarnLegendFieldInert,
-			Message: fmt.Sprintf("%s: legend %q is not read — %s.", path, prop, reason),
-			Details: map[string]any{
-				"Path":     path,
-				"Property": prop,
-				"Channel":  channel,
-				"Reason":   reason,
 			},
 		})
 	}

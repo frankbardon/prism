@@ -732,6 +732,13 @@ spline back to straight segments. Values outside the range are clamped.
 }
 ```
 
+### Distribution geometry
+
+| Property | Mark | Meaning |
+|---|---|---|
+| `maxbins` | `histogram` | Upper bound on the bin count. Omit for automatic bin selection. |
+| `violin_resolution` | `violin` | Kernel-density sample points per violin. |
+
 ### Arc geometry
 
 | Property | Meaning |

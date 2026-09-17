@@ -196,51 +196,22 @@ func TestPrismInertScaleBaseOnlyAppliesToLog(t *testing.T) {
 	}
 }
 
-func TestPrismInertContinuousColorHasNoLegend(t *testing.T) {
-	src := `{
-	  "$schema": "urn:prism:schema:v1:spec",
-	  "data": {"values": [{"a": 1, "b": 2, "c": 3}]},
-	  "mark": {"type": "point"},
-	  "encoding": {
-	    "x": {"field": "a", "type": "quantitative"},
-	    "y": {"field": "b", "type": "quantitative"},
-	    "color": {"field": "c", "type": "quantitative"}
-	  }
-	}`
-	got := inertCodes(t, src)
-	if len(got) != 1 || got[0] != scene.WarnLegendNotBuilt {
-		t.Fatalf("want PRISM_WARN_LEGEND_NOT_BUILT, got %v", got)
-	}
-	// An explicit "legend": null says the author wants no key.
-	hidden := strings.Replace(src, `"field": "c", "type": "quantitative"`,
-		`"field": "c", "type": "quantitative", "legend": null`, 1)
-	if got := inertCodes(t, hidden); len(got) != 0 {
-		t.Fatalf(`"legend": null still warned: %v`, got)
-	}
-}
-
-func TestPrismInertLegendPropertyWithNoConsumer(t *testing.T) {
-	got := inertPaths(t, `{
+// TestPrismInertLegendKeysAreSilent pins the E7-S3 correction: every
+// legend presentation key is honoured (E3-S4 wired all five), so the
+// detector must say nothing about them. Until E7-S3 it emitted
+// PRISM_WARN_LEGEND_FIELD_INERT on specs the encoder obeyed.
+func TestPrismInertLegendKeysAreSilent(t *testing.T) {
+	if got := inertPaths(t, `{
 	  "$schema": "urn:prism:schema:v1:spec",
 	  "data": {"values": [{"a": 1, "b": 2, "c": "x"}]},
 	  "mark": {"type": "point"},
 	  "encoding": {
 	    "x": {"field": "a", "type": "quantitative"},
 	    "y": {"field": "b", "type": "quantitative"},
-	    "color": {"field": "c", "type": "nominal", "legend": {"title": "Cohort", "symbol_type": "square", "direction": "horizontal"}}
+	    "color": {"field": "c", "type": "nominal", "legend": {"title": "Cohort", "symbol_type": "square", "direction": "horizontal", "symbol_size": 80, "tick_count": 3}}
 	  }
-	}`)
-	want := map[string]bool{
-		"encoding.color.legend.direction":   true,
-		"encoding.color.legend.symbol_type": true,
-	}
-	if len(got) != 2 {
-		t.Fatalf("want 2 legend warnings (title is honoured), got %v", got)
-	}
-	for _, p := range got {
-		if !want[p] {
-			t.Fatalf("unexpected path %q (all: %v)", p, got)
-		}
+	}`); len(got) != 0 {
+		t.Fatalf("legend presentation keys warned: %v", got)
 	}
 }
 

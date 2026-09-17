@@ -146,18 +146,17 @@ type PositionChannel struct {
 // distinguishable from an absent key. All other keys decode through
 // the default struct path.
 //
-// Strictness caveat: a custom UnmarshalJSON receives raw bytes, and
-// the outer decoder's DisallowUnknownFields setting does not reach
-// inside it, so an unknown key written *within* a channel object is
-// dropped here rather than raising a decode error. Every other
-// channel class with a custom decoder (MarkChannel, TooltipChannel,
-// OrderChannel, DetailChannel) and every block they decode by hand
-// (Axis, Legend) share the caveat. The JSON Schema shape stage is
-// what rejects those keys — `additionalProperties: false` on each
-// channel $def in schema/v1/encoding.schema.json — so a caller that
-// runs spec.Decode without validate.ShapeValidator sees the key
-// silently dropped. Route decoding through the validator, not
-// Decode alone, when strictness matters.
+// Strictness: a custom UnmarshalJSON receives raw bytes and the outer
+// decoder's DisallowUnknownFields setting does not reach inside it, so
+// this decoder re-arms strictness itself via strictUnmarshal — as do
+// every other channel class with a custom decoder (MarkChannel,
+// TooltipChannel, OrderChannel, DetailChannel) and every block they
+// decode by hand (Axis, Legend). Without that an unknown key written
+// *within* a channel object was silently dropped for any caller using
+// spec.Decode alone, since only the JSON Schema shape stage
+// (`additionalProperties: false` on each channel $def in
+// schema/v1/encoding.schema.json) rejected it.
+// internal/gates/spec_strict_decode_test.go keeps it that way.
 func (p *PositionChannel) UnmarshalJSON(data []byte) error {
 	type alias PositionChannel
 	var aux struct {
@@ -166,7 +165,7 @@ func (p *PositionChannel) UnmarshalJSON(data []byte) error {
 		Stack json.RawMessage `json:"stack"`
 		alias
 	}
-	if err := json.Unmarshal(data, &aux); err != nil {
+	if err := strictUnmarshal(data, &aux); err != nil {
 		return err
 	}
 	*p = PositionChannel(aux.alias)
@@ -199,7 +198,7 @@ func (p *PositionChannel) UnmarshalJSON(data []byte) error {
 			p.AxisHidden = true
 		} else {
 			var ax Axis
-			if err := json.Unmarshal(aux.Axis, &ax); err != nil {
+			if err := strictUnmarshal(aux.Axis, &ax); err != nil {
 				return fmt.Errorf("axis: %w", err)
 			}
 			p.Axis = &ax
@@ -273,7 +272,7 @@ func (m *MarkChannel) UnmarshalJSON(data []byte) error {
 		Legend json.RawMessage `json:"legend"`
 		alias
 	}
-	if err := json.Unmarshal(data, &aux); err != nil {
+	if err := strictUnmarshal(data, &aux); err != nil {
 		return err
 	}
 	*m = MarkChannel(aux.alias)
@@ -291,7 +290,7 @@ func (m *MarkChannel) UnmarshalJSON(data []byte) error {
 			m.LegendHidden = true
 		} else {
 			var lg Legend
-			if err := json.Unmarshal(aux.Legend, &lg); err != nil {
+			if err := strictUnmarshal(aux.Legend, &lg); err != nil {
 				return fmt.Errorf("legend: %w", err)
 			}
 			m.Legend = &lg
@@ -348,14 +347,14 @@ func (c TooltipChannel) MarshalJSON() ([]byte, error) {
 func (c *TooltipChannel) UnmarshalJSON(data []byte) error {
 	if len(data) > 0 && data[0] == '[' {
 		var arr []TextChannel
-		if err := json.Unmarshal(data, &arr); err != nil {
+		if err := strictUnmarshal(data, &arr); err != nil {
 			return fmt.Errorf("tooltip: %w", err)
 		}
 		c.Multi = arr
 		return nil
 	}
 	var single TextChannel
-	if err := json.Unmarshal(data, &single); err != nil {
+	if err := strictUnmarshal(data, &single); err != nil {
 		return fmt.Errorf("tooltip: %w", err)
 	}
 	c.Single = &single
@@ -391,14 +390,14 @@ func (c OrderChannel) MarshalJSON() ([]byte, error) {
 func (c *OrderChannel) UnmarshalJSON(data []byte) error {
 	if len(data) > 0 && data[0] == '[' {
 		var arr []OrderChannelEntry
-		if err := json.Unmarshal(data, &arr); err != nil {
+		if err := strictUnmarshal(data, &arr); err != nil {
 			return fmt.Errorf("order: %w", err)
 		}
 		c.Multi = arr
 		return nil
 	}
 	var single OrderChannelEntry
-	if err := json.Unmarshal(data, &single); err != nil {
+	if err := strictUnmarshal(data, &single); err != nil {
 		return fmt.Errorf("order: %w", err)
 	}
 	c.Single = &single
@@ -433,14 +432,14 @@ func (c DetailChannel) MarshalJSON() ([]byte, error) {
 func (c *DetailChannel) UnmarshalJSON(data []byte) error {
 	if len(data) > 0 && data[0] == '[' {
 		var arr []DetailChannelEntry
-		if err := json.Unmarshal(data, &arr); err != nil {
+		if err := strictUnmarshal(data, &arr); err != nil {
 			return fmt.Errorf("detail: %w", err)
 		}
 		c.Multi = arr
 		return nil
 	}
 	var single DetailChannelEntry
-	if err := json.Unmarshal(data, &single); err != nil {
+	if err := strictUnmarshal(data, &single); err != nil {
 		return fmt.Errorf("detail: %w", err)
 	}
 	c.Single = &single

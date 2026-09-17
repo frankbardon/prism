@@ -62,13 +62,13 @@ func (s *Selection) UnmarshalJSON(data []byte) error {
 	switch probe.Type {
 	case "point":
 		var p PointSelection
-		if err := json.Unmarshal(data, &p); err != nil {
+		if err := strictUnmarshal(data, &p); err != nil {
 			return fmt.Errorf("selection point: %w", err)
 		}
 		s.Point = &p
 	case "interval":
 		var i IntervalSelection
-		if err := json.Unmarshal(data, &i); err != nil {
+		if err := strictUnmarshal(data, &i); err != nil {
 			return fmt.Errorf("selection interval: %w", err)
 		}
 		s.Interval = &i

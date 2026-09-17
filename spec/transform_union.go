@@ -1,7 +1,6 @@
 package spec
 
 import (
-	"bytes"
 	"encoding/json"
 	"fmt"
 )
@@ -247,12 +246,4 @@ var transformDiscriminators = []string{
 	"join", "union", "pivot", "unpivot",
 	"sample", "sort", "limit", "crosstab", "regression", "timeunit",
 	"stack",
-}
-
-// strictUnmarshal applies DisallowUnknownFields to a single byte slice.
-// Centralizing it keeps every nested decoder consistent with spec.Decode.
-func strictUnmarshal(data []byte, v any) error {
-	dec := json.NewDecoder(bytes.NewReader(data))
-	dec.DisallowUnknownFields()
-	return dec.Decode(v)
 }

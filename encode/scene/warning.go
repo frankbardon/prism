@@ -66,14 +66,14 @@ const (
 	// `padding_inner` on a linear scale, a `base` on anything but
 	// log. Details carry the resolved family.
 	WarnScaleFieldInert = "PRISM_WARN_SCALE_FIELD_INERT"
-	// WarnLegendFieldInert fires when a `legend` block property has
-	// no consumer in the legend builder.
-	WarnLegendFieldInert = "PRISM_WARN_LEGEND_FIELD_INERT"
+	// PRISM_WARN_LEGEND_FIELD_INERT was retired in E7-S3: E3-S4
+	// landed the consumers for all five legend presentation keys in
+	// the same wave E7-S1 declared them dead, so the warning had
+	// become a false positive. See errors/codes.go.
+	//
 	// WarnLegendNotBuilt fires when a continuous (quantitative /
-	// temporal) color channel is bound: the symbol legend builder
-	// needs discrete categories and the gradient legend has no
-	// producer yet, so the chart renders with no color key at all and
-	// the whole `legend` block is inert.
+	// temporal) color channel binds and no legend is produced for it,
+	// so the chart renders with no color key.
 	WarnLegendNotBuilt = "PRISM_WARN_LEGEND_NOT_BUILT"
 	// WarnFacetChildSkipped fires when a facet child's encoding asks
 	// for a channel-level aggregate, a stack or an `order` sort:

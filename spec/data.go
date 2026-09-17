@@ -77,7 +77,7 @@ func (d *Data) UnmarshalJSON(data []byte) error {
 
 	type rawData Data
 	var r rawData
-	if err := json.Unmarshal(data, &r); err != nil {
+	if err := strictUnmarshal(data, &r); err != nil {
 		return fmt.Errorf("data: %w", err)
 	}
 	switch {
