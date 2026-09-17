@@ -40,6 +40,7 @@ func EncodeComposite(s *spec.Spec, composite *plan.CompositeDAG, childTables []m
 		return nil, err
 	}
 	doc.Warnings = append(doc.Warnings, InertFieldWarnings(s)...)
+	narrowDocCSS(doc, s, opts)
 	return doc, nil
 }
 

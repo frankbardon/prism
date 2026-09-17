@@ -2,22 +2,29 @@
   <style>:root{--prism-color-axis:#6b7280;--prism-color-grid:#e5e7eb;--prism-color-text:#111827;--prism-color-bg:transparent;--prism-font-sans:Inter, system-ui, sans-serif;--prism-font-mono:ui-monospace, SF Mono, monospace;--prism-font-size-label:11px;--prism-font-size-title:16px;--prism-font-size-axis-title:12px;--prism-axis-domain-color:#6b7280;--prism-axis-domain-width:1px;--prism-axis-tick-color:#6b7280;--prism-axis-tick-width:1px;--prism-axis-tick-size:5px;--prism-grid-color:#e5e7eb;--prism-grid-width:1px;--prism-axis-label-color:#111827;--prism-axis-label-font-size:11px;--prism-axis-label-padding:4px;--prism-axis-title-color:#111827;--prism-axis-title-font-size:12px;--prism-axis-title-padding:8px;--prism-legend-padding:8px;--prism-legend-symbol-size:64px;--prism-legend-label-color:#111827;--prism-legend-label-font-size:11px;--prism-legend-title-color:#111827;--prism-legend-title-font-size:12px;--prism-legend-title-font-weight:600;--prism-legend-row-padding:4px;--prism-title-color:#111827;--prism-title-font-size:16px;--prism-title-font-weight:600;--prism-title-anchor:start;--prism-title-padding:12px;--prism-view-bg:transparent;--prism-view-padding:0px;--prism-mark-fill:#4c78a8;--prism-mark-stroke-width:0px;--prism-mark-opacity:1;--prism-mark-network-fill:#4c78a8;--prism-mark-network-stroke:#4c78a8;--prism-mark-network-stroke-width:1px;--prism-deselected-opacity:0.3;--prism-selected-opacity:1;}.prism-axis-domain{stroke:var(--prism-axis-domain-color,var(--prism-color-axis));stroke-width:var(--prism-axis-domain-width,1px);fill:none;}.prism-axis-tick{stroke:var(--prism-axis-tick-color,var(--prism-color-axis));stroke-width:var(--prism-axis-tick-width,1px);}.prism-axis-label{fill:var(--prism-axis-label-color,var(--prism-color-text));font-family:var(--prism-font-sans);font-size:var(--prism-axis-label-font-size,var(--prism-font-size-label,11px));font-weight:var(--prism-axis-label-font-weight,400);}.prism-axis-title{fill:var(--prism-axis-title-color,var(--prism-color-text));font-family:var(--prism-font-sans);font-size:var(--prism-axis-title-font-size,var(--prism-font-size-axis-title,12px));font-weight:var(--prism-axis-title-font-weight,600);}.prism-grid-line{stroke:var(--prism-grid-color,var(--prism-color-grid));stroke-width:var(--prism-grid-width,1px);}.prism-title{fill:var(--prism-title-color,var(--prism-color-text));font-family:var(--prism-font-sans);font-size:var(--prism-title-font-size,var(--prism-font-size-title,16px));font-weight:var(--prism-title-font-weight,600);}.prism-legend-title{fill:var(--prism-legend-title-color,var(--prism-color-text));font-family:var(--prism-font-sans);font-size:var(--prism-legend-title-font-size,12px);font-weight:var(--prism-legend-title-font-weight,600);}.prism-legend-label{fill:var(--prism-legend-label-color,var(--prism-color-text));font-family:var(--prism-font-sans);font-size:var(--prism-legend-label-font-size,11px);}.prism-legend-swatch{stroke:none;}.prism-selected{opacity:var(--prism-selected-opacity,1);}.prism-deselected{opacity:var(--prism-deselected-opacity,0.3);}</style>
 
   <g class="prism-scene" data-scene-id="scene-0">
-    <text class="prism-title" x="410" y="20" text-anchor="middle">Small citation network</text>
+    <text class="prism-title" x="410" y="20" text-anchor="middle">Service graph with node labels</text>
     <g class="prism-plot">
       <g class="prism-layer" data-layer-id="layer-0" data-prism-layer="layer-0">
-        <polyline class="prism-mark-line" data-prism-datum-row="0" points="435.487,149.309 291.815,50" fill="none" stroke="#4c78a8" stroke-width="1"/>
-        <polyline class="prism-mark-line" data-prism-datum-row="1" points="435.487,149.309 302.771,294.107" fill="none" stroke="#4c78a8" stroke-width="1"/>
-        <polyline class="prism-mark-line" data-prism-datum-row="2" points="291.815,50 171.413,199.438" fill="none" stroke="#4c78a8" stroke-width="1"/>
-        <polyline class="prism-mark-line" data-prism-datum-row="3" points="302.771,294.107 171.413,199.438" fill="none" stroke="#4c78a8" stroke-width="1"/>
-        <polyline class="prism-mark-line" data-prism-datum-row="4" points="171.413,199.438 132.5,389.047" fill="none" stroke="#4c78a8" stroke-width="1"/>
-        <polyline class="prism-mark-line" data-prism-datum-row="5" points="302.771,294.107 132.5,389.047" fill="none" stroke="#4c78a8" stroke-width="1"/>
-        <polyline class="prism-mark-line" data-prism-datum-row="6" points="132.5,389.047 40,560" fill="none" stroke="#4c78a8" stroke-width="1"/>
-        <circle class="prism-mark-point" cx="435.487" cy="149.309" r="6" fill="#4c78a8" stroke="#4c78a8" stroke-width="1"/>
-        <circle class="prism-mark-point" cx="291.815" cy="50" r="6" fill="#4c78a8" stroke="#4c78a8" stroke-width="1"/>
-        <circle class="prism-mark-point" cx="302.771" cy="294.107" r="6" fill="#4c78a8" stroke="#4c78a8" stroke-width="1"/>
-        <circle class="prism-mark-point" cx="171.413" cy="199.438" r="6" fill="#4c78a8" stroke="#4c78a8" stroke-width="1"/>
-        <circle class="prism-mark-point" cx="132.5" cy="389.047" r="6" fill="#4c78a8" stroke="#4c78a8" stroke-width="1"/>
-        <circle class="prism-mark-point" cx="40" cy="560" r="6" fill="#4c78a8" stroke="#4c78a8" stroke-width="1"/>
+        <polyline class="prism-mark-line" data-prism-datum-row="0" points="402.209,257.59 553.963,126.674" fill="none" stroke="#4c78a8" stroke-width="1"/>
+        <polyline class="prism-mark-line" data-prism-datum-row="1" points="402.209,257.59 496.552,437.22" fill="none" stroke="#4c78a8" stroke-width="1"/>
+        <polyline class="prism-mark-line" data-prism-datum-row="2" points="402.209,257.59 208.461,186.651" fill="none" stroke="#4c78a8" stroke-width="1"/>
+        <polyline class="prism-mark-line" data-prism-datum-row="3" points="208.461,186.651 64,88.388" fill="none" stroke="#4c78a8" stroke-width="1"/>
+        <polyline class="prism-mark-line" data-prism-datum-row="4" points="496.552,437.22 637.933,538" fill="none" stroke="#4c78a8" stroke-width="1"/>
+        <polyline class="prism-mark-line" data-prism-datum-row="5" points="553.963,126.674 706.646,50" fill="none" stroke="#4c78a8" stroke-width="1"/>
+        <circle class="prism-mark-point" cx="402.209" cy="257.59" r="6" fill="#4c78a8" stroke="#4c78a8" stroke-width="1"/>
+        <circle class="prism-mark-point" cx="553.963" cy="126.674" r="6" fill="#4c78a8" stroke="#4c78a8" stroke-width="1"/>
+        <circle class="prism-mark-point" cx="496.552" cy="437.22" r="6" fill="#4c78a8" stroke="#4c78a8" stroke-width="1"/>
+        <circle class="prism-mark-point" cx="208.461" cy="186.651" r="6" fill="#4c78a8" stroke="#4c78a8" stroke-width="1"/>
+        <circle class="prism-mark-point" cx="64" cy="88.388" r="6" fill="#4c78a8" stroke="#4c78a8" stroke-width="1"/>
+        <circle class="prism-mark-point" cx="637.933" cy="538" r="6" fill="#4c78a8" stroke="#4c78a8" stroke-width="1"/>
+        <circle class="prism-mark-point" cx="706.646" cy="50" r="6" fill="#4c78a8" stroke="#4c78a8" stroke-width="1"/>
+        <text class="prism-mark-text" data-prism-id="network-label-gateway" x="402.209" y="275.59" text-anchor="middle" font-size="11" fill="#111827">gateway</text>
+        <text class="prism-mark-text" data-prism-id="network-label-auth" x="553.963" y="144.674" text-anchor="middle" font-size="11" fill="#111827">Auth</text>
+        <text class="prism-mark-text" data-prism-id="network-label-catalog" x="496.552" y="455.22" text-anchor="middle" font-size="11" fill="#111827">Catalog</text>
+        <text class="prism-mark-text" data-prism-id="network-label-cart" x="208.461" y="204.651" text-anchor="middle" font-size="11" fill="#111827">Cart</text>
+        <text class="prism-mark-text" data-prism-id="network-label-billing" x="64" y="106.388" text-anchor="middle" font-size="11" fill="#111827">Billing</text>
+        <text class="prism-mark-text" data-prism-id="network-label-search" x="637.933" y="556" text-anchor="middle" font-size="11" fill="#111827">Search</text>
+        <text class="prism-mark-text" data-prism-id="network-label-sessions" x="706.646" y="68" text-anchor="middle" font-size="11" fill="#111827">Sessions</text>
       </g>
     </g>
   </g>

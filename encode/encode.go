@@ -94,6 +94,7 @@ func Encode(s *spec.Spec, tables map[plan.NodeID]*table.Table, tipID plan.NodeID
 		return nil, err
 	}
 	doc.Warnings = append(doc.Warnings, InertFieldWarnings(s)...)
+	narrowDocCSS(doc, s, opts)
 	return doc, nil
 }
 
