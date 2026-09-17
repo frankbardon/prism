@@ -108,6 +108,15 @@ func Merge(base, override *Theme) *Theme {
 	if override.Axis != nil {
 		out.Axis = mergeAxis(out.Axis, override.Axis)
 	}
+	// The per-axis blocks merge against their own counterpart, never
+	// against `axis` — folding them into the shared block would lose
+	// the distinction the cascade needs at emit time. See Theme.AxisFor.
+	if override.AxisX != nil {
+		out.AxisX = mergeAxis(out.AxisX, override.AxisX)
+	}
+	if override.AxisY != nil {
+		out.AxisY = mergeAxis(out.AxisY, override.AxisY)
+	}
 	if override.Legend != nil {
 		out.Legend = mergeLegend(out.Legend, override.Legend)
 	}

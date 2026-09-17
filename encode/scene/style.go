@@ -38,9 +38,29 @@ type Style struct {
 	StrokeWidth float64   `json:"stroke_width,omitempty"`
 	StrokeDash  []float64 `json:"stroke_dash,omitempty"`
 	Opacity     float64   `json:"opacity,omitempty"`
-	FontFamily  string    `json:"font_family,omitempty"`
-	FontWeight  int       `json:"font_weight,omitempty"`
-	Cursor      string    `json:"cursor,omitempty"`
+	// FillOpacity and StrokeOpacity are the per-paint alphas
+	// (spec.MarkDef.fill_opacity / stroke_opacity, E4-S1). They are
+	// independent of Opacity above and *compose multiplicatively*
+	// with it — the renderer emits all three as separate SVG
+	// attributes (`fill-opacity`, `stroke-opacity`, `opacity`), which
+	// SVG composites the same way Vega's canvas renderer does
+	// (`alpha = opacity * (fillOpacity ?? 1)`). Neither overrides the
+	// other. Pointer-typed so an explicit 0 (fully transparent paint)
+	// is distinguishable from unset, unlike Opacity, whose float64
+	// zero has always meant "unset" in this IR.
+	FillOpacity   *float64 `json:"fill_opacity,omitempty"`
+	StrokeOpacity *float64 `json:"stroke_opacity,omitempty"`
+	FontFamily    string   `json:"font_family,omitempty"`
+	FontWeight    int      `json:"font_weight,omitempty"`
+	// FontStyle is the CSS font-style keyword ("normal" | "italic" |
+	// "oblique") for text-bearing marks (E4-S1). Empty means unset —
+	// no attribute is emitted and the glyph inherits the document
+	// default. FontFamily / FontWeight above are its siblings;
+	// FontWeight is numeric because SVG's font-weight attribute takes
+	// a number, so named spec weights normalise at encode time (see
+	// encode.normalizeFontWeight).
+	FontStyle string `json:"font_style,omitempty"`
+	Cursor    string `json:"cursor,omitempty"`
 	// LineHeight and LetterSpacing carry the resolved theme
 	// MarkStyle.LineHeight / LetterSpacing typography tokens (E2-S2)
 	// for text-mark glyphs. The renderer emits LetterSpacing as a

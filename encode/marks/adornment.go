@@ -44,11 +44,15 @@ func appendSparkAdornments(in Inputs, base []scene.Mark) ([]scene.Mark, error) {
 	if !ad.enabled() {
 		return base, nil
 	}
-	pts, err := sparkSeriesPoints(in)
+	orient, err := MarkOrientationOr(in, "spark", OrientVertical)
 	if err != nil {
 		return nil, err
 	}
-	extra, err := encodeAdornments(pts, in.Y.Scale, in.Layout, in.Style, ad)
+	pts, err := sparkSeriesPoints(in, orient)
+	if err != nil {
+		return nil, err
+	}
+	extra, err := encodeAdornments(pts, MeasureChannel(in, orient).Scale, orient, in.Layout, in.Style, ad)
 	if err != nil {
 		return nil, err
 	}
@@ -56,38 +60,34 @@ func appendSparkAdornments(in Inputs, base []scene.Mark) ([]scene.Mark, error) {
 }
 
 // sparkSeriesPoints resolves the spark's value points in plot-space
-// pixels, one per row in upstream order. x maps through X.Scale (with a
-// half-band centre offset when X is a band scale, so a sparkbar dot
-// sits over the column rather than its left edge); y maps through
-// Y.Scale, landing the adornment on the bar tip / line vertex / area
-// crest.
-func sparkSeriesPoints(in Inputs) ([][2]float64, error) {
-	xs, err := readField(in.Table, in.X.Field)
+// pixels, one per row in upstream order. The category axis supplies
+// the slot centre via CategoryCenters — which is the band midpoint on
+// a sparkbar, so a dot sits over the column rather than its left edge,
+// and the value's own pixel on a continuous axis — while the measure
+// axis lands the adornment on the bar tip / line vertex / area crest.
+// Orientation (E9-S2) decides which physical axis is which.
+func sparkSeriesPoints(in Inputs, o Orientation) ([][2]float64, error) {
+	centers, err := CategoryCenters(in, o)
 	if err != nil {
 		return nil, err
 	}
-	ys, err := readField(in.Table, in.Y.Field)
+	measure := MeasureChannel(in, o)
+	vals, err := readField(in.Table, measure.Field)
 	if err != nil {
 		return nil, err
 	}
-	if len(xs) != len(ys) {
-		return nil, fmt.Errorf("sparkSeriesPoints: column length mismatch (x=%d, y=%d)", len(xs), len(ys))
+	if len(centers) != len(vals) {
+		return nil, fmt.Errorf("sparkSeriesPoints: column length mismatch (%s=%d, %s=%d)",
+			o.CategoryAxis(), len(centers), o.MeasureAxis(), len(vals))
 	}
-	xOffset := 0.0
-	if band, ok := in.X.Scale.(BandScaler); ok {
-		xOffset = band.BandWidth() / 2
-	}
-	pts := make([][2]float64, 0, len(xs))
-	for i := range xs {
-		x, err := in.X.Scale.Apply(xs[i])
+	pts := make([][2]float64, 0, len(centers))
+	for i := range centers {
+		m, err := measure.Scale.Apply(vals[i])
 		if err != nil {
 			return nil, err
 		}
-		y, err := in.Y.Scale.Apply(ys[i])
-		if err != nil {
-			return nil, err
-		}
-		pts = append(pts, [2]float64{x + xOffset, y})
+		x, y := OrientedPoint(o, centers[i], m)
+		pts = append(pts, [2]float64{x, y})
 	}
 	return pts, nil
 }
@@ -108,10 +108,13 @@ func adornmentsFromMark(m *spec.MarkDef) Adornments {
 
 // encodeAdornments emits the opt-in adornment scene marks for a spark
 // series. points are the encoded series points in plot-space pixels,
-// one per datum in row order. yScale maps value-axis data to pixel y
-// for the reference band. plot is the spark plot region — the band
-// spans its full width. base supplies the spark's resolved style: dots
-// inherit its stroke (line) color, the band a faint fill of the same.
+// one per datum in row order. measureScale maps value-axis data to a
+// pixel on the measure axis for the reference band. o is the spark's
+// orientation (E9-S2), which decides which physical axis the band
+// spans and which direction counts as "high". plot is the spark plot
+// region — the band spans its full extent across the category axis.
+// base supplies the spark's resolved style: dots inherit its stroke
+// (line) color, the band a faint fill of the same.
 //
 // Order: the reference band is emitted first so it sits behind the
 // extent and last-point dots in paint order.
@@ -121,42 +124,42 @@ func adornmentsFromMark(m *spec.MarkDef) Adornments {
 // to one without them. All geometry is snapped to render precision via
 // roundTo (matching render.FormatFloat) so cross-impl goldens are
 // stable.
-func encodeAdornments(points [][2]float64, yScale Scale, plot scene.Rect, base scene.Style, ad Adornments) ([]scene.Mark, error) {
+func encodeAdornments(points [][2]float64, measureScale Scale, o Orientation, plot scene.Rect, base scene.Style, ad Adornments) ([]scene.Mark, error) {
 	if !ad.enabled() || len(points) == 0 {
 		return nil, nil
 	}
 
 	var out []scene.Mark
 
-	// Reference band — behind the series.
-	if ad.ReferenceBand != nil && yScale != nil {
-		y0, err := yScale.Apply(ad.ReferenceBand.From)
+	// Reference band — behind the series. It spans the plot across the
+	// category axis and covers [from, to] on the measure axis.
+	if ad.ReferenceBand != nil && measureScale != nil {
+		m0, err := measureScale.Apply(ad.ReferenceBand.From)
 		if err != nil {
 			return nil, err
 		}
-		y1, err := yScale.Apply(ad.ReferenceBand.To)
+		m1, err := measureScale.Apply(ad.ReferenceBand.To)
 		if err != nil {
 			return nil, err
 		}
-		top := math.Min(y0, y1)
-		height := math.Abs(y1 - y0)
+		span := [2]float64{math.Min(m0, m1), math.Abs(m1 - m0)}
+		rect := OrientedRect(o, PlotCategoryExtent(o, plot), span)
+		rect.X = roundTo(rect.X, 3)
+		rect.Y = roundTo(rect.Y, 3)
+		rect.W = roundTo(rect.W, 3)
+		rect.H = roundTo(rect.H, 3)
 		out = append(out, scene.Mark{
 			Type:  scene.MarkRect,
 			ID:    "adornment-band",
 			Style: bandStyle(base),
-			Rect: &scene.RectGeom{
-				X: roundTo(plot.X, 3),
-				Y: roundTo(top, 3),
-				W: roundTo(plot.W, 3),
-				H: roundTo(height, 3),
-			},
+			Rect:  &rect,
 		})
 	}
 
-	// Min/max extent dots. y pixels grow downward, so the smallest y is
-	// the highest value and the largest y the lowest value.
+	// Min/max extent dots, read along the measure axis in the
+	// direction a larger value points.
 	if ad.PointExtent {
-		highIdx, lowIdx := extentIndices(points)
+		highIdx, lowIdx := extentIndices(points, o)
 		out = append(out, dotMark("adornment-max", points[highIdx], dotStyle(base)))
 		if lowIdx != highIdx {
 			out = append(out, dotMark("adornment-min", points[lowIdx], dotStyle(base)))
@@ -171,16 +174,23 @@ func encodeAdornments(points [][2]float64, yScale Scale, plot scene.Rect, base s
 	return out, nil
 }
 
-// extentIndices returns the index of the highest-value point (smallest
-// pixel y) and the lowest-value point (largest pixel y). On ties it
-// keeps the first occurrence. points must be non-empty.
-func extentIndices(points [][2]float64) (highIdx, lowIdx int) {
+// extentIndices returns the index of the highest-value point and the
+// lowest-value point. "Highest" follows the measure axis's direction:
+// vertically the smallest pixel y (the SVG y axis grows downward),
+// horizontally the largest pixel x. On ties it keeps the first
+// occurrence. points must be non-empty.
+func extentIndices(points [][2]float64, o Orientation) (highIdx, lowIdx int) {
+	axis := 1
+	if o == OrientHorizontal {
+		axis = 0
+	}
+	dir := MeasureDirection(o)
 	highIdx, lowIdx = 0, 0
 	for i := 1; i < len(points); i++ {
-		if points[i][1] < points[highIdx][1] {
+		if dir*points[i][axis] > dir*points[highIdx][axis] {
 			highIdx = i
 		}
-		if points[i][1] > points[lowIdx][1] {
+		if dir*points[i][axis] < dir*points[lowIdx][axis] {
 			lowIdx = i
 		}
 	}

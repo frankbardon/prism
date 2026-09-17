@@ -10,15 +10,15 @@ arcs, etc. Specify via top-level `mark` (shorthand string) or
 
 | Mark | When to use |
 |---|---|
-| `bar` | Compare categories. The default. |
+| `bar` | Compare categories. The default. Stacks by segment — see [Encoding › Stacking](encoding.md#stacking). |
 | `line` | Continuous trends; ordered x-axis. |
-| `area` | Filled trends. Supports negative values + stacks. |
+| `area` | Filled trends. Supports negative values, an explicit `y2` lower edge, stacking — see [Encoding › Stacking](encoding.md#stacking) — and [`orient`](#orientation-markorient). |
 | `point` | Scatter, dot plots. |
 | `circle`, `square` | Convenience aliases for `point` with shape preset. |
-| `tick` | Strip plots, ranking dot plots. |
+| `tick` | Strip plots, ranking dot plots. Honours [`orient`](#orientation-markorient). |
 | `rect` | Heatmap cells, custom rectangular layouts. |
 | `rule` | Reference lines, benchmarks, ranges. |
-| `text` | Inline labels, annotations. |
+| `text` | Inline labels, annotations. Content comes from the `text` channel — see [Text](#text). |
 | `arc` | Primitive for `pie` / `donut` / sankey links. |
 
 ### Composite marks
@@ -27,8 +27,8 @@ arcs, etc. Specify via top-level `mark` (shorthand string) or
 |---|---|
 | `histogram` | `bar` + auto-bin transform. |
 | `heatmap` | `rect` + 2D bin + sequential color scale. Binds an optional field-driven `opacity` channel for per-cell shading — pair it with a crosstab `zscore_vs_margin` overlay column to fade insignificant cells (significance shading). Opacity maps the field linearly over `[min, max]` to `[0.15, 1.0]`. |
-| `boxplot` | `rect` (IQR) + `rule` (whiskers) + `point` (outliers). |
-| `violin` | `area` symmetric around centerline (Epanechnikov KDE). |
+| `boxplot` | `rect` (IQR) + `rule` (whiskers) + `point` (outliers). Honours [`orient`](#orientation-markorient). |
+| `violin` | `area` symmetric around centerline (Epanechnikov KDE). Honours [`orient`](#orientation-markorient). |
 | `pie` | `arc` with theta computed from share. |
 | `donut` | `arc` with `inner_radius_ratio > 0`. |
 
@@ -40,9 +40,10 @@ arcs, etc. Specify via top-level `mark` (shorthand string) or
 | `funnel` | Conversion funnels — stacked trapezoids. |
 | `sparkline` | Inline micro-line charts, no axes. |
 | `sparkbar` | Inline micro-column charts, no axes — bar-family sibling of `sparkline`. |
-| `winloss` | Equal-height up/down micro-bars by the sign of `y` (>0 up, <0 down, ==0 flat). Magnitude is ignored — only direction encodes. |
+| `winloss` | Equal-length micro-bars by the sign of the measured value (>0 one way, <0 the other, ==0 flat). Magnitude is ignored — only direction encodes. Honours [`orient`](#orientation-markorient). |
 | `sparkarea` | Inline filled micro-area charts, no axes — area-family sibling of `sparkline`; fill reaches the y=0 baseline. |
 | `bullet` | Compact KPI gauge — a measure bar over qualitative bands, with an optional comparative bar and target tick. Keeps its measure axis. |
+| `progress` | Multi-row metric bars — one value bar per row on a full-scale track. The multi-row sibling of `bullet`; row labels come from the category axis. |
 | `image` | Sprites / data-URL images at position. |
 | `path` | Raw SVG path data — escape hatch. |
 | `geoshape` | Country / admin-1 polygons (choropleth). See [Geographic Marks](geo.md). |
@@ -62,7 +63,7 @@ any combination on the same mark.
 |---|---|---|
 | `point_last` | boolean | Draws an emphasis dot on the final (most recent) value. |
 | `point_extent` | boolean | Draws highlight dots on the minimum and maximum values. |
-| `reference_band` | `{from, to}` | Shades a faint horizontal normal-range band, spanning the full spark width between the two value-axis bounds, behind the series. |
+| `reference_band` | `{from, to}` | Shades a faint normal-range band between the two value-axis bounds, spanning the spark's full extent across the category axis, behind the series. |
 
 Dots inherit the spark's line color; the band is a faint fill of the
 same color. `from` / `to` are data-space values on the spark's value
@@ -85,6 +86,47 @@ series.
 }
 ```
 
+### Text
+
+The `text` mark draws one label per row at the position its `x` / `y`
+channels resolve to. Label **content** comes from the `text` encoding
+channel:
+
+| `encoding.text` | Label content |
+|---|---|
+| `{"field": "label", "type": "nominal"}` | That column's value for the row. |
+| `{"field": "score", "type": "quantitative", "format": ".1f"}` | The column's value through the [d3-format](encoding.md#text-channel) subset — `80.04` renders as `80.0`. |
+| `{"value": "n/a"}` | The literal, repeated on every row (formatted too, when `format` is set). |
+| *omitted* | Fallback: the `y` field's value verbatim (or the `x` field's when `y` is unbound). |
+
+`text.aggregate` is honoured exactly like a position channel's: it
+injects the same synthetic group-aggregate node, and a non-aggregated
+`text` field joins the group-by alongside the other channels. So
+`{"text": {"aggregate": "mean", "field": "score", "type": "quantitative"}}`
+labels each group with its mean.
+
+At least one position channel must be bound. A label-only mark (say
+`x` bound, `y` omitted) is valid — the unbound axis centres the label
+in the plot region rather than erroring.
+
+```json
+{
+  "mark": {"type": "text", "font_size": 12, "baseline": "bottom"},
+  "encoding": {
+    "x": {"field": "brand_id", "type": "nominal"},
+    "y": {"field": "score", "type": "quantitative"},
+    "text": {"field": "score", "type": "quantitative", "format": ".0%"}
+  }
+}
+```
+
+Mark-def fields `align` (`left` / `right`), `baseline` (`top` /
+`bottom`), `angle`, and `font_size` position and orient the label.
+
+Arbitrary free-floating annotations ("no data" callouts not tied to a
+row) are **not** reachable from a spec today — every text mark is
+row-driven.
+
 ### Tree / dendrogram / network
 
 Hierarchical and relational marks share a small layout package
@@ -103,12 +145,14 @@ Channel bindings:
 - `source` — parent / from-node id field (required for tree/dendrogram/network).
 - `target` — child / to-node id field (required).
 - `value` — optional edge weight (network) / node size (tree).
-- `text` — optional per-node label.
+- `text` — optional per-node label. See [Node labels](#node-labels).
 - `color`, `fill`, `stroke`, `opacity`, `size` — standard mark props.
 
 Mark-def options:
 
-- `orient` — `vertical` (default), `horizontal`, `radial`.
+- `orient` — `vertical` (default) or `horizontal`; picks the direction
+  the layout grows. See [Orientation](#orientation-markorient). `radial`
+  is rejected (`PRISM_SPEC_046`).
 - `link_shape` — `step` (default), `curve`, `straight`.
 - `node_shape` — `circle` (default), `rect`, `none`.
 - `node_size` — base radius / side length (default 6).
@@ -119,6 +163,53 @@ Validate rules: `PRISM_SPEC_028` (missing source/target),
 `PRISM_SPEC_029` (multi-root tree). Encode-time:
 `PRISM_ENCODE_TREE_CYCLE`, `PRISM_ENCODE_NETWORK_NONFINITE`,
 `PRISM_WARN_NETWORK_CYCLE`.
+
+#### Node labels
+
+Bind the `text` channel to label the nodes. Content resolves through
+the same path the `text` mark uses — `field` reads a column, `value`
+supplies a literal, `format` runs the result through the d3-format
+subset — so a label formats exactly as the equivalent text mark would.
+See [Encoding › Text channel](encoding.md#on-a-graph-mark).
+
+Labelling is **opt-in**. With no `text` channel these marks emit no
+label geometry at all, which is what keeps an unlabelled tree or
+network byte-identical to one drawn before labels existed.
+
+These marks are node-oriented while the channel is row-oriented, so a
+row's label binds to the node named by that row's `target` value (the
+node identity); the first row wins when a target repeats. A node that
+never appears as a `target` — the root of an edge-list hierarchy, a
+pure source in a network — has no row of its own and falls back to
+its id.
+
+**Where the label lands** follows the classic tidy-tree convention: a
+label sits on the far side of its node from that node's subtree, so it
+never collides with the links or the children below it.
+
+| Mark | `orient` | Internal node | Leaf |
+|---|---|---|---|
+| `tree`, `dendrogram` | `vertical` (default) | Above the node, centred | Below the node, centred |
+| `tree`, `dendrogram` | `horizontal` | Left of the node, right-aligned | Right of the node, left-aligned |
+| `network` | n/a | Below the node, centred | Below the node, centred |
+
+A force layout has no growth direction and no leaf / internal
+distinction, so every `network` label simply hangs under its node.
+
+The plot rect is inset by the estimated label band when labels are on,
+so the outermost labels (a vertical tree's root and leaf row, a
+horizontal tree's root and leaf column) stay inside the chart rather
+than running off the canvas. That inset is why turning labels on also
+moves the nodes.
+
+**Limitation:** Prism runs no text-measurement pass. Label widths are
+estimated at 6px per character — the same standing approximation the
+axis `label_limit` and `label_overlap` heuristics use — so the inset is
+approximate for very wide glyphs, and sibling labels within one depth
+row are not collision-tested against each other. Hiding a label (the
+axis heuristic's answer to an overlap) would lose a node's identity, so
+graph labels are never dropped; give a crowded tree more room, shorter
+labels, or `orient: horizontal`.
 
 ### Bullet
 
@@ -153,7 +244,13 @@ Mark-def options:
   naming a data field resolved from row 0.
 - `comparative` — a secondary measure (e.g. prior period). Like `target`,
   a literal number or a data-field name.
-- `orientation` — `horizontal` (default) or `vertical`.
+- `orientation` — `horizontal` (default) or `vertical`. Note the field
+  name: `bullet` keeps its own `orientation` rather than the shared
+  `orient`, because it is not a category/measure swap — a bullet is a
+  single KPI readout whose bands, comparative bar and target tick all
+  rotate together, and its default is `horizontal` where `orient`'s is
+  `vertical`. Folding it into `orient` would silently flip every
+  existing bullet. See [Orientation](#orientation-markorient).
 
 ```json
 {
@@ -171,6 +268,96 @@ Mark-def options:
 ```
 
 Validate rule: `PRISM_SPEC_036` (bands strictly ascending).
+
+### Progress
+
+The `progress` mark draws **one metric row per data row**: a value bar
+sitting on a full-scale track, where the visible remainder of the track
+reads as "distance still to go". It is the layout behind a metric-row
+panel — four labelled rows, each a bar against a 0–100 ceiling.
+
+It is the multi-row sibling of [`bullet`](#bullet). `bullet` collapses
+its measure to row 0 — it is a single KPI readout — so a four-metric
+panel needs a `facet` wrapper, and facet labels its rows
+`"<field> = <value>"` with no format control. `progress` reads every
+row, and the row labels are simply the category axis's tick labels.
+
+Two things make it more than a bar with a background rect:
+
+- **The measure domain is mark-owned.** `total` names the value the
+  track runs to, and the measure scale is extended to reach it before
+  the scale is built. The track therefore ends at the plot edge instead
+  of running past it — the clipping `bullet` still suffers when a band
+  bound sits above the data range.
+- **The track is a separate scene mark.** Each row emits a
+  `progress-track-N` rect *and* a `progress-N` value rect, in that
+  order, rather than one rect with a painted backdrop. That is what
+  makes the track independently themeable and independently
+  selectable in CSS. Both carry the row's `data-prism-datum-row`
+  back-reference, so a hover on the filled part of a row behaves like
+  a hover on its remainder.
+
+Channel bindings:
+
+- Horizontal (the default reading): `x` is the quantitative value, `y`
+  is the nominal metric label.
+- Vertical: `x` is the nominal label, `y` is the quantitative value.
+
+Orientation comes from the shared [`mark.orient`](#orientation-markorient)
+vocabulary — `progress` does **not** carry a per-mark orientation field
+the way `bullet` does. You rarely write it: a nominal `y` against a
+quantitative `x` already infers horizontal.
+
+Mark-def options:
+
+- `total` — the measure ceiling the track runs to. A literal number
+  applies to every row; a string names a data field read **per row**, so
+  each metric can carry its own maximum (a per-rep quota, say). Omit it
+  and the track spans the data-derived domain instead. A literal must be
+  positive (`PRISM_SPEC_061`).
+- `thickness` — the fraction of the category band a row occupies,
+  centred in it. Defaults to `0.5`; must be greater than 0 and at most 1.
+- `corner_radius` — the standard mark-def field, applied to both the
+  track and the value bar so they round together.
+
+A value above its row's `total` overflows the track rather than being
+clipped — over-attainment stays visible.
+
+```json
+{
+  "mark": {"type": "progress", "total": 100, "corner_radius": 3, "thickness": 0.45},
+  "encoding": {
+    "x": {"field": "score", "type": "quantitative"},
+    "y": {"field": "metric", "type": "nominal"}
+  }
+}
+```
+
+The two halves are themed independently, through two keys rather than
+one (see [Themes: multi-element marks](themes.md#multi-element-marks)):
+
+| Key | Styles |
+|---|---|
+| `marks.progress` | The value bar. `mark.fill` and a `color` channel still shadow it, in that order. |
+| `marks.progress_track` | The unfilled track. There is no `mark_def` equivalent — the track is styled through the theme. |
+
+Both take the full `MarkStyle` shape, so a track can carry a stroke, an
+opacity or a pattern fill, not just a colour. Every bundled theme sets
+both, so a progress chart tracks light / dark / print with no per-chart
+configuration; a custom theme that sets neither falls back to its own
+grid colour for the track, which keeps it reading as chrome rather than
+as a second series.
+
+In the rendered SVG the halves carry distinct classes —
+`prism-mark-progress` and `prism-mark-progress-track` — so a stylesheet
+can scope to either. Marks are otherwise classed by geometry, and both
+of these are rects.
+
+Right-hand value and delta labels ("92.4", "+14.3 vs category") are not
+part of the mark — layer a `text` mark over it.
+
+Validate rule: `PRISM_SPEC_061` (both position channels bound;
+`thickness` in (0, 1]; a literal `total` positive).
 
 ### Image and path
 
@@ -243,13 +430,21 @@ Column fields (`encoding.columns[]`, one object per column):
 - `mark` — optional sub-mark rendering this column's cells (e.g.
   `"sparkline"`). Omit to render the column as formatted text.
 
+`format` is a d3-format specifier from the
+[supported subset](encoding.md#table-columns) and is applied to the
+column's cell text at encode time. The raw value is kept alongside the
+formatted text, so a client-side header sort still compares numbers,
+not the formatted strings. A `format` on a column that also binds a
+`mark` has no text to shape and is reported as
+`PRISM_WARN_CHANNEL_INERT`.
+
 ```json
 {
   "mark": {"type": "table", "page_size": 50},
   "encoding": {
     "columns": [
       {"field": "name", "type": "nominal", "title": "Account"},
-      {"field": "revenue", "type": "quantitative", "aggregate": "sum", "format": "$,.0f"},
+      {"field": "revenue", "type": "quantitative", "aggregate": "sum", "format": ",.0f"},
       {"field": "trend", "type": "quantitative", "mark": "sparkline"}
     ]
   }
@@ -306,6 +501,300 @@ name at render time, naming every currently-registered name in its
 details). See [Renderer compatibility](#renderer-compatibility) below
 — unlike `table`, `custom` renders through **both** backends, since a
 renderer can implement `RenderSVG`, `RenderHTML`, or both.
+
+## Style properties
+
+Beyond `type`, a `mark_def` object carries the visual properties every
+mark is drawn with. They are spec-level constants — one value for the
+whole mark — as distinct from an encoding channel, which varies per
+row. Where a mark-def property and a theme `mark` token name the same
+thing, the **mark def wins**; see
+[Themes: mark style precedence](themes.md#mark-style-precedence).
+
+### Paint
+
+| Property | Applies to | Meaning |
+|---|---|---|
+| `fill` | filled marks | Fill color, `#RRGGBB` / `#RRGGBBAA`. |
+| `stroke` | all | Stroke color. |
+| `stroke_width` | all | Stroke width in pixels. |
+| `stroke_dash` | all stroked marks | Dash pattern, `[on, off, …]` pixels. Emits `stroke-dasharray`. |
+| `opacity` | all | Overall element opacity, `[0, 1]`. |
+| `fill_opacity` | filled marks | Fill-paint alpha, `[0, 1]`. |
+| `stroke_opacity` | stroked marks | Stroke-paint alpha, `[0, 1]`. |
+| `corner_radius` | `bar` / `rect` | Corner rounding in pixels. |
+
+`stroke_dash` is a whole-pattern override, not a merge: a mark def
+that names it replaces the theme `mark` block's `stroke_dash` outright,
+and one that omits it keeps the theme's. An empty array reads the same
+as an absent key, so to draw solid over a dashed theme token, drop the
+`stroke_dash` from the theme rather than writing `[]` in the spec. A
+pattern of all zeros is treated as unset — some renderers draw an
+all-zero dash as an invisible stroke rather than a solid one.
+
+`opacity`, `fill_opacity` and `stroke_opacity` are **independent and
+multiplicative** — none overrides another. This matches Vega-Lite,
+whose canvas renderer computes the fill alpha as
+`opacity × (fillOpacity ?? 1)` and the stroke alpha as
+`opacity × (strokeOpacity ?? 1)`. Prism emits all three as separate
+SVG attributes (`opacity`, `fill-opacity`, `stroke-opacity`), which
+SVG composites the same way, so:
+
+```json
+{"mark": {"type": "bar", "opacity": 0.5, "fill_opacity": 0.5}}
+```
+
+paints a fill at an effective alpha of `0.25`, not `0.5`. Set
+`fill_opacity` alone when you want a translucent fill under a solid
+stroke; set `opacity` when you want the whole mark — fill, stroke and
+all — to fade together. An explicit `0` is honoured (a fully
+transparent paint), unlike an omitted property, which inherits.
+
+### Clipping (`clip`)
+
+`clip` is the one mark-def property that is not a paint at all: it
+forces the **plot-region clip** on (`true`) or off (`false`).
+
+```json
+{"mark": {"type": "line", "clip": true}}
+```
+
+Omit it and the encoder decides: the clip is armed only when a position
+channel pins an explicit `scale.domain`, which is the one way a mark can
+land outside the plot rect. Because the clip bounds a plot rect rather
+than a single mark, a `layer` resolves it once for the whole stack — one
+`clip: true` arms it for every layer, and a `clip: false` otherwise
+disarms it for all of them. See
+[Encoding: rows outside the domain](encoding.md#rows-outside-the-domain--overflow-and-clip).
+
+### Typography
+
+Applies to `text` marks and to any mark that draws a text component.
+
+| Property | Meaning |
+|---|---|
+| `font` | Font family, e.g. `"Inter, system-ui, sans-serif"`. |
+| `font_size` | Glyph size in pixels. |
+| `font_weight` | `"normal"` \| `"bold"` \| `"lighter"` \| `"bolder"`, or a number (100–900). |
+| `font_style` | `"normal"` \| `"italic"` \| `"oblique"`. |
+| `align` | Horizontal anchor — `"left"` \| `"center"` \| `"right"`. |
+| `baseline` | Vertical anchor — `"top"` \| `"middle"` \| `"bottom"` \| `"alphabetic"`. |
+| `angle` | Rotation in degrees about the anchor point. |
+| `dx`, `dy` | Pixel offset from the anchor point. |
+
+`font_weight` normalises to a number in the Scene IR, since SVG's
+`font-weight` attribute is numeric. The CSS keywords map to their
+computed values against the default inherited weight of 400:
+`normal` → 400, `bold` → 700, `bolder` → 700, `lighter` → 100.
+
+`dx` / `dy` are applied **after** `angle`, in the rotated frame — so a
+rotated label nudged with `dy: -4` moves 4px along its own baseline
+normal, not straight up the page. This is Vega's rule
+(`translate(x,y) rotate(a) translate(dx,dy)`) and is what makes
+`dx`/`dy` useful for lifting a label clear of the geometry it
+annotates:
+
+```json
+{
+  "mark": {"type": "text", "dy": -6, "font_weight": "bold", "font_style": "italic"},
+  "encoding": {
+    "x": {"field": "quarter", "type": "nominal"},
+    "y": {"field": "revenue", "type": "quantitative"},
+    "text": {"field": "revenue", "type": "quantitative"}
+## Orientation (`mark.orient`)
+
+A bar does not really have an "x axis" and a "y axis" — it has a
+**category** axis (the discrete band the bar sits in, which sets its
+thickness) and a **measure** axis (the continuous value, along which it
+grows from the data-zero baseline). Which physical axis plays which
+role is the mark's orientation.
+
+| `orient` | Category axis | Measure axis | Bars grow |
+|---|---|---|---|
+| `vertical` | `x` | `y` | up/down from a baseline at `y = 0` |
+| `horizontal` | `y` | `x` | right/left from a baseline at `x = 0` |
+
+The same split applies to every cartesian family, not just `bar` —
+a boxplot's band and whisker caps sit on the category axis while its
+quantiles walk the measure axis, an area's series runs along the
+category axis and fills to a baseline on the measure axis, and a tick
+draws a short segment along the measure axis at its category's centre.
+
+### Inference
+
+**You usually do not write `orient` at all.** It is inferred from
+whichever axis carries the discrete (band) scale, the same way
+Vega-Lite infers it:
+
+| `x` scale | `y` scale | Inferred |
+|---|---|---|
+| band | continuous | `vertical` |
+| continuous | band | `horizontal` |
+| band | band | `vertical` (ambiguous; the default wins) |
+| continuous | continuous | error — neither axis can host the category |
+
+The last row holds for the marks that *need* a band to sit in (`bar`,
+`rect`, `boxplot`, `violin`, `winloss`). `area` and `tick` position
+rows along an axis that is usually continuous or temporal, so two
+continuous axes are perfectly legal there and fall back to the mark's
+historic direction — `vertical` for `area`, `horizontal` for `tick`.
+An explicit `orient` still wins on those marks, and is the only way to
+draw a horizontal area.
+
+So a nominal `y` against a quantitative `x` already draws a horizontal
+bar chart:
+
+```json
+{
+  "mark": "bar",
+  "encoding": {
+    "y": {"field": "channel", "type": "nominal"},
+    "x": {"field": "delta",   "type": "quantitative"}
+  }
+}
+```
+
+An explicit `orient` **overrides** the inference. On a mark that needs
+a band it cannot invent one, though: `"orient": "horizontal"` against a
+continuous `y` fails with `PRISM_ENCODE_001` naming the axis that needs
+the band, rather than drawing something else and hoping you notice.
+
+Everything else about the mark is orientation-agnostic: the baseline,
+`corner_radius`, `color` grouping and the `x2`/`y2`
+[span channels](encoding.md#span-channels) all behave the same in
+either direction. A negative value crosses the baseline the same way
+too — leftward instead of downward.
+
+Categories run in the same direction as every other Prism `y` scale:
+the first category sits at the **bottom** of a horizontal bar chart,
+not the top. Pin an explicit order with
+`{"scale": {"domain": [...]}}` when you want a different one.
+
+### Which marks read it
+
+| Mark | Meaning of `orient` | Default | Needs a band on the category axis |
+|---|---|---|---|
+| `bar`, `rect` | Swaps the category and measure axes, as above. | inferred, else `vertical` | yes |
+| `progress` | Swaps the category and measure axes, as above. | inferred, else `horizontal` | yes |
+| `boxplot`, `violin` | Swaps the axes: the band holds the box / density fan, the measure axis the quantiles or samples. | inferred, else `vertical` | yes |
+| `winloss` | Swaps the axes: the streak runs across the band and the equal-length bars grow either side of the zero baseline. | inferred, else `vertical` | yes |
+| `sparkbar` | As `bar` — `sparkbar` is a thin wrapper over the bar encoder. | inferred, else `vertical` | yes |
+| `area`, `sparkarea` | Moves the series axis and the fill baseline. A horizontal area runs bottom-to-top and fills to `x = 0`. | `vertical` | no |
+| `tick` | Moves the short segment to the other axis, centred in its category slot. | inferred, else `horizontal` | no |
+| `tree`, `dendrogram`, `network` | The direction the layout grows — not a category/measure swap. It also picks the side [node labels](#node-labels) sit on. | `vertical` | n/a |
+| `bullet` | Uses its own `orientation` field instead (see [Bullet](#bullet)). | `horizontal` | n/a |
+| `heatmap` | Not implemented — a heatmap is banded on **both** axes, so there is no category/measure split to swap. | — | — |
+| everything else | Not implemented — `orient` is **rejected**, never ignored. | — | — |
+
+Two shapes are worth calling out:
+
+- `y2` supplies an area's explicit lower edge only while the area is
+  vertical. On a horizontal area the fill measures along `x`, so a
+  bound `y2` would be a second position on the series axis — that
+  combination is rejected rather than quietly dropped.
+- A horizontal `boxplot` or `violin` reads its *category* from `y` and
+  its values from `x`, so swap the two channel bindings (or set
+  `orient` explicitly) rather than only relabelling the axes.
+
+`radial` is named by the vocabulary but implemented by no mark, so it
+is rejected too. For a radial reading reach for a polar mark (`arc` /
+`pie` / `donut`). Both rejections are `PRISM_SPEC_046` at validate
+time; the rule is `mark orient supported` in
+[`validate/RULES.md`](https://github.com/frankbardon/prism/blob/main/validate/RULES.md).
+
+## Interpolation (`line` and `area` curves)
+
+`mark.interpolate` selects how consecutive points are joined. It
+applies to the `line` and `area` families (`sparkline` and `sparkarea`
+inherit it, since they are thin wrappers over the same encoders).
+Default is `linear`.
+
+| `interpolate` | Shape |
+|---|---|
+| `linear` | Straight segments between points. The default. |
+| `monotone` | Monotone cubic spline (Fritsch–Carlson). Smooth, and provably never overshoots the data — the safe smoothing choice. |
+| `step` | Right-angle steps with the riser midway between each pair of x values. |
+| `step-before` | Right-angle steps with the riser at the *earlier* x — the value changes before it is reached. |
+| `step-after` | Right-angle steps with the riser at the *later* x — the value holds until the next point. |
+| `cardinal` | Cardinal spline through every point. Smoother than `monotone`, but it may overshoot. |
+
+`mark.tension` (0–1) parameterises `cardinal` only; every other method
+ignores it. `0` is the default and the loosest curve; `1` collapses the
+spline back to straight segments. Values outside the range are clamped.
+
+```json
+{
+  "mark": {"type": "line", "interpolate": "monotone", "stroke_width": 2},
+  "encoding": {
+    "x": {"field": "day",  "type": "temporal"},
+    "y": {"field": "load", "type": "quantitative"}
+  }
+}
+```
+
+### Distribution geometry
+
+| Property | Mark | Meaning |
+|---|---|---|
+| `maxbins` | `histogram` | Upper bound on the bin count. Omit for automatic bin selection. |
+| `violin_resolution` | `violin` | Kernel-density sample points per violin. |
+
+### Arc geometry
+
+| Property | Meaning |
+|---|---|
+| `inner_radius` | Donut hole radius in pixels (absolute; wins over the ratio). |
+| `inner_radius_ratio` | Donut hole as a fraction of the outer radius, `[0, 1]`. |
+| `outer_radius` | Outer radius in pixels. |
+| `pad_angle` | Angular gap between neighbouring sectors, in **radians**. |
+
+`pad_angle` is the gap *between* two sectors, not the inset applied to
+one: each sector gives up half the pad at each of its two ends, so two
+adjacent sectors end up `pad_angle` radians apart. A sector narrower
+than `pad_angle` collapses to nothing rather than drawing backwards.
+
+Prism applies a single constant angular inset at every radius.
+d3-shape (and therefore Vega-Lite) varies the inset with radius so the
+*linear* gap stays constant from the inner to the outer edge; the two
+agree closely for a thin annulus and diverge for a full pie with a
+large pad. `pad_angle: 0.02` (about 1.15°) is a good starting point:
+
+```json
+{"mark": {"type": "donut", "pad_angle": 0.02, "inner_radius_ratio": 0.6}}
+```
+An `area` applies its curve to **both** boundaries — the upper edge and
+the reversed lower/baseline edge — so a band keeps parallel outlines
+rather than a curved top over a straight bottom. The short connector
+between the two edges is always a straight segment.
+
+That is what makes `area` the streamgraph mark: a centred stack
+(`"stack": "center"`, see
+[Encoding › Centred stacks](encoding.md#centred-stacks-the-streamgraph))
+hands each series a floating pair of edges, and a smooth
+`interpolate` carries both of them, so the ribbons read as one
+flowing stream. `bar` cannot take the centred offset — it is
+baseline-anchored geometry, and `PRISM_SPEC_053` says so rather than
+drawing detached columns.
+
+Geometry semantics match d3-shape's `curveLinear`, `curveMonotoneX`,
+`curveStep`/`curveStepBefore`/`curveStepAfter` and
+`curveCardinal.tension(t)`, so a Prism curve and the equivalent
+Vega-Lite / d3 curve trace the same path.
+
+**Out of scope.** The `basis` and `bundle` families and d3's `-open` /
+`-closed` variants are not implemented and are rejected by
+`schema/v1/mark.schema.json` at validation time rather than silently
+falling back.
+
+**Rendering.** `linear` lines emit `<polyline points="…">`; every other
+interpolation emits `<path d="…">` with the same `prism-mark-line`
+class, identity and style attributes. The split is intentional —
+`<polyline>` expresses a linear line exactly, and keeping it pins the
+byte shape of every committed linear golden and cross-impl fixture.
+Area marks were already `<path>` and stay so for every curve. All
+control points route through `render/precision.go`'s 3-decimal
+quantisation, so host Go, TinyGo-via-WASM and the browser bundle emit
+identical path data.
 
 ## Channel allowlists
 

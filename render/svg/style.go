@@ -3,6 +3,7 @@ package svg
 import (
 	"fmt"
 	"sort"
+	"strconv"
 
 	"github.com/frankbardon/prism/encode/scene"
 	"github.com/frankbardon/prism/render"
@@ -83,11 +84,78 @@ func writeStyleAttrs(w *Writer, s scene.Style) {
 	if s.StrokeWidth > 0 {
 		w.AttrFloat("stroke-width", s.StrokeWidth)
 	}
+	writeStrokeDashAttr(w, s.StrokeDash)
+	// fill-opacity / stroke-opacity (E4-S1) are per-paint alphas that
+	// compose multiplicatively with the element-level opacity below —
+	// SVG's own compositing rule, and the same one Vega's canvas
+	// renderer implements as `alpha = opacity * (fillOpacity ?? 1)`.
+	// Emitting all three independently is therefore the whole
+	// implementation; neither overrides the other. Unlike Opacity
+	// (whose float64 zero has always meant "unset" in this IR) these
+	// are pointer-typed, so an explicit 0 emits a fully transparent
+	// paint rather than being swallowed.
+	if s.FillOpacity != nil {
+		w.AttrFloat("fill-opacity", *s.FillOpacity)
+	}
+	if s.StrokeOpacity != nil {
+		w.AttrFloat("stroke-opacity", *s.StrokeOpacity)
+	}
 	if s.Opacity > 0 && s.Opacity < 1 {
 		w.AttrFloat("opacity", s.Opacity)
 	}
 	writeTypographyAttrs(w, s.LineHeight, s.LetterSpacing)
 	writeFilterAttr(w, s.Filter)
+}
+
+// writeStrokeDashAttr emits stroke-dasharray="<on> <off> …" for the
+// dash pattern carried by scene.Style.StrokeDash (E7-S4 — the spec's
+// mark_def.stroke_dash and the theme mark block's stroke_dash token
+// both land there, via encode.applyMarkDef / applyThemeMarkStyle).
+// Nil or empty emits nothing, which is what keeps every mark that
+// declares no dash byte-identical to its pre-E7-S4 golden.
+//
+// Lengths route through render.FormatFloat like every other numeric
+// SVG output so the pinned 3-decimal precision contract (and with it
+// host↔TinyGo cross-impl parity) holds for dash patterns too. A
+// pattern of all zeros would make the stroke invisible in some
+// renderers rather than solid, so it is skipped as if unset; the
+// schema already floors each entry at 0.
+func writeStrokeDashAttr(w *Writer, dash []float64) {
+	if len(dash) == 0 {
+		return
+	}
+	parts := make([]string, 0, len(dash))
+	positive := false
+	for _, d := range dash {
+		if d > 0 {
+			positive = true
+		}
+		parts = append(parts, render.FormatFloat(d))
+	}
+	if !positive {
+		return
+	}
+	w.JoinAttr("stroke-dasharray", parts)
+}
+
+// writeFontAttrs emits the font-family / font-weight / font-style
+// presentation attributes carried by a text-bearing mark's Style
+// (E4-S1). Called only from renderTextMark: every other mark element
+// is glyph-free, and the structural axis / legend / title text
+// elements take their typography from the theme's CSS classes rather
+// than from a scene.Style. Each attribute is skipped when unset, so
+// a mark that declares no font properties emits byte-identical
+// output to before this existed.
+func writeFontAttrs(w *Writer, s scene.Style) {
+	if s.FontFamily != "" {
+		w.Attr("font-family", s.FontFamily)
+	}
+	if s.FontWeight > 0 {
+		w.Attr("font-weight", strconv.Itoa(s.FontWeight))
+	}
+	if s.FontStyle != "" {
+		w.Attr("font-style", s.FontStyle)
+	}
 }
 
 // writeTypographyAttrs applies the E2-S2 line-height / letter-spacing

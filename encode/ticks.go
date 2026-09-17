@@ -5,6 +5,7 @@ import (
 	"math"
 	"strconv"
 
+	prismformat "github.com/frankbardon/prism/encode/format"
 	"github.com/frankbardon/prism/encode/scene"
 )
 
@@ -139,14 +140,25 @@ func TicksWithLabels(values []float64, scale Scale, format string) ([]scene.Tick
 	return out, nil
 }
 
-// formatTick renders a numeric tick value. P05's default is %g (the
-// Go stdlib's compact float format); explicit format overrides via
-// fmt verbs.
+// formatTick renders a numeric tick value. The default is %g (the Go
+// stdlib's compact float format); a non-empty format is a d3-format
+// specifier, parsed by encode/format — the same subset
+// PRISM_SPEC_011 validates `axis.format` against, and the same one
+// the legend labels use (E3-S3), so an identical string now renders
+// identically on both. It was `fmt.Sprintf(format, v)` until E7-S1,
+// which meant a documented specifier like ".0%" rendered
+// "%!(NOVERB)" on an axis. A string the parser rejects (validate
+// would already have refused it) falls back to the default rather
+// than emitting a broken label.
 func formatTick(v float64, format string) string {
 	if format == "" {
 		return strconv.FormatFloat(v, 'g', -1, 64)
 	}
-	return fmt.Sprintf(format, v)
+	sp, err := prismformat.Parse(format)
+	if err != nil {
+		return strconv.FormatFloat(v, 'g', -1, 64)
+	}
+	return sp.Apply(v)
 }
 
 // roundSigFigs rounds v to the given number of significant decimal

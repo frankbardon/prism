@@ -59,14 +59,14 @@ func (c *Condition) UnmarshalJSON(data []byte) error {
 	switch first {
 	case '[':
 		var arr []ConditionTest
-		if err := json.Unmarshal(data, &arr); err != nil {
+		if err := strictUnmarshal(data, &arr); err != nil {
 			return fmt.Errorf("condition: %w", err)
 		}
 		c.Multi = arr
 		return nil
 	case '{':
 		var single ConditionTest
-		if err := json.Unmarshal(data, &single); err != nil {
+		if err := strictUnmarshal(data, &single); err != nil {
 			return fmt.Errorf("condition: %w", err)
 		}
 		c.Single = &single

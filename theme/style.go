@@ -190,6 +190,64 @@ type AxisStyle struct {
 	Filter string `json:"filter,omitempty"`
 }
 
+// AxisFor returns the effective AxisStyle for one cartesian axis:
+// the shared Axis block with the channel's own AxisX / AxisY block
+// folded on top, property by property. A property the per-axis block
+// leaves unset keeps the shared block's value, so setting only
+// axis_x.grid_color recolours the vertical grid lines and nothing
+// else.
+//
+// This is the single place the theme half of the precedence chain is
+// expressed. The whole chain, highest priority first, is:
+//
+//	spec channel `axis` block  >  theme.axis_x / theme.axis_y
+//	                           >  theme.axis
+//	                           >  built-in default
+//
+// The spec level is applied where each token is consumed (the CSS
+// cascade for colour/stroke tokens, resolveAxisMetric in render/svg
+// for geometry) because a spec value is per-channel already; AxisFor
+// supplies the resolved theme layer those consumers fall back to.
+//
+// channel accepts the scene channel names — "x"/"x2" select AxisX,
+// "y"/"y2" select AxisY, anything else resolves to Axis alone.
+// Returns a fresh pointer callers may mutate; nil only when both
+// blocks are nil.
+func (t *Theme) AxisFor(channel string) *AxisStyle {
+	if t == nil {
+		return nil
+	}
+	return mergeAxis(t.Axis, t.axisOverrideFor(channel))
+}
+
+// axisOverrideFor maps a channel name onto the per-axis block that
+// overrides the shared one, or nil when the channel has none.
+func (t *Theme) axisOverrideFor(channel string) *AxisStyle {
+	if t == nil {
+		return nil
+	}
+	switch channel {
+	case "x", "x2":
+		return t.AxisX
+	case "y", "y2":
+		return t.AxisY
+	}
+	return nil
+}
+
+// cloneAxisStyle deep-copies an AxisStyle (GridDash is the only
+// reference-typed field). nil in, nil out.
+func cloneAxisStyle(a *AxisStyle) *AxisStyle {
+	if a == nil {
+		return nil
+	}
+	out := *a
+	if a.GridDash != nil {
+		out.GridDash = append([]float64(nil), a.GridDash...)
+	}
+	return &out
+}
+
 // LegendStyle holds legend tokens.
 type LegendStyle struct {
 	FillColor         string   `json:"fill_color,omitempty"`

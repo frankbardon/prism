@@ -4,36 +4,46 @@ import (
 	"fmt"
 
 	"github.com/frankbardon/prism/encode/scene"
-	prismerrors "github.com/frankbardon/prism/errors"
 )
 
-// winlossHeightRatio is the fraction of the plot height each win/loss
-// bar occupies above (or below) the baseline. Every bar is the same
-// height — only its direction (above vs below the y==0 baseline)
-// carries meaning.
+// winlossHeightRatio is the fraction of the plot's measure-axis extent
+// each win/loss bar occupies on either side of the baseline. Every bar
+// is the same length — only its direction (which side of the zero
+// baseline it falls on) carries meaning.
 const winlossHeightRatio = 0.4
 
-// encodeWinloss emits one RectGeom per row, an equal-height up/down bar
-// driven solely by the sign of y: y > 0 → bar above the baseline,
-// y < 0 → bar below, y == 0 → a flat (zero-height) bar at the baseline.
-// Magnitude is intentionally ignored; |y| never affects bar height.
+// encodeWinloss emits one RectGeom per row, an equal-length win/loss
+// bar driven solely by the sign of the measured value: positive → bar
+// on the positive side of the baseline, negative → the other side,
+// zero → a flat (zero-length) bar on the baseline itself. Magnitude is
+// intentionally ignored; |value| never affects bar length.
 //
 // Like sparkline/sparkbar this is a chrome-suppressed spark mark
 // (isSparkMark in encode/encode.go strips axes/legend/title and routes
-// layout through ComputeSparkline). The baseline is the y==0 pixel,
-// mirroring the bar encoder (bar.go), so a sign-crossing domain centres
-// the streak in the plot region.
+// layout through ComputeSparkline). The baseline is the measure axis's
+// zero pixel, mirroring the bar encoder (bar.go), so a sign-crossing
+// domain centres the streak in the plot region.
+//
+// Orientation (E9-S2) comes from MarkOrientation (orient.go), so a
+// band on y — or an explicit `"orient": "horizontal"` — draws the
+// streak as rows growing left/right from a vertical baseline instead.
 func encodeWinloss(in Inputs) ([]scene.Mark, error) {
-	xs, err := readField(in.Table, in.X.Field)
+	orient, err := MarkOrientation(in, "winloss")
 	if err != nil {
 		return nil, err
 	}
-	ys, err := readField(in.Table, in.Y.Field)
+	slots, err := CategorySlots(in, orient)
 	if err != nil {
 		return nil, err
 	}
-	if len(xs) != len(ys) {
-		return nil, fmt.Errorf("encodeWinloss: column length mismatch (x=%d, y=%d)", len(xs), len(ys))
+	measure := MeasureChannel(in, orient)
+	vals, err := readField(in.Table, measure.Field)
+	if err != nil {
+		return nil, err
+	}
+	if len(slots) != len(vals) {
+		return nil, fmt.Errorf("encodeWinloss: column length mismatch (%s=%d, %s=%d)",
+			orient.CategoryAxis(), len(slots), orient.MeasureAxis(), len(vals))
 	}
 	var colorVals []any
 	if in.Color != nil && in.Color.Field != "" {
@@ -44,51 +54,35 @@ func encodeWinloss(in Inputs) ([]scene.Mark, error) {
 		colorVals = cv
 	}
 
-	band, ok := in.X.Scale.(BandScaler)
-	if !ok {
-		return nil, prismerrors.New(
-			"PRISM_ENCODE_001",
-			"winloss mark requires a band scale for x, got a continuous scale instead.",
-			map[string]any{"Field": in.X.Field, "Source": "<scale>", "Available": "band"},
-		)
-	}
-	width := band.BandWidth()
+	// Baseline = the measure axis's data-zero pixel (mirrors bar.go).
+	// For a sign-crossing domain this lands mid-plot.
+	baseline := BaselinePixel(in, orient)
 
-	// Baseline = pixel y where data value = 0 (mirrors bar.go). For a
-	// sign-crossing domain this lands mid-plot; falls back to the plot
-	// bottom only if the scale cannot map 0 (shouldn't happen for
-	// linear scales).
-	baseline, err := in.Y.Scale.Apply(float64(0))
-	if err != nil {
-		baseline = in.Layout.Bottom()
-	}
-
-	// Every bar is the same height regardless of |y|.
-	barHeight := in.Layout.H * winlossHeightRatio
+	// Every bar is the same length regardless of |value| — a fixed
+	// fraction of the plot's measure-axis extent. `dir` is the pixel
+	// direction a positive value points in, so a win grows up when
+	// vertical and rightward when horizontal.
+	barLen := PlotMeasureExtent(orient, in.Layout)[1] * winlossHeightRatio
+	dir := MeasureDirection(orient)
 
 	cornerR := 0.0
 	if in.Mark != nil && in.Mark.CornerRadius != nil {
 		cornerR = *in.Mark.CornerRadius
 	}
 
-	marks := make([]scene.Mark, 0, len(xs))
-	for i := range xs {
-		x, err := in.X.Scale.Apply(xs[i])
-		if err != nil {
-			return nil, err
-		}
-		// Direction by sign of y; magnitude ignored. y > 0 grows up,
-		// y < 0 grows down, y == 0 (or non-numeric) is a flat marker on
-		// the baseline so the per-row datum alignment stays 1:1.
-		top, h := baseline, 0.0
-		if v, ok := toFloat64(ys[i]); ok {
+	marks := make([]scene.Mark, 0, len(slots))
+	for i := range slots {
+		// Direction by sign; magnitude ignored. A positive value grows
+		// along dir, a negative one against it, and zero (or a
+		// non-numeric cell) is a flat marker on the baseline so the
+		// per-row datum alignment stays 1:1.
+		span := [2]float64{baseline, 0}
+		if v, ok := toFloat64(vals[i]); ok {
 			switch {
 			case v > 0:
-				top = baseline - barHeight
-				h = barHeight
+				span = spanFromBaseline(baseline+dir*barLen, baseline)
 			case v < 0:
-				top = baseline
-				h = barHeight
+				span = spanFromBaseline(baseline-dir*barLen, baseline)
 			}
 		}
 		style := in.Style
@@ -101,17 +95,13 @@ func encodeWinloss(in Inputs) ([]scene.Mark, error) {
 				}
 			}
 		}
+		rect := OrientedRect(orient, slots[i], span)
+		rect.CornerR = cornerR
 		marks = append(marks, scene.Mark{
 			Type:  scene.MarkRect,
 			ID:    fmt.Sprintf("winloss-%d", i),
 			Style: style,
-			Rect: &scene.RectGeom{
-				X:       x,
-				Y:       top,
-				W:       width,
-				H:       h,
-				CornerR: cornerR,
-			},
+			Rect:  &rect,
 		})
 	}
 	return marks, nil

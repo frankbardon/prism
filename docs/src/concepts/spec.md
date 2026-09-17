@@ -458,10 +458,114 @@ every Prism transform, composes anywhere in a chain.
 `day_of_week` and other component-extraction units (which return an
 ordinal, not a date) land in a follow-up.
 
+## Stack transform
+
+The `stack` transform accumulates one quantitative field into per-row
+`[start, end]` bounds inside each stack, so a bar or area mark can draw
+each segment as a span instead of anchoring every segment on the axis
+baseline. It is the Vega-Lite `stack` transform, and it is what the
+implicit stacking described in
+[Encoding → Stacking](encoding.md#stacking) compiles down to.
+
+```json
+{
+  "transform": [
+    {"stack": "users", "groupby": ["stage"], "offset": "zero", "as": ["users_lo", "users_hi"]}
+  ],
+  "mark": "bar",
+  "encoding": {
+    "x":  {"field": "stage", "type": "nominal"},
+    "y":  {"field": "users_lo", "type": "quantitative"},
+    "y2": {"field": "users_hi", "type": "quantitative"},
+    "color": {"field": "plan", "type": "nominal"}
+  }
+}
+```
+
+| Field | Required | Notes |
+|---|---|---|
+| `stack`   | yes | Quantitative field to accumulate. |
+| `groupby` | no  | Fields delimiting one stack — typically the dimension position channel. Omitted stacks the whole table as one group. |
+| `offset`  | no  | `zero` (default) accumulates from the baseline; `normalize` rescales each stack onto `0…1`; `center` slides each stack so its own midpoint lands on zero. |
+| `as`      | no  | Output column pair `[start, end]`. Defaults to `["<field>_start", "<field>_end"]`. These are **column names**, not a dataset alias — `stack` publishes no alias, exactly like `bin` and `calculate`. |
+| `data`    | no  | Optional input alias. |
+
+Semantics:
+
+- Positive and negative values accumulate on **independent cursors**
+  from zero, so a stack holding both grows up *and* down from the
+  baseline rather than cancelling.
+- `normalize` rescales each stack over its own extent
+  (`(v − lo) / (hi − lo)`), which reduces to `v / total` for
+  all-positive data. A stack whose values are all zero normalises to
+  zero rather than dividing by zero.
+- `center` keeps each stack's thickness and slides the whole pair of
+  bounds so the stack's own midpoint is zero — the streamgraph
+  silhouette. Output bounds are therefore **signed**, and every stack
+  is symmetric about the same line no matter how much total it
+  carries. The inside-out segment ordering a centred *encoding* stack
+  applies (see
+  [Encoding › Centred stacks](encoding.md#centred-stacks-the-streamgraph))
+  is not available here — this transform has no grouping channel to
+  derive series from, so it keeps upstream row order like the other
+  offsets.
+- A null or non-numeric cell contributes nothing: it gets a
+  zero-height `[cursor, cursor]` bound and the cursor does not move.
+- Segment order inside a stack is **upstream row order**. This
+  transform carries no `sort` key of its own; order the rows with a
+  preceding `{"sort": …}` transform, or bind the
+  [`order` channel](encoding.md#order-channel), which sorts the rows
+  before the stack accumulates.
+- The output columns must not collide with existing ones;
+  `PRISM_PLAN_STACK_OUTPUT_COLLISION` names the offender. A `stack`
+  field the upstream table does not carry raises
+  `PRISM_PLAN_STACK_FIELD_MISSING`.
+
+Like every other transform, `stack` accepts **any** upstream table — a
+leaf, inline values, or the output of an earlier transform — so it
+composes anywhere in the chain.
+
+## Sort direction
+
+The `sort` transform and the `window` transform's `sort` key both take
+per-field entries of the form `{"field": …, "order": …}`. `order` is
+`"ascending"` (the default) or `"descending"`; `"asc"` and `"desc"` are
+accepted aliases. The same vocabulary applies to the
+[`order` channel](encoding.md#order-channel)'s `sort` key.
+
+```json
+{"transform": [{"sort": [{"field": "revenue", "order": "descending"}]}]}
+```
+
+A `window` transform may carry its own `sort` array — it orders rows
+*within* each partition without reordering the table:
+
+```json
+{"transform": [
+  {"window": [{"op": "rank", "as": "place"}],
+   "partitionby": ["region"],
+   "sort": [{"field": "revenue", "order": "descending"}]}
+]}
+```
+
 ## Strict by default
 
 - Unknown fields error (typos like `xfield` vs `x.field` caught at parse).
+  Strictness reaches every level: an unrecognised key inside a channel
+  object, or inside that channel's `axis` / `legend` sub-block, fails the
+  decode rather than being dropped. The JSON Schema shape stage agrees —
+  `additionalProperties: false` on every `$def` — so `prism validate` and a
+  library caller using `spec.Decode` alone reject the same document. (That
+  was not always true: a hand-written `UnmarshalJSON` receives raw bytes and
+  Go does not propagate the outer decoder's `DisallowUnknownFields` into it,
+  so each decoder in `spec/` re-arms strictness itself.
+  `internal/gates/spec_strict_decode_test.go` drives an unknown key through
+  every one of them on each build.)
 - Semantic violations error (agg op on incompatible field type, etc.).
+- A key that decodes and then reaches no consumer is reported as a warning
+  (below) — and, for anything newly added, fails the build:
+  `internal/gates/spec_field_consumer_test.go` requires every exported,
+  JSON-tagged `spec/` field to have a typed consumer outside `spec/`.
 - 24+ `PRISM_SPEC_*` rules cover field-existence, channel-for-mark,
   selection refs, structured filter / calculate predicates, scale type compatibility,
   animation easing / key constraints, and more. Run
@@ -473,6 +577,53 @@ ordinal, not a date) land in a follow-up.
 prism validate my-chart.prism.json
 prism validate --json my-chart.prism.json
 ```
+
+## Warnings — and the fields that do nothing
+
+A spec can be perfectly valid and still ask for something Prism does
+not do. Those keys used to be discarded in silence; they now report
+themselves as **warnings**. A warning never stops the chart: the
+document still renders, and the warning rides alongside it.
+
+Where they surface:
+
+- `prism plot` / `prism scene` print `WARN <CODE>: <message>` to
+  **stderr**, so the rendered bytes on stdout stay clean.
+- `prism scene` also carries them in the document itself, under the
+  top-level `warnings` array of the Scene IR (`code`, `message`,
+  `details`) — the same array the browser runtime and the Twirp /
+  MCP facades read.
+- `prism errors lookup <CODE>` explains any of them, with fixups.
+
+The **inert-field** family reports a key that decoded, passed
+validation, and then reached no consumer. Each one names the exact
+path (`layer[1].mark.tooltip`, `encoding.y.scale.padding_inner`)
+plus the mark or channel it was written on:
+
+| Code | Fires when |
+|---|---|
+| `PRISM_WARN_MARK_DEF_INERT` | a `mark_def` property is set on a mark that never reads it — `pad_angle` on a bar, `dx` on a rect — or on a property no mark reads at all (`shape`, `tooltip`, `layout`) |
+| `PRISM_WARN_CHANNEL_INERT` | a channel binding reaches no encoder: `fill`, `stroke`, `size`, `shape` (no mark reads them), `opacity` on anything but `heatmap`, or a `format` on a table column that also binds a sub-`mark` (that column draws geometry, not text) |
+| `PRISM_WARN_SCALE_FIELD_INERT` | a `scale` property does not apply to the family the channel resolves to — `padding_inner` on a linear scale, `base` on anything but `log`, `zero` on a log / time / discrete scale |
+| `PRISM_WARN_LEGEND_NOT_BUILT` | a **quantitative or temporal** `color` channel builds a gradient legend, but the mark never reads the colour ramp (only `heatmap` consumes a sequential palette today), so the key describes a scale the marks do not use |
+| `PRISM_WARN_FACET_CHILD_SKIPPED` | a facet child's encoding asks for a channel-level `aggregate`, a `stack`, or an `order` — the child encoding is stripped before the plan is built, so none of the three is injected |
+
+Silence is intentional for three groups, and none of them warns: a key
+that **is** honoured; a key that is **rejected** outright at validate
+(`orient: "radial"` → `PRISM_SPEC_046`, `scale.range` on a position
+channel → `PRISM_SPEC_045`, `bar` + `stack: "center"` →
+`PRISM_SPEC_053` — a rejection is already visible); and a key that is
+inert *by design* — the `json:"-"` internal bindings, and
+`axis.format` / `legend.format`, which a validation rule reads.
+Universal style properties (`fill`, `stroke`, `stroke_width`,
+`stroke_dash`, `opacity`, …) are never reported either: every mark
+carries them into its Scene IR style, so no mark type can render them
+inert. A
+channel carrying a `condition` is likewise never reported: the
+condition pass evaluates it whatever the channel.
+
+The report is produced once per spec, from the top of the composition
+tree, so a layer or concat child is never warned about twice.
 
 ## Spec patches (RFC 6902)
 

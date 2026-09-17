@@ -16,19 +16,37 @@ type MarkDef struct {
 	Shape         string    `json:"shape,omitempty"`
 	Interpolate   string    `json:"interpolate,omitempty"`
 	Tension       *float64  `json:"tension,omitempty"`
-	Orient        string    `json:"orient,omitempty"`
-	Align         string    `json:"align,omitempty"`
-	Baseline      string    `json:"baseline,omitempty"`
-	Font          string    `json:"font,omitempty"`
-	FontSize      *float64  `json:"font_size,omitempty"`
-	FontWeight    any       `json:"font_weight,omitempty"`
-	FontStyle     string    `json:"font_style,omitempty"`
-	Angle         *float64  `json:"angle,omitempty"`
-	Dx            *float64  `json:"dx,omitempty"`
-	Dy            *float64  `json:"dy,omitempty"`
-	Tooltip       any       `json:"tooltip,omitempty"`
-	InnerRadius   *float64  `json:"inner_radius,omitempty"`
-	OuterRadius   *float64  `json:"outer_radius,omitempty"`
+	// Clip (E2-S2) forces the plot-region clip on or off for the scene
+	// this mark belongs to. Left unset the encoder decides: the clip is
+	// armed only when a position channel pins an explicit
+	// `scale.domain`, because that is the one way a mark can land
+	// outside the plot rect. `true` always clips, `false` never does.
+	// The clip is a property of the plot rect, not of one mark, so in a
+	// layer composite a single `true` wins and a `false` otherwise
+	// disarms it for every layer.
+	Clip *bool `json:"clip,omitempty"`
+	// Orient (E9-S1) names which axis a baseline-anchored mark grows
+	// along: "vertical" (the default) puts the category on x and the
+	// measure on y, "horizontal" swaps them. Left empty the encoder
+	// *infers* it from whichever axis carries the band scale — see
+	// encode/marks/orient.go MarkOrientation. "radial" is part of the
+	// vocabulary but implemented by no mark and rejected at validate
+	// (PRISM_SPEC_046). The tree / dendrogram / network marks read the
+	// same field as the direction their layout grows rather than as an
+	// axis swap; the bullet mark keeps its own Orientation (below).
+	Orient      string   `json:"orient,omitempty"`
+	Align       string   `json:"align,omitempty"`
+	Baseline    string   `json:"baseline,omitempty"`
+	Font        string   `json:"font,omitempty"`
+	FontSize    *float64 `json:"font_size,omitempty"`
+	FontWeight  any      `json:"font_weight,omitempty"`
+	FontStyle   string   `json:"font_style,omitempty"`
+	Angle       *float64 `json:"angle,omitempty"`
+	Dx          *float64 `json:"dx,omitempty"`
+	Dy          *float64 `json:"dy,omitempty"`
+	Tooltip     any      `json:"tooltip,omitempty"`
+	InnerRadius *float64 `json:"inner_radius,omitempty"`
+	OuterRadius *float64 `json:"outer_radius,omitempty"`
 	// InnerRadiusRatio (P10) is the donut hole's inner radius as a
 	// fraction of OuterR (0–1). When set, takes precedence over the
 	// default donut ratio (0.55). Ignored when InnerRadius is also
@@ -80,6 +98,25 @@ type MarkDef struct {
 	// "horizontal" | "vertical". Default "horizontal".
 	Orientation string `json:"orientation,omitempty"`
 
+	// Progress mark (E10-S1) draws one metric row per table row: a
+	// value bar on a full-scale track.
+	//
+	// Total is the upper bound of the measure axis — the value the
+	// track runs to and the point the scale's domain ends at, so the
+	// track can never overflow the plot. It takes either a literal
+	// number (one ceiling for every row) or a string naming a data
+	// field, read **per row** so each metric can carry its own
+	// maximum. Left unset the track runs to the measure scale's own
+	// domain maximum. Unlike bullet.Target / bullet.Comparative — the
+	// polymorphism this mirrors — a field name is never collapsed to
+	// row 0: a progress mark is inherently multi-row.
+	Total any `json:"total,omitempty"`
+	// Thickness is the fraction of the category band a progress row's
+	// bar and track occupy, centred in the band. Must be greater than
+	// 0 and at most 1 (PRISM_SPEC_061). Nil uses
+	// ProgressThicknessDefault.
+	Thickness *float64 `json:"thickness,omitempty"`
+
 	// Spark adornments (E4) are opt-in, default-off embellishments for
 	// the compact spark marks (sparkline / sparkbar / sparkarea). The
 	// zero value of every field means "no adornment", so existing spark
@@ -121,6 +158,12 @@ type MarkDef struct {
 // table mark whose mark_def omits page_size. Documented in
 // docs/src/concepts/marks.md; keep both in sync.
 const TablePageSizeDefault = 25
+
+// ProgressThicknessDefault is the fraction of the category band a
+// progress mark's bar and track occupy when mark_def omits
+// thickness. Documented in docs/src/concepts/marks.md; keep both in
+// sync.
+const ProgressThicknessDefault = 0.5
 
 // ReferenceBand bounds the shaded normal-range band drawn behind a
 // spark mark (E4 adornments). From and To are data-space values on the

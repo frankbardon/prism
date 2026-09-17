@@ -41,15 +41,24 @@ func BuildLookup(s *spec.Spec, fs vfs.Fs) validate.SchemaLookup {
 		}
 		shim := &validate.SchemaShim{Name: name}
 		if len(ds.Values) > 0 {
-			seen := map[string]bool{}
+			// A null (or otherwise unclassifiable) value carries no
+			// measure type. Keep scanning later rows for the field's
+			// first typed value rather than letting a leading gap in a
+			// series leave the field permanently untyped — the shim
+			// mirrors table.FromInline's first-non-null inference.
+			at := map[string]int{}
 			for _, row := range ds.Values {
 				for k, v := range row {
-					if seen[k] {
+					mt := inferMeasureType(v)
+					if i, ok := at[k]; ok {
+						if shim.Fields[i].Type == "" {
+							shim.Fields[i].Type = mt
+						}
 						continue
 					}
-					seen[k] = true
+					at[k] = len(shim.Fields)
 					shim.Fields = append(shim.Fields, validate.FieldShim{
-						Name: k, Type: inferMeasureType(v),
+						Name: k, Type: mt,
 					})
 				}
 			}

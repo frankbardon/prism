@@ -2,6 +2,7 @@ package encode
 
 import (
 	"fmt"
+	"strconv"
 
 	"github.com/frankbardon/prism/encode/marks"
 	"github.com/frankbardon/prism/encode/scale"
@@ -39,6 +40,12 @@ type EncodeOpts struct {
 	OverrideYScale Scale
 }
 
+// flatSceneID is the id the flat encoder stamps on the single scene
+// it builds. A composite caller renumbers it through renameScene,
+// which also re-keys anything filed under it in Defs (the plot clip,
+// and a gradient legend's <linearGradient>).
+const flatSceneID = "scene-0"
+
 // sparkMarks is the single source of truth for "spark" marks —
 // compact marks that render without axes, legend, or title and use
 // the tight 4-px-pad layout (ComputeSparkline). Adding a spark mark
@@ -75,7 +82,25 @@ func isSparkMark(markType string) bool {
 //     (full nesting always; no flat-chart special case).
 //
 // All warnings collected along the way attach to SceneDoc.Warnings.
+//
+// Encode is the top-of-tree entry point: it delegates the encoding to
+// encodeLeaf and then appends the spec-wide inert-field warnings
+// (E7-S1). Composition cells call encodeLeaf directly, which is what
+// keeps InertFieldWarnings a single reporter — a layer child is
+// walked once, from the root spec, never once per cell.
 func Encode(s *spec.Spec, tables map[plan.NodeID]*table.Table, tipID plan.NodeID, opts EncodeOpts) (*scene.SceneDoc, error) {
+	doc, err := encodeLeaf(s, tables, tipID, opts)
+	if err != nil {
+		return nil, err
+	}
+	doc.Warnings = append(doc.Warnings, InertFieldWarnings(s)...)
+	narrowDocCSS(doc, s, opts)
+	return doc, nil
+}
+
+// encodeLeaf is Encode without the inert-field pass — the entry every
+// composition cell uses.
+func encodeLeaf(s *spec.Spec, tables map[plan.NodeID]*table.Table, tipID plan.NodeID, opts EncodeOpts) (*scene.SceneDoc, error) {
 	if s == nil {
 		return nil, fmt.Errorf("encode: nil spec")
 	}
@@ -119,6 +144,14 @@ func Encode(s *spec.Spec, tables map[plan.NodeID]*table.Table, tipID plan.NodeID
 		)
 	}
 
+	// Stacking (E5-S2): when the plan injected a StackNode, repoint the
+	// stacked position channel at its bounds columns before anything
+	// reads the encoding. Everything downstream — domain resolution,
+	// axis building, the span-aware bar / area encoders — then treats
+	// the stack as an ordinary x→x2 / y→y2 interval. No-op for every
+	// spec that does not stack. See encode/stack.go.
+	s = rebindStack(s, tbl)
+
 	enc := s.Encoding
 	if enc == nil {
 		return nil, prismerrors.New(
@@ -140,6 +173,45 @@ func Encode(s *spec.Spec, tables map[plan.NodeID]*table.Table, tipID plan.NodeID
 	}
 
 	hasTitle := s.Title != nil
+	// Axis placement drives both the layout reservation and the
+	// scene.Axis.Position stamped below, so padding can never disagree
+	// with where the axis actually renders. The reservation is keyed on
+	// the placement, not on whether the channel turned out to be bound:
+	// an unbound channel still reserves its side, as it always has.
+	// A channel that hides its axis with `"axis": null` is the one
+	// exception — it claims no side, so the plot expands into the
+	// padding the axis would have reserved.
+	placement := placementFor(enc)
+	// Legend placement (E1-S3) resolves before the layout, because a
+	// side orient (left / right / top / bottom) reserves a margin band
+	// the plot rect has to shrink for. Corner orients (the default
+	// top-right included) overlay the plot and reserve nothing, which
+	// is what keeps default placement byte-identical.
+	//
+	// Legend content (E3-S3) resolves first, because the band a side
+	// orient reserves is measured from the *shown* entries and the
+	// label budget — both of which legend.values, legend.title and
+	// legend.label_limit move — and because legend.type, read here,
+	// decides which KIND of legend is coming (E3-S4). The kind in
+	// turn picks the default anchor: a symbol legend keeps the
+	// top-right corner, a gradient bar defaults to the right side so
+	// it reserves margin instead of lying over the cells it describes.
+	legendContent := ResolveLegendContent(legendSpecOf(enc))
+	legendKind := ResolveLegendKind(enc.Color, legendContent)
+	legendPl, legendEnabled := ResolveLegendPlacement(legendSpecOf(enc), DefaultLegendPosition(legendKind))
+	sides := placement.Sides()
+	reservedLegendSide := false
+	if legendEnabled && !isSparkMark(markType) && IsSideLegend(legendPl.Position) {
+		// The box is measured up front: a top/bottom band's depth
+		// grows with the entry count, and a channel that builds no
+		// legend at all (fewer than two categories, or a gradient
+		// over a column with no numeric cell) must not reserve an
+		// empty band either.
+		if box, ok := legendReserveBox(legendKind, enc, tbl, legendPl, legendContent, colorLegendTitle(enc)); ok {
+			sides.MarkLegend(legendPl.Position, box.SideExtent(legendPl.Position, legendPl.Offset))
+			reservedLegendSide = true
+		}
+	}
 	// Sparkline (D067): 4-px-padded plot rect, no axis/legend/title
 	// reservation; the title block, axes, and legends are suppressed
 	// at scene-assembly time below.
@@ -148,7 +220,15 @@ func Encode(s *spec.Spec, tables map[plan.NodeID]*table.Table, tipID plan.NodeID
 		layout = ComputeSparkline(width, height)
 		hasTitle = false
 	} else {
-		layout = Compute(width, height, hasTitle)
+		layout = Compute(LayoutOpts{
+			Width:  width,
+			Height: height,
+			Title:  hasTitle,
+			Sides:  sides,
+		})
+	}
+	if reservedLegendSide {
+		legendPl.Reserve = layout.Padding.LegendBand(legendPl.Position, hasTitle)
 	}
 
 	var warnings []scene.Warning
@@ -186,11 +266,30 @@ func Encode(s *spec.Spec, tables map[plan.NodeID]*table.Table, tipID plan.NodeID
 	// Image mark uses x/y when bound, otherwise skips — let the
 	// standard path run; the image encoder is forgiving on missing
 	// scales.
-	polarMark := markType == "arc" || markType == "pie" || markType == "donut"
-	selfScaleMark := markType == "histogram"
-	specialtyMark := markType == "sankey" || markType == "funnel" || markType == "path" ||
-		markType == "tree" || markType == "dendrogram" || markType == "network"
-	geoMark := markType == "geoshape" || markType == "geopoint"
+	polarMark := isPolarMark(markType)
+	selfScaleMark := isSelfScaleMark(markType)
+	specialtyMark := isSpecialtyMark(markType)
+	geoMark := isGeoMark(markType)
+
+	// Drop rows carrying a null in a scale-bound channel before any
+	// scale resolution runs, so the domains, the color categories and
+	// every per-row consumer downstream (marks, tooltips, datum
+	// back-references, category styles, conditions) agree on one row
+	// set. Only the cartesian x / y channels are scale-bound — the
+	// marks that skip that resolution below (polar / histogram /
+	// specialty / geo) bring their own geometry and never hand a raw
+	// field value to Scale.Apply. A null in a non-scale-bound channel
+	// (tooltip, text, color, …) is left alone.
+	if usesCartesianScales(markType) {
+		filtered, nullWarn, nerr := marks.DropNullRows(tbl, "layer-0", scaleBoundChannels(enc)...)
+		if nerr != nil {
+			return nil, nerr
+		}
+		tbl = filtered
+		if nullWarn != nil {
+			warnings = append(warnings, *nullWarn)
+		}
+	}
 
 	// Resolve x / y scales (composite caller may supply pre-computed
 	// shared overrides per P09 / D057; honour them when present so
@@ -215,6 +314,27 @@ func Encode(s *spec.Spec, tables map[plan.NodeID]*table.Table, tipID plan.NodeID
 			xExtra = ext
 		}
 	}
+	// A progress mark owns its measure domain: mark.total names the
+	// value the track runs to, and the track would overflow the plot
+	// if the domain stopped at the data max. Inject the totals as
+	// extra domain values on the measure axis — x when the mark reads
+	// horizontally (a nominal y against a quantitative x, the
+	// canonical metric-row shape), y when it reads vertically.
+	if markType == "progress" && s.Mark != nil && s.Mark.Def != nil {
+		ext := progressMeasureExtras(s.Mark.Def, tbl)
+		if progressMeasureIsX(s.Mark.Def, enc) {
+			xExtra = append(xExtra, ext...)
+		} else {
+			yExtra = append(yExtra, ext...)
+		}
+	}
+	// A bound span channel (E9-S3) shares its base channel's scale, so
+	// its values have to widen that channel's domain before the scale
+	// is built — otherwise an interval reaching past the base column's
+	// range would resolve outside the plot. No-ops when x2 / y2 is
+	// absent.
+	xExtra = append(xExtra, spanDomainValues(enc.X2, tbl)...)
+	yExtra = append(yExtra, spanDomainValues(enc.Y2, tbl)...)
 	if !polarMark && !selfScaleMark && !specialtyMark && !geoMark {
 		if opts.OverrideXScale != nil {
 			xScale = opts.OverrideXScale
@@ -244,14 +364,16 @@ func Encode(s *spec.Spec, tables map[plan.NodeID]*table.Table, tipID plan.NodeID
 	}
 
 	// Build axes (only when the channel was bound). Sparkline (D067)
-	// suppresses axes entirely — leave axes empty.
+	// suppresses axes entirely — leave axes empty. A channel with
+	// `"axis": null` is suppressed the same way: no domain line,
+	// ticks, labels, title or grid.
 	axes := make([]scene.Axis, 0, 2)
 	if !isSparkMark(markType) && !geoMark {
-		if xScale != nil {
-			axes = append(axes, BuildAxisWithOpts(xScale, scene.ChannelX, scene.AxisPositionBottom, layout.Plot, axisOptsFor(enc.X)))
+		if xScale != nil && !placement.XHidden {
+			axes = append(axes, BuildAxisWithOpts(xScale, scene.ChannelX, placement.X, layout.Plot, axisOptsFor(enc.X).withWarnings(&warnings)))
 		}
-		if yScale != nil {
-			axes = append(axes, BuildAxisWithOpts(yScale, scene.ChannelY, scene.AxisPositionLeft, layout.Plot, axisOptsFor(enc.Y)))
+		if yScale != nil && !placement.YHidden {
+			axes = append(axes, BuildAxisWithOpts(yScale, scene.ChannelY, placement.Y, layout.Plot, axisOptsFor(enc.Y).withWarnings(&warnings)))
 		}
 	}
 
@@ -266,25 +388,16 @@ func Encode(s *spec.Spec, tables map[plan.NodeID]*table.Table, tipID plan.NodeID
 				map[string]any{"Field": enc.Color.Field, "Source": "<table>", "Available": joinTableFields(tbl)},
 			)
 		}
-		cats := []string{}
-		seen := map[string]bool{}
-		for i := 0; i < col.Len(); i++ {
-			s, ok := col.ValueAt(i).(string)
-			if !ok || seen[s] {
-				continue
-			}
-			seen[s] = true
-			cats = append(cats, s)
-		}
+		cats := distinctStringValues(col)
 		colorChannel = &marks.ColorChannel{
 			Field:             enc.Color.Field,
 			Categories:        cats,
-			Palette:           ResolveCategoricalPalette(fullTheme, schemeNameOf(enc.Color)),
-			SequentialPalette: ResolveSequentialPalette(fullTheme, schemeNameOf(enc.Color)),
+			Palette:           ResolveCategoricalPaletteWithOpts(fullTheme, colorScaleOpts(enc.Color)),
+			SequentialPalette: ResolveSequentialPaletteWithOpts(fullTheme, colorScaleOpts(enc.Color)),
 		}
 		if darkTheme != nil {
-			colorChannel.DarkPalette = ResolveCategoricalPalette(darkTheme, schemeNameOf(enc.Color))
-			colorChannel.DarkSequentialPalette = ResolveSequentialPalette(darkTheme, schemeNameOf(enc.Color))
+			colorChannel.DarkPalette = ResolveCategoricalPaletteWithOpts(darkTheme, colorScaleOpts(enc.Color))
+			colorChannel.DarkSequentialPalette = ResolveSequentialPaletteWithOpts(darkTheme, colorScaleOpts(enc.Color))
 		}
 	}
 
@@ -317,12 +430,18 @@ func Encode(s *spec.Spec, tables map[plan.NodeID]*table.Table, tipID plan.NodeID
 		Table:         tbl,
 		X:             markX,
 		Y:             markY,
+		X2:            spanChannel(enc.X2, toMarkScale(xScale)),
+		Y2:            spanChannel(enc.Y2, toMarkScale(yScale)),
 		Color:         colorChannel,
+		Detail:        detailFields(enc),
+		Ordered:       spec.ResolveOrder(enc) != nil,
 		Opacity:       opacityChannel,
 		Layout:        layout.Plot,
 		Style:         style,
 		LabelStyle:    defaultMarkStyleAuto(fullTheme, darkTheme, colorReg, "text"),
+		TrackStyle:    progressTrackStyle(fullTheme),
 		Tooltip:       enc.Tooltip,
+		Text:          enc.Text,
 		KeyField:      keyFieldFromEncoding(enc),
 		ColorRegistry: colorReg,
 	}
@@ -436,18 +555,19 @@ func Encode(s *spec.Spec, tables map[plan.NodeID]*table.Table, tipID plan.NodeID
 		if err := applyConditions(enc, tbl, hr.Marks); err != nil {
 			return nil, err
 		}
-		if hr.XScale != nil {
-			axes = append(axes, BuildAxisWithOpts(hr.XScale, scene.ChannelX, scene.AxisPositionBottom, layout.Plot, axisOptsFor(enc.X)))
+		if hr.XScale != nil && !placement.XHidden {
+			axes = append(axes, BuildAxisWithOpts(hr.XScale, scene.ChannelX, placement.X, layout.Plot, axisOptsFor(enc.X).withWarnings(&warnings)))
 		}
-		if hr.YScale != nil {
-			yTitle := "count"
-			if enc.Y != nil && enc.Y.Field != "" {
-				yTitle = enc.Y.Field
-			}
-			axes = append(axes, BuildAxisWithOpts(hr.YScale, scene.ChannelY, scene.AxisPositionLeft, layout.Plot, DefaultAxisOpts(yTitle)))
+		if hr.YScale != nil && !placement.YHidden {
+			// E3-S5: the synthetic bin-count axis honours channel.axis
+			// config exactly like the histogram's x axis; "count" is only
+			// the title fallback when the channel names no field and sets
+			// no explicit axis.title.
+			axes = append(axes, BuildAxisWithOpts(hr.YScale, scene.ChannelY, placement.Y, layout.Plot,
+				axisOptsForTitled(enc.Y, "count").withWarnings(&warnings)))
 		}
 		finalizeAutoDarkCSS(sceneTheme, fullTheme, colorReg, isThemeOwner)
-		return buildSceneDoc(s, layout, axes, hr.Marks, markType, colorChannel, enc, sceneTheme, warnings, hasTitle), nil
+		return buildSceneDoc(s, layout, axes, hr.Marks, markType, colorChannel, enc, sceneTheme, warnings, hasTitle, legendPl, legendEnabled, legendContent, legendKind, tbl), nil
 	}
 
 	markList, markWarn, err := marks.Encode(markType, markInputs)
@@ -471,9 +591,13 @@ func Encode(s *spec.Spec, tables map[plan.NodeID]*table.Table, tipID plan.NodeID
 		Marks: markList,
 	}
 	// Build legends for non-trivial mark channels. Sparkline (D067)
-	// suppresses legends entirely.
+	// suppresses legends entirely, and so does an explicit
+	// `"legend": null` on the color channel.
 	var legends []scene.Legend
-	if !isSparkMark(markType) && colorChannel != nil && len(colorChannel.Categories) > 1 {
+	var legendGradient *scene.Gradient
+	legendGradientKey := ""
+	if legendEnabled && !isSparkMark(markType) && !legendHidden(enc.Color) && colorChannel != nil &&
+		(len(colorChannel.Categories) > 1 || legendKind == LegendKindGradient) {
 		// Sankey populates colorChannel from source ∪ target nodes when
 		// no explicit color binding exists (D064); use colorChannel.Field
 		// as the legend title in that case.
@@ -481,20 +605,30 @@ func Encode(s *spec.Spec, tables map[plan.NodeID]*table.Table, tipID plan.NodeID
 		if enc.Color != nil && enc.Color.Field != "" {
 			title = enc.Color.Field
 		}
-		legend := BuildSymbolLegend(LegendInputs{
+		legendGradientKey = LegendGradientID(flatSceneID, scene.ChannelColor)
+		legend, grad := buildColorLegend(colorLegendInputs{
+			Kind:       legendKind,
+			SceneID:    flatSceneID,
 			Channel:    scene.ChannelColor,
 			Title:      title,
+			Field:      colorChannel.Field,
+			Format:     colorChannelFormat(enc),
 			Categories: colorChannel.Categories,
 			Palette:    colorChannel.Palette,
-			Position:   scene.LegendTopRight,
-		}, layout.Plot)
+			Sequential: colorChannel.SequentialPalette,
+			Table:      tbl,
+			Placement:  legendPl,
+			Content:    legendContent,
+			Plot:       layout.Plot,
+		})
 		if legend != nil {
 			legends = append(legends, *legend)
+			legendGradient = grad
 		}
 	}
 
 	sceneObj := scene.Scene{
-		ID:         "scene-0",
+		ID:         flatSceneID,
 		Frame:      layout.Frame,
 		Plot:       layout.Plot,
 		Axes:       axes,
@@ -510,6 +644,10 @@ func Encode(s *spec.Spec, tables map[plan.NodeID]*table.Table, tipID plan.NodeID
 			Y:       20,
 		}
 	}
+	registerSceneGradient(&sceneObj, legendGradientKey, legendGradient)
+	// Plot-region clip (E2-S2). Armed only when a position scale pins
+	// an explicit domain, or `mark_def.clip` asks for it outright.
+	armPlotClip(&sceneObj, wantsPlotClip(s))
 	finalizeAutoDarkCSS(sceneTheme, fullTheme, colorReg, isThemeOwner)
 	doc := scene.NewDoc()
 	doc.Theme = sceneTheme
@@ -531,6 +669,8 @@ func buildSceneDoc(
 	s *spec.Spec, layout Layout, axes []scene.Axis, markList []scene.Mark,
 	markType string, colorChannel *marks.ColorChannel, enc *spec.Encoding,
 	sceneTheme *scene.Theme, warnings []scene.Warning, hasTitle bool,
+	legendPl LegendPlacement, legendEnabled bool, legendContent LegendContent,
+	legendKind LegendKind, tbl *table.Table,
 ) *scene.SceneDoc {
 	layer := scene.SceneLayer{
 		ID:    "layer-0",
@@ -538,21 +678,32 @@ func buildSceneDoc(
 		Marks: markList,
 	}
 	var legends []scene.Legend
-	if colorChannel != nil && len(colorChannel.Categories) > 1 {
-		title := enc.Color.Field
-		legend := BuildSymbolLegend(LegendInputs{
+	var legendGradient *scene.Gradient
+	legendGradientKey := LegendGradientID(flatSceneID, scene.ChannelColor)
+	if legendEnabled && !legendHidden(enc.Color) && colorChannel != nil &&
+		(len(colorChannel.Categories) > 1 || legendKind == LegendKindGradient) {
+		legend, grad := buildColorLegend(colorLegendInputs{
+			Kind:       legendKind,
+			SceneID:    flatSceneID,
 			Channel:    scene.ChannelColor,
-			Title:      title,
+			Title:      enc.Color.Field,
+			Field:      colorChannel.Field,
+			Format:     colorChannelFormat(enc),
 			Categories: colorChannel.Categories,
 			Palette:    colorChannel.Palette,
-			Position:   scene.LegendTopRight,
-		}, layout.Plot)
+			Sequential: colorChannel.SequentialPalette,
+			Table:      tbl,
+			Placement:  legendPl,
+			Content:    legendContent,
+			Plot:       layout.Plot,
+		})
 		if legend != nil {
 			legends = append(legends, *legend)
+			legendGradient = grad
 		}
 	}
 	sceneObj := scene.Scene{
-		ID:         "scene-0",
+		ID:         flatSceneID,
 		Frame:      layout.Frame,
 		Plot:       layout.Plot,
 		Axes:       axes,
@@ -568,6 +719,8 @@ func buildSceneDoc(
 			Y:       20,
 		}
 	}
+	registerSceneGradient(&sceneObj, legendGradientKey, legendGradient)
+	armPlotClip(&sceneObj, wantsPlotClip(s))
 	doc := scene.NewDoc()
 	doc.Theme = sceneTheme
 	doc.Grid = scene.SceneGrid{
@@ -607,17 +760,11 @@ func resolveChannel(ch *spec.PositionChannel, tbl *table.Table, rmin, rmax float
 	// extra carries mark-supplied domain values (bullet bands / target /
 	// comparative) that must widen the data-derived domain.
 	values = append(values, extra...)
+	opts := ScaleOptsFromSpec(ch.Scale)
 	if ch.Scale != nil && ch.Scale.Type != "" {
-		opts := ScaleOpts{}
-		if ch.Scale.Base != nil {
-			opts.Base = *ch.Scale.Base
-		}
-		if ch.Scale.Exponent != nil {
-			opts.Exp = *ch.Scale.Exponent
-		}
 		return ResolveScaleTyped(scene.ScaleType(ch.Scale.Type), values, rmin, rmax, opts)
 	}
-	return ResolveScale(ch.Type, col.Kind(), values, rmin, rmax)
+	return ResolveScaleWithOpts(ch.Type, col.Kind(), values, rmin, rmax, opts)
 }
 
 // bulletMeasureExtras returns the extra measure-axis domain values a
@@ -678,6 +825,96 @@ func fieldOf(ch *spec.PositionChannel) string {
 		return ""
 	}
 	return ch.Field
+}
+
+// isPolarMark reports whether markType consumes theta + colour and
+// builds its own share-based geometry (D059) instead of cartesian
+// x / y scales.
+func isPolarMark(markType string) bool {
+	return markType == "arc" || markType == "pie" || markType == "donut"
+}
+
+// isSelfScaleMark reports whether markType builds its own synthetic
+// x / y scales inside the encoder (D060).
+func isSelfScaleMark(markType string) bool {
+	return markType == "histogram"
+}
+
+// isSpecialtyMark reports whether markType brings its own geometry
+// and needs no cartesian axes (P11 marks + the graph family).
+func isSpecialtyMark(markType string) bool {
+	switch markType {
+	case "sankey", "funnel", "path", "tree", "dendrogram", "network":
+		return true
+	}
+	return false
+}
+
+// isGeoMark reports whether markType projects lon/lat rather than
+// resolving cartesian scales (P18).
+func isGeoMark(markType string) bool {
+	return markType == "geoshape" || markType == "geopoint"
+}
+
+// usesCartesianScales reports whether markType goes through the
+// standard x / y scale resolution — and therefore whether a raw field
+// value from those channels ever reaches Scale.Apply. It is the one
+// predicate both the flat encoder and the layer-composite encoder
+// consult before dropping null rows, so the two can never disagree
+// about which channels are scale-bound.
+func usesCartesianScales(markType string) bool {
+	return !isPolarMark(markType) && !isSelfScaleMark(markType) &&
+		!isSpecialtyMark(markType) && !isGeoMark(markType)
+}
+
+// scaleBoundChannels lists the encoding channels whose raw field
+// values are handed to a resolved Scale.Apply — the only channels
+// where an upstream null becomes a hard PRISM_ENCODE_001 rather than
+// a cosmetic default. Today that is exactly the cartesian x / y pair;
+// every other channel (color, opacity, tooltip, text, detail, the
+// sankey / geo bindings) either has no scale or tolerates a null.
+//
+// Feeding marks.DropNullRows from one helper keeps the flat and
+// layer-composite encoders on the same definition of "scale-bound".
+func scaleBoundChannels(enc *spec.Encoding) []marks.NullChannel {
+	if enc == nil {
+		return nil
+	}
+	var out []marks.NullChannel
+	if f := fieldOf(enc.X); f != "" {
+		out = append(out, marks.NullChannel{Channel: "x", Field: f})
+	}
+	if f := fieldOf(enc.Y); f != "" {
+		out = append(out, marks.NullChannel{Channel: "y", Field: f})
+	}
+	return out
+}
+
+// detailFields (E5-S1) flattens encoding.detail — which decodes as
+// either a single entry or an array (spec.DetailChannel) — into the
+// ordered list of table field names marks group on. Entries without a
+// field are skipped; a nil channel yields nil, which marks.Inputs
+// treats as "no detail bound".
+//
+// Detail is a pure grouping channel: unlike color it resolves no
+// scale and no palette here, so nothing beyond the field names needs
+// to travel to the mark encoders.
+func detailFields(enc *spec.Encoding) []string {
+	if enc == nil || enc.Detail == nil {
+		return nil
+	}
+	entries := enc.Detail.Multi
+	if enc.Detail.Single != nil {
+		entries = append([]spec.DetailChannelEntry{*enc.Detail.Single}, entries...)
+	}
+	var out []string
+	for _, e := range entries {
+		if e.Field == "" {
+			continue
+		}
+		out = append(out, e.Field)
+	}
+	return out
 }
 
 // defaultMarkStyle returns the resolved default style for a mark
@@ -825,6 +1062,22 @@ func applyThemeMarkStyle(style *scene.Style, ms *theme.MarkStyle, t *theme.Theme
 	if ms.Opacity != nil {
 		style.Opacity = *ms.Opacity
 	}
+	// E4-S1: the theme's paint-alpha / typography tokens. These are
+	// the theme.MarkStyle counterparts of spec.MarkDef's fill_opacity
+	// / font_weight / font_style, and applyMarkDef runs after this
+	// function, so a spec mark_def value shadows the theme token.
+	// (theme.MarkStyle has no stroke_opacity or font-family token —
+	// the mark def's stroke_opacity / font are spec-only.)
+	if ms.FillOpacity != nil {
+		v := *ms.FillOpacity
+		style.FillOpacity = &v
+	}
+	if w, ok := normalizeFontWeight(ms.FontWeight); ok {
+		style.FontWeight = w
+	}
+	if ms.FontStyle != "" {
+		style.FontStyle = ms.FontStyle
+	}
 	if ms.LineHeight != nil {
 		v := *ms.LineHeight
 		style.LineHeight = &v
@@ -881,9 +1134,23 @@ func finalizeAutoDarkCSS(sceneTheme *scene.Theme, fullTheme *theme.Theme, colorR
 	sceneTheme.CSS = fullTheme.CSSVariables(vars...)
 }
 
-// applyMarkDef folds spec.MarkDef overrides into a style. P05
-// honours Fill, Stroke, StrokeWidth, Opacity; richer fields land in
-// P06.
+// applyMarkDef folds spec.MarkDef overrides into a style.
+//
+// It runs *after* defaultMarkStyleAuto (which folds in the theme's
+// theme.MarkStyle cascade), so every field written here shadows the
+// theme's same-named token — the spec-wins precedence documented in
+// docs/src/concepts/themes.md. Fields the mark def leaves nil are not
+// touched, so the theme value survives.
+//
+// Paint alphas: FillOpacity / StrokeOpacity are *independent* of
+// Opacity, not overrides of it. All three ride into the SVG as
+// separate attributes and compose multiplicatively, matching Vega's
+// canvas renderer (`alpha = opacity * (fillOpacity ?? 1)`) and SVG's
+// own compositing. See scene.Style.FillOpacity.
+//
+// Geometric mark-def fields (dx / dy / pad_angle) are not style —
+// they land on the geometry in the per-mark encoders
+// (encode/marks/text.go, encode/marks/arc.go).
 func applyMarkDef(def *spec.MarkDef, style *scene.Style) {
 	if def == nil {
 		return
@@ -901,9 +1168,81 @@ func applyMarkDef(def *spec.MarkDef, style *scene.Style) {
 	if def.StrokeWidth != nil {
 		style.StrokeWidth = *def.StrokeWidth
 	}
+	// stroke_dash (E7-S4) is a whole-pattern override, not a merge:
+	// a spec dash replaces the theme MarkStyle.StrokeDash applyThemeMarkStyle
+	// may already have written, the same all-or-nothing rule every
+	// other field here follows. Copied rather than aliased so a later
+	// mutation of the spec slice cannot reach into the Scene IR.
+	// An explicit empty array is indistinguishable from absent on the
+	// wire (both decode to a zero-length slice), so it leaves the
+	// theme value alone — to draw solid over a dashed theme, omit the
+	// key and set stroke_dash on the theme's mark block instead.
+	if len(def.StrokeDash) > 0 {
+		style.StrokeDash = append([]float64(nil), def.StrokeDash...)
+	}
 	if def.Opacity != nil {
 		style.Opacity = *def.Opacity
 	}
+	if def.FillOpacity != nil {
+		v := *def.FillOpacity
+		style.FillOpacity = &v
+	}
+	if def.StrokeOpacity != nil {
+		v := *def.StrokeOpacity
+		style.StrokeOpacity = &v
+	}
+	if def.Font != "" {
+		style.FontFamily = def.Font
+	}
+	if w, ok := normalizeFontWeight(def.FontWeight); ok {
+		style.FontWeight = w
+	}
+	if def.FontStyle != "" {
+		style.FontStyle = def.FontStyle
+	}
+}
+
+// normalizeFontWeight folds spec's polymorphic font_weight (a JSON
+// number or one of the CSS keywords) into scene.Style's numeric
+// FontWeight. ok is false for nil, an empty string, or anything the
+// keyword table and the number forms don't cover — the caller then
+// leaves the existing weight alone rather than writing a 0.
+//
+// "bolder" / "lighter" are relative in CSS; SVG text in Prism always
+// starts from the default inherited weight of 400, so they resolve to
+// CSS's computed values for that base — 700 and 100 respectively.
+func normalizeFontWeight(v any) (int, bool) {
+	switch w := v.(type) {
+	case nil:
+		return 0, false
+	case float64:
+		return int(w), w > 0
+	case float32:
+		return int(w), w > 0
+	case int:
+		return w, w > 0
+	case int64:
+		return int(w), w > 0
+	case string:
+		switch w {
+		case "":
+			return 0, false
+		case "normal":
+			return 400, true
+		case "bold":
+			return 700, true
+		case "lighter":
+			return 100, true
+		case "bolder":
+			return 700, true
+		}
+		n, err := strconv.Atoi(w)
+		if err != nil || n <= 0 {
+			return 0, false
+		}
+		return n, true
+	}
+	return 0, false
 }
 
 // specMarkToScene maps the spec's mark-type string to the canonical
@@ -978,13 +1317,15 @@ func joinNodeIDs(tables map[plan.NodeID]*table.Table) string {
 	return out
 }
 
-// schemeNameOf returns the scheme name from a color-channel
-// scale block, or "" when absent.
-func schemeNameOf(ch *spec.MarkChannel) string {
-	if ch == nil || ch.Scale == nil {
-		return ""
+// colorScaleOpts lifts a color channel's scale block into the
+// ScaleOpts the palette cascade reads (scheme, inline range,
+// interpolation space). A nil channel or a channel with no scale
+// block yields the zero value, which reads as "all defaults".
+func colorScaleOpts(ch *spec.MarkChannel) ScaleOpts {
+	if ch == nil {
+		return ScaleOpts{}
 	}
-	return ch.Scale.Scheme
+	return ScaleOptsFromSpec(ch.Scale)
 }
 
 // resolveTheme picks the active theme. Precedence:
@@ -1085,9 +1426,97 @@ func joinNames(xs []string) string {
 	return out
 }
 
+// axisHidden reports whether a position channel carries an explicit
+// `"axis": null` (Vega-Lite's suppression syntax). An absent axis key
+// is NOT hidden — spec.PositionChannel decodes the two states apart.
+func axisHidden(ch *spec.PositionChannel) bool {
+	return ch != nil && ch.AxisHidden
+}
+
+// legendHidden reports whether a mark channel carries an explicit
+// `"legend": null`. As with axisHidden, an absent key is not hidden.
+func legendHidden(ch *spec.MarkChannel) bool {
+	return ch != nil && ch.LegendHidden
+}
+
+// placementFor returns the axis placement for a flat encoding: each
+// channel's `axis.orient` resolved into a side, with its
+// `"axis": null` suppression applied. The layout reservation and the
+// axis-building guards below read the same value, so padding always
+// follows the axis to the side it moved to.
+//
+// Orient is read through axisOptsFor, keeping that the single reader
+// of `channel.axis`.
+func placementFor(enc *spec.Encoding) AxisPlacement {
+	p := DefaultAxisPlacement()
+	if enc == nil {
+		return p
+	}
+	p.X = AxisPositionFor(scene.ChannelX, axisOptsFor(enc.X).Orient)
+	p.Y = AxisPositionFor(scene.ChannelY, axisOptsFor(enc.Y).Orient)
+	p.XHidden = axisHidden(enc.X)
+	p.YHidden = axisHidden(enc.Y)
+	// E3-S2: a component suppressed by `axis.labels: false` /
+	// `axis.ticks: false` releases the padding it would have reserved,
+	// resolved through the same axisOptsFor the axis is built from.
+	p.ReserveFrom(axisOptsFor(enc.X), axisOptsFor(enc.Y))
+	return p
+}
+
+// specAxisHidden reports whether a child spec hides the axis for the
+// given cartesian channel. A nested composite child carries no
+// encoding block of its own and hides nothing.
+func specAxisHidden(s *spec.Spec, ch scene.Channel) bool {
+	if s == nil || s.Encoding == nil {
+		return false
+	}
+	switch ch {
+	case scene.ChannelX:
+		return axisHidden(s.Encoding.X)
+	case scene.ChannelY:
+		return axisHidden(s.Encoding.Y)
+	}
+	return false
+}
+
+// specDeclaresChannel reports whether a child spec binds the given
+// cartesian channel at all (hidden or not).
+func specDeclaresChannel(s *spec.Spec, ch scene.Channel) bool {
+	if s == nil || s.Encoding == nil {
+		return false
+	}
+	switch ch {
+	case scene.ChannelX:
+		return s.Encoding.X != nil
+	case scene.ChannelY:
+		return s.Encoding.Y != nil
+	}
+	return false
+}
+
+// layerAxisHidden reports whether a stack of layered children agrees
+// that the channel's axis is suppressed: at least one child declares
+// the channel and every child that declares it sets `"axis": null`.
+// Layers share one pair of axes, so a single layer that still wants
+// its axis keeps it — and keeps its padding — for the whole stack.
+func layerAxisHidden(specs []*spec.Spec, ch scene.Channel) bool {
+	declared := false
+	for _, s := range specs {
+		if !specDeclaresChannel(s, ch) {
+			continue
+		}
+		declared = true
+		if !specAxisHidden(s, ch) {
+			return false
+		}
+	}
+	return declared
+}
+
 // axisOptsFor resolves AxisOpts from a PositionChannel. Reads
-// channel.axis.{title, grid, label_angle, label_overlap, format}.
-// Defaults match DefaultAxisOpts; the spec selectively overrides.
+// channel.axis.{orient, title, grid, label_angle, label_overlap,
+// format}. Defaults match DefaultAxisOpts; the spec selectively
+// overrides.
 func axisOptsFor(ch *spec.PositionChannel) AxisOpts {
 	title := ""
 	if ch != nil {
@@ -1100,6 +1529,7 @@ func axisOptsFor(ch *spec.PositionChannel) AxisOpts {
 	if ch.Axis == nil {
 		return opts
 	}
+	opts.Orient = ch.Axis.Orient
 	if t, ok := axisTitleString(ch.Axis.Title); ok {
 		opts.Title = t
 	}
@@ -1115,7 +1545,58 @@ func axisOptsFor(ch *spec.PositionChannel) AxisOpts {
 	if ch.Axis.Format != "" {
 		opts.Format = ch.Axis.Format
 	}
+	// E3-S2: component visibility, geometry and layering. Each is an
+	// optional pointer, so an absent key leaves the default in place
+	// and the three visibility switches compose independently.
+	if ch.Axis.Labels != nil {
+		opts.Labels = *ch.Axis.Labels
+	}
+	if ch.Axis.Ticks != nil {
+		opts.Ticks = *ch.Axis.Ticks
+	}
+	if ch.Axis.Domain != nil {
+		opts.Domain = *ch.Axis.Domain
+	}
+	opts.TickSize = ch.Axis.TickSize
+	opts.LabelPadding = ch.Axis.LabelPadding
+	opts.TitlePadding = ch.Axis.TitlePadding
+	opts.LabelLimit = ch.Axis.LabelLimit
+	if ch.Axis.Zindex != nil {
+		opts.Zindex = *ch.Axis.Zindex
+	}
+	if ch.Axis.TickCount != nil {
+		n := *ch.Axis.TickCount
+		opts.TickCount = &n
+	}
+	if ch.Axis.TickMinStep != nil {
+		opts.TickMinStep = *ch.Axis.TickMinStep
+	}
+	if len(ch.Axis.Values) > 0 {
+		opts.Values = append([]any(nil), ch.Axis.Values...)
+	}
 	return opts
+}
+
+// axisOptsForTitled resolves AxisOpts from a PositionChannel, falling
+// back to the supplied title when the channel names no field. An
+// explicit `"title": false` still suppresses the title — the fallback
+// only fills a title the spec never asked about.
+func axisOptsForTitled(ch *spec.PositionChannel, fallback string) AxisOpts {
+	opts := axisOptsFor(ch)
+	if opts.Title == "" && !axisTitleExplicit(ch) {
+		opts.Title = fallback
+	}
+	return opts
+}
+
+// axisTitleExplicit reports whether the channel's axis block sets a
+// usable `title` (a string, or `false` to suppress).
+func axisTitleExplicit(ch *spec.PositionChannel) bool {
+	if ch == nil || ch.Axis == nil {
+		return false
+	}
+	_, ok := axisTitleString(ch.Axis.Title)
+	return ok
 }
 
 // axisTitleString accepts the polymorphic axis.title field (string or

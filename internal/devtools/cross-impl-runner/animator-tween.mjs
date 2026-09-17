@@ -114,6 +114,41 @@ if (westRect.getAttribute("y") !== "50") fail(`west y = ${westRect.getAttribute(
 if (westRect.getAttribute("height") !== "150") fail(`west height = ${westRect.getAttribute("height")}, want 150 after tween`);
 if (westRect.getAttribute("fill") !== "#ffffff") fail(`west fill = ${westRect.getAttribute("fill")}, want #ffffff after tween`);
 
+// ----- Test 2b: text-mark style vocabulary attrs tween (E4-S1) -----
+//
+// dx / dy (the text anchor offset) and fill-opacity / stroke-opacity
+// (the per-paint alphas, independent of and multiplicative with
+// `opacity`) joined NUMERIC_ATTRS when the encoder started emitting
+// them. They must tween rather than snap.
+
+const textPrev = buildSvg([
+  { tag: "text", key: "label=a", attrs: { x: "10", y: "20", dx: "0", dy: "0", "fill-opacity": "0.2", "stroke-opacity": "0.2" } },
+]);
+const textNext = buildSvg([
+  { tag: "text", key: "label=a", attrs: { x: "10", y: "20", dx: "8", dy: "-4", "fill-opacity": "1", "stroke-opacity": "0.6" } },
+]);
+let textNow = 0;
+let textFrame = null;
+const textAnim = new PrismAnimator(textPrev, textNext, { duration_ms: 1000, easing: "linear" }, {
+  now: () => textNow,
+  rAF: (cb) => { textFrame = cb; return 1; },
+  cAF: () => {},
+});
+const textDone = textAnim.start();
+const textEl = textPrev.querySelector(`[data-prism-mark-key="label=a"]`);
+textNow = 0;   textFrame && textFrame();
+textNow = 500; textFrame && textFrame();
+const midDx = parseFloat(textEl.getAttribute("dx"));
+const midAlpha = parseFloat(textEl.getAttribute("fill-opacity"));
+if (!(midDx > 0 && midDx < 8)) fail(`text dx should be mid-tween, got ${midDx}`);
+if (!(midAlpha > 0.2 && midAlpha < 1)) fail(`text fill-opacity should be mid-tween, got ${midAlpha}`);
+textNow = 1000; textFrame && textFrame();
+await textDone;
+if (parseFloat(textEl.getAttribute("dx")) !== 8) fail(`text dx = ${textEl.getAttribute("dx")}, want 8 after tween`);
+if (parseFloat(textEl.getAttribute("dy")) !== -4) fail(`text dy = ${textEl.getAttribute("dy")}, want -4 after tween`);
+if (parseFloat(textEl.getAttribute("fill-opacity")) !== 1) fail(`text fill-opacity = ${textEl.getAttribute("fill-opacity")}, want 1 after tween`);
+if (parseFloat(textEl.getAttribute("stroke-opacity")) !== 0.6) fail(`text stroke-opacity = ${textEl.getAttribute("stroke-opacity")}, want 0.6 after tween`);
+
 // ----- Test 3: OKLab interpolation at midpoint is gray, not muddy -----
 
 const lerpProbe = buildSvg([
@@ -148,6 +183,38 @@ if (channel === 127 || channel === 128) {
 probeNow = 1000;    probeFrame && probeFrame();
 await probeDone;
 
+// ----- Test 3b: <path> tweens stroke-width -----
+//
+// A line mark with a non-linear `interpolate` renders as <path>
+// instead of <polyline>, so the path tween set must cover the same
+// stroke-width the polyline set does, or curved lines would snap
+// their weight mid-transition.
+
+const pathPrev = buildSvg([
+  { tag: "path", key: "series=a", attrs: { d: "M0,0 C1,1 2,2 3,3", "stroke-width": "2", opacity: "1" } },
+]);
+const pathNext = buildSvg([
+  { tag: "path", key: "series=a", attrs: { d: "M0,0 C1,1 2,2 3,3", "stroke-width": "6", opacity: "1" } },
+]);
+let pathNow = 0;
+let pathFrame = null;
+const pathAnim = new PrismAnimator(pathPrev, pathNext, { duration_ms: 1000, easing: "linear" }, {
+  now: () => pathNow,
+  rAF: (cb) => { pathFrame = cb; return 1; },
+  cAF: () => {},
+});
+const pathDone = pathAnim.start();
+pathNow = 0;    pathFrame && pathFrame();
+pathNow = 500;  pathFrame && pathFrame();
+const midWidth = Number(pathPrev.querySelector(`[data-prism-mark-key="series=a"]`).getAttribute("stroke-width"));
+if (!(midWidth > 2 && midWidth < 6)) {
+  fail(`path stroke-width should tween 2 → 6; midpoint was ${midWidth}`);
+}
+pathNow = 1000; pathFrame && pathFrame();
+await pathDone;
+const endWidth = pathPrev.querySelector(`[data-prism-mark-key="series=a"]`).getAttribute("stroke-width");
+if (endWidth !== "6") fail(`path stroke-width = ${endWidth}, want 6 after tween`);
+
 // ----- Test 4: structurallyCompatible -----
 
 const docA = { grid: { cells: [{ scene: { layers: [{ mark: "rect" }], axes: [{}, {}] } }] } };
@@ -166,6 +233,6 @@ if (Object.keys(EASINGS).length !== 13) fail(`EASINGS has ${Object.keys(EASINGS)
 if (typeof easingFn("not_a_real_easing") !== "function") fail("easingFn should fall back to cubic_in_out for unknown names");
 if (easingFn("linear")(0.5) !== 0.5) fail("linear easing midpoint should be 0.5");
 
-console.error("PASS: partition + numeric tween + OKLab + structurallyCompatible + reduced-motion + easings");
+console.error("PASS: partition + numeric tween + text dx/dy + paint alphas + path stroke-width + OKLab + structurallyCompatible + reduced-motion + easings");
 try { await window.happyDOM?.close(); } catch {}
 process.exit(0);

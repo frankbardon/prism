@@ -16,32 +16,34 @@
       "properties": {
         "type": {"$ref": "scale.schema.json#/$defs/scale_type", "description": "Scale type."},
         "domain": {
-          "oneOf": [
-            {"type": "array", "description": "Explicit domain values."},
-            {"type": "string", "minLength": 1, "description": "Named domain reference."}
-          ],
-          "description": "Domain of the scale."
+          "type": "array",
+          "minItems": 1,
+          "description": "Explicit domain, pinned outright: exactly two ascending numeric bounds on a continuous scale (linear/log/pow/sqrt), two ISO-8601 or epoch-ms bounds on a time scale, or the ordered category list on a band/point/ordinal scale. An explicit domain overrides the data extent and suppresses both zero and nice."
         },
         "range": {
           "oneOf": [
-            {"type": "array", "description": "Explicit range values."},
+            {"type": "array", "description": "Explicit range values. Honoured as an inline color list on a color channel; declaring it on a position channel is rejected with PRISM_SPEC_045."},
             {"type": "string", "minLength": 1, "description": "Named scheme or range reference (e.g. \"viridis\")."}
           ],
-          "description": "Range of the scale."
+          "description": "Range of the scale. On a color channel an inline list of colors — the alternative to scheme, outranking both scheme and the theme's range slots. Position channels take their range from the computed plot rect and reject an explicit range (PRISM_SPEC_045)."
         },
         "scheme":   {"type": "string", "description": "Categorical or sequential color scheme name."},
-        "padding":  {"type": "number", "minimum": 0, "description": "Inner padding fraction for band/point scales."},
-        "padding_inner": {"type": "number", "minimum": 0, "maximum": 1, "description": "Inner band padding fraction."},
-        "padding_outer": {"type": "number", "minimum": 0, "description": "Outer band padding fraction."},
-        "align":    {"type": "number", "minimum": 0, "maximum": 1, "description": "Alignment for band/point scales (0..1)."},
+        "padding":  {"type": "number", "minimum": 0, "exclusiveMaximum": 1, "description": "Padding shorthand for band/point scales, in [0,1). On a band scale it sets padding_inner and padding_outer together; on a point scale it sets the (only) outer padding. An explicit padding_inner/padding_outer outranks it."},
+        "padding_inner": {"type": "number", "minimum": 0, "exclusiveMaximum": 1, "description": "Gap between adjacent bands as a fraction of the step, in [0,1). Band scales only — a point scale collapses every band to a point. Defaults to 0.1."},
+        "padding_outer": {"type": "number", "minimum": 0, "exclusiveMaximum": 1, "description": "Gap before the first and after the last band/point, as a fraction of the step, in [0,1). Defaults to 0.05 on a band scale and 0.5 on a point scale."},
+        "align":    {"type": "number", "minimum": 0, "maximum": 1, "description": "Where the slack left over after band layout sits, in [0,1]: 0 packs the bands against the range start, 1 against the end, 0.5 (the default) centres them."},
         "base":     {"type": "number", "exclusiveMinimum": 0, "description": "Log scale base."},
         "exponent": {"type": "number", "description": "Pow scale exponent."},
-        "nice":     {"type": ["boolean", "integer", "string"], "description": "Whether to extend the domain to nice round values; integer = tick count hint."},
-        "clamp":    {"type": "boolean", "description": "Clamp values outside the domain to the domain extremes."},
-        "zero":     {"type": "boolean", "description": "Include zero in the domain (numeric scales)."},
-        "reverse":  {"type": "boolean", "description": "Reverse the range."},
-        "round":    {"type": "boolean", "description": "Round output values to integers."},
-        "interpolate": {"type": "string", "description": "Range interpolation method (e.g. \"rgb\", \"hcl\")."}
+        "nice":     {"type": "boolean", "description": "Round the resolved domain outward to human bounds. Defaults to true for linear/pow/sqrt/time and false for log. Boolean only — Vega-Lite's numeric tick-count and time-interval forms are rejected; use axis.tick_count for tick density."},
+        "clamp":    {"type": "boolean", "description": "Pin a value outside the resolved domain to the nearest domain edge instead of letting it map past the range. Continuous families only. Defaults to false, which lets the value overflow and the plot rect clip it."},
+        "zero":     {"type": "boolean", "description": "Include zero in the domain. Defaults to true for linear/pow/sqrt; ignored on log (a log domain cannot contain zero) and on time."},
+        "reverse":  {"type": "boolean", "description": "Run the scale the other way round, relative to the channel's default orientation: on x it swaps left for right, and on y — which already maps the domain minimum to the bottom of the plot — it puts the minimum at the top. Axes, ticks and gridlines follow."},
+        "round":    {"type": "boolean", "description": "Quantise layout to whole pixels: a band/point scale floors the step and rounds the leading offset and band width, a continuous scale rounds the resolved pixel. Independent of the renderer's 3-decimal coordinate pinning."},
+        "interpolate": {
+          "type": "string",
+          "enum": ["rgb", "hsl", "lab"],
+          "description": "Colorspace a continuous color ramp is traversed in. \"rgb\" (default) blends sRGB components directly; \"hsl\" blends hue along the shorter arc; \"lab\" blends in CIELAB, which is roughly perceptually uniform. Vega-Lite's \"hcl\" is not supported. Applied at encode time by resampling the ramp, so the emitted gradient stops already carry the space."
+        }
       }
     }
   }

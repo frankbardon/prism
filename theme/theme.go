@@ -56,9 +56,29 @@ type Theme struct {
 
 	// v2 nested blocks. Each block is a pointer so JSON merges
 	// remain sparse.
-	Mark   *MarkStyle             `json:"mark,omitempty"`
-	Marks  map[string]*MarkStyle  `json:"marks,omitempty"`
+	Mark *MarkStyle `json:"mark,omitempty"`
+	// Marks is keyed by mark type (bar, line, point, …) with one
+	// intentional exception: a mark family that draws more than one
+	// element per row claims an extra key per element, named
+	// <mark>_<element>. MarksKeyProgressTrack is the first — see its
+	// doc comment for why that beats a dedicated block on Theme.
+	Marks map[string]*MarkStyle `json:"marks,omitempty"`
+	// Axis is the shared axis block: every token set here applies to
+	// both cartesian axes. AxisX / AxisY layer over it **per property**
+	// for one axis only — a block that sets nothing but grid_color
+	// leaves every other token inherited from Axis. nil means "inherit
+	// Axis unchanged", which is why a theme that states neither is
+	// byte-for-byte identical to one authored before they existed.
+	//
+	// Because the x axis draws the *vertical* grid lines and the y axis
+	// the *horizontal* ones, these blocks are also how grid lines are
+	// themed per orientation (E8-S1).
+	//
+	// Resolution lives in exactly one place — AxisFor — and the full
+	// precedence chain is documented there.
 	Axis   *AxisStyle             `json:"axis,omitempty"`
+	AxisX  *AxisStyle             `json:"axis_x,omitempty"`
+	AxisY  *AxisStyle             `json:"axis_y,omitempty"`
 	Legend *LegendStyle           `json:"legend,omitempty"`
 	Title  *TitleStyle            `json:"title,omitempty"`
 	View   *ViewStyle             `json:"view,omitempty"`
@@ -166,7 +186,22 @@ func (t *Theme) ToSceneTheme() *scene.Theme {
 		out.AxisLabelLetterSpacing = copyFloat(t.Axis.LabelLetterSpacing)
 		out.AxisTitleLineHeight = copyFloat(t.Axis.TitleLineHeight)
 		out.AxisTitleLetterSpacing = copyFloat(t.Axis.TitleLetterSpacing)
+		// E3-S2: the tick-size / label-padding tokens drive real
+		// geometry in render/svg, not just the CSS-variable manifest.
+		out.AxisTickSize = copyFloat(t.Axis.TickSize)
+		out.AxisLabelPadding = copyFloat(t.Axis.LabelPadding)
+		// E8-S2: title_padding joins them. It was emitted as
+		// --prism-axis-title-padding from the start but never read —
+		// the title coordinate was hard-coded — so it is the same
+		// species of dead geometry token the two above used to be.
+		out.AxisTitlePadding = copyFloat(t.Axis.TitlePadding)
 	}
+	// E8-S1: the per-axis `axis_x` / `axis_y` overrides, narrowed to
+	// the tokens a CSS variable cannot express. The colour/stroke half
+	// of these blocks leaves via theme/css.go's scoped
+	// `.prism-axis-x` / `.prism-axis-y` declarations instead.
+	out.AxisX = sceneAxisTokens(t.AxisX)
+	out.AxisY = sceneAxisTokens(t.AxisY)
 	if t.Legend != nil {
 		out.LegendFilter = t.Legend.Filter
 		out.LegendLabelLineHeight = copyFloat(t.Legend.LabelLineHeight)
@@ -203,6 +238,31 @@ func (t *Theme) ToSceneTheme() *scene.Theme {
 	return out
 }
 
+// sceneAxisTokens projects a per-axis AxisStyle onto the Scene IR
+// subset the renderer needs (geometry + SVG-attribute typography +
+// the group filter). Returns nil when the block is nil or states
+// nothing in that subset, so a theme whose `axis_x` is colour-only
+// adds no bytes to the serialised scene.
+func sceneAxisTokens(a *AxisStyle) *scene.AxisTokens {
+	if a == nil {
+		return nil
+	}
+	out := &scene.AxisTokens{
+		TickSize:           copyFloat(a.TickSize),
+		LabelPadding:       copyFloat(a.LabelPadding),
+		TitlePadding:       copyFloat(a.TitlePadding),
+		LabelLineHeight:    copyFloat(a.LabelLineHeight),
+		LabelLetterSpacing: copyFloat(a.LabelLetterSpacing),
+		TitleLineHeight:    copyFloat(a.TitleLineHeight),
+		TitleLetterSpacing: copyFloat(a.TitleLetterSpacing),
+		Filter:             a.Filter,
+	}
+	if *out == (scene.AxisTokens{}) {
+		return nil
+	}
+	return out
+}
+
 // Clone returns a deep copy of the theme; lists, maps, and nested
 // pointers are duplicated so sparse-override merges do not
 // aliasing-leak.
@@ -224,13 +284,9 @@ func (t *Theme) Clone() *Theme {
 			out.Marks[k] = v.Clone()
 		}
 	}
-	if t.Axis != nil {
-		v := *t.Axis
-		if t.Axis.GridDash != nil {
-			v.GridDash = append([]float64(nil), t.Axis.GridDash...)
-		}
-		out.Axis = &v
-	}
+	out.Axis = cloneAxisStyle(t.Axis)
+	out.AxisX = cloneAxisStyle(t.AxisX)
+	out.AxisY = cloneAxisStyle(t.AxisY)
 	if t.Legend != nil {
 		v := *t.Legend
 		out.Legend = &v
@@ -288,6 +344,34 @@ func (t *Theme) Clone() *Theme {
 	out.CategoryStyles = cloneCategoryStyles(t.CategoryStyles)
 	return &out
 }
+
+// Marks keys that are not mark types.
+//
+// A progress mark draws two elements per row — the value bar and the
+// unfilled track behind it — and they need independent paint: a track
+// that inherits the bar's fill is invisible, and a track hardcoded in
+// the encoder is the bulletBandShade mistake (encode/marks/bullet.go
+// interpolates fixed greys no theme can reach).
+//
+// The track therefore claims its own Marks key rather than a new
+// block on Theme. Marks is already map[string]*MarkStyle, so the key
+// inherits the whole existing pipeline unchanged — Clone, Merge,
+// ApplyOverride, Validate, the theme.schema.json additionalProperties
+// map, and the --prism-mark-progress_track-* CSS variables css.go
+// emits for every entry. A dedicated block would have to re-earn all
+// of it.
+const (
+	// MarksKeyProgress styles a progress mark's value bar.
+	MarksKeyProgress = "progress"
+	// MarksKeyProgressTrack styles a progress mark's unfilled track.
+	// Unlike MarksKeyProgress it is NOT a mark type: no spec can set
+	// mark.type to it (the schema's mark_type enum does not list it),
+	// and encode never looks it up through MarkDefault, because the
+	// theme.Mark global default is the data-mark fill and folding it
+	// in is exactly how the track would end up the same colour as the
+	// bar. The key is read directly; see encode.progressTrackStyle.
+	MarksKeyProgressTrack = "progress_track"
+)
 
 // MarkDefault returns the effective MarkStyle for markType after
 // folding theme.Mark (global default) with theme.Marks[markType]

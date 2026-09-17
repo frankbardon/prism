@@ -440,6 +440,28 @@ var Codes = map[string]CodeMetadata{
 		},
 		SeeAlso: []string{"PRISM_RESOLVE_007"},
 	},
+	// Stacking (E5-S2). Both are structural failures of the StackNode
+	// the planner injects from `encoding.<x|y>.stack` or from an
+	// explicit `stack` transform.
+	"PRISM_PLAN_STACK_FIELD_MISSING": {
+		Code:    "PRISM_PLAN_STACK_FIELD_MISSING",
+		Message: `Stack field {{.Field}} is not present in the upstream table (available: {{.Available}}).`,
+		Fixups: []string{
+			`Check the spelling of the stacked position channel's "field".`,
+			`If the field is produced by a transform, make sure the stack transform runs after it.`,
+			`Inspect the upstream columns with ` + "`prism execute <spec>`" + `.`,
+		},
+		SeeAlso: []string{"PRISM_SPEC_001", "PRISM_PLAN_STACK_OUTPUT_COLLISION"},
+	},
+	"PRISM_PLAN_STACK_OUTPUT_COLLISION": {
+		Code:    "PRISM_PLAN_STACK_OUTPUT_COLLISION",
+		Message: `Stack output column {{.Column}} already exists upstream; choose a different "as" pair.`,
+		Fixups: []string{
+			`Set "as": ["<lower>", "<upper>"] on the stack transform to names the upstream table does not already use.`,
+			`Rename or drop the colliding upstream column with a project / calculate transform.`,
+		},
+		SeeAlso: []string{"PRISM_PLAN_STACK_FIELD_MISSING"},
+	},
 	"PRISM_PLAN_004": {
 		Code:    "PRISM_PLAN_004",
 		Message: `Union input schemas disagree: {{.Diff}}.`,
@@ -493,6 +515,102 @@ var Codes = map[string]CodeMetadata{
 			`Remove the offending dataset from "datasets" if it is no longer published.`,
 		},
 		SeeAlso: []string{"PRISM_COMPILE_001"},
+	},
+
+	"PRISM_WARN_AXIS_CONFIG_CONFLICT": {
+		Code:    "PRISM_WARN_AXIS_CONFIG_CONFLICT",
+		Message: `Shared {{.Channel}} axis: {{.Winner}} already set {{.Property}}; {{.Loser}} disagrees and is ignored.`,
+		Fixups: []string{
+			`Set "{{.Property}}" identically on every child that specifies it, or on only one child.`,
+			`Move the axis block to the child whose value should win — the first child that specifies a property wins.`,
+			`Opt the channel out of sharing with "resolve": {"scale": {"{{.Channel}}": "independent"}} so each child keeps its own axis.`,
+		},
+		SeeAlso: []string{"PRISM_WARN_LAYER_SKIPPED"},
+	},
+
+	"PRISM_WARN_AXIS_VALUES_DROPPED": {
+		Code:    "PRISM_WARN_AXIS_VALUES_DROPPED",
+		Message: `{{.Channel}} axis: {{.Count}} entries of "axis": {"values": [...]} cannot be placed and were dropped.`,
+		Fixups: []string{
+			`Every pinned tick must fall inside the resolved scale domain ({{.DomainMin}} … {{.DomainMax}}); widen it with "scale": {"domain": [...]} if the values are the ones you want.`,
+			`Pin numbers on a quantitative axis, ISO-8601 date strings (or epoch milliseconds) on a temporal one, and exact category names on a nominal / ordinal one.`,
+			`Grid lines follow the tick set, so a dropped value takes its grid line with it. Dropped entries: {{.Dropped}}.`,
+		},
+		SeeAlso: []string{"PRISM_WARN_AXIS_CONFIG_CONFLICT"},
+	},
+
+	// --- E7-S1 inert-field warnings. A spec key that decodes, passes
+	// validation and then reaches no consumer now says so instead of
+	// being silently discarded. All six are emitted once per spec by
+	// encode.InertFieldWarnings, from the top of the composition tree.
+	"PRISM_WARN_MARK_DEF_INERT": {
+		Code:    "PRISM_WARN_MARK_DEF_INERT",
+		Message: `{{.Path}}: mark_def "{{.Property}}" is not read by the "{{.Mark}}" mark.`,
+		Fixups: []string{
+			`The property is {{.Owners}} — on any other mark it decodes and is discarded.`,
+			`Remove "{{.Property}}" from the mark_def, or change the mark type to one that reads it.`,
+			`docs/src/concepts/marks.md lists the mark_def properties each mark family consumes.`,
+		},
+		SeeAlso: []string{"PRISM_WARN_CHANNEL_INERT", "PRISM_WARN_SCALE_FIELD_INERT"},
+	},
+
+	"PRISM_WARN_CHANNEL_INERT": {
+		Code:    "PRISM_WARN_CHANNEL_INERT",
+		Message: `{{.Path}}: this encoding binding reaches no consumer — {{.Reason}}.`,
+		Fixups: []string{
+			`Remove the binding, or move the intent onto a channel the mark reads (docs/src/concepts/encoding.md lists them per mark).`,
+			`A constant is usually available on the mark_def instead — mark_def.fill / .stroke / .size / .opacity.`,
+			`A channel-level "condition" is still evaluated, so a conditional binding on the same channel is not reported.`,
+		},
+		SeeAlso: []string{"PRISM_WARN_MARK_DEF_INERT"},
+	},
+
+	"PRISM_WARN_SCALE_FIELD_INERT": {
+		Code:    "PRISM_WARN_SCALE_FIELD_INERT",
+		Message: `{{.Path}}: scale "{{.Property}}" does not apply to the {{.Family}} scale this channel resolves to.`,
+		Fixups: []string{
+			`{{.Reason}}.`,
+			`Set "scale": {"type": "..."} explicitly if you meant a different scale family.`,
+			`docs/src/concepts/encoding.md's scale section lists which knob each family reads.`,
+		},
+		SeeAlso: []string{"PRISM_SPEC_041", "PRISM_SPEC_045"},
+	},
+
+	// Retired in E7-S3. E7-S1 added this warning and E3-S4 landed its
+	// consumers in the same wave, so it fired on specs the encoder was
+	// in fact honouring: ResolveLegendContent reads type / direction /
+	// symbol_type / symbol_size / tick_count. The code stays in the
+	// catalogue so an archived envelope still resolves through
+	// `prism errors lookup`.
+	"PRISM_WARN_LEGEND_FIELD_INERT": {
+		Code:    "PRISM_WARN_LEGEND_FIELD_INERT",
+		Message: `Retired code: the legend presentation keys are read by the legend builder.`,
+		Fixups: []string{
+			`"type", "direction", "symbol_type", "symbol_size" and "tick_count" all take effect — see docs/src/concepts/encoding.md (Legend placement / content).`,
+		},
+		SeeAlso: []string{"PRISM_SPEC_051", "PRISM_SPEC_052"},
+	},
+
+	"PRISM_WARN_LEGEND_NOT_BUILT": {
+		Code:    "PRISM_WARN_LEGEND_NOT_BUILT",
+		Message: `{{.Path}}: a {{.Type}} colour channel builds a gradient legend, but the {{.Mark}} mark never reads the colour ramp.`,
+		Fixups: []string{
+			`The symbol legend is built from discrete colour categories; a continuous colour channel needs a gradient legend.`,
+			`Bin the field ("bin": true) or declare it "nominal" / "ordinal" to get a symbol legend.`,
+			`Suppress the warning on purpose with "legend": null on the channel if the chart is meant to carry no key.`,
+		},
+		SeeAlso: []string{"PRISM_SPEC_051"},
+	},
+
+	"PRISM_WARN_FACET_CHILD_SKIPPED": {
+		Code:    "PRISM_WARN_FACET_CHILD_SKIPPED",
+		Message: `{{.Path}}: a facet child's {{.Feature}} is dropped — the child encoding is stripped before the plan is built.`,
+		Fixups: []string{
+			`{{.Reason}}.`,
+			`Do the work upstream instead: an explicit "aggregate" / "stack" / "sort" transform in the child's transform list survives faceting.`,
+			`Pre-aggregate the rows before handing them to Prism when the transform list cannot express it.`,
+		},
+		SeeAlso: []string{"PRISM_WARN_CHANNEL_INERT"},
 	},
 
 	// --- P09 facet / repeat codes.
@@ -890,6 +1008,156 @@ var Codes = map[string]CodeMetadata{
 		},
 		SeeAlso: []string{"PRISM_SPEC_003"},
 	},
+	"PRISM_SPEC_041": {
+		Code:    "PRISM_SPEC_041",
+		Message: `Channel "{{.Channel}}" has a malformed scale.domain: {{.Reason}}.`,
+		Fixups: []string{
+			`A continuous scale (linear / log / pow / sqrt) takes exactly two ascending numeric bounds, e.g. ` + "`{\"scale\": {\"domain\": [90, 130]}}`" + `.`,
+			`A time scale takes two bounds, each an ISO-8601 date string or an epoch-millisecond number, e.g. ` + "`{\"scale\": {\"domain\": [\"2024-01-01T00:00:00Z\", \"2024-12-31T00:00:00Z\"]}}`" + `.`,
+			`A band / point / ordinal scale takes the explicit category order as a non-empty list of strings, e.g. ` + "`{\"scale\": {\"domain\": [\"small\", \"medium\", \"large\"]}}`" + `; any data category the list omits is appended after it.`,
+			`Drop ` + "`domain`" + ` to derive the domain from the data, and shape it with ` + "`zero`" + ` / ` + "`nice`" + ` instead.`,
+		},
+		SeeAlso: []string{"PRISM_SPEC_007", "PRISM_SPEC_010"},
+	},
+	"PRISM_SPEC_042": {
+		Code:    "PRISM_SPEC_042",
+		Message: `Span channel {{.Channel}} draws no geometry on mark type {{.Mark}}.`,
+		Fixups: []string{
+			`The span channels ` + "`x2`" + ` and ` + "`y2`" + ` extend a position into an interval. Only ` + "`bar`" + `, ` + "`rect`" + ` and ` + "`rule`" + ` range on either axis, and ` + "`area`" + ` takes ` + "`y2`" + ` as an explicit lower edge; on any other mark the binding has nowhere to land, so it is rejected rather than dropped.`,
+			`For a ranged bar keep the categorical axis and range the other one, e.g. ` + "`{mark: {type: \"bar\"}, encoding: {y: {field: \"task\", type: \"nominal\"}, x: {field: \"start\", type: \"quantitative\"}, x2: {field: \"end\", type: \"quantitative\"}}}`" + `.`,
+			`A span channel also needs its base channel: bind ` + "`x`" + ` alongside ` + "`x2`" + ` (and ` + "`y`" + ` alongside ` + "`y2`" + `), each naming a field.`,
+		},
+		SeeAlso: []string{"PRISM_SPEC_003", "PRISM_SPEC_043"},
+	},
+	"PRISM_SPEC_043": {
+		Code:    "PRISM_SPEC_043",
+		Message: `Span channel {{.Channel}} declares type {{.Type}} but {{.Base}} declares {{.BaseType}}.`,
+		Fixups: []string{
+			`A span channel never resolves a scale of its own — it is measured on the scale its base channel resolved, so both ends must declare the same ` + "`type`" + `.`,
+			`Set ` + "`x2.type`" + ` to match ` + "`x.type`" + ` (and ` + "`y2.type`" + ` to match ` + "`y.type`" + `). If the two columns genuinely hold different kinds of value, precompute a single comparable column upstream.`,
+		},
+		SeeAlso: []string{"PRISM_SPEC_042"},
+	},
+	"PRISM_SPEC_044": {
+		Code:    "PRISM_SPEC_044",
+		Message: `Axis orient {{.Orient}} is not a side the {{.Channel}} axis can occupy.`,
+		Fixups: []string{
+			`An x axis runs horizontally, so it can only sit ` + "`bottom`" + ` (the default) or ` + "`top`" + `; a y axis runs vertically, so it can only sit ` + "`left`" + ` (the default) or ` + "`right`" + `.`,
+			`To put the x axis above the plot: ` + "`{\"x\": {\"field\": \"month\", \"type\": \"nominal\", \"axis\": {\"orient\": \"top\"}}}`" + `. To put the y axis on the right: ` + "`{\"y\": {\"field\": \"sales\", \"type\": \"quantitative\", \"axis\": {\"orient\": \"right\"}}}`" + `.`,
+			`Moving an axis moves the padding its side reserves with it, so no manual spacing adjustment is needed.`,
+			`Looking for the legend instead? That is ` + "`legend.orient`" + ` on a mark channel, which accepts the four sides plus the four corners and ` + "`none`" + `.`,
+		},
+		SeeAlso: []string{"PRISM_SPEC_003", "PRISM_SPEC_010"},
+	},
+	"PRISM_SPEC_046": {
+		Code:    "PRISM_SPEC_046",
+		Message: `Mark property "orient" is not drawn as declared: {{.Orient}} on mark {{.Mark}}.`,
+		Fixups: []string{
+			"`orient`" + ` names which axis a baseline-anchored mark grows along: ` + "`vertical`" + ` (the default) puts the category on ` + "`x`" + ` and the measure on ` + "`y`" + `, and ` + "`horizontal`" + ` swaps them, e.g. ` + "`{mark: {type: \"bar\", orient: \"horizontal\"}, encoding: {y: {field: \"brand\", type: \"nominal\"}, x: {field: \"score\", type: \"quantitative\"}}}`" + `.`,
+			`You rarely need to declare it — orientation is inferred from whichever axis carries the discrete (band) scale, so a nominal ` + "`y`" + ` against a quantitative ` + "`x`" + ` already draws horizontally. Declare ` + "`orient`" + ` only to override that inference.`,
+			"`radial`" + ` is named by the vocabulary but implemented by no mark. Drop it; for a radial reading reach for a polar mark (` + "`arc`" + ` / ` + "`pie`" + ` / ` + "`donut`" + `) instead.`,
+			`Only ` + "`bar`" + `, ` + "`rect`" + ` and ` + "`progress`" + ` swap their category and measure axes, and ` + "`tree`" + ` / ` + "`dendrogram`" + ` / ` + "`network`" + ` read ` + "`orient`" + ` as the direction their layout grows. On any other mark type the property has no geometry to affect, so it is rejected rather than ignored.`,
+		},
+		SeeAlso: []string{"PRISM_SPEC_003", "PRISM_SPEC_042"},
+	},
+	"PRISM_SPEC_045": {
+		Code:    "PRISM_SPEC_045",
+		Message: `Channel "{{.Channel}}" declares scale.range, which Prism honours on color channels only.`,
+		Fixups: []string{
+			`A position scale's range is the plot rect Prism computes, not a spec-supplied span: the axis, the gridlines and every mark measure against that same rect, so an author-chosen range would move the marks without moving the chrome and the chart would render with axes that disagree with the data they label.`,
+			`To change what the axis covers, bound the domain instead: ` + "`{\"scale\": {\"domain\": [0, 100]}}`" + `, or shape the data extent with ` + "`zero`" + ` / ` + "`nice`" + `.`,
+			`To change the pixel span, size the chart — ` + "`width`" + ` / ` + "`height`" + ` on the spec — or adjust ` + "`scale.padding`" + ` / ` + "`padding_inner`" + ` / ` + "`padding_outer`" + ` on a band or point scale.`,
+			`On a color channel ` + "`range`" + ` is supported and takes an inline color list, e.g. ` + "`{\"color\": {\"field\": \"origin\", \"type\": \"nominal\", \"scale\": {\"range\": [\"#4c78a8\", \"#f58518\", \"#54a24b\"]}}}`" + `.`,
+		},
+		SeeAlso: []string{"PRISM_SPEC_041", "PRISM_SPEC_028"},
+	},
+	"PRISM_SPEC_049": {
+		Code:    "PRISM_SPEC_049",
+		Message: `Channel "{{.Channel}}" sets scale.{{.Property}} to {{.Value}}, outside {{.Range}}.`,
+		Fixups: []string{
+			`Band padding is a *fraction of the step*, not a pixel count: ` + "`padding_inner`" + ` is the gap between adjacent bands and ` + "`padding_outer`" + ` the gap before the first and after the last one, so both live in [0,1). The defaults are 0.1 inner and 0.05 outer.`,
+			`To widen the gaps between bars: ` + "`{\"x\": {\"field\": \"origin\", \"type\": \"nominal\", \"scale\": {\"padding_inner\": 0.4}}}`" + `. To set both gaps at once use the ` + "`padding`" + ` shorthand.`,
+			"`align`" + ` says where the slack left over after layout sits, so it is a position in [0,1]: 0 packs the bands against the range start, 1 against the end, 0.5 (the default) centres them.`,
+			`Wider bars come from a wider chart, not from a padding above 1 — set ` + "`width`" + ` / ` + "`height`" + ` on the spec instead.`,
+		},
+		SeeAlso: []string{"PRISM_SPEC_041", "PRISM_SPEC_045"},
+	},
+	"PRISM_SPEC_061": {
+		Code:    "PRISM_SPEC_061",
+		Message: `Progress mark structure is invalid: {{.Path}}.`,
+		Fixups: []string{
+			`A ` + "`progress`" + ` mark draws one metric row per data row — a value bar on a full-scale track — so it needs both position channels bound: one discrete for the metric labels and one quantitative for the value, e.g. ` + "`{mark: {type: \"progress\", total: 100}, encoding: {y: {field: \"metric\", type: \"nominal\"}, x: {field: \"score\", type: \"quantitative\"}}}`" + `.`,
+			"`thickness`" + ` is the fraction of the category band a row occupies, centred in it, so it must be greater than 0 and at most 1 (it defaults to 0.5). Values outside that range draw nothing or overlap the neighbouring rows.`,
+			"`total`" + ` is the measure ceiling the track runs to, and the measure scale is extended to reach it so the track cannot overflow the plot. As a literal it must be a positive number; as a string it names a data field read per row, so each metric can carry its own maximum.`,
+			`Leave ` + "`total`" + ` off entirely to let the track span the data-derived domain instead.`,
+		},
+		SeeAlso: []string{"PRISM_SPEC_003", "PRISM_SPEC_046", "PRISM_SPEC_036"},
+	},
+	"PRISM_SPEC_051": {
+		Code:    "PRISM_SPEC_051",
+		Message: `Channel "{{.Channel}}" declares legend.type "{{.Type}}", which its channel type "{{.ChannelType}}" cannot produce.`,
+		Fixups: []string{
+			"`legend.type`" + ` overrides the legend form Prism would otherwise infer, so it has to name a form the channel can fill. A ` + "`gradient`" + ` is a continuous bar and needs a numeric domain to run between, so it belongs on a ` + "`quantitative`" + ` channel; a ` + "`symbol`" + ` legend is a list of category swatches and needs categories to name, so it belongs on a discrete one.`,
+			`Drop the key. The inference already picks the right form: ` + "`{\"color\": {\"field\": \"count\", \"type\": \"quantitative\"}}`" + ` builds a gradient bar and ` + "`{\"color\": {\"field\": \"origin\", \"type\": \"nominal\"}}`" + ` builds category swatches, with no ` + "`legend.type`" + ` written at all.`,
+			`To show a continuous field as discrete swatches, make it discrete first: a ` + "`bin`" + ` transform (or an upstream ` + "`calculate`" + `) turns the measure into named buckets, and the channel then declares ` + "`\"type\": \"ordinal\"`" + `.`,
+			`To hide the legend entirely rather than change its form, write ` + "`\"legend\": null`" + ` on the channel.`,
+		},
+		SeeAlso: []string{"PRISM_SPEC_052", "PRISM_SPEC_003"},
+	},
+	"PRISM_SPEC_052": {
+		Code:    "PRISM_SPEC_052",
+		Message: `Legend symbol_type "{{.SymbolType}}" on channel "{{.Channel}}" is not a shape Prism draws.`,
+		Fixups: []string{
+			"`legend.symbol_type`" + ` takes the point mark's own shape vocabulary, because a legend swatch and a point are drawn by the same emitter: {{.Allowed}}.`,
+			`Shape and size travel together — ` + "`{\"color\": {\"field\": \"origin\", \"type\": \"nominal\", \"legend\": {\"symbol_type\": \"diamond\", \"symbol_size\": 14}}}`" + ` draws 14-px diamond swatches.`,
+			`Leave ` + "`symbol_type`" + ` off for the default square swatch, which is what every legend draws when the key is absent.`,
+		},
+		SeeAlso: []string{"PRISM_SPEC_051"},
+	},
+	"PRISM_SPEC_053": {
+		Code:    "PRISM_SPEC_053",
+		Message: `Channel "{{.Channel}}" declares stack "center", which mark type {{.Mark}} cannot draw.`,
+		Fixups: []string{
+			"`center`" + ` is the streamgraph offset: it floats each stack's baseline so the band stays symmetric about zero. Only ` + "`area`" + ` draws that — a ribbon carries both of its own edges, so the whole shape moves intact.`,
+			`A baseline-anchored mark (` + "`bar`" + `) measures every segment from the axis, so centring it detaches the columns from the axis and the tick labels stop naming values. Switch the mark: ` + "`{\"mark\": \"area\", \"encoding\": {\"y\": {\"aggregate\": \"sum\", \"field\": \"visits\", \"type\": \"quantitative\", \"stack\": \"center\"}}}`" + `.`,
+			`To keep the bar, keep the offset anchored: ` + "`\"stack\": \"zero\"`" + ` for absolute totals, or ` + "`\"stack\": \"normalize\"`" + ` for a 100% stacked bar.`,
+		},
+		SeeAlso: []string{"PRISM_SPEC_042"},
+	},
+	"PRISM_SPEC_054": {
+		Code:    "PRISM_SPEC_054",
+		Message: `An "encoding" block on {{.Path}} sits beside "{{.Operator}}", where nothing reads it.`,
+		Fixups: []string{
+			`A composition parent passes only ` + "`data`" + `, ` + "`datasets`" + ` and ` + "`$schema`" + ` down to its children — ` + "`encoding`" + `, ` + "`mark`" + `, ` + "`transform`" + ` and ` + "`title`" + ` are not inherited, because each layer / panel is a self-contained chart. A parent-level block is read by no code path, so the chart renders exactly as if it were absent.`,
+			`Move the channels into each child under ` + "`{{.Child}}`" + `, e.g. ` + "`{\"layer\": [{\"mark\": \"bar\", \"encoding\": {\"x\": {\"field\": \"month\", \"type\": \"ordinal\"}}}, {\"mark\": \"line\", \"encoding\": {\"x\": {\"field\": \"month\", \"type\": \"ordinal\"}}}]}`" + `.`,
+			`On a ` + "`facet`" + ` or ` + "`repeat`" + ` parent the chart lives under the ` + "`spec`" + ` key — put the encoding there: ` + "`{\"facet\": {\"column\": {\"field\": \"region\", \"type\": \"nominal\"}}, \"spec\": {\"mark\": \"bar\", \"encoding\": {…}}}`" + `.`,
+			`With a single child, drop the composition operator and write a flat spec instead — ` + "`mark`" + ` plus ` + "`encoding`" + ` at the root is the same chart with nothing to inherit.`,
+			`To make layers agree on one axis or legend, repeat the per-channel ` + "`axis`" + ` / ` + "`legend`" + ` block on each child and leave ` + "`resolve`" + ` at its default ("shared"); the encoder folds the children's blocks and reports a disagreement as PRISM_WARN_AXIS_CONFIG_CONFLICT rather than silently dropping one.`,
+		},
+		SeeAlso: []string{"PRISM_WARN_AXIS_CONFIG_CONFLICT", "PRISM_SPEC_012"},
+	},
+	"PRISM_SPEC_055": {
+		Code:    "PRISM_SPEC_055",
+		Message: `Order entry {{.Entry}} is malformed.`,
+		Fixups: []string{
+			`Every ` + "`encoding.order`" + ` entry needs a ` + "`field`" + ` — the column rows are compared on. An entry without one has nothing to order by, e.g. ` + "`{\"order\": {\"field\": \"rank\", \"type\": \"quantitative\"}}`" + `.`,
+			`The ` + "`sort`" + ` direction is ` + "`\"ascending\"`" + ` (the default) or ` + "`\"descending\"`" + `; ` + "`\"asc\"`" + ` and ` + "`\"desc\"`" + ` are accepted aliases. Any other spelling is rejected rather than silently read as ascending.`,
+			`To order by several keys, use the array form: ` + "`{\"order\": [{\"field\": \"tier\"}, {\"field\": \"revenue\", \"sort\": \"descending\"}]}`" + `.`,
+			`Leave ` + "`order`" + ` unbound to keep the table's own row order, which is what every chart that does not declare it gets.`,
+		},
+		SeeAlso: []string{"PRISM_SPEC_056", "PRISM_SPEC_003"},
+	},
+	"PRISM_SPEC_056": {
+		Code:    "PRISM_SPEC_056",
+		Message: `Order entry {{.Entry}} declares aggregate "{{.Aggregate}}", which the order channel does not support.`,
+		Fixups: []string{
+			`Ordering by a per-series total needs a second aggregation at a different granularity than the chart's own, joined back onto the rows. Prism rejects the key rather than accepting and ignoring it.`,
+			`Precompute the total upstream and order by that column, e.g. a ` + "`window`" + ` transform writing ` + "`revenue_total`" + `, then ` + "`{\"order\": {\"field\": \"revenue_total\", \"sort\": \"descending\"}}`" + `.`,
+			`If another channel already aggregates the same field, drop the ` + "`aggregate`" + ` key and name the field alone — the order key then reads that aggregate's output column.`,
+			`For a plain row reordering with no aggregation involved, a ` + "`sort`" + ` transform does the same job and leaves ` + "`order`" + ` unbound.`,
+		},
+		SeeAlso: []string{"PRISM_SPEC_055", "PRISM_SPEC_002"},
+	},
 	"PRISM_WARN_NETWORK_CYCLE": {
 		Code:    "PRISM_WARN_NETWORK_CYCLE",
 		Message: `network input graph contains a cycle; force layout may produce a visually messy result.`,
@@ -931,7 +1199,16 @@ var Codes = map[string]CodeMetadata{
 			`Source data had {{.Count}} rows where one or more channel-bound fields were null (often from a left / outer join with no match on the right). Filter or impute those rows upstream to suppress the warning.`,
 			`See ` + "`docs/src/concepts/multi-source.md`" + ` for join null semantics.`,
 		},
-		SeeAlso: []string{"PRISM_JOIN_001"},
+		SeeAlso: []string{"PRISM_JOIN_001", "PRISM_ENCODE_NULL_ALL_ROWS"},
+	},
+	"PRISM_ENCODE_NULL_ALL_ROWS": {
+		Code:    "PRISM_ENCODE_NULL_ALL_ROWS",
+		Message: `Every one of the {{.Count}} upstream rows is null on channel(s) {{.Channels}}; there is nothing left to draw.`,
+		Fixups: []string{
+			`Rows null in a scale-bound channel are dropped with ` + "`PRISM_WARN_NULL_DROPPED`" + `; here every row qualified, so the mark would render empty. Check that {{.Fields}} is the column you meant to bind.`,
+			`A column that is null in every row infers as categorical/string with no values — confirm the upstream transform (often a left / outer join with no match) actually produced data.`,
+		},
+		SeeAlso: []string{"PRISM_WARN_NULL_DROPPED", "PRISM_JOIN_001"},
 	},
 	"PRISM_WARN_NULL_AGG_ALL": {
 		Code:    "PRISM_WARN_NULL_AGG_ALL",

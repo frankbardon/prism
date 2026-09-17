@@ -45,3 +45,6 @@ internal/devtools/cross-impl-runner/package-lock.json
 # each test run.
 testdata/cross_impl/**/wasm.svg
 testdata/cross_impl/**/diff.txt
+
+# Ephemeral git worktrees created for isolated subagent runs.
+.claude/worktrees/

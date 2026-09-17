@@ -101,9 +101,18 @@ func encodeArc(in Inputs, mode string) ([]scene.Mark, error) {
 	if mode == "donut" {
 		innerR = outerR * 0.55
 	}
+	// padAngle (E4-S1) is the angular gap between neighbouring
+	// sectors, in radians. The encoder carries it through untouched;
+	// render/svg's arcPath halves it and insets each sector's two
+	// ends, so the visible gap between adjacent sectors equals the
+	// declared value. See scene.ArcGeom.PadAngle.
+	padAngle := 0.0
 	if in.Mark != nil {
 		if in.Mark.OuterRadius != nil {
 			outerR = *in.Mark.OuterRadius
+		}
+		if in.Mark.PadAngle != nil && *in.Mark.PadAngle > 0 {
+			padAngle = *in.Mark.PadAngle
 		}
 		if in.Mark.InnerRadius != nil {
 			innerR = *in.Mark.InnerRadius
@@ -155,6 +164,7 @@ func encodeArc(in Inputs, mode string) ([]scene.Mark, error) {
 				EndAngle:   end,
 				InnerR:     innerR,
 				OuterR:     outerR,
+				PadAngle:   padAngle,
 			},
 		})
 		cursor = end

@@ -5,77 +5,149 @@ import (
 	"sort"
 
 	"github.com/frankbardon/prism/encode/scene"
+	prismerrors "github.com/frankbardon/prism/errors"
 )
 
-// encodeArea partitions rows by the bound color channel (Vega-Lite
-// semantics: color/detail on an area mark splits it into one ribbon
-// per distinct value — mirrors encodeLine) and emits one scene.Mark
-// per group, each carrying its own resolved fill color via
-// groupRowsByColor / lookupCategoryColor — the same palette
-// resolution the legend uses. Within each group, points are sorted by
-// resolved x pixel ascending so the ribbon traces left-to-right
-// rather than upstream row order.
+// encodeArea partitions rows by the bound discrete grouping channels
+// — color and/or detail (Vega-Lite semantics: either one on an area
+// mark splits it into one ribbon per distinct value — mirrors
+// encodeLine) — and emits one scene.Mark per group, each carrying its
+// own resolved fill color via groupRows / lookupCategoryColor — the
+// same palette resolution the legend uses. A detail-only split leaves
+// in.Style's fill untouched: detail groups series without consuming a
+// palette slot or producing a legend. Within each group, points are
+// sorted by resolved x pixel ascending so the ribbon traces
+// left-to-right rather than upstream row order — unless the encoding
+// binds `order` (E5-S4), which hands the point sequence to the
+// author: the plan has already sorted the rows and each group traces
+// in table order.
 //
 // Each group's Upper is its row-by-row points and Lower is the y=0
 // baseline edge (one point per Upper x, snapped to the pixel where
 // the data value is 0). The baseline is the scale's zero, so
 // positive-only domains fill down to the plot bottom and
 // zero-crossing domains fill above and below the mid-plot zero line.
-// Stacked / streamgraph variants land in P08.
 //
-// When no color channel is bound, behavior is unchanged from before
+// Stacking (E5-S2) needs no code here: the StackNode's bounds columns
+// reach this encoder as an ordinary y / y2 pair (encode/stack.go
+// rebinds the channels before scales resolve), so a stacked area is
+// just the y2 path below with a per-series lower edge. The centred
+// streamgraph offset (E5-S3) is the same arrangement with signed
+// bounds — the accumulation and the inside-out segment ordering both
+// happen upstream in the plan node, and this encoder only ever sees a
+// series with two edges.
+//
+// Binding y2 (E9-S3) replaces that implicit baseline with an explicit
+// lower edge read per row from the y2 column and resolved through the
+// y scale — the band shape behind a confidence interval. The
+// geometry is otherwise identical, so grouping, sorting and curve
+// interpolation all carry over unchanged. x2 is not expressible on an
+// area and is rejected at validate (PRISM_SPEC_041).
+//
+// When neither channel is bound, behavior is unchanged from before
 // grouping existed: a single scene.Mark ("area-0") carrying every
 // row's points in raw upstream order.
+//
+// Orientation (E9-S2): an area has the same category/measure split a
+// bar does, except its category axis is usually continuous or temporal
+// rather than banded — so it resolves through MarkOrientationOr
+// (orient.go) with a vertical fallback. `"orient": "horizontal"` moves
+// the series axis to y and the baseline to x = 0, which is the shape a
+// horizontal ribbon needs. Everything else — grouping, ordering along
+// the series axis, curve interpolation — is orientation-agnostic.
 func encodeArea(in Inputs) ([]scene.Mark, error) {
-	xs, err := readField(in.Table, in.X.Field)
+	orient, err := MarkOrientationOr(in, "area", OrientVertical)
 	if err != nil {
 		return nil, err
 	}
-	ys, err := readField(in.Table, in.Y.Field)
+	category := CategoryChannel(in, orient)
+	measure := MeasureChannel(in, orient)
+	cats, err := readField(in.Table, category.Field)
 	if err != nil {
 		return nil, err
 	}
-	if len(xs) != len(ys) {
-		return nil, fmt.Errorf("encodeArea: column length mismatch (x=%d, y=%d)", len(xs), len(ys))
+	vals, err := readField(in.Table, measure.Field)
+	if err != nil {
+		return nil, err
 	}
-	if len(xs) == 0 {
+	if len(cats) != len(vals) {
+		return nil, fmt.Errorf("encodeArea: column length mismatch (%s=%d, %s=%d)",
+			orient.CategoryAxis(), len(cats), orient.MeasureAxis(), len(vals))
+	}
+	if len(cats) == 0 {
 		return nil, nil
 	}
-	// Baseline = pixel y where the data value = 0 (mirrors bar.go).
-	// Positive-only domains snap this to the plot bottom; zero-crossing
-	// domains land it mid-plot. Fall back to the plot bottom on apply
-	// failure (shouldn't happen for linear scales).
-	baseline, err := in.Y.Scale.Apply(float64(0))
-	if err != nil {
-		baseline = in.Layout.Bottom()
+	// Baseline = the measure axis's data-zero pixel (mirrors bar.go).
+	// Positive-only domains snap this to the plot edge; zero-crossing
+	// domains land it mid-plot.
+	baseline := BaselinePixel(in, orient)
+	// y2 (E9-S3), when bound, supplies the lower edge per row instead
+	// of the baseline. Left nil otherwise, which keeps the baseline
+	// path byte-identical. y2 is the *measure* companion only while the
+	// area is vertical; on a horizontal area y2 would be a second
+	// position on the series axis, which the geometry cannot express —
+	// rejected rather than silently ignored.
+	var lows []any
+	if spanBound(in.Y2) {
+		if orient == OrientHorizontal {
+			return nil, prismerrors.New(
+				"PRISM_ENCODE_001",
+				"A horizontal area measures along x, so y2 has no lower edge to supply.",
+				map[string]any{"Field": in.Y2.Field, "Source": "<y2>", "Available": "vertical"},
+			)
+		}
+		lows, err = readField(in.Table, in.Y2.Field)
+		if err != nil {
+			return nil, err
+		}
+		if len(lows) != len(cats) {
+			return nil, fmt.Errorf("encodeArea: column length mismatch (x=%d, y2=%d)", len(cats), len(lows))
+		}
 	}
-	upperAll := make([][2]float64, len(xs))
-	lowerAll := make([][2]float64, len(xs))
-	for i := range xs {
-		x, err := in.X.Scale.Apply(xs[i])
+	// seriesPos is the pixel along the category (series) axis; it is
+	// what the grouped path sorts on, in either orientation.
+	seriesPos := make([]float64, len(cats))
+	upperAll := make([][2]float64, len(cats))
+	lowerAll := make([][2]float64, len(cats))
+	for i := range cats {
+		c, err := category.Scale.Apply(cats[i])
 		if err != nil {
 			return nil, err
 		}
-		y, err := in.Y.Scale.Apply(ys[i])
+		m, err := measure.Scale.Apply(vals[i])
 		if err != nil {
 			return nil, err
 		}
-		upperAll[i] = [2]float64{x, y}
-		lowerAll[i] = [2]float64{x, baseline}
+		low := baseline
+		if lows != nil {
+			if low, err = in.Y2.Scale.Apply(lows[i]); err != nil {
+				return nil, err
+			}
+		}
+		seriesPos[i] = c
+		ux, uy := OrientedPoint(orient, c, m)
+		lx, ly := OrientedPoint(orient, c, low)
+		upperAll[i] = [2]float64{ux, uy}
+		lowerAll[i] = [2]float64{lx, ly}
 	}
 
-	grouped := in.Color != nil && in.Color.Field != ""
-	groups, err := groupRowsByColor(in, len(xs))
+	// An `order` binding (E5-S4) means the plan already sequenced the
+	// rows; honour that sequence instead of the default left-to-right
+	// x-sort, which is the whole point of the channel's path sense.
+	sortByX := len(groupChannels(in)) > 0 && !in.Ordered
+	groups, err := groupRows(in, len(cats))
 	if err != nil {
 		return nil, err
 	}
+
+	curve, tension := curveFor(in)
 
 	marks := make([]scene.Mark, 0, len(groups))
 	for gi, g := range groups {
 		idxs := append([]int(nil), g.indices...)
-		if grouped {
+		if sortByX {
 			sort.SliceStable(idxs, func(a, b int) bool {
-				return upperAll[idxs[a]][0] < upperAll[idxs[b]][0]
+				return seriesPos[idxs[a]] < seriesPos[idxs[b]]
 			})
 		}
 		upper := make([][2]float64, len(idxs))
@@ -94,9 +166,10 @@ func encodeArea(in Inputs) ([]scene.Mark, error) {
 			ID:    fmt.Sprintf("area-%d", gi),
 			Style: style,
 			Area: &scene.AreaGeom{
-				Upper: upper,
-				Lower: lower,
-				Curve: scene.CurveLinear,
+				Upper:   upper,
+				Lower:   lower,
+				Curve:   curve,
+				Tension: tension,
 			},
 		})
 	}

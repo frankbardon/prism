@@ -70,12 +70,18 @@ func (p *Padding) UnmarshalJSON(data []byte) error {
 		return nil
 	}
 	var obj paddingObj
-	if err := json.Unmarshal(data, &obj); err == nil {
+	err := strictUnmarshal(data, &obj)
+	if err == nil {
 		p.Top = obj.Top
 		p.Right = obj.Right
 		p.Bottom = obj.Bottom
 		p.Left = obj.Left
 		return nil
+	}
+	// A misspelled side is the right shape with one wrong key, so name
+	// it rather than hiding it behind the generic union message.
+	if isUnknownFieldError(err) {
+		return fmt.Errorf("padding: %w", err)
 	}
 	return fmt.Errorf("padding: expected number or object, got %s", string(data))
 }
@@ -118,9 +124,13 @@ func (t *TextOrTextObj) UnmarshalJSON(data []byte) error {
 		return nil
 	}
 	var obj TextObj
-	if err := json.Unmarshal(data, &obj); err == nil {
+	err := strictUnmarshal(data, &obj)
+	if err == nil {
 		t.Obj = &obj
 		return nil
+	}
+	if isUnknownFieldError(err) {
+		return fmt.Errorf("text: %w", err)
 	}
 	return fmt.Errorf("text: expected string or object, got %s", string(data))
 }

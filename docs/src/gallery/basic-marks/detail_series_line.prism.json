@@ -1,0 +1,34 @@
+{
+  "$schema": "urn:prism:schema:v1:spec",
+  "title": "Sensor drift — one line per sensor, one colour",
+  "data": {
+    "values": [
+      {"hour": 0, "sensor": "s-01", "reading": 21.0},
+      {"hour": 1, "sensor": "s-01", "reading": 21.4},
+      {"hour": 2, "sensor": "s-01", "reading": 22.1},
+      {"hour": 3, "sensor": "s-01", "reading": 22.0},
+      {"hour": 4, "sensor": "s-01", "reading": 22.6},
+      {"hour": 0, "sensor": "s-02", "reading": 19.8},
+      {"hour": 1, "sensor": "s-02", "reading": 20.5},
+      {"hour": 2, "sensor": "s-02", "reading": 20.2},
+      {"hour": 3, "sensor": "s-02", "reading": 21.1},
+      {"hour": 4, "sensor": "s-02", "reading": 21.4},
+      {"hour": 0, "sensor": "s-03", "reading": 23.2},
+      {"hour": 1, "sensor": "s-03", "reading": 23.0},
+      {"hour": 2, "sensor": "s-03", "reading": 23.9},
+      {"hour": 3, "sensor": "s-03", "reading": 24.3},
+      {"hour": 4, "sensor": "s-03", "reading": 24.1},
+      {"hour": 0, "sensor": "s-04", "reading": 18.4},
+      {"hour": 1, "sensor": "s-04", "reading": 18.9},
+      {"hour": 2, "sensor": "s-04", "reading": 19.6},
+      {"hour": 3, "sensor": "s-04", "reading": 19.2},
+      {"hour": 4, "sensor": "s-04", "reading": 20.0}
+    ]
+  },
+  "mark": "line",
+  "encoding": {
+    "x": {"field": "hour", "type": "quantitative"},
+    "y": {"field": "reading", "type": "quantitative"},
+    "detail": {"field": "sensor", "type": "nominal"}
+  }
+}

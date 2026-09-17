@@ -16,6 +16,8 @@ type LinearScale struct {
 	DomainMax float64
 	RangeMin  float64
 	RangeMax  float64
+	// ContinuousOutput carries `scale.clamp` and `scale.round`.
+	ContinuousOutput
 }
 
 // Apply implements Scale.
@@ -29,10 +31,10 @@ func (s *LinearScale) Apply(value any) (float64, error) {
 		)
 	}
 	if s.DomainMax == s.DomainMin {
-		return (s.RangeMin + s.RangeMax) / 2, nil
+		return s.quantise((s.RangeMin + s.RangeMax) / 2), nil
 	}
 	t := (v - s.DomainMin) / (s.DomainMax - s.DomainMin)
-	return s.RangeMin + t*(s.RangeMax-s.RangeMin), nil
+	return s.interpolate(t, s.RangeMin, s.RangeMax), nil
 }
 
 // Domain implements Scale.

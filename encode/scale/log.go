@@ -17,6 +17,11 @@ type LogScale struct {
 	DomainMax float64
 	RangeMin  float64
 	RangeMax  float64
+	// ContinuousOutput carries `scale.clamp` and `scale.round`. Clamp
+	// pins a positive out-of-domain value to the nearest domain edge;
+	// a non-positive value has no image on a log scale at all and
+	// still raises PRISM_SPEC_010.
+	ContinuousOutput
 }
 
 // Apply implements Scale.
@@ -45,10 +50,10 @@ func (s *LogScale) Apply(value any) (float64, error) {
 	mn := math.Log(s.DomainMin) / logBase
 	mx := math.Log(s.DomainMax) / logBase
 	if mx == mn {
-		return (s.RangeMin + s.RangeMax) / 2, nil
+		return s.quantise((s.RangeMin + s.RangeMax) / 2), nil
 	}
 	t := (num - mn) / (mx - mn)
-	return s.RangeMin + t*(s.RangeMax-s.RangeMin), nil
+	return s.interpolate(t, s.RangeMin, s.RangeMax), nil
 }
 
 // Domain implements Scale.

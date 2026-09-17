@@ -89,6 +89,37 @@ func presentChannels(enc *spec.Encoding) []string {
 // text-only. Sankey lives in its own tier (source/target/value per
 // D064); funnel lives in its own tier (x category + y quantity per
 // D066); sparkline mirrors line (D067).
+//
+// detail stays universal by design (E5-S1). It is a pure grouping
+// channel — it partitions a mark's rows into separate series without
+// consuming a palette slot, building a legend, or altering styling —
+// so it is never structurally invalid for a mark. Today only the
+// path-forming marks (line, area) act on it, because they are the
+// only ones whose geometry spans multiple rows; every other mark
+// already emits one mark per row, so a partition changes nothing.
+// Accepting it silently everywhere matches Vega-Lite and keeps a
+// spec portable across a mark-type switch.
+//
+// order stays universal by the same reasoning (E5-S4), and for a
+// stronger reason: it is not a mark property at all. Binding it sorts
+// the ROWS, upstream of the encoder (plan/build's
+// injectEncodingOrder), so every mark type sees it whether or not it
+// has geometry that responds. What differs per mark is only which of
+// the channel's three senses is observable:
+//
+//   - bar / area — stack order, via the StackNode's first-appearance
+//     segment ranking;
+//   - line / area — point sequence along the path, the one sense that
+//     needs encoder cooperation (marks.Inputs.Ordered suppresses the
+//     default left-to-right x-sort);
+//   - every per-row mark (point, bar, rule, text, tick, rect, …) —
+//     draw order, since marks are emitted in table order and the last
+//     one emitted paints on top.
+//
+// A mark whose geometry is row-order-independent (a single-mark type
+// such as arc, or a layout-computing mark such as sankey) simply
+// observes none of them. That is a no-op, not a structural error, so
+// rejecting the channel there would break portability for no gain.
 func allowedChannelsForMark(mark string) []string {
 	common := []string{"tooltip", "order", "detail", "row", "column"}
 	cartesianMark := []string{"x", "y", "x2", "y2", "color", "fill", "stroke", "opacity", "size", "shape"}
@@ -99,6 +130,11 @@ func allowedChannelsForMark(mark string) []string {
 	// bullet carries target / comparative / bands as mark-def fields; the
 	// measure value rides the x (horizontal) or y (vertical) channel.
 	bulletMark := []string{"x", "y", "color", "fill", "stroke", "opacity", "text"}
+	// progress (E10-S1) rides the same pair as bullet — one axis
+	// discrete (the metric labels), the other quantitative (the value)
+	// — with total / thickness carried as mark-def fields rather than
+	// channels.
+	progressMark := []string{"x", "y", "color", "fill", "stroke", "opacity", "text"}
 	sparklineMark := []string{"x", "y", "color", "fill", "stroke", "opacity"}
 	sparkbarMark := []string{"x", "y", "color", "fill", "stroke", "opacity"}
 	winlossMark := []string{"x", "y", "color", "fill", "stroke", "opacity"}
@@ -120,6 +156,8 @@ func allowedChannelsForMark(mark string) []string {
 		set = funnelMark
 	case "bullet":
 		set = bulletMark
+	case "progress":
+		set = progressMark
 	case "sparkline":
 		set = sparklineMark
 	case "sparkbar":

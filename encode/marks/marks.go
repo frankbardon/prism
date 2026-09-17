@@ -86,10 +86,36 @@ const OpacityFloor = 0.15
 // bindings — Field name only, no scale. See D064. Used exclusively
 // by encodeSankey; other encoders ignore them.
 type Inputs struct {
-	Table   *table.Table
-	X       Channel
-	Y       Channel
-	Color   *ColorChannel
+	Table *table.Table
+	X     Channel
+	Y     Channel
+	// X2 / Y2 (E9-S3) are the secondary position channels. Each one
+	// carries its own field name but the *same* resolved Scale as its
+	// base channel, so a span is measured in the base channel's units
+	// and lands on the base channel's axis. A zero Channel means "no
+	// span bound", which keeps every mark on its historic
+	// baseline-anchored geometry. See span.go.
+	X2    Channel
+	Y2    Channel
+	Color *ColorChannel
+	// Detail (E5-S1) carries the encoding.detail binding as an
+	// ordered list of table field names. Detail is a pure grouping
+	// channel: it partitions a mark's rows into separate series
+	// exactly as Color does (see groupRows) but consumes no palette
+	// slot, builds no legend, and leaves mark styling untouched. Nil
+	// or empty means "no detail bound", which keeps grouping
+	// byte-identical to the color-only behavior.
+	Detail []string
+	// Ordered (E5-S4) reports that the leaf encoding binds `order`,
+	// i.e. the author took explicit control of row sequence and the
+	// plan already sorted the table (plan/build's injectEncodingOrder;
+	// see spec/order.go). The path marks act on it: line and area
+	// trace their points in table order instead of re-sorting each
+	// group by resolved x pixel. Every other sense of the channel —
+	// stack order, draw order — falls out of table order and needs no
+	// flag. False (the default) preserves the pre-E5-S4 geometry
+	// exactly.
+	Ordered bool
 	Opacity *OpacityChannel
 	Layout  scene.Rect // the Plot region
 	Style   scene.Style
@@ -98,6 +124,12 @@ type Inputs struct {
 	Source  Channel              // sankey source-node field (no scale)
 	Target  Channel              // sankey target-node field (no scale)
 	Value   Channel              // sankey flow-magnitude field (no scale)
+	// Text is the encoding.text binding (E4-S4). Consumed by the text
+	// mark to source its label content — `field` reads a column,
+	// `value` supplies a literal, and `format` runs the result through
+	// encode/format. nil (the default) leaves the text encoder on its
+	// historical y-value fallback.
+	Text *spec.TextChannel
 	// Feature (P18) is the geoshape feature-id binding — the table
 	// column whose values are geodata IDs (USA, US-CA, …).
 	Feature Channel
@@ -133,6 +165,15 @@ type Inputs struct {
 	// the label picks up the theme's text fill and stays legible
 	// across dark/print/high-contrast themes.
 	LabelStyle scene.Style
+	// TrackStyle is the theme-resolved default Style for the unfilled
+	// track a progress mark's value bar sits on (E10-S1). The track is
+	// a distinct scene mark ("progress-track-N"), not a backdrop baked
+	// into the bar's geometry, so it takes its own Style rather than a
+	// tinted copy of Style. Resolved by encode from the active theme —
+	// never from a constant in this package; E10-S2 promotes the
+	// resolution behind it to a first-class theme token. A zero Style
+	// paints nothing, which is what a mark other than progress gets.
+	TrackStyle scene.Style
 	// ColorRegistry (E4-S3) accumulates light/dark resolved mark-color
 	// pairs for the "auto light/dark in one SVG" feature. nil — the
 	// default, and the entire state whenever the active theme has no
@@ -199,6 +240,8 @@ func Encode(markType string, in Inputs) ([]scene.Mark, *scene.Warning, error) {
 		marksOut, err = encodeFunnel(in)
 	case "bullet":
 		marksOut, err = encodeBullet(in)
+	case "progress":
+		marksOut, err = encodeProgress(in)
 	case "sparkline":
 		marksOut, err = encodeSparkline(in)
 	case "sparkbar":

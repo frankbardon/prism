@@ -18,12 +18,18 @@ import (
 // Type resolution:
 //   - If fields is non-empty, every declared field is honoured verbatim;
 //     unknown type tokens fall back to KindString (categorical_u8).
-//   - Otherwise the first row's JSON kinds drive inference:
+//   - Otherwise the first *non-null* value observed for each field drives
+//     inference:
 //     string → categorical_u8 / KindString
 //     float64 / json.Number → f64 / KindFloat
 //     bool → packed_bool / KindBool
-//     other (nil, nested arrays/maps) → categorical_u8 / KindString
+//     other (nested arrays/maps) → categorical_u8 / KindString
 //     so downstream rules see a usable measure type.
+//     A JSON `null` (or a key missing from the row) carries no type
+//     information and is skipped; a field that is null in *every* row has
+//     nothing to infer from and resolves to categorical_u8 / KindString.
+//     That column is entirely null, so the kind is never exercised by a
+//     value — it only has to be a kind the rest of the pipeline accepts.
 //
 // Subsequent rows are validated against the resolved schema; a row whose
 // JSON kind for a given field disagrees with the schema returns
@@ -57,7 +63,9 @@ func FromInline(name string, values []map[string]any, fields []spec.FieldSpec) (
 	return tbl, schema, nil
 }
 
-// inferInlineSchema resolves field types from declarations or the first row.
+// inferInlineSchema resolves field types from declarations, or — absent
+// declarations — from the first non-null value each field takes across
+// the rows.
 func inferInlineSchema(values []map[string]any, fields []spec.FieldSpec) (*Schema, []string, error) {
 	s := &Schema{}
 	order := []string{}
@@ -79,17 +87,9 @@ func inferInlineSchema(values []map[string]any, fields []spec.FieldSpec) (*Schem
 		return nil, nil, fmt.Errorf("table: FromInline cannot infer schema from empty values without declared fields")
 	}
 
-	// Use the first row's key set; preserve a deterministic order
-	// (alphabetical) so identical specs produce identical schemas.
-	first := values[0]
-	keys := make([]string, 0, len(first))
-	for k := range first {
-		keys = append(keys, k)
-	}
-	sort.Strings(keys)
-
-	for _, k := range keys {
-		ft := fieldTypeFromJSONValue(first[k])
+	names, types := inferInlineColumns(values)
+	for _, k := range names {
+		ft := types[k]
 		fld := Field{Name: k, Type: ft}
 		if ft.IsCategorical() {
 			fld.Dictionary = NewDictionary()
@@ -98,6 +98,53 @@ func inferInlineSchema(values []map[string]any, fields []spec.FieldSpec) (*Schem
 		order = append(order, k)
 	}
 	return s, order, nil
+}
+
+// inferInlineColumns resolves, in a single pass over the rows, both the
+// column order and each column's native kind.
+//
+// Order is the union of every row's key set, sorted alphabetically. The
+// union (rather than row 0's key set alone) is what lets a field that
+// only appears in a later row still become a column: it lands in the
+// same alphabetical slot it would have occupied had row 0 carried it, so
+// the order depends on neither map iteration nor which row happened to
+// introduce the key.
+//
+// Kind comes from the first *non-null* value the field takes. Nulls and
+// missing keys carry no type information, so a leading gap in a series
+// no longer decides the column's kind. A field still waiting for its
+// first non-null value is tracked in untyped; emptying that set lets the
+// remaining rows skip the kind check entirely, so the scan short-circuits
+// per field rather than running to the end of the table.
+//
+// A field that is null (or absent) in every row keeps the
+// FieldTypeCategoricalU8 fallback, which is also where values with no
+// usable kind land. Every row of such a column is flagged in its null
+// bitmap, so no value is ever stored under the inferred kind.
+func inferInlineColumns(values []map[string]any) ([]string, map[string]FieldType) {
+	width := len(values[0])
+	names := make([]string, 0, width)
+	types := make(map[string]FieldType, width)
+	untyped := make(map[string]struct{}, width)
+
+	for _, row := range values {
+		for k, v := range row {
+			if _, known := types[k]; !known {
+				names = append(names, k)
+				types[k] = FieldTypeCategoricalU8
+				untyped[k] = struct{}{}
+			}
+			if len(untyped) == 0 || v == nil {
+				continue
+			}
+			if _, waiting := untyped[k]; waiting {
+				types[k] = fieldTypeFromJSONValue(v)
+				delete(untyped, k)
+			}
+		}
+	}
+	sort.Strings(names)
+	return names, types
 }
 
 // buildInlineColumns walks values once and emits typed columns. Each
@@ -278,7 +325,9 @@ func inlineKindCompatible(want, got Kind) bool {
 }
 
 // fieldTypeFromJSONValue picks a native table.FieldType for an inline
-// first-row value.
+// value. Callers pass the first non-null value observed for the field
+// (see inferInlineFieldType); nil reaches the default arm only through
+// the all-null fallback.
 func fieldTypeFromJSONValue(v any) FieldType {
 	switch v.(type) {
 	case string:

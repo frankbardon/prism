@@ -1,0 +1,15 @@
+{"$schema":"urn:prism:schema:v1:spec",
+ "title":"Legend content — title, values, label limit",
+ "data":{"values":[
+   {"quarter":"Q1","segment":"Enterprise accounts","revenue":120},
+   {"quarter":"Q1","segment":"Mid market","revenue":90},
+   {"quarter":"Q1","segment":"Small business","revenue":40},
+   {"quarter":"Q2","segment":"Enterprise accounts","revenue":140},
+   {"quarter":"Q2","segment":"Mid market","revenue":85},
+   {"quarter":"Q2","segment":"Small business","revenue":55}]},
+ "mark":{"type":"bar"},
+ "encoding":{
+   "x":{"field":"quarter","type":"nominal"},
+   "y":{"aggregate":"sum","field":"revenue","type":"quantitative"},
+   "color":{"field":"segment","type":"nominal",
+     "legend":{"title":"Segment","values":["Enterprise accounts","Mid market"],"label_limit":90}}}}

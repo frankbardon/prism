@@ -129,6 +129,29 @@ func Build(s *spec.Spec, opts Options) (*plan.DAG, plan.NodeID, error) {
 		return nil, "", err
 	}
 
+	// If the encoding binds `order`, inject a SortNode so the rows
+	// reach every downstream consumer in the author's sequence. It
+	// runs after the synthetic aggregate (so an order key may name an
+	// aggregated output column) and before the StackNode (whose
+	// segment ranking reads first appearance in row order). See
+	// spec/order.go for why row order is the single mechanism behind
+	// all three senses of the channel.
+	tip, err = ctx.injectEncodingOrder(tip, s.Encoding)
+	if err != nil {
+		return nil, "", err
+	}
+
+	// If the encoding stacks — explicitly via `stack`, or implicitly
+	// because it is the bar/area + aggregate + grouping shape
+	// Vega-Lite stacks — inject a StackNode on top. It must run after
+	// the synthetic aggregate so it accumulates the aggregated values,
+	// and its output columns must reach the encoder, so it is the last
+	// thing before the sink.
+	tip, err = ctx.injectEncodingStack(tip, s)
+	if err != nil {
+		return nil, "", err
+	}
+
 	// Mark the tip as the DAG's sole sink. Encode stage consumes the
 	// table at this id; renderers locate it via DAG.Sinks(). D040
 	// retired the synthetic SinkNode that P03 wired here.
@@ -555,6 +578,10 @@ func transformAsName(t spec.Transform) string {
 	case t.TimeUnit != nil:
 		// TimeUnit.As is the output column name, not a dataset alias.
 		return ""
+	case t.Stack != nil:
+		// Stack.As is the [start, end] output column pair, not a
+		// dataset alias — do NOT publish.
+		return ""
 	}
 	return ""
 }
@@ -707,6 +734,21 @@ func (c *buildCtx) applyOneTransform(input plan.NodeID, t spec.Transform) (plan.
 			return "", err
 		}
 		return c.addAndReturn(node)
+	case t.Stack != nil:
+		in, err := resolveInput(t.Stack.Data)
+		if err != nil {
+			return "", err
+		}
+		id := c.nextID("stack")
+		startAs, endAs := "", ""
+		if len(t.Stack.As) > 0 {
+			startAs = t.Stack.As[0]
+		}
+		if len(t.Stack.As) > 1 {
+			endAs = t.Stack.As[1]
+		}
+		return c.addAndReturn(nodes.NewStack(
+			id, in, t.Stack.Stack, t.Stack.Groupby, nil, t.Stack.Offset, startAs, endAs))
 	case t.Regression != nil:
 		in, err := resolveInput(t.Regression.Data)
 		if err != nil {
@@ -768,6 +810,13 @@ func joinOnFields(on any) []string {
 	return nil
 }
 
+// detailEntries (E5-S1) flattens encoding.detail — which decodes as
+// either a single entry or an array (spec.DetailChannel) — into a
+// flat slice, so callers don't have to re-handle both forms.
+func detailEntries(enc *spec.Encoding) []spec.DetailChannelEntry {
+	return spec.DetailEntries(enc)
+}
+
 // injectEncodingAggregate looks at the encoding for any channel
 // declaring an aggregate; if any does, append a GroupAggregateNode
 // whose groupby = every non-aggregated field channel and whose aggs =
@@ -805,6 +854,49 @@ func (c *buildCtx) injectEncodingAggregate(tip plan.NodeID, enc *spec.Encoding) 
 	collectMark(enc.Opacity)
 	collectMark(enc.Size)
 	collectMark(enc.Shape)
+	// Detail (E5-S1) is a pure grouping channel: it carries no scale
+	// and no palette, but it partitions the marks a series is split
+	// into, so it has to survive the synthetic aggregate the same way
+	// color does. Without this, `detail` + an aggregated y collapses
+	// the detail column out of the aggregate's output and the mark
+	// encoder can't read it back.
+	for _, d := range detailEntries(enc) {
+		if d.Field == "" {
+			continue
+		}
+		entries = append(entries, entry{field: d.Field, agg: d.Aggregate})
+	}
+	// The text channel (E4-S4) carries the same field/aggregate pair
+	// on its slimmer struct, so a text mark labelling aggregated
+	// values ({"text": {"aggregate": "mean", "field": "score"}})
+	// routes through the same synthetic GroupAggregateNode — and a
+	// non-aggregated text field joins the groupby alongside the
+	// position channels.
+	if enc.Text != nil && enc.Text.Field != "" {
+		entries = append(entries, entry{field: enc.Text.Field, agg: enc.Text.Aggregate})
+	}
+	// Order (E5-S4) is a grouping-adjacent channel: a non-aggregated
+	// order key has to survive the synthetic aggregate or the
+	// injected SortNode downstream has nothing to read. Matching
+	// Vega-Lite, whose implicit aggregate derives its groupby from
+	// every non-aggregate field def, order included.
+	//
+	// A field another channel already aggregates is skipped: the
+	// aggregate's output column carries the same name, so the sort
+	// reads the aggregated value and the field must NOT also widen
+	// the groupby (which would defeat the aggregation entirely).
+	aggregatedField := map[string]bool{}
+	for _, e := range entries {
+		if e.agg != "" {
+			aggregatedField[e.field] = true
+		}
+	}
+	for _, o := range spec.OrderEntries(enc) {
+		if o.Field == "" || aggregatedField[o.Field] {
+			continue
+		}
+		entries = append(entries, entry{field: o.Field, agg: o.Aggregate})
+	}
 	// Table columns (E1) carry the same field/aggregate shape via the
 	// embedded ChannelCommon, so a table column declaring an
 	// aggregate triggers the synthetic GroupAggregateNode exactly
@@ -830,6 +922,7 @@ func (c *buildCtx) injectEncodingAggregate(tip plan.NodeID, enc *spec.Encoding) 
 	var groupby []string
 	var aggs []nodes.AggOp
 	seen := map[string]bool{}
+	seenAgg := map[string]bool{}
 	for _, e := range entries {
 		if e.agg == "" {
 			if !seen[e.field] {
@@ -838,10 +931,75 @@ func (c *buildCtx) injectEncodingAggregate(tip plan.NodeID, enc *spec.Encoding) 
 			}
 			continue
 		}
+		// Two channels may name the same aggregate of the same field —
+		// e.g. a text mark labelling its own aggregated y value with
+		// {"y": {"aggregate": "mean", "field": "score"}, "text":
+		// {"aggregate": "mean", "field": "score"}}. Both alias to the
+		// same output column, so emitting the AggOp twice would
+		// declare a schema field the aggregator never materialises
+		// (PRISM_COMPILE_001, "have N columns, schema declares N+1").
+		// Collapse exact duplicates.
+		key := e.agg + "\x00" + e.field
+		if seenAgg[key] {
+			continue
+		}
+		seenAgg[key] = true
 		aggs = append(aggs, nodes.AggOp{Op: e.agg, Field: e.field, As: e.field})
 	}
 	id := c.nextID("enc-ga")
 	return c.addAndReturn(nodes.NewGroupAggregate(id, tip, groupby, aggs))
+}
+
+// injectEncodingOrder appends a SortNode when the leaf encoding binds
+// `order` (E5-S4). The resolution lives in spec/order.go so the
+// encoder — which only has to stop re-sorting line / area points by x
+// once the author has taken control — reaches the same verdict from
+// the same spec, with no plan → encode side channel.
+//
+// Reordering the rows here, upstream of everything, is what makes one
+// mechanism cover all three senses of the channel: the StackNode
+// ranks segments by first appearance, encode/marks/group.go hands
+// each group its indices in table order, and every per-row mark
+// encoder emits in table order. With `order` unbound this is a no-op
+// and row order is preserved exactly.
+func (c *buildCtx) injectEncodingOrder(tip plan.NodeID, enc *spec.Encoding) (plan.NodeID, error) {
+	keys := spec.ResolveOrder(enc)
+	if len(keys) == 0 {
+		return tip, nil
+	}
+	sk := make([]nodes.SortKey, 0, len(keys))
+	for _, k := range keys {
+		dir := spec.SortAscending
+		if k.Descending {
+			dir = spec.SortDescending
+		}
+		sk = append(sk, nodes.SortKey{Field: k.Field, Order: dir})
+	}
+	id := c.nextID("enc-order")
+	return c.addAndReturn(nodes.NewSort(id, tip, sk))
+}
+
+// injectEncodingStack appends a StackNode when spec.ResolveStack says
+// the leaf spec stacks. The resolution lives in spec/stack.go so the
+// encoder — which has to rebind the position channels onto the node's
+// output columns — reaches exactly the same verdict from the same
+// spec, with no plan → encode side channel.
+//
+// Grouping is derived, not re-derived: StackBinding.StackBy comes from
+// spec.StackByFields, which walks colour-then-detail in the same order
+// encode/marks/group.go's groupChannels does, so the stack's segment
+// order and the mark partitioner's group order agree. The binding's
+// Ordering overrides that order for a centred stack (E5-S3), where
+// inside-out placement is what makes the streamgraph read.
+func (c *buildCtx) injectEncodingStack(tip plan.NodeID, s *spec.Spec) (plan.NodeID, error) {
+	st := spec.ResolveStack(s)
+	if st == nil {
+		return tip, nil
+	}
+	id := c.nextID("enc-stack")
+	return c.addAndReturn(nodes.NewStack(
+		id, tip, st.Field, st.Groupby, st.StackBy, st.Offset, st.StartAs, st.EndAs).
+		WithOrdering(st.Ordering))
 }
 
 // missingDatasetErr formats a PRISM_PLAN_003 with the available leaf

@@ -1,6 +1,6 @@
 # Prism Gallery
 
-98 fixture specs across 16 categories. Each entry pairs a `*.prism.json`
+125 fixture specs across 18 categories. Each entry pairs a `*.prism.json`
 spec with a rendered `*.svg`. Browse the source to learn the spec
 shapes; open the SVGs to see what they render. The `table/` fixtures
 are one exception — a top-level `table` mark renders only through
@@ -23,10 +23,20 @@ For live interactive rendering in a browser, see [`live.html`](live.html).
 | [point_scatter](basic-marks/point_scatter.prism.json) | <img src="basic-marks/point_scatter.svg" width="240"> |
 | [rule_basic](basic-marks/rule_basic.prism.json) | <img src="basic-marks/rule_basic.svg" width="240"> |
 | [text_basic](basic-marks/text_basic.prism.json) | <img src="basic-marks/text_basic.svg" width="240"> |
+| [text_labelled_points](basic-marks/text_labelled_points.prism.json) | <img src="basic-marks/text_labelled_points.svg" width="240"> |
 | [tick_strip](basic-marks/tick_strip.prism.json) | <img src="basic-marks/tick_strip.svg" width="240"> |
 | [arc_basic](basic-marks/arc_basic.prism.json) | <img src="basic-marks/arc_basic.svg" width="240"> |
 | [rect_heatmap_lite](basic-marks/rect_heatmap_lite.prism.json) | <img src="basic-marks/rect_heatmap_lite.svg" width="240"> |
+| [bar_horizontal](basic-marks/bar_horizontal.prism.json) | <img src="basic-marks/bar_horizontal.svg" width="240"> |
 | [multi_series_line](basic-marks/multi_series_line.prism.json) | <img src="basic-marks/multi_series_line.svg" width="240"> |
+| [detail_series_line](basic-marks/detail_series_line.prism.json) | <img src="basic-marks/detail_series_line.svg" width="240"> |
+| [line_monotone](basic-marks/line_monotone.prism.json) | <img src="basic-marks/line_monotone.svg" width="240"> |
+| [area_step](basic-marks/area_step.prism.json) | <img src="basic-marks/area_step.svg" width="240"> |
+| [stacked_bar](basic-marks/stacked_bar.prism.json) | <img src="basic-marks/stacked_bar.svg" width="240"> |
+| [stacked_area_normalize](basic-marks/stacked_area_normalize.prism.json) | <img src="basic-marks/stacked_area_normalize.svg" width="240"> |
+| [area_horizontal](basic-marks/area_horizontal.prism.json) | <img src="basic-marks/area_horizontal.svg" width="240"> |
+| [tick_strip_horizontal](basic-marks/tick_strip_horizontal.prism.json) | <img src="basic-marks/tick_strip_horizontal.svg" width="240"> |
+| [streamgraph](basic-marks/streamgraph.prism.json) | <img src="basic-marks/streamgraph.svg" width="240"> |
 
 ## Composite marks
 
@@ -41,6 +51,7 @@ For live interactive rendering in a browser, see [`live.html`](live.html).
 | [crosstab_significance_shading](composite-marks/crosstab_significance_shading.prism.json) | <img src="composite-marks/crosstab_significance_shading.svg" width="240"> |
 | [boxplot](composite-marks/boxplot.prism.json) | <img src="composite-marks/boxplot.svg" width="240"> |
 | [violin_score](composite-marks/violin_score.prism.json) | <img src="composite-marks/violin_score.svg" width="240"> |
+| [boxplot_horizontal](composite-marks/boxplot_horizontal.prism.json) | <img src="composite-marks/boxplot_horizontal.svg" width="240"> |
 | [pie](composite-marks/pie.prism.json) | <img src="composite-marks/pie.svg" width="240"> |
 | [donut](composite-marks/donut.prism.json) | <img src="composite-marks/donut.svg" width="240"> |
 | [donut_traffic](composite-marks/donut_traffic.prism.json) | <img src="composite-marks/donut_traffic.svg" width="240"> |
@@ -68,6 +79,19 @@ For live interactive rendering in a browser, see [`live.html`](live.html).
 | [bullet_pipeline](specialty-marks/bullet_pipeline.prism.json) | <img src="specialty-marks/bullet_pipeline.svg" width="240"> |
 | [image_logo](specialty-marks/image_logo.prism.json) | <img src="specialty-marks/image_logo.svg" width="240"> |
 | [path_arbitrary](specialty-marks/path_arbitrary.prism.json) | <img src="specialty-marks/path_arbitrary.svg" width="240"> |
+
+## Progress
+
+One value bar per data row on a full-scale track — the multi-row
+sibling of `bullet`. See [Marks ›
+Progress](../concepts/marks.md#progress).
+
+| Spec | Preview |
+|---|---|
+| [progress_brand_funnel](progress/progress_brand_funnel.prism.json) | <img src="progress/progress_brand_funnel.svg" width="240"> |
+| [progress_metric_row](progress/progress_metric_row.prism.json) | <img src="progress/progress_metric_row.svg" width="240"> |
+| [progress_team_quota](progress/progress_team_quota.prism.json) | <img src="progress/progress_team_quota.svg" width="240"> |
+| [progress_vertical_capacity](progress/progress_vertical_capacity.prism.json) | <img src="progress/progress_vertical_capacity.svg" width="240"> |
 
 ## Geographic marks
 
@@ -143,6 +167,7 @@ source.
 |---|---|
 | [filter_structured](transforms/filter_structured.prism.json) | <img src="transforms/filter_structured.svg" width="240"> |
 | [calculate_structured](transforms/calculate_structured.prism.json) | <img src="transforms/calculate_structured.svg" width="240"> |
+| [stack_explicit](transforms/stack_explicit.prism.json) | <img src="transforms/stack_explicit.svg" width="240"> |
 
 ## Scales
 
@@ -157,6 +182,28 @@ source.
 | [band](scales/band.prism.json) | <img src="scales/band.svg" width="240"> |
 | [point](scales/point.prism.json) | <img src="scales/point.svg" width="240"> |
 | [ordinal](scales/ordinal.prism.json) | <img src="scales/ordinal.svg" width="240"> |
+| [axis_tick_values](scales/axis_tick_values.prism.json) | <img src="scales/axis_tick_values.svg" width="240"> |
+
+## Axes
+
+| Spec | Preview |
+|---|---|
+| [axis_orient_top](axes/axis_orient_top.prism.json) | <img src="axes/axis_orient_top.svg" width="240"> |
+| [axis_orient_layer](axes/axis_orient_layer.prism.json) | <img src="axes/axis_orient_layer.svg" width="240"> |
+
+## Legends
+
+Everything the `legend` block controls — content (`title`, `values`,
+`label_limit`), layout (`orient`, `direction`, `symbol_type`,
+`symbol_size`), and the gradient legend a continuous colour channel
+builds. See [Encoding ›
+Legends](../concepts/encoding.md#legend-placement).
+
+| Spec | Preview |
+|---|---|
+| [legend_content](legends/legend_content.prism.json) | <img src="legends/legend_content.svg" width="240"> |
+| [legend_layout](legends/legend_layout.prism.json) | <img src="legends/legend_layout.svg" width="240"> |
+| [legend_gradient](legends/legend_gradient.prism.json) | <img src="legends/legend_gradient.svg" width="240"> |
 
 ## Selections
 
@@ -183,7 +230,8 @@ selection or a structured predicate `test`. See
 ## Tree
 
 Rooted hierarchies laid out with tidy-tree, plus the `dendrogram`
-variant (step links, hidden nodes). See
+variant (step links, hidden nodes). All three bind the `text` channel
+to label their nodes. See
 [Marks › Tree / dendrogram / network](../concepts/marks.md#tree--dendrogram--network).
 
 | Spec | Preview |
@@ -195,12 +243,14 @@ variant (step links, hidden nodes). See
 ## Network
 
 Force-directed node-link diagrams with deterministic seeded layouts.
+Bind the `text` channel to label the nodes.
 See [Marks › Tree / dendrogram / network](../concepts/marks.md#tree--dendrogram--network).
 
 | Spec | Preview |
 |---|---|
 | [citation_network](network/citation_network.prism.json) | <img src="network/citation_network.svg" width="240"> |
 | [dependency_graph](network/dependency_graph.prism.json) | <img src="network/dependency_graph.svg" width="240"> |
+| [labelled_network](network/labelled_network.prism.json) | <img src="network/labelled_network.svg" width="240"> |
 
 ## Themes
 
@@ -219,6 +269,7 @@ below is identical; only the rendering theme differs.
 | [bar_pattern](themes/bar_pattern.prism.json) | <img src="themes/bar_pattern.svg" width="240"> |
 | [bar_dark_variant](themes/bar_dark_variant.prism.json) | <img src="themes/bar_dark_variant.svg" width="240"> |
 | [bar_category_styles](themes/bar_category_styles.prism.json) | <img src="themes/bar_category_styles.svg" width="240"> |
+| [bar_per_axis_grid](themes/bar_per_axis_grid.prism.json) | <img src="themes/bar_per_axis_grid.svg" width="240"> |
 
 `bar_dark_variant` is different from the row above it: its spec sets
 `theme: {"dark_variant": "dark"}` instead of picking a theme with
@@ -246,6 +297,17 @@ color automatically — no spec-level `condition` block at all. See
 [Category styles](../concepts/themes.md#category-styles) for the
 field→value→style shape and how a spec-level `condition` on the same
 field/value would win if one were present.
+
+`bar_per_axis_grid` demonstrates `theme.axis_x` / `theme.axis_y`: the
+shared `axis` block sets one grid colour, then each per-axis block
+overrides it for one orientation only — the vertical grid lines (drawn
+by the **x** axis) become dashed amber, the horizontal ones (drawn by
+the **y** axis) stay slate. It also exercises the axis-title gap: the
+y channel's spec-level `axis.title_padding` outranks the
+`axis_y.title_padding` the theme asks for, while the x axis, which
+nobody configures, keeps the built-in 8 px. See [Per-axis
+blocks](../concepts/themes.md#per-axis-blocks) and [Axis geometry
+precedence](../concepts/themes.md#axis-geometry-precedence).
 
 ## Animation
 

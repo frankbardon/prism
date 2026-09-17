@@ -24,8 +24,8 @@ func encodeHeatmap(in Inputs) ([]scene.Mark, error) {
 			map[string]any{"Field": "<xy>", "Source": "<encoding>", "Available": joinFieldNames(in.Table)},
 		)
 	}
-	xBand, xIsBand := in.X.Scale.(BandScaler)
-	yBand, yIsBand := in.Y.Scale.(BandScaler)
+	_, xIsBand := in.X.Scale.(BandScaler)
+	_, yIsBand := in.Y.Scale.(BandScaler)
 	if !xIsBand || !yIsBand {
 		return nil, prismerrors.New(
 			"PRISM_ENCODE_001",
@@ -120,16 +120,23 @@ func encodeHeatmap(in Inputs) ([]scene.Mark, error) {
 		}
 	}
 
+	// Cell geometry: one (start, positive length) pair per axis. Both
+	// go through rectAxisExtent (span.go), the single band normaliser
+	// — a y band runs bottom-to-top so its step is negative, and SVG
+	// rejects a negative height. E9-S2 folded the third inline copy of
+	// that normalisation onto the shared helper; heatmap binds no span
+	// channel, so the zero Channel selects the band path.
+	xExt, err := rectAxisExtent(in, "x", in.X, Channel{}, true)
+	if err != nil {
+		return nil, err
+	}
+	yExt, err := rectAxisExtent(in, "y", in.Y, Channel{}, true)
+	if err != nil {
+		return nil, err
+	}
+
 	marks := make([]scene.Mark, 0, len(xs))
 	for i := range xs {
-		x, err := in.X.Scale.Apply(xs[i])
-		if err != nil {
-			return nil, err
-		}
-		y, err := in.Y.Scale.Apply(ys[i])
-		if err != nil {
-			return nil, err
-		}
 		style := in.Style
 		if len(colorValues) > 0 {
 			var c *scene.Color
@@ -158,29 +165,15 @@ func encodeHeatmap(in Inputs) ([]scene.Mark, error) {
 		if len(opacityValues) > 0 {
 			style.Opacity = opacityFor(opacityValues[i], omn, omx)
 		}
-		// Band step is signed: the y axis runs from plot.bottom to
-		// plot.top so yBand.BandWidth() is negative. SVG rejects rects
-		// with negative width/height, so we normalise here — the rect
-		// renders from (min, max) regardless of the band scale's
-		// direction.
-		w := xBand.BandWidth()
-		h := yBand.BandWidth()
-		rx, ry := x, y
-		if w < 0 {
-			rx, w = x+w, -w
-		}
-		if h < 0 {
-			ry, h = y+h, -h
-		}
 		marks = append(marks, scene.Mark{
 			Type:  scene.MarkRect,
 			ID:    fmt.Sprintf("heatmap-%d", i),
 			Style: style,
 			Rect: &scene.RectGeom{
-				X: rx,
-				Y: ry,
-				W: w,
-				H: h,
+				X: xExt[i][0],
+				Y: yExt[i][0],
+				W: xExt[i][1],
+				H: yExt[i][1],
 			},
 		})
 	}

@@ -146,7 +146,9 @@ prism plot bar.json --theme=colorblind > bar-cb.svg
 |---|---|
 | `mark`     | Default style applied to every mark unless `marks.<type>` overrides. |
 | `marks.<type>` | Per-mark-type defaults. Key matches the spec's `mark.type` (bar, line, area, point, rule, text, tick, rect, arc, geoshape, geopoint, ...). |
-| `axis`     | Axis domain, ticks, grid, labels, titles. |
+| `marks.<type>_<element>` | Defaults for one *element* of a mark family that draws several per row. `progress_track` is the only one today — see [Multi-element marks](#multi-element-marks). |
+| `axis`     | Axis domain, ticks, grid, labels, titles — applied to **both** cartesian axes. |
+| `axis_x` / `axis_y` | Same token set as `axis`, layered over it **per property** for one axis only (see [Per-axis blocks](#per-axis-blocks)). Because the x axis draws the vertical grid lines and the y axis the horizontal ones, these are also how grid lines are themed per orientation. |
 | `legend`   | Legend fills, symbols, labels, padding. |
 | `title`    | Chart title typography. |
 | `view`     | Chart-rect background, stroke, padding. |
@@ -160,6 +162,242 @@ prism plot bar.json --theme=colorblind > bar-cb.svg
 | `patterns`  | Named registry of pattern fills — built-in catalogue or raw-SVG content — referenced via `url(#name)` fills (see [Gradients and patterns](#gradients-and-patterns)). |
 | `dark_variant` | Name of a registered counterpart theme for automatic light/dark rendering (see [Dark variant pairing](#dark-variant-pairing)). |
 | `category_styles` | Field name → field value → `MarkStyle` map for theme-level data-driven styling (see [Category styles](#category-styles)). |
+
+### Mark style precedence
+
+A mark's final style is resolved by folding four layers in a fixed
+order, each shadowing the previous **per field**. A layer that leaves
+a field unset never clears what an earlier layer wrote:
+
+1. Prism's built-in fallback for the mark type (so a chart still
+   renders under a theme that declares nothing).
+2. The theme's `mark` block — the global default for every mark.
+3. The theme's `marks.<type>` block — the per-mark-type override.
+4. The spec's own `mark_def` — see
+   [Marks: style properties](marks.md#style-properties).
+
+**The spec wins.** Anything written in a spec's `mark: {…}` object
+shadows the theme token of the same name; a theme can only supply the
+default for a property the spec does not state. Encoding channels and
+conditions resolve after all four and shadow the lot, since they vary
+per row.
+
+`theme.MarkStyle` and `spec.MarkDef` share field names by design
+where they mean the same thing. The overlap is:
+
+| Property | In theme `mark` / `marks.<type>` | In spec `mark_def` |
+|---|---|---|
+| `fill`, `stroke`, `stroke_width`, `stroke_dash` | ✅ | ✅ |
+| `opacity`, `fill_opacity` | ✅ | ✅ |
+| `corner_radius`, `size`, `shape` | ✅ | ✅ |
+| `font_size`, `font_weight`, `font_style` | ✅ | ✅ |
+| `align`, `baseline` | ✅ | ✅ |
+| `line_height`, `letter_spacing`, `filter` | ✅ | — theme-only |
+| `stroke_opacity`, `font` (family) | — spec-only | ✅ |
+| `dx`, `dy`, `angle`, `pad_angle`, radii | — spec-only | ✅ |
+
+So a theme can set a house `fill_opacity` for every `area` mark and an
+individual chart can still override it:
+
+```json
+{
+  "mark": {"type": "area", "fill_opacity": 0.9},
+  "encoding": {"x": {"field": "t", "type": "temporal"},
+               "y": {"field": "v", "type": "quantitative"}}
+}
+```
+
+renders at `fill_opacity: 0.9` even under a theme declaring
+`"marks": {"area": {"fill_opacity": 0.3}}`, while that theme's
+`stroke` and `corner_radius` (which the spec does not mention) still
+apply.
+
+`stroke_dash` follows the same per-field rule, with one wrinkle worth
+stating: it is a list, and the override is **whole-pattern** rather
+than element-wise. A spec `"stroke_dash": [6, 3]` replaces a theme's
+`[2, 2]` outright; an omitted key keeps the theme's; and an empty
+array reads as omitted, so a mark cannot go solid by writing `[]` —
+drop the token from the theme instead. Both sides spell the field
+`stroke_dash` on the wire and `StrokeDash` in Go, so when reading the
+encoder, check whether the receiver is a `theme.MarkStyle` or a
+`spec.MarkDef` before concluding which one a line applies.
+
+### Multi-element marks
+
+Most marks draw one shape per row, so one `marks.<type>` key styles
+the whole thing. A [`progress`](marks.md#progress) mark draws **two**:
+the value bar, and the unfilled track behind it that shows how much
+distance is left. They need independent paint — a track that inherits
+the bar's fill is invisible — so the track claims its own key:
+
+| Key | Styles |
+|---|---|
+| `marks.progress` | The value bar. Behaves like any other `marks.<type>` block. |
+| `marks.progress_track` | The unfilled track behind it. |
+
+`progress_track` takes the full `MarkStyle` shape, so the track
+honours `fill`, `stroke`, `stroke_width`, `opacity`, a `filter`, and
+`url(#name)` gradient / pattern refs exactly as a bar does:
+
+```json
+{
+  "theme": {
+    "name": "light",
+    "marks": {
+      "progress": {"fill": "#2563eb", "corner_radius": 4},
+      "progress_track": {"fill": "#eef2ff", "stroke": "#c7d2fe", "stroke_width": 1}
+    }
+  }
+}
+```
+
+Two things about `progress_track` differ from a normal per-type block,
+both on purpose:
+
+- **It is not a mark type.** `mark.type` cannot be set to
+  `progress_track`; it names an element, not something you can draw on
+  its own.
+- **It does not inherit the global `mark` block.** Every other
+  `marks.<type>` key layers over `mark`, but `mark.fill` is the *data*
+  fill, and a track that inherited it would come out the same colour
+  as the bar sitting on it. A theme that sets no `progress_track`
+  falls back to its own grid colour instead, so a custom theme that
+  never heard of `progress` still tints the track as chrome rather
+  than as a second series.
+
+Every bundled theme states both keys. `high_contrast` is the one that
+diverges from the grid-colour default: its grid colour is pure black,
+which would paint a black track under a black value bar, so it uses a
+white track with a black outline.
+
+The two elements also carry distinct CSS classes in the rendered SVG —
+`prism-mark-progress` and `prism-mark-progress-track` — so downstream
+stylesheets can scope to either half. Every other mark is classed by
+its geometry (both of these would otherwise be `prism-mark-bar`).
+
+### Per-axis blocks
+
+`axis` states house style for *both* cartesian axes at once. When the
+two need to differ, `axis_x` and `axis_y` layer over it — carrying the
+same token set, and overriding **per property**:
+
+```json
+{
+  "axis":   { "grid_color": "#e5e7eb", "tick_color": "#6b7280" },
+  "axis_x": { "grid_color": "#f3f4f6" }
+}
+```
+
+The x axis draws a `#f3f4f6` grid and keeps the `#6b7280` tick colour
+it inherited; the y axis takes both values from `axis` unchanged. A
+block that sets one token does not reset the rest — nothing is
+replaced wholesale.
+
+**Grid orientation.** An x axis emits the **vertical** grid lines and a
+y axis the **horizontal** ones, so `axis_x.grid_color` /
+`axis_y.grid_color` (and `grid_width`, `grid_dash`, `grid_opacity`)
+are how the two orientations are coloured apart — a common request that
+`axis` alone cannot express. A frequent pattern is horizontal rules
+only:
+
+```json
+{
+  "axis_x": { "grid_color": "transparent" },
+  "axis_y": { "grid_color": "#e5e7eb", "grid_dash": [2, 2] }
+}
+```
+
+`x2` and `y2` resolve to the same block as their base channel — a span
+channel never carries an axis of its own.
+
+#### How it is applied
+
+Most of these tokens ride the CSS cascade: `theme/css.go` emits the
+per-axis block as custom-property declarations scoped to that axis's
+own group, and the renderer already wraps each axis (its grid lines
+included) in `<g class="prism-axis prism-axis-x">`:
+
+```css
+:root{--prism-grid-color:#e5e7eb;}
+.prism-axis-x{--prism-grid-color:#f3f4f6;}
+```
+
+Custom properties inherit, so the scoped declaration shadows the
+`:root` one for that axis alone. The per-property merge *is* the
+cascade — nothing is pre-folded, and the same post-hoc restyling that
+works on `--prism-grid-color` works on the scoped variable.
+
+Tokens that move SVG coordinates (`tick_size`, `label_padding`,
+`title_padding`) or that are emitted as SVG attributes rather than CSS
+(`label_line_height`, `label_letter_spacing`, `title_line_height`,
+`title_letter_spacing`) cannot travel that way — a CSS variable cannot
+move a line endpoint or a text coordinate. Those ride the Scene IR instead, on
+`scene.Theme.axis_x` / `axis_y`, and the renderer falls back to the
+shared `axis` value property by property. `filter` lands on the axis's
+own group and composes with the shared block's filter on the enclosing
+`prism-axes` group.
+
+A theme that declares neither block emits exactly the bytes it did
+before the blocks existed: this is purely additive.
+
+### Axis geometry precedence
+
+Three `axis` tokens are **geometry**, not appearance: `tick_size` (the
+major tick length), `label_padding` (the gap between the axis line and
+its tick labels) and `title_padding` (the gap between those labels and
+the axis title). They move SVG coordinates, so unlike the colour and
+font tokens they cannot be re-styled after the fact by overriding a
+CSS variable — the variables `--prism-axis-tick-size`,
+`--prism-axis-label-padding` and `--prism-axis-title-padding` are
+emitted for reference, but the geometry itself is resolved before the
+SVG is written.
+
+All three names also exist on a position channel's `axis` block (see
+[Encoding: axis components and geometry](encoding.md#axis-components-and-geometry)).
+Where they overlap, the resolution order is fixed, highest first:
+
+1. **The spec's `axis` block** — `"axis": {"tick_size": 12}` on the
+   channel.
+2. **The theme's `axis_x` / `axis_y` block** — the per-axis override
+   (see [Per-axis blocks](#per-axis-blocks)).
+3. **The theme's `axis` block** — `"axis": {"tick_size": 9}`.
+4. **Prism's built-in metric** — 5 px tick, 4 px label padding, 8 px
+   title padding.
+
+This is the one precedence chain every axis token follows, geometry or
+not; only the machinery differs (the CSS cascade for colour and font
+tokens, `resolveAxisMetric` in the SVG renderer for geometry). Each
+level shadows the previous **per property**.
+
+**The spec wins.** A theme can set the house tick length for every
+chart, and an individual chart still overrides it per channel; the
+theme value applies only where the `axis` block says nothing. This
+matches [mark style precedence](#mark-style-precedence): the theme
+supplies defaults, the spec states intent.
+
+```json
+{ "axis": { "tick_size": 9, "label_padding": 10 } }
+```
+
+under a spec whose x channel carries `"axis": {"tick_size": 12}`
+renders a 12 px x tick (spec) with a 10 px label gap (theme, since the
+spec left `label_padding` alone), while the y axis — which states
+nothing — takes both theme values.
+
+**`title_padding` is measured from the tick labels, not from the plot
+edge**, and it is added to a fixed per-side text allowance rather than
+replacing it, so the 8 px every built-in theme states reproduces the
+title position Prism has always drawn. Note that a padding larger than
+the default draws into the outer margin: the layout reserves a fixed
+depth per side and does not grow it to follow a token, the same
+text-metric deferral `tick_size` and `label_padding` are subject to.
+
+Minor ticks are not separately tokenised; they render at 0.6× whatever
+major tick size resolves, so the default 5 px still yields a 3 px minor
+tick. The remaining axis knobs — `labels`, `ticks`, `domain`,
+`label_limit` and `zindex` — are spec-only: they decide *whether* a
+component is drawn and in what order, which is an authoring decision
+rather than a house style, so no theme token shadows them.
 
 ### Typography tokens
 
@@ -529,6 +767,44 @@ peer-reviewed sources (Wong 2011, Tol 2018). The default
 `colorblind` theme uses `okabe_ito` for categorical channels and
 `cividis` for continuous channels.
 
+### Where a scheme sits in the cascade
+
+A named scheme is the **second** tier of palette resolution, not the
+first. The full order, highest first:
+
+1. `scale.range` on the channel — an inline color list supplied by the
+   spec author. Nothing overrides it.
+2. `scale.scheme` on the channel — a name from the catalogue above, or
+   from the theme's own `schemes` registry (which shadows the global
+   catalogue for that name).
+3. The theme's `range` slot for the role — `range.category` for a
+   discrete channel, `range.ramp` then `range.heatmap` for a
+   continuous one.
+4. The theme's legacy flat `color_scheme_categorical` /
+   `color_scheme_sequential` field.
+5. Prism's built-in default palette (a category10 derivative), or a
+   9-stop `blues` ramp on the continuous side.
+
+An unknown scheme name degrades quietly to the next tier so a
+malformed spec still renders; validate reports it separately as
+`PRISM_SPEC_028`. An inline `range` is the one tier that does not
+degrade as a unit — unparseable entries are dropped and the rest still
+win, and only a wholly unparseable range falls through.
+
+### Traversing a ramp — `scale.interpolate`
+
+A continuous ramp — whether it came from a scheme above or from an
+inline `scale.range` — is traversed in the colorspace
+`scale.interpolate` names: `rgb` (default), `hsl`, or `lab`.
+Vega-Lite's `hcl` is not supported. `lab` is the one to reach for when
+a ramp's steps need to read as evenly spaced rather than merely be
+evenly spaced in sRGB.
+
+Prism resamples the ramp at encode time, so the stops that reach a
+renderer already trace the chosen space's curve. See
+[Choosing the colors](./encoding.md#choosing-the-colors--range-scheme-interpolate)
+in the encoding reference for the full treatment.
+
 ## Sparse override at spec level
 
 ```json
@@ -541,10 +817,15 @@ peer-reviewed sources (Wong 2011, Tol 2018). The default
     },
     "range": {
       "category": { "scheme": "okabe_ito" }
-    }
+    },
+    "axis_y": { "grid_dash": [2, 2] }
   }
 }
 ```
+
+Every block the theme struct carries is available here, `axis_x` /
+`axis_y` included — each merges against its own counterpart in the
+base theme, never against the shared `axis` block.
 
 Spec-level overrides merge over the named base theme without
 restating the whole struct. Order of precedence:
@@ -596,16 +877,23 @@ without re-rendering.
 --prism-color-bg          --prism-font-sans      --prism-font-mono
 
 --prism-axis-domain-color --prism-axis-tick-size --prism-axis-label-color
+--prism-axis-label-padding --prism-axis-title-padding
 --prism-grid-color        --prism-grid-width     --prism-grid-dash
 
 --prism-mark-fill         --prism-mark-bar-fill  --prism-mark-line-stroke
 --prism-mark-bar-corner-radius --prism-mark-point-size
+--prism-mark-progress-fill     --prism-mark-progress_track-fill
 
 --prism-legend-padding    --prism-legend-symbol-size --prism-title-font-size
 --prism-view-bg           --prism-view-padding
 
 --prism-selected-opacity  --prism-deselected-opacity
 ```
+
+Every `marks.<key>` block emits one variable per token it sets, named
+`--prism-mark-<key>-<token>` — the key verbatim, so the
+[multi-element](#multi-element-marks) `progress_track` block emits
+`--prism-mark-progress_track-fill` with its underscore intact.
 
 The full set scales with the tokens the active theme defines —
 unset tokens omit the variable so renderers fall back to hard-coded
@@ -629,6 +917,23 @@ are the one exception: they render as direct per-element attributes
 rather than `--prism-*` custom properties, so they are baked in at
 render time and are not runtime-overridable via DOM style assignment
 the way the tokens above are.
+
+`--prism-axis-tick-size`, `--prism-axis-label-padding` and
+`--prism-axis-title-padding` are emitted, but they are **reference
+only**: a CSS variable cannot move an SVG line endpoint or a `<text>`
+coordinate, so the geometry those three tokens describe is resolved at
+render time (see
+[Axis geometry precedence](#axis-geometry-precedence)). Overriding them
+in the DOM restyles nothing.
+
+A theme's `axis_x` / `axis_y` blocks (see
+[Per-axis blocks](#per-axis-blocks)) emit the same `--prism-axis-*` /
+`--prism-grid-*` names a second time, scoped to
+`.prism-axis-x { ... }` / `.prism-axis-y { ... }` rather than `:root`.
+Custom properties inherit, so the scoped declaration wins for that
+axis's group and leaves the other axis on the `:root` value. Both are
+runtime-overridable the same way — assigning to the group element's
+style shadows the theme's scoped value.
 
 ## Rendering backends
 

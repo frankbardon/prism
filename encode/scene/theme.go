@@ -86,6 +86,76 @@ type Theme struct {
 	LegendTitleLetterSpacing *float64 `json:"legend_title_letter_spacing,omitempty"`
 	TitleLineHeight          *float64 `json:"title_line_height,omitempty"`
 	TitleLetterSpacing       *float64 `json:"title_letter_spacing,omitempty"`
+	// AxisTickSize / AxisLabelPadding carry the resolved
+	// theme.AxisStyle tick_size / label_padding tokens (E3-S2) — the
+	// same values theme/css.go emits as --prism-axis-tick-size and
+	// --prism-axis-label-padding. A CSS variable cannot move an SVG
+	// line endpoint or a <text> coordinate, so the geometry has to
+	// ride on the Scene IR as well for the tokens to mean anything.
+	//
+	// These are the *theme* layer of the precedence chain. A
+	// per-channel `axis.tick_size` / `axis.label_padding` lands on
+	// scene.Axis.TickSize / LabelPadding instead and wins outright;
+	// these apply only where the axis states nothing.
+	AxisTickSize     *float64 `json:"axis_tick_size,omitempty"`
+	AxisLabelPadding *float64 `json:"axis_label_padding,omitempty"`
+	// AxisTitlePadding is the same story for the theme's
+	// `axis.title_padding` token (E8-S2). --prism-axis-title-padding
+	// was emitted from the very first theme but nothing read it: the
+	// axis title's coordinate was hard-coded, so the token was dead in
+	// exactly the way tick_size and label_padding were before E3-S2.
+	// A CSS variable cannot move a <text> x/y, so the value rides here.
+	AxisTitlePadding *float64 `json:"axis_title_padding,omitempty"`
+	// AxisX / AxisY carry the theme's per-axis `axis_x` / `axis_y`
+	// overrides (E8-S1), narrowed to the tokens that cannot ride a CSS
+	// variable. Colour and stroke tokens are *not* here: theme/css.go
+	// scopes those onto the `.prism-axis-x` / `.prism-axis-y` group as
+	// custom-property declarations and CSS inheritance does the
+	// per-property fold for free. Geometry (tick length, label gap) and
+	// typography emitted as SVG attributes (line-height, letter-spacing)
+	// have no such route — a CSS variable cannot move a line endpoint —
+	// so they ride the IR, exactly as AxisTickSize / AxisLabelPadding
+	// above do for the shared block.
+	//
+	// These hold the *override* only, never the fold with the shared
+	// block: render/svg falls back to the flat Axis* fields above when
+	// a per-axis token is nil, which is what makes the merge
+	// per-property.
+	AxisX *AxisTokens `json:"axis_x,omitempty"`
+	AxisY *AxisTokens `json:"axis_y,omitempty"`
+}
+
+// AxisTokens is the per-axis slice of the theme's axis tokens that the
+// renderer has to read off the Scene IR rather than off a CSS
+// variable. See Theme.AxisX.
+type AxisTokens struct {
+	TickSize           *float64 `json:"tick_size,omitempty"`
+	LabelPadding       *float64 `json:"label_padding,omitempty"`
+	TitlePadding       *float64 `json:"title_padding,omitempty"`
+	LabelLineHeight    *float64 `json:"label_line_height,omitempty"`
+	LabelLetterSpacing *float64 `json:"label_letter_spacing,omitempty"`
+	TitleLineHeight    *float64 `json:"title_line_height,omitempty"`
+	TitleLetterSpacing *float64 `json:"title_letter_spacing,omitempty"`
+	// Filter names an entry in Theme.Filters, applied to this axis's
+	// own group. The shared block's Filter (Theme.AxisFilter) still
+	// applies to the enclosing `prism-axes` group, so the two compose
+	// rather than replace.
+	Filter string `json:"filter,omitempty"`
+}
+
+// AxisTokensFor returns the per-axis override block for one channel,
+// or nil when the theme states none. Nil-safe in the receiver.
+func (t *Theme) AxisTokensFor(ch Channel) *AxisTokens {
+	if t == nil {
+		return nil
+	}
+	switch ch {
+	case ChannelX, ChannelX2:
+		return t.AxisX
+	case ChannelY, ChannelY2:
+		return t.AxisY
+	}
+	return nil
 }
 
 // Default returns the hard-coded P05 theme:

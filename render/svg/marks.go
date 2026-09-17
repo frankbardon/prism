@@ -57,6 +57,19 @@ func hasTooltip(m scene.Mark) bool {
 	return m.Tooltip != nil && len(m.Tooltip.Lines) > 0
 }
 
+// writeMarkClass writes the mark's class attribute: m.Class verbatim
+// when the encoder set one, otherwise the geom-derived default. Only
+// marks that need to distinguish parts of a multi-shape row set Class
+// (encode/marks/progress.go), so every other mark keeps the class it
+// has always emitted and every committed golden stays byte-identical.
+func writeMarkClass(w *Writer, m scene.Mark, geomClass string) {
+	if m.Class != "" {
+		w.Attr("class", m.Class)
+		return
+	}
+	w.Attr("class", geomClass)
+}
+
 // writeDatumAttr writes data-prism-datum-row="<row-id>" when the mark
 // carries a Datum back-reference (D077). Marks without Datum (composite
 // helpers, e.g. boxplot whisker pairs) get no attribute and the JS
@@ -102,7 +115,7 @@ func writeTooltipChild(w *Writer, m scene.Mark) {
 func renderRect(w *Writer, m scene.Mark) {
 	g := m.Rect
 	w.OpenTag("rect")
-	w.Attr("class", "prism-mark-bar")
+	writeMarkClass(w, m, "prism-mark-bar")
 	if m.ID != "" {
 		w.Attr("data-prism-id", m.ID)
 	}
@@ -130,11 +143,16 @@ func renderLine(w *Writer, m scene.Mark) {
 	if len(g.Points) == 0 {
 		return
 	}
-	// Emit as a <polyline> for P05 (the design's CurveLinear default
-	// fits polyline exactly). When non-linear curves land, switch to
-	// <path> with the d= attribute.
+	// CurveLinear (and the unset zero value) stays a <polyline> — it
+	// fits the primitive exactly and every committed linear golden and
+	// cross-impl fixture pins that byte shape. Non-linear curves need
+	// Bezier / riser commands, so they take the <path> branch below.
+	if isCurved(g.Curve) {
+		renderCurvedLine(w, m)
+		return
+	}
 	w.OpenTag("polyline")
-	w.Attr("class", "prism-mark-line")
+	writeMarkClass(w, m, "prism-mark-line")
 	if m.ID != "" {
 		w.Attr("data-prism-id", m.ID)
 	}
@@ -162,6 +180,34 @@ func renderLine(w *Writer, m scene.Mark) {
 	w.SelfClose()
 }
 
+// renderCurvedLine is renderLine's non-linear branch: the same class,
+// identity and style attrs, but the geometry lands in a <path d="…">
+// because <polyline> cannot express risers or Bezier segments.
+func renderCurvedLine(w *Writer, m scene.Mark) {
+	g := m.Line
+	w.OpenTag("path")
+	writeMarkClass(w, m, "prism-mark-line")
+	if m.ID != "" {
+		w.Attr("data-prism-id", m.ID)
+	}
+	writeDatumAttr(w, m)
+	writeKeyAttr(w, m)
+	w.OpenAttr("d")
+	writeSegTo(w, "M", g.Points[0][0], g.Points[0][1])
+	writeCurveBody(w, g.Points, g.Curve, g.Tension)
+	w.CloseAttr()
+	// Lines need fill="none" so they don't fill the enclosed area.
+	w.Attr("fill", "none")
+	writeStyleAttrs(w, m.Style)
+	if hasTooltip(m) {
+		w.CloseTagOpen()
+		writeTooltipChild(w, m)
+		w.EndTag("path")
+		return
+	}
+	w.SelfClose()
+}
+
 func renderArea(w *Writer, m scene.Mark) {
 	g := m.Area
 	if len(g.Upper) == 0 {
@@ -171,32 +217,30 @@ func renderArea(w *Writer, m scene.Mark) {
 	// the reversed lower edge, Z to close. The encoder supplies Lower
 	// as the y=0 baseline edge (one point per Upper x).
 	w.OpenTag("path")
-	w.Attr("class", "prism-mark-area")
+	writeMarkClass(w, m, "prism-mark-area")
 	if m.ID != "" {
 		w.Attr("data-prism-id", m.ID)
 	}
 	writeDatumAttr(w, m)
 	writeKeyAttr(w, m)
 	w.OpenAttr("d")
-	// Upper edge: M x0,y0 L x1,y1 L x2,y2 ...
-	w.Raw("M")
-	w.Raw(render.FormatFloat(g.Upper[0][0]))
-	w.Raw(",")
-	w.Raw(render.FormatFloat(g.Upper[0][1]))
-	for _, p := range g.Upper[1:] {
-		w.Raw(" L")
-		w.Raw(render.FormatFloat(p[0]))
-		w.Raw(",")
-		w.Raw(render.FormatFloat(p[1]))
-	}
-	// Reverse the lower (baseline) edge to close the shape. The encoder
+	// Upper edge: M x0,y0 then the curve body (" Lx,y" per point when
+	// linear — byte-identical to the pre-curve emitter).
+	writeSegTo(w, "M", g.Upper[0][0], g.Upper[0][1])
+	writeCurveBody(w, g.Upper, g.Curve, g.Tension)
+	// Reverse the lower (baseline) edge to close the shape, honouring
+	// the same curve so both boundaries stay parallel. The encoder
 	// always supplies Lower for area marks; a degenerate empty Lower
-	// closes straight back to the upper start via Z.
-	for i := len(g.Lower) - 1; i >= 0; i-- {
-		w.Raw(" L")
-		w.Raw(render.FormatFloat(g.Lower[i][0]))
-		w.Raw(",")
-		w.Raw(render.FormatFloat(g.Lower[i][1]))
+	// closes straight back to the upper start via Z. The first
+	// reversed point is always a straight connector down from the
+	// upper edge's end, then the curve body resumes from there.
+	if len(g.Lower) > 0 {
+		lower := make([][2]float64, len(g.Lower))
+		for i, p := range g.Lower {
+			lower[len(g.Lower)-1-i] = p
+		}
+		writeSegTo(w, " L", lower[0][0], lower[0][1])
+		writeCurveBody(w, lower, g.Curve, g.Tension)
 	}
 	w.Raw(" Z")
 	w.CloseAttr()
@@ -212,21 +256,25 @@ func renderArea(w *Writer, m scene.Mark) {
 
 func renderPoint(w *Writer, m scene.Mark) {
 	g := m.Point
-	w.OpenTag("circle")
-	w.Attr("class", "prism-mark-point")
+	// Shape geometry is shared with the legend's shaped swatches
+	// (render/svg/symbols.go) — there is exactly one emitter for the
+	// scene.PointShape vocabulary. A circle (the only shape any
+	// encoder produces today) still emits <circle cx cy r>, which is
+	// what keeps every committed point golden byte-identical.
+	tag := symbolTag(g.Shape)
+	w.OpenTag(tag)
+	writeMarkClass(w, m, "prism-mark-point")
 	if m.ID != "" {
 		w.Attr("data-prism-id", m.ID)
 	}
 	writeDatumAttr(w, m)
 	writeKeyAttr(w, m)
-	w.AttrFloat("cx", g.Cx)
-	w.AttrFloat("cy", g.Cy)
-	w.AttrFloat("r", g.R)
+	writeSymbolGeom(w, g.Shape, g.Cx, g.Cy, g.R)
 	writeStyleAttrs(w, m.Style)
 	if hasTooltip(m) {
 		w.CloseTagOpen()
 		writeTooltipChild(w, m)
-		w.EndTag("circle")
+		w.EndTag(tag)
 		return
 	}
 	w.SelfClose()
@@ -235,7 +283,7 @@ func renderPoint(w *Writer, m scene.Mark) {
 func renderTextMark(w *Writer, m scene.Mark) {
 	g := m.Text
 	w.OpenTag("text")
-	w.Attr("class", "prism-mark-text")
+	writeMarkClass(w, m, "prism-mark-text")
 	if m.ID != "" {
 		w.Attr("data-prism-id", m.ID)
 	}
@@ -243,6 +291,20 @@ func renderTextMark(w *Writer, m scene.Mark) {
 	writeKeyAttr(w, m)
 	w.AttrFloat("x", g.X)
 	w.AttrFloat("y", g.Y)
+	// dx / dy (E4-S1) are SVG presentation attributes rather than
+	// being folded into x / y, so they offset the glyph inside the
+	// element's own (already rotated) coordinate system. Combined with
+	// the rotate-about-anchor transform below that reproduces Vega's
+	// text transform, translate(x,y) rotate(a) translate(dx,dy):
+	// rotation still pivots on the anchor, and the offset rides along
+	// with it. Routed through AttrFloat (render.FormatFloat) like
+	// every other coordinate.
+	if g.Dx != 0 {
+		w.AttrFloat("dx", g.Dx)
+	}
+	if g.Dy != 0 {
+		w.AttrFloat("dy", g.Dy)
+	}
 	switch g.Anchor {
 	case scene.AnchorStart:
 		w.Attr("text-anchor", "start")
@@ -254,6 +316,7 @@ func renderTextMark(w *Writer, m scene.Mark) {
 	if g.FontSize > 0 {
 		w.AttrFloat("font-size", g.FontSize)
 	}
+	writeFontAttrs(w, m.Style)
 	if g.Angle != 0 {
 		w.Attr("transform", rotateAround(g.Angle, g.X, g.Y))
 	}
@@ -271,7 +334,7 @@ func renderTextMark(w *Writer, m scene.Mark) {
 func renderArc(w *Writer, m scene.Mark) {
 	g := m.Arc
 	w.OpenTag("path")
-	w.Attr("class", "prism-mark-arc")
+	writeMarkClass(w, m, "prism-mark-arc")
 	if m.ID != "" {
 		w.Attr("data-prism-id", m.ID)
 	}
@@ -300,14 +363,15 @@ func renderArc(w *Writer, m scene.Mark) {
 func arcPath(g *scene.ArcGeom) string {
 	const sweepCW = 1 // SVG sweep flag: 1 = clockwise in pixel space.
 	const sweepCCW = 0
+	startAngle, endAngle := paddedArcAngles(g)
 	largeArc := "0"
-	if (g.EndAngle - g.StartAngle) > 3.141592653589793 {
+	if (endAngle - startAngle) > 3.141592653589793 {
 		largeArc = "1"
 	}
-	cosS := cos(g.StartAngle)
-	sinS := sin(g.StartAngle)
-	cosE := cos(g.EndAngle)
-	sinE := sin(g.EndAngle)
+	cosS := cos(startAngle)
+	sinS := sin(startAngle)
+	cosE := cos(endAngle)
+	sinE := sin(endAngle)
 	ax := g.Cx + g.OuterR*cosS
 	ay := g.Cy + g.OuterR*sinS
 	bx := g.Cx + g.OuterR*cosE
@@ -330,6 +394,30 @@ func arcPath(g *scene.ArcGeom) string {
 		" Z"
 }
 
+// paddedArcAngles applies ArcGeom.PadAngle (E4-S1), returning the
+// sector's drawn start / end angles. Half the pad is taken off each
+// end, so the gap left between two sectors that share a boundary is
+// exactly PadAngle — the reading Vega-Lite's mark_def.pad_angle
+// carries (d3-shape varies the inset with radius; Prism uses the
+// single constant angular inset, which is the same thing whenever
+// inner and outer radius are close and a good approximation
+// otherwise — see docs/src/concepts/marks.md).
+//
+// A sector narrower than PadAngle would invert if inset naively, so
+// the inset is clamped to half the span: such a sector collapses to a
+// zero-width wedge rather than drawing backwards.
+func paddedArcAngles(g *scene.ArcGeom) (float64, float64) {
+	span := g.EndAngle - g.StartAngle
+	if g.PadAngle <= 0 || span <= 0 {
+		return g.StartAngle, g.EndAngle
+	}
+	inset := g.PadAngle / 2
+	if inset > span/2 {
+		inset = span / 2
+	}
+	return g.StartAngle + inset, g.EndAngle - inset
+}
+
 func ff(v float64) string { return render.FormatFloat(v) }
 
 func itoa(n int) string {
@@ -349,7 +437,7 @@ func sin(a float64) float64 { return math.Sin(a) }
 func renderPath(w *Writer, m scene.Mark) {
 	g := m.Path
 	w.OpenTag("path")
-	w.Attr("class", "prism-mark-path")
+	writeMarkClass(w, m, "prism-mark-path")
 	if m.ID != "" {
 		w.Attr("data-prism-id", m.ID)
 	}
@@ -388,7 +476,7 @@ func renderPath(w *Writer, m scene.Mark) {
 func renderImage(w *Writer, m scene.Mark) {
 	g := m.Image
 	w.OpenTag("image")
-	w.Attr("class", "prism-mark-image")
+	writeMarkClass(w, m, "prism-mark-image")
 	if m.ID != "" {
 		w.Attr("data-prism-id", m.ID)
 	}
@@ -412,7 +500,7 @@ func renderImage(w *Writer, m scene.Mark) {
 func renderRule(w *Writer, m scene.Mark) {
 	g := m.Rule
 	w.OpenTag("line")
-	w.Attr("class", "prism-mark-rule")
+	writeMarkClass(w, m, "prism-mark-rule")
 	if m.ID != "" {
 		w.Attr("data-prism-id", m.ID)
 	}

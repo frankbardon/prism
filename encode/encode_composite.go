@@ -35,6 +35,19 @@ import (
 // goldens stay byte-identical because the 1×1 single-layer case is
 // preserved.
 func EncodeComposite(s *spec.Spec, composite *plan.CompositeDAG, childTables []map[plan.NodeID]*table.Table, opts EncodeOpts) (*scene.SceneDoc, error) {
+	doc, err := encodeComposite(s, composite, childTables, opts)
+	if err != nil {
+		return nil, err
+	}
+	doc.Warnings = append(doc.Warnings, InertFieldWarnings(s)...)
+	narrowDocCSS(doc, s, opts)
+	return doc, nil
+}
+
+// encodeComposite is EncodeComposite without the top-of-tree
+// inert-field pass (E7-S1); see Encode / encodeLeaf for why the two
+// are split.
+func encodeComposite(s *spec.Spec, composite *plan.CompositeDAG, childTables []map[plan.NodeID]*table.Table, opts EncodeOpts) (*scene.SceneDoc, error) {
 	if s == nil {
 		return nil, fmt.Errorf("encode: nil spec")
 	}
@@ -83,7 +96,51 @@ func encodeLayerComposite(s *spec.Spec, composite *plan.CompositeDAG, childTable
 	}
 
 	hasTitle := s.Title != nil
-	layout := Compute(width, height, hasTitle)
+	// Layers share one pair of axes, so the suppression has to be
+	// unanimous: the axis (and the padding its side reserves) is
+	// released only when every layer that binds the channel sets
+	// `"axis": null`.
+	childSpecs := make([]*spec.Spec, 0, len(composite.Children))
+	for _, child := range composite.Children {
+		childSpecs = append(childSpecs, child.Spec)
+	}
+	placement := DefaultAxisPlacement()
+	placement.XHidden = layerAxisHidden(childSpecs, scene.ChannelX)
+	placement.YHidden = layerAxisHidden(childSpecs, scene.ChannelY)
+	// E1-S2: layers share one pair of axes, so `axis.orient` folds
+	// across them first-specified-wins exactly like every other axis
+	// property. The fold runs over *every* child (not just the ones
+	// that survive the table check below), matching layerAxisHidden:
+	// the padding reservation is decided before the layout, and a
+	// layer dropped for want of a table must not move the axes.
+	placement = sharedAxisPlacement(placement, declaredLayerEncodings(composite))
+	// E3-S2: the shared axes' component suppression narrows the side
+	// reservation here, before the layout is computed. The blocks are
+	// merged with the same first-specified-wins rule the shared axis
+	// itself uses below, so padding and geometry cannot disagree; the
+	// conflict warnings are dropped here on purpose and raised once,
+	// at the real build site.
+	placement.ReserveFrom(
+		specSharedAxisOpts(scene.ChannelX, childSpecs),
+		specSharedAxisOpts(scene.ChannelY, childSpecs))
+	// Legend placement (E1-S3). Every layer resolves its own legend,
+	// so the reservation is the sum of what each layer claims on a
+	// given side — that is exactly the depth the legendStackOffset
+	// accumulation below stacks into.
+	sides := placement.Sides()
+	legendPls := layerLegendPlacements(composite, childTables, &sides)
+	layout := Compute(LayoutOpts{
+		Width:  width,
+		Height: height,
+		Title:  hasTitle,
+		Sides:  sides,
+	})
+	for i, ll := range legendPls {
+		if ll.reserved {
+			ll.placement.Reserve = layout.Padding.LegendBand(ll.placement.Position, hasTitle)
+			legendPls[i] = ll
+		}
+	}
 
 	var warnings []scene.Warning
 
@@ -101,6 +158,14 @@ func encodeLayerComposite(s *spec.Spec, composite *plan.CompositeDAG, childTable
 			})
 			continue
 		}
+		// Stacking (E5-S2): rebind this layer's encoding onto its
+		// StackNode bounds columns once, here, so every downstream
+		// helper that reads child.Spec.Encoding — shared-domain
+		// collection, shared-axis config, the per-layer scale
+		// resolution and the mark encoders — sees the stacked span
+		// rather than the raw measure column. No-op for a layer that
+		// does not stack.
+		child.Spec = rebindStack(child.Spec, tbl)
 		live = append(live, liveChild{idx: i, child: child, tbl: tbl})
 	}
 	if len(live) == 0 {
@@ -168,7 +233,10 @@ func encodeLayerComposite(s *spec.Spec, composite *plan.CompositeDAG, childTable
 	// sweep finding: layer_independent_color.svg rendered two
 	// "prism-legend-color" groups at identical x/y).
 	legendStackOffset := map[scene.LegendPosition]float64{}
-	const legendStackGap = 8.0
+	// One <linearGradient> per layer that built a gradient legend,
+	// keyed by the id its swatch references and filed onto the scene's
+	// Defs once the scene exists.
+	legendGradients := map[string]scene.Gradient{}
 	seenIndependentX := false
 	seenIndependentY := false
 	for _, lc := range live {
@@ -193,13 +261,31 @@ func encodeLayerComposite(s *spec.Spec, composite *plan.CompositeDAG, childTable
 			)
 		}
 
+		// Same null policy as the flat encoder: rows null in a
+		// scale-bound channel leave this layer's table before its
+		// scales, colour categories and marks are built. The warning
+		// names the layer so a multi-layer spec says which one shed
+		// rows. Other layers are untouched.
+		if usesCartesianScales(markType) {
+			filtered, nullWarn, nerr := marks.DropNullRows(
+				lc.tbl, fmt.Sprintf("layer-%d", lc.idx), scaleBoundChannels(childEnc)...)
+			if nerr != nil {
+				return nil, nerr
+			}
+			lc.tbl = filtered
+			if nullWarn != nil {
+				warnings = append(warnings, *nullWarn)
+			}
+		}
+
 		// Per-layer X scale: shared one when present, else resolve per
 		// channel.
 		var xScale Scale
 		if xSharedScale != nil {
 			xScale = xSharedScale
 		} else if childEnc.X != nil && childEnc.X.Field != "" {
-			sc, wn, err := resolveChannel(childEnc.X, lc.tbl, layout.Plot.X, layout.Plot.Right())
+			sc, wn, err := resolveChannel(childEnc.X, lc.tbl, layout.Plot.X, layout.Plot.Right(),
+				spanDomainValues(childEnc.X2, lc.tbl)...)
 			if err != nil {
 				return nil, err
 			}
@@ -212,7 +298,8 @@ func encodeLayerComposite(s *spec.Spec, composite *plan.CompositeDAG, childTable
 		if ySharedScale != nil {
 			yScale = ySharedScale
 		} else if childEnc.Y != nil && childEnc.Y.Field != "" {
-			sc, wn, err := resolveChannel(childEnc.Y, lc.tbl, layout.Plot.Bottom(), layout.Plot.Y)
+			sc, wn, err := resolveChannel(childEnc.Y, lc.tbl, layout.Plot.Bottom(), layout.Plot.Y,
+				spanDomainValues(childEnc.Y2, lc.tbl)...)
 			if err != nil {
 				return nil, err
 			}
@@ -224,16 +311,16 @@ func encodeLayerComposite(s *spec.Spec, composite *plan.CompositeDAG, childTable
 
 		// Add per-layer independent axes; emit once per channel so
 		// stacking N layers does not produce N visually-identical axes.
-		if xScale != nil && xSharedScale == nil && !seenIndependentX {
+		if xScale != nil && xSharedScale == nil && !seenIndependentX && !placement.XHidden {
 			perCellAxes = append(perCellAxes, BuildAxisWithOpts(
-				xScale, scene.ChannelX, scene.AxisPositionBottom, layout.Plot,
-				axisOptsFor(childEnc.X)))
+				xScale, scene.ChannelX, placement.X, layout.Plot,
+				axisOptsFor(childEnc.X).withWarnings(&warnings)))
 			seenIndependentX = true
 		}
-		if yScale != nil && ySharedScale == nil && !seenIndependentY {
+		if yScale != nil && ySharedScale == nil && !seenIndependentY && !placement.YHidden {
 			perCellAxes = append(perCellAxes, BuildAxisWithOpts(
-				yScale, scene.ChannelY, scene.AxisPositionLeft, layout.Plot,
-				axisOptsFor(childEnc.Y)))
+				yScale, scene.ChannelY, placement.Y, layout.Plot,
+				axisOptsFor(childEnc.Y).withWarnings(&warnings)))
 			seenIndependentY = true
 		}
 
@@ -249,36 +336,53 @@ func encodeLayerComposite(s *spec.Spec, composite *plan.CompositeDAG, childTable
 					map[string]any{"Field": childEnc.Color.Field, "Source": "<layer-table>", "Available": joinTableFields(lc.tbl)},
 				)
 			}
-			cats := []string{}
-			seenCat := map[string]bool{}
-			for i := 0; i < col.Len(); i++ {
-				s, ok := col.ValueAt(i).(string)
-				if !ok || seenCat[s] {
-					continue
-				}
-				seenCat[s] = true
-				cats = append(cats, s)
-			}
+			cats := distinctStringValues(col)
 			colorChannel = &marks.ColorChannel{
 				Field:      childEnc.Color.Field,
 				Categories: cats,
-				Palette:    ResolveCategoricalPalette(fullTheme, schemeNameOf(childEnc.Color)),
+				Palette:    ResolveCategoricalPaletteWithOpts(fullTheme, colorScaleOpts(childEnc.Color)),
+				// The sequential ramp is resolved here for the same
+				// reason the flat encoder resolves it: a layer whose
+				// colour is continuous interpolates within it, and its
+				// gradient legend draws its stops from the same slice,
+				// so bar and cells cannot describe different ramps.
+				SequentialPalette: ResolveSequentialPaletteWithOpts(fullTheme, colorScaleOpts(childEnc.Color)),
 			}
-			if len(cats) > 1 {
-				legend := BuildSymbolLegend(LegendInputs{
+			ll := legendPls[lc.idx]
+			if (len(cats) > 1 || ll.kind == LegendKindGradient) && ll.enabled && !legendHidden(childEnc.Color) {
+				legend, grad := buildColorLegend(colorLegendInputs{
+					Kind:       ll.kind,
+					SceneID:    flatSceneID,
 					Channel:    scene.ChannelColor,
 					Title:      fmt.Sprintf("layer-%d: %s", lc.idx, childEnc.Color.Field),
+					Field:      childEnc.Color.Field,
+					Format:     childEnc.Color.Format,
 					Categories: cats,
 					Palette:    colorChannel.Palette,
-					Position:   scene.LegendTopRight,
-				}, layout.Plot)
+					Sequential: colorChannel.SequentialPalette,
+					Table:      lc.tbl,
+					Placement:  ll.placement,
+					Content:    ll.content,
+					Plot:       layout.Plot,
+				})
 				if legend != nil {
+					// Every layer's bar would otherwise file under the
+					// same scene-qualified key; the layer index keeps
+					// them apart.
+					if grad != nil {
+						id := fmt.Sprintf("%s-layer-%d", LegendGradientID(flatSceneID, scene.ChannelColor), lc.idx)
+						legend.Entries[0].Swatch.GradientID = id
+						legendGradients[id] = *grad
+					}
 					if off := legendStackOffset[legend.Position]; off != 0 {
 						switch legend.Position {
-						case scene.LegendBottomLeft, scene.LegendBottomRight, scene.LegendBottom:
-							// Bottom-anchored legends grow upward off the
-							// plot's bottom edge, so later legends stack
-							// above (not through) earlier ones.
+						case scene.LegendBottomLeft, scene.LegendBottomRight:
+							// The bottom corners anchor their lower edge to
+							// the plot's bottom, so later legends stack
+							// above (not through) earlier ones. The bottom
+							// *side* placement sits below the plot and
+							// grows downward into its reserved band, so it
+							// takes the default branch.
 							legend.Frame.Y -= off
 						default:
 							legend.Frame.Y += off
@@ -299,11 +403,26 @@ func encodeLayerComposite(s *spec.Spec, composite *plan.CompositeDAG, childTable
 			Table:    lc.tbl,
 			X:        marks.Channel{Field: fieldOf(childEnc.X), Scale: toMarkScale(xScale)},
 			Y:        marks.Channel{Field: fieldOf(childEnc.Y), Scale: toMarkScale(yScale)},
+			X2:       spanChannel(childEnc.X2, toMarkScale(xScale)),
+			Y2:       spanChannel(childEnc.Y2, toMarkScale(yScale)),
 			Color:    colorChannel,
+			Detail:   detailFields(childEnc),
+			Ordered:  spec.ResolveOrder(childEnc) != nil,
 			Layout:   layout.Plot,
 			Style:    style,
 			Tooltip:  childEnc.Tooltip,
+			Text:     childEnc.Text,
 			KeyField: keyFieldFromEncoding(childEnc),
+			// Sub-marks that draw their own labels (funnel's stage
+			// values, the graph family's node labels) take the theme's
+			// "text" style rather than the layer's own mark style —
+			// see marks.Inputs.LabelStyle. Without this a labelled
+			// tree inside a layer emits text with no fill at all.
+			LabelStyle: defaultMarkStyle(fullTheme, "text"),
+			// A progress mark inside a layer still needs its track to
+			// paint; the track's Style is theme-resolved, not derived
+			// from the layer's own mark style (E10-S1).
+			TrackStyle: progressTrackStyle(fullTheme),
 		}
 		if lc.child.Spec.Mark != nil {
 			markInputs.Mark = lc.child.Spec.Mark.Def
@@ -327,7 +446,7 @@ func encodeLayerComposite(s *spec.Spec, composite *plan.CompositeDAG, childTable
 	}
 
 	sceneObj := scene.Scene{
-		ID:         "scene-0",
+		ID:         flatSceneID,
 		Frame:      layout.Frame,
 		Plot:       layout.Plot,
 		Axes:       perCellAxes,
@@ -343,6 +462,13 @@ func encodeLayerComposite(s *spec.Spec, composite *plan.CompositeDAG, childTable
 			Y:       20,
 		}
 	}
+	for id, g := range legendGradients {
+		registerSceneGradient(&sceneObj, id, &g)
+	}
+	// One plot-region clip for the whole layer stack (E2-S2): every
+	// layer shares this scene's plot rect, so the clip is resolved once
+	// across the parent spec and its layer children.
+	armPlotClip(&sceneObj, wantsPlotClip(s))
 
 	doc := scene.NewDoc()
 	doc.Theme = sceneTheme
@@ -355,14 +481,22 @@ func encodeLayerComposite(s *spec.Spec, composite *plan.CompositeDAG, childTable
 	// Shared axes (D051): emit once on the grid, not per cell. Only
 	// populated when the axis resolves shared AND we built a shared
 	// scale for the channel.
-	if xSharedScale != nil && resolution[scene.ChannelX].Axis == encresolve.ModeShared {
-		ax := BuildAxisWithOpts(xSharedScale, scene.ChannelX, scene.AxisPositionBottom, layout.Plot,
-			DefaultAxisOpts(xSharedTitle))
+	// E3-S5: a shared axis resolves its `axis` config from the layer
+	// children, first-specified-wins per property, rather than
+	// discarding it. See sharedAxisOpts + docs/src/concepts/composition.md.
+	childEncodings := layerEncodings(live)
+	if xSharedScale != nil && !placement.XHidden && resolution[scene.ChannelX].Axis == encresolve.ModeShared {
+		opts, axWarn := sharedAxisOpts(scene.ChannelX,
+			sharedAxisBlocksFrom(scene.ChannelX, childEncodings), xSharedTitle)
+		warnings = append(warnings, axWarn...)
+		ax := BuildAxisWithOpts(xSharedScale, scene.ChannelX, placement.X, layout.Plot, opts.withWarnings(&warnings))
 		doc.Grid.Shared.X = &ax
 	}
-	if ySharedScale != nil && resolution[scene.ChannelY].Axis == encresolve.ModeShared {
-		ax := BuildAxisWithOpts(ySharedScale, scene.ChannelY, scene.AxisPositionLeft, layout.Plot,
-			DefaultAxisOpts(ySharedTitle))
+	if ySharedScale != nil && !placement.YHidden && resolution[scene.ChannelY].Axis == encresolve.ModeShared {
+		opts, axWarn := sharedAxisOpts(scene.ChannelY,
+			sharedAxisBlocksFrom(scene.ChannelY, childEncodings), ySharedTitle)
+		warnings = append(warnings, axWarn...)
+		ax := BuildAxisWithOpts(ySharedScale, scene.ChannelY, placement.Y, layout.Plot, opts.withWarnings(&warnings))
 		doc.Grid.Shared.Y = &ax
 	}
 	doc.Warnings = warnings
@@ -376,6 +510,96 @@ type liveChild struct {
 	idx   int
 	child plan.ChildDAG
 	tbl   *table.Table
+}
+
+// legendStackGap is the vertical breathing room between two legends
+// stacked at the same anchor.
+const legendStackGap = 8.0
+
+// layerLegend is one layer's resolved legend placement, indexed
+// positionally by composite child.
+type layerLegend struct {
+	placement LegendPlacement
+	// content is the layer's resolved legend content (E3-S3): title
+	// override, entry filter, label format and label limit.
+	content LegendContent
+	enabled bool
+	// kind is the layer's resolved legend form (E3-S4): a column of
+	// category swatches, or a continuous gradient bar. Decided here so
+	// the pre-layout reservation and the built legend agree.
+	kind LegendKind
+	// reserved records that this layer's legend claimed margin on a
+	// side, so the Reserve depth is filled in once the layout is
+	// computed.
+	reserved bool
+}
+
+// layerLegendPlacements resolves each layer's legend.orient / padding
+// / offset and accumulates the margin every side placement claims
+// into sides. Legends stack within a side (see legendStackOffset in
+// encodeLayerComposite), so the extents on one side add.
+//
+// It runs before the layout is computed and therefore re-reads the
+// child tables to count categories; the scan happens only for a layer
+// that actually asked for a side orient, which is the opt-in case.
+func layerLegendPlacements(composite *plan.CompositeDAG, childTables []map[plan.NodeID]*table.Table, sides *LayoutSides) []layerLegend {
+	out := make([]layerLegend, len(composite.Children))
+	for i, child := range composite.Children {
+		enc := child.Spec.Encoding
+		content := ResolveLegendContent(legendSpecOf(enc))
+		var colorCh *spec.MarkChannel
+		if enc != nil {
+			colorCh = enc.Color
+		}
+		kind := ResolveLegendKind(colorCh, content)
+		pl, enabled := ResolveLegendPlacement(legendSpecOf(enc), DefaultLegendPosition(kind))
+		out[i] = layerLegend{placement: pl, content: content, enabled: enabled, kind: kind}
+		if !enabled || !IsSideLegend(pl.Position) {
+			continue
+		}
+		tbl, ok := childTables[i][child.Tip]
+		if !ok || tbl == nil {
+			continue
+		}
+		// A layer legend always carries a title (the "layer-N: field"
+		// form below) unless legend.title suppresses it, so a
+		// non-empty derived title stands in for it here.
+		box, ok := legendReserveBox(kind, enc, tbl, pl, content, "layer")
+		if !ok {
+			continue
+		}
+		addLegendExtent(sides, pl.Position, box.SideExtent(pl.Position, pl.Offset)+legendStackGap)
+		out[i].reserved = true
+	}
+	return out
+}
+
+// addLegendExtent accumulates extent onto the side named by pos.
+func addLegendExtent(sides *LayoutSides, pos scene.LegendPosition, extent float64) {
+	var c *SideChrome
+	switch pos {
+	case scene.LegendTop:
+		c = &sides.Top
+	case scene.LegendRight:
+		c = &sides.Right
+	case scene.LegendBottom:
+		c = &sides.Bottom
+	case scene.LegendLeft:
+		c = &sides.Left
+	default:
+		return
+	}
+	c.Legend = true
+	switch pos {
+	case scene.LegendLeft, scene.LegendRight:
+		// Left / right legends stack vertically, so the side needs the
+		// widest one, not the sum.
+		if extent > c.LegendExtent {
+			c.LegendExtent = extent
+		}
+	default:
+		c.LegendExtent += extent
+	}
 }
 
 // collectLayerDomains returns one LayerDomain per surviving layer for
@@ -416,6 +640,15 @@ func collectLayerDomains(live []liveChild, channel scene.Channel) ([]encresolve.
 		for i := 0; i < col.Len(); i++ {
 			values[i] = col.ValueAt(i)
 		}
+		// A span channel shares the base channel's scale (E9-S3), so
+		// its values belong in the same shared domain. No-op unless
+		// x2 / y2 is bound on this layer.
+		switch channel {
+		case scene.ChannelX:
+			values = append(values, spanDomainValues(enc.X2, lc.tbl)...)
+		case scene.ChannelY:
+			values = append(values, spanDomainValues(enc.Y2, lc.tbl)...)
+		}
 		ty := scaleTypeForChannel(ch, col.Kind())
 		out = append(out, encresolve.LayerDomain{
 			LayerID: fmt.Sprintf("layer-%d", lc.idx),
@@ -425,6 +658,35 @@ func collectLayerDomains(live []liveChild, channel scene.Channel) ([]encresolve.
 		})
 	}
 	return out, nil
+}
+
+// layerEncodings projects the surviving layers onto the labelled
+// encodings the shared-axis resolver consumes, preserving layer order
+// so "first specified wins" means the lowest-indexed layer.
+// declaredLayerEncodings labels every declared layer's encoding, live
+// or not. layerEncodings is its live-only counterpart, used once the
+// executor's tables have been checked; this one runs before the
+// layout, where no table check has happened yet.
+func declaredLayerEncodings(composite *plan.CompositeDAG) []labelledEncoding {
+	out := make([]labelledEncoding, 0, len(composite.Children))
+	for i, child := range composite.Children {
+		out = append(out, labelledEncoding{
+			Label: fmt.Sprintf("layer-%d", i),
+			Enc:   childEncoding(child.Spec),
+		})
+	}
+	return out
+}
+
+func layerEncodings(live []liveChild) []labelledEncoding {
+	out := make([]labelledEncoding, 0, len(live))
+	for _, lc := range live {
+		out = append(out, labelledEncoding{
+			Label: fmt.Sprintf("layer-%d", lc.idx),
+			Enc:   lc.child.Spec.Encoding,
+		})
+	}
+	return out
 }
 
 // firstFieldName returns the field name on the first live layer that
@@ -523,7 +785,34 @@ func resolveSharedScale(domains []encresolve.LayerDomain, live []liveChild, chan
 	if err != nil {
 		return nil, err
 	}
-	return scaleFromUnified(ty, dom, rmin, rmax)
+	// A shared scale still honours the spec's scale block: the first
+	// live layer declaring one on this channel supplies the explicit
+	// domain / zero / nice knobs, so an author-pinned domain is not
+	// silently overwritten by the union of the layers' data extents.
+	return scaleFromUnified(ty, dom, rmin, rmax, sharedScaleOpts(live, channel))
+}
+
+// sharedScaleOpts returns the ScaleOpts of the first live layer that
+// declares a scale block on the given channel.
+func sharedScaleOpts(live []liveChild, channel scene.Channel) ScaleOpts {
+	for _, lc := range live {
+		enc := lc.child.Spec.Encoding
+		if enc == nil {
+			continue
+		}
+		var ch *spec.PositionChannel
+		switch channel {
+		case scene.ChannelX:
+			ch = enc.X
+		case scene.ChannelY:
+			ch = enc.Y
+		}
+		if ch == nil || ch.Scale == nil {
+			continue
+		}
+		return ScaleOptsFromSpec(ch.Scale)
+	}
+	return ScaleOpts{}
 }
 
 // scaleFromUnified converts a (type, domain) pair from
@@ -531,9 +820,24 @@ func resolveSharedScale(domains []encresolve.LayerDomain, live []liveChild, chan
 // mark wiring. Numeric / temporal domains arrive as []any{min, max}
 // already in the right shape; categorical domains arrive as the full
 // ordered list of categories.
-func scaleFromUnified(ty scene.ScaleType, domain []any, rmin, rmax float64) (Scale, error) {
+func scaleFromUnified(ty scene.ScaleType, domain []any, rmin, rmax float64, opts ScaleOpts) (Scale, error) {
+	// `scale.reverse` flips a continuous pixel range; a discrete
+	// family reverses its slot assignment inside the scale instead
+	// (see ScaleOpts.Reverse), so the flip is applied per family.
 	switch ty {
 	case scene.ScaleLinear, scene.ScaleLog, scene.ScalePow, scene.ScaleSqrt:
+		rmin, rmax = opts.pixelRange(rmin, rmax)
+		// Zero-forcing and nice rounding follow the same per-family
+		// defaults the flat encoder uses — notably log opts out of
+		// both, matching resolveLog.
+		isLog := ty == scene.ScaleLog
+		lo, hi, pinned, err := opts.numericDomain(string(ty))
+		if err != nil {
+			return nil, err
+		}
+		if pinned {
+			return newLinearScale(lo, hi, rmin, rmax, opts), nil
+		}
 		if len(domain) < 2 {
 			return nil, fmt.Errorf("scaleFromUnified: numeric domain needs [min,max], got %v", domain)
 		}
@@ -542,32 +846,31 @@ func scaleFromUnified(ty scene.ScaleType, domain []any, rmin, rmax float64) (Sca
 		if !ok1 || !ok2 {
 			return nil, fmt.Errorf("scaleFromUnified: numeric domain values not float64: %T %T", domain[0], domain[1])
 		}
-		if mn > 0 {
-			mn = 0
-		}
-		if mx < 0 {
-			mx = 0
-		}
-		return &LinearScale{
-			DomainMin: mn,
-			DomainMax: mx,
-			RangeMin:  rmin,
-			RangeMax:  rmax,
-		}, nil
+		mn, mx = opts.shapeContinuous(mn, mx, !isLog, !isLog)
+		return newLinearScale(mn, mx, rmin, rmax, opts), nil
 	case scene.ScaleBand, scene.ScalePoint, scene.ScaleOrdinal:
-		cats := make([]string, 0, len(domain))
-		for _, v := range domain {
-			if s, ok := v.(string); ok {
-				cats = append(cats, s)
+		cats, err := opts.categoryDomain(domain)
+		if err != nil {
+			return nil, err
+		}
+		if len(cats) == 0 {
+			cats = make([]string, 0, len(domain))
+			for _, v := range domain {
+				if s, ok := v.(string); ok {
+					cats = append(cats, s)
+				}
 			}
 		}
-		return &BandScale{
-			Categories: cats,
-			RangeMin:   rmin,
-			RangeMax:   rmax,
-			Padding:    0.1,
-		}, nil
+		return NewBandScale(cats, rmin, rmax, opts), nil
 	case scene.ScaleTime:
+		rmin, rmax = opts.pixelRange(rmin, rmax)
+		lo, hi, pinned, err := opts.temporalDomain()
+		if err != nil {
+			return nil, err
+		}
+		if pinned {
+			return &TimeScale{Linear: newLinearScale(lo, hi, rmin, rmax, opts)}, nil
+		}
 		if len(domain) < 2 {
 			return nil, fmt.Errorf("scaleFromUnified: time domain needs [min,max]")
 		}
@@ -576,8 +879,10 @@ func scaleFromUnified(ty scene.ScaleType, domain []any, rmin, rmax float64) (Sca
 		if !ok1 || !ok2 {
 			return nil, fmt.Errorf("scaleFromUnified: time domain values not float64: %T %T", domain[0], domain[1])
 		}
-		lin := &LinearScale{DomainMin: mn, DomainMax: mx, RangeMin: rmin, RangeMax: rmax}
-		return &TimeScale{Linear: lin}, nil
+		if opts.niceEnabled(true) {
+			mn, mx = niceTimeDomain(mn, mx)
+		}
+		return &TimeScale{Linear: newLinearScale(mn, mx, rmin, rmax, opts)}, nil
 	}
 	return nil, fmt.Errorf("scaleFromUnified: unknown scale type %q", ty)
 }
@@ -648,7 +953,7 @@ func encodeConcatComposite(s *spec.Spec, composite *plan.CompositeDAG, childTabl
 
 		// Each concat child is a flat chart (D050 forbids nested
 		// composition in v1); call Encode directly.
-		childDoc, err := Encode(child.Spec, childTables[i], child.Tip, childOpts)
+		childDoc, err := encodeLeaf(child.Spec, childTables[i], child.Tip, childOpts)
 		if err != nil {
 			return nil, fmt.Errorf("concat child %d: %w", i, err)
 		}
@@ -657,7 +962,7 @@ func encodeConcatComposite(s *spec.Spec, composite *plan.CompositeDAG, childTabl
 		}
 		childScene := childDoc.Grid.Cells[0].Scene
 		offsetScene(&childScene, offsetX, offsetY)
-		childScene.ID = fmt.Sprintf("scene-%d", i)
+		renameScene(&childScene, fmt.Sprintf("scene-%d", i))
 		cells = append(cells, scene.SceneCell{
 			Row:   row,
 			Col:   col,
@@ -713,6 +1018,7 @@ func offsetScene(s *scene.Scene, dx, dy float64) {
 		s.Legends[i].Frame.X += dx
 		s.Legends[i].Frame.Y += dy
 	}
+	offsetClips(s, dx, dy)
 }
 
 func offsetAxis(a *scene.Axis, dx, dy float64) {

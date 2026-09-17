@@ -4,10 +4,12 @@ package scene
 type CurveType string
 
 const (
-	CurveLinear   CurveType = "linear"
-	CurveMonotone CurveType = "monotone"
-	CurveStep     CurveType = "step"
-	CurveCardinal CurveType = "cardinal"
+	CurveLinear     CurveType = "linear"
+	CurveMonotone   CurveType = "monotone"
+	CurveStep       CurveType = "step"
+	CurveStepBefore CurveType = "step-before"
+	CurveStepAfter  CurveType = "step-after"
+	CurveCardinal   CurveType = "cardinal"
 )
 
 // PointShape is the point mark's symbol discriminator.
@@ -20,6 +22,19 @@ const (
 	ShapeCross    PointShape = "cross"
 	ShapeDiamond  PointShape = "diamond"
 )
+
+// PointShapes is the whole drawable shape vocabulary, in the order
+// the JSON Schema publishes it. It is the single list both the
+// encoder (legend.symbol_type resolution) and the validator
+// (PRISM_SPEC_052) read, so neither can drift from what
+// render/svg/symbols.go can actually emit.
+var PointShapes = []PointShape{
+	ShapeCircle,
+	ShapeSquare,
+	ShapeTriangle,
+	ShapeCross,
+	ShapeDiamond,
+}
 
 // TextAnchor controls horizontal text anchoring.
 type TextAnchor string
@@ -51,17 +66,27 @@ type RectGeom struct {
 }
 
 // LineGeom is the geometry for a line mark (one polyline per mark).
+//
+// Tension parameterises CurveCardinal only (0–1, d3 semantics: the
+// cardinal control-point scale is (1-Tension)/6). Every other curve
+// ignores it. Zero is both the unset value and the d3/Vega-Lite
+// default, so it stays out of the JSON unless an author sets it.
 type LineGeom struct {
-	Points [][2]float64 `json:"points"`
-	Dash   []float64    `json:"dash,omitempty"`
-	Curve  CurveType    `json:"curve,omitempty"`
+	Points  [][2]float64 `json:"points"`
+	Dash    []float64    `json:"dash,omitempty"`
+	Curve   CurveType    `json:"curve,omitempty"`
+	Tension float64      `json:"tension,omitempty"`
 }
 
 // AreaGeom is the geometry for an area mark. Lower=nil → baseline 0.
+// Curve applies to both the upper and the (reversed) lower edge, so a
+// stacked band keeps parallel boundaries. Tension parameterises
+// CurveCardinal only — see LineGeom.
 type AreaGeom struct {
-	Upper [][2]float64 `json:"upper"`
-	Lower [][2]float64 `json:"lower,omitempty"`
-	Curve CurveType    `json:"curve,omitempty"`
+	Upper   [][2]float64 `json:"upper"`
+	Lower   [][2]float64 `json:"lower,omitempty"`
+	Curve   CurveType    `json:"curve,omitempty"`
+	Tension float64      `json:"tension,omitempty"`
 }
 
 // PointGeom is the geometry for a point / scatter mark.
@@ -81,8 +106,10 @@ type RuleGeom struct {
 	Dash []float64 `json:"dash,omitempty"`
 }
 
-// ArcGeom is the geometry for arc / pie / donut marks (declared for
-// JSON stability; encoder emits PRISM_WARN_MARK_NOT_IMPLEMENTED in P05).
+// ArcGeom is the geometry for arc / pie / donut marks. PadAngle is
+// the angular gap (radians) the renderer opens between this sector
+// and its neighbours; the encoder carries the mark_def value through
+// unchanged and render/svg's arcPath does the inset (E4-S1).
 type ArcGeom struct {
 	Cx         float64 `json:"cx"`
 	Cy         float64 `json:"cy"`
@@ -93,6 +120,21 @@ type ArcGeom struct {
 	PadAngle   float64 `json:"pad_angle,omitempty"`
 }
 
+// LabelCharWidth is Prism's single standing approximation of one
+// label character's advance width in pixels, and LabelLineHeight the
+// matching line box height. Prism runs no text-measurement pass, so
+// every consumer that has to reason about how much room a string will
+// occupy — the axis label overlap / label_limit heuristics in
+// encode/axis_build.go and the node-label placement in
+// encode/marks — estimates from these constants rather than from font
+// metrics. They live here because encode and encode/marks both import
+// this package and neither can import the other. They are a layout
+// estimate only: nothing in the serialised Scene IR carries them.
+const (
+	LabelCharWidth  = 6.0
+	LabelLineHeight = 12.0
+)
+
 // TextGeom is the geometry for a text mark.
 type TextGeom struct {
 	X        float64      `json:"x"`
@@ -102,6 +144,15 @@ type TextGeom struct {
 	Baseline TextBaseline `json:"baseline,omitempty"`
 	Angle    float64      `json:"angle,omitempty"`
 	FontSize float64      `json:"font_size,omitempty"`
+	// Dx and Dy offset the glyph from its anchor point
+	// (spec.MarkDef.dx / dy, E4-S1). They are applied *after* Angle,
+	// in the rotated frame — the renderer emits them as the SVG
+	// `dx` / `dy` presentation attributes on <text>, which the
+	// element's own rotate() transform has already rotated. That
+	// matches Vega's text mark, whose transform is
+	// translate(x,y) rotate(a) translate(dx,dy).
+	Dx float64 `json:"dx,omitempty"`
+	Dy float64 `json:"dy,omitempty"`
 }
 
 // PathGeom is the SVG-passthrough escape hatch for shapes Prism does

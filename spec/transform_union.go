@@ -1,7 +1,6 @@
 package spec
 
 import (
-	"bytes"
 	"encoding/json"
 	"fmt"
 )
@@ -40,6 +39,8 @@ func (t Transform) MarshalJSON() ([]byte, error) {
 		return json.Marshal(t.Regression)
 	case t.TimeUnit != nil:
 		return json.Marshal(t.TimeUnit)
+	case t.Stack != nil:
+		return json.Marshal(t.Stack)
 	}
 	return []byte("null"), nil
 }
@@ -53,19 +54,18 @@ func (t *Transform) UnmarshalJSON(data []byte) error {
 	if err := json.Unmarshal(data, &probe); err != nil {
 		return fmt.Errorf("transform: %w", err)
 	}
-	matched := 0
-	hit := ""
+	var matches []string
 	for _, key := range transformDiscriminators {
 		if _, ok := probe[key]; ok {
-			matched++
-			hit = key
+			matches = append(matches, key)
 		}
 	}
-	if matched == 0 {
+	if len(matches) == 0 {
 		return fmt.Errorf("transform: missing discriminator key (one of %v required)", transformDiscriminators)
 	}
-	if matched > 1 {
-		return fmt.Errorf("transform: multiple discriminator keys present, exactly one of %v allowed", transformDiscriminators)
+	hit, err := selectDiscriminator(matches)
+	if err != nil {
+		return err
 	}
 	switch hit {
 	case "filter":
@@ -158,10 +158,86 @@ func (t *Transform) UnmarshalJSON(data []byte) error {
 			return err
 		}
 		t.TimeUnit = &v
+	case "stack":
+		var v StackTransform
+		if err := strictUnmarshal(data, &v); err != nil {
+			return err
+		}
+		t.Stack = &v
 	default:
 		return fmt.Errorf("transform: unhandled discriminator %q", hit)
 	}
 	return nil
+}
+
+// selectDiscriminator picks the owning variant when more than one
+// discriminator key is present.
+//
+// A few variants legitimately carry another variant's discriminator as
+// an ordinary optional field — `window` takes a `sort` array, and
+// `sort` is itself a discriminator. The probe therefore prefers the
+// variant whose *required* key is present: if exactly one match owns
+// every other match as a subordinate key, that match wins. Anything
+// else is genuinely ambiguous and still errors.
+//
+// Before E5-S4 this returned an error for a window carrying a sort
+// key — a shape schema/v1/transform.schema.json has always
+// advertised, so the schema promised a document the decoder refused.
+func selectDiscriminator(matches []string) (string, error) {
+	if len(matches) == 1 {
+		return matches[0], nil
+	}
+	owner := ""
+	for _, candidate := range matches {
+		sub := transformSubordinateKeys[candidate]
+		ok := true
+		for _, other := range matches {
+			if other == candidate {
+				continue
+			}
+			if !containsString(sub, other) {
+				ok = false
+				break
+			}
+		}
+		if !ok {
+			continue
+		}
+		if owner != "" {
+			// Two variants each claim the other; refuse rather than pick.
+			return "", ambiguousDiscriminatorErr(matches)
+		}
+		owner = candidate
+	}
+	if owner == "" {
+		return "", ambiguousDiscriminatorErr(matches)
+	}
+	return owner, nil
+}
+
+// ambiguousDiscriminatorErr reports an undecidable key combination.
+func ambiguousDiscriminatorErr(matches []string) error {
+	return fmt.Errorf("transform: multiple discriminator keys present (%v), exactly one of %v allowed", matches, transformDiscriminators)
+}
+
+// containsString reports membership without pulling in a generic
+// helper for one three-element lookup.
+func containsString(list []string, want string) bool {
+	for _, v := range list {
+		if v == want {
+			return true
+		}
+	}
+	return false
+}
+
+// transformSubordinateKeys maps a transform variant's discriminator to
+// the other discriminator keys that variant may legally carry as
+// ordinary optional fields. Keep it in step with the structs in
+// transform.go — a variant that gains such a field needs a row here or
+// the decoder will reject the shape the schema advertises.
+var transformSubordinateKeys = map[string][]string{
+	"window": {"sort"},
 }
 
 // transformDiscriminators lists the keys that select a transform variant.
@@ -169,12 +245,5 @@ var transformDiscriminators = []string{
 	"filter", "calculate", "aggregate", "bin", "window",
 	"join", "union", "pivot", "unpivot",
 	"sample", "sort", "limit", "crosstab", "regression", "timeunit",
-}
-
-// strictUnmarshal applies DisallowUnknownFields to a single byte slice.
-// Centralizing it keeps every nested decoder consistent with spec.Decode.
-func strictUnmarshal(data []byte, v any) error {
-	dec := json.NewDecoder(bytes.NewReader(data))
-	dec.DisallowUnknownFields()
-	return dec.Decode(v)
+	"stack",
 }

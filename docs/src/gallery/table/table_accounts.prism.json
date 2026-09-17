@@ -16,7 +16,7 @@
     "columns": [
       {"field": "name", "type": "nominal", "title": "Account"},
       {"field": "region", "type": "nominal", "title": "Region"},
-      {"field": "revenue", "type": "quantitative", "title": "Revenue", "format": "$,.0f"}
+      {"field": "revenue", "type": "quantitative", "title": "Revenue", "format": ",.0f"}
     ]
   }
 }

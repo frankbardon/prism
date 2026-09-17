@@ -1,6 +1,7 @@
 package spec
 
 import (
+	"bytes"
 	"encoding/json"
 	"fmt"
 )
@@ -97,27 +98,92 @@ type ChannelCommon struct {
 	Key bool `json:"key,omitempty"`
 }
 
+// isJSONNull reports whether raw is the JSON literal null. Used by
+// the channel decoders to tell an explicit `"axis": null` /
+// `"legend": null` (suppression) apart from an absent key (default).
+func isJSONNull(raw json.RawMessage) bool {
+	return bytes.Equal(bytes.TrimSpace(raw), []byte("null"))
+}
+
 // PositionChannel adds axis + stack to ChannelCommon.
+//
+// Axis is tri-state on the wire (Vega-Lite's suppression syntax):
+//
+//	key absent      → Axis nil,  AxisHidden false → default axis
+//	"axis": {...}   → Axis set,  AxisHidden false → configured axis
+//	"axis": null    → Axis nil,  AxisHidden true  → no axis at all
+//
+// A nil Axis alone therefore does NOT mean "hidden" — read
+// AxisHidden for that. The flag is decode-only state (no wire key of
+// its own); MarshalJSON re-emits it as the JSON null it came from.
 type PositionChannel struct {
 	ChannelCommon
-	Axis  *Axis `json:"axis,omitempty"`
-	Stack any   `json:"stack,omitempty"`
+	Axis *Axis `json:"axis,omitempty"`
+	// AxisHidden records an explicit `"axis": null` on this channel.
+	// Encode suppresses the axis entirely — domain line, ticks,
+	// labels, title and grid — and releases the padding the axis's
+	// side had reserved (see encode.AxisPlacement).
+	AxisHidden bool `json:"-"`
+	// Stack (E5-S2) selects the stacking offset for this channel:
+	// "zero" (or true) accumulates segments from the baseline,
+	// "normalize" rescales each stack to a 0..1 share, "center"
+	// is reserved for the streamgraph work and currently resolves
+	// to no stacking at all. false — and an explicit null, recorded
+	// in StackNull — disable the implicit stacking a bar / area
+	// mark would otherwise pick up. See spec/stack.go.
+	Stack any `json:"stack,omitempty"`
+	// StackNull records an explicit `"stack": null` on this channel.
+	// A nil Stack alone does NOT mean "disabled" — an absent key is
+	// nil too, and that leaves implicit stacking enabled. Decode-only
+	// state (no wire key of its own); MarshalJSON re-emits it as the
+	// JSON null it came from.
+	StackNull bool `json:"-"`
 }
 
 // UnmarshalJSON intercepts the `field` key so the channel accepts
-// either a bare string or a {"repeat": <axis>} substitution object.
-// All other keys decode through the default struct path; unknown
-// keys still error per Decode's DisallowUnknownFields setting.
+// either a bare string or a {"repeat": <axis>} substitution object,
+// and the `axis` / `stack` keys so an explicit null is
+// distinguishable from an absent key. All other keys decode through
+// the default struct path.
+//
+// Strictness: a custom UnmarshalJSON receives raw bytes and the outer
+// decoder's DisallowUnknownFields setting does not reach inside it, so
+// this decoder re-arms strictness itself via strictUnmarshal — as do
+// every other channel class with a custom decoder (MarkChannel,
+// TooltipChannel, OrderChannel, DetailChannel) and every block they
+// decode by hand (Axis, Legend). Without that an unknown key written
+// *within* a channel object was silently dropped for any caller using
+// spec.Decode alone, since only the JSON Schema shape stage
+// (`additionalProperties: false` on each channel $def in
+// schema/v1/encoding.schema.json) rejected it.
+// internal/gates/spec_strict_decode_test.go keeps it that way.
 func (p *PositionChannel) UnmarshalJSON(data []byte) error {
 	type alias PositionChannel
 	var aux struct {
 		Field json.RawMessage `json:"field"`
+		Axis  json.RawMessage `json:"axis"`
+		Stack json.RawMessage `json:"stack"`
 		alias
 	}
-	if err := json.Unmarshal(data, &aux); err != nil {
+	if err := strictUnmarshal(data, &aux); err != nil {
 		return err
 	}
 	*p = PositionChannel(aux.alias)
+	// The outer `Stack` raw field shadows the embedded alias's `stack`
+	// key at the type level, so the value never lands via aux.alias —
+	// decode it here, exactly as `field` and `axis` are.
+	if len(aux.Stack) > 0 {
+		if isJSONNull(aux.Stack) {
+			p.Stack = nil
+			p.StackNull = true
+		} else {
+			var v any
+			if err := json.Unmarshal(aux.Stack, &v); err != nil {
+				return fmt.Errorf("stack: %w", err)
+			}
+			p.Stack = v
+		}
+	}
 	if len(aux.Field) > 0 {
 		f, ref, err := fieldOrRepeat(aux.Field)
 		if err != nil {
@@ -126,24 +192,87 @@ func (p *PositionChannel) UnmarshalJSON(data []byte) error {
 		p.Field = f
 		p.FieldRef = ref
 	}
+	if len(aux.Axis) > 0 {
+		if isJSONNull(aux.Axis) {
+			p.Axis = nil
+			p.AxisHidden = true
+		} else {
+			var ax Axis
+			if err := strictUnmarshal(aux.Axis, &ax); err != nil {
+				return fmt.Errorf("axis: %w", err)
+			}
+			p.Axis = &ax
+		}
+	}
 	return nil
 }
 
+// MarshalJSON re-emits an explicit `"axis": null` for a hidden axis
+// and `"stack": null` for explicitly disabled stacking. Without it the
+// nil pointer plus omitempty would drop the key and silently turn
+// "hidden" / "disabled" back into "default" on a round-trip. The
+// plain path (neither flag set) marshals through the struct encoding,
+// so its bytes are unchanged.
+func (p PositionChannel) MarshalJSON() ([]byte, error) {
+	type alias PositionChannel
+	null := json.RawMessage("null")
+	// One aux shape per flag combination. A shadowing outer field must
+	// always be populated: encoding/json resolves the name conflict at
+	// type level, so an unset outer `axis` would suppress the embedded
+	// (configured) one rather than fall through to it.
+	switch {
+	case !p.AxisHidden && !p.StackNull:
+		return json.Marshal(alias(p))
+	case p.AxisHidden && !p.StackNull:
+		var aux struct {
+			alias
+			Axis *json.RawMessage `json:"axis"`
+		}
+		aux.alias, aux.Axis = alias(p), &null
+		return json.Marshal(aux)
+	case !p.AxisHidden && p.StackNull:
+		var aux struct {
+			alias
+			Stack *json.RawMessage `json:"stack"`
+		}
+		aux.alias, aux.Stack = alias(p), &null
+		return json.Marshal(aux)
+	default:
+		var aux struct {
+			alias
+			Axis  *json.RawMessage `json:"axis"`
+			Stack *json.RawMessage `json:"stack"`
+		}
+		aux.alias, aux.Axis, aux.Stack = alias(p), &null, &null
+		return json.Marshal(aux)
+	}
+}
+
 // MarkChannel adds legend to ChannelCommon.
+//
+// Legend is tri-state on the wire exactly as PositionChannel.Axis is:
+// an absent key leaves Legend nil with LegendHidden false (default
+// legend), `"legend": null` leaves Legend nil with LegendHidden true
+// (no legend at all).
 type MarkChannel struct {
 	ChannelCommon
 	Legend *Legend `json:"legend,omitempty"`
+	// LegendHidden records an explicit `"legend": null` on this
+	// channel. Encode emits no legend for it.
+	LegendHidden bool `json:"-"`
 }
 
 // UnmarshalJSON intercepts the `field` key for the same reason as
-// PositionChannel.
+// PositionChannel, and the `legend` key so an explicit null is
+// distinguishable from an absent key.
 func (m *MarkChannel) UnmarshalJSON(data []byte) error {
 	type alias MarkChannel
 	var aux struct {
-		Field json.RawMessage `json:"field"`
+		Field  json.RawMessage `json:"field"`
+		Legend json.RawMessage `json:"legend"`
 		alias
 	}
-	if err := json.Unmarshal(data, &aux); err != nil {
+	if err := strictUnmarshal(data, &aux); err != nil {
 		return err
 	}
 	*m = MarkChannel(aux.alias)
@@ -155,7 +284,36 @@ func (m *MarkChannel) UnmarshalJSON(data []byte) error {
 		m.Field = f
 		m.FieldRef = ref
 	}
+	if len(aux.Legend) > 0 {
+		if isJSONNull(aux.Legend) {
+			m.Legend = nil
+			m.LegendHidden = true
+		} else {
+			var lg Legend
+			if err := strictUnmarshal(aux.Legend, &lg); err != nil {
+				return fmt.Errorf("legend: %w", err)
+			}
+			m.Legend = &lg
+		}
+	}
 	return nil
+}
+
+// MarshalJSON re-emits an explicit `"legend": null` for a hidden
+// legend; see PositionChannel.MarshalJSON.
+func (m MarkChannel) MarshalJSON() ([]byte, error) {
+	type alias MarkChannel
+	if !m.LegendHidden {
+		return json.Marshal(alias(m))
+	}
+	var aux struct {
+		alias
+		Legend *json.RawMessage `json:"legend"`
+	}
+	aux.alias = alias(m)
+	null := json.RawMessage("null")
+	aux.Legend = &null
+	return json.Marshal(aux)
 }
 
 // TextChannel is a slimmer channel for text marks and tooltips.
@@ -189,14 +347,14 @@ func (c TooltipChannel) MarshalJSON() ([]byte, error) {
 func (c *TooltipChannel) UnmarshalJSON(data []byte) error {
 	if len(data) > 0 && data[0] == '[' {
 		var arr []TextChannel
-		if err := json.Unmarshal(data, &arr); err != nil {
+		if err := strictUnmarshal(data, &arr); err != nil {
 			return fmt.Errorf("tooltip: %w", err)
 		}
 		c.Multi = arr
 		return nil
 	}
 	var single TextChannel
-	if err := json.Unmarshal(data, &single); err != nil {
+	if err := strictUnmarshal(data, &single); err != nil {
 		return fmt.Errorf("tooltip: %w", err)
 	}
 	c.Single = &single
@@ -232,14 +390,14 @@ func (c OrderChannel) MarshalJSON() ([]byte, error) {
 func (c *OrderChannel) UnmarshalJSON(data []byte) error {
 	if len(data) > 0 && data[0] == '[' {
 		var arr []OrderChannelEntry
-		if err := json.Unmarshal(data, &arr); err != nil {
+		if err := strictUnmarshal(data, &arr); err != nil {
 			return fmt.Errorf("order: %w", err)
 		}
 		c.Multi = arr
 		return nil
 	}
 	var single OrderChannelEntry
-	if err := json.Unmarshal(data, &single); err != nil {
+	if err := strictUnmarshal(data, &single); err != nil {
 		return fmt.Errorf("order: %w", err)
 	}
 	c.Single = &single
@@ -274,14 +432,14 @@ func (c DetailChannel) MarshalJSON() ([]byte, error) {
 func (c *DetailChannel) UnmarshalJSON(data []byte) error {
 	if len(data) > 0 && data[0] == '[' {
 		var arr []DetailChannelEntry
-		if err := json.Unmarshal(data, &arr); err != nil {
+		if err := strictUnmarshal(data, &arr); err != nil {
 			return fmt.Errorf("detail: %w", err)
 		}
 		c.Multi = arr
 		return nil
 	}
 	var single DetailChannelEntry
-	if err := json.Unmarshal(data, &single); err != nil {
+	if err := strictUnmarshal(data, &single); err != nil {
 		return fmt.Errorf("detail: %w", err)
 	}
 	c.Single = &single

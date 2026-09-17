@@ -57,13 +57,25 @@ export function easingFn(name) {
 const NUMERIC_ATTRS = {
   rect:     ["x", "y", "width", "height", "rx", "ry", "opacity", "fill-opacity", "stroke-opacity"],
   circle:   ["cx", "cy", "r", "opacity", "fill-opacity", "stroke-opacity"],
-  line:     ["x1", "y1", "x2", "y2", "stroke-width", "opacity"],
-  polyline: ["stroke-width", "opacity"],
+  line:     ["x1", "y1", "x2", "y2", "stroke-width", "opacity", "stroke-opacity"],
+  polyline: ["stroke-width", "opacity", "stroke-opacity"],
   ellipse:  ["cx", "cy", "rx", "ry", "opacity"],
-  text:     ["x", "y", "font-size", "opacity"],
+  // dx / dy are the text mark's anchor offset (mark_def.dx / dy,
+  // E4-S1); they are ordinary numeric attrs and tween like x / y.
+  text:     ["x", "y", "dx", "dy", "font-size", "opacity", "fill-opacity", "stroke-opacity"],
   image:    ["x", "y", "width", "height", "opacity"],
-  path:     ["opacity", "fill-opacity", "stroke-opacity"],
+  // A non-linear line curve (interpolate: monotone / step / …)
+  // renders as <path> instead of <polyline>, so path carries the
+  // polyline tween set as well as the area/arc fill attrs.
+  path:     ["stroke-width", "opacity", "fill-opacity", "stroke-opacity"],
 };
+
+// stroke-dasharray (E7-S4) is absent from both tables on purpose.
+// It is a *list* of lengths ("4 2"), not a scalar, so the numeric
+// tween would parse only the first entry and rewrite the whole
+// pattern from it — a visibly wrong dash mid-transition. It is a
+// discrete attribute: the incoming scene's value applies on swap, the
+// same way font-family and stroke-linecap already behave.
 
 // Color attrs that route through OKLab interpolation.
 const COLOR_ATTRS = ["fill", "stroke"];

@@ -14,7 +14,99 @@ type AxisOpts struct {
 	LabelOverlap string // "parity" (default) | "auto" | "none"
 	MinorTicks   bool   // default true for linear
 	Format       string // d3-format spec for tick labels
+	// Orient is the spec's `axis.orient` — the side the axis sits on
+	// ("top" / "bottom" for x, "left" / "right" for y). Empty means
+	// the channel's default side. It is never consumed by
+	// BuildAxisWithOpts directly: AxisPositionFor turns it into the
+	// scene.AxisPosition that drives BOTH the layout reservation
+	// (AxisPlacement) and the position stamped on the built axis, so
+	// the padding can never sit on one side while the axis renders on
+	// another. A value invalid for the channel is rejected upstream by
+	// PRISM_SPEC_044 and falls back to the default side here.
+	Orient string
+	// Labels / Ticks / Domain are the per-component visibility
+	// switches from `axis.labels`, `axis.ticks` and `axis.domain`
+	// (E3-S2). All three default to true and compose independently:
+	// suppressing the labels leaves the tick marks and the domain
+	// line, and so on. Whole-axis suppression is `"axis": null`
+	// (E1-S4), handled before the axis is ever built.
+	Labels bool
+	Ticks  bool
+	Domain bool
+	// TickSize / LabelPadding / TitlePadding are the spec-level pixel
+	// overrides. Nil defers to the theme's --prism-axis-tick-size /
+	// --prism-axis-label-padding / --prism-axis-title-padding tokens,
+	// and then to the renderer's built-in metrics.
+	TickSize     *float64
+	LabelPadding *float64
+	TitlePadding *float64
+	// LabelLimit is the maximum label width in pixels before the label
+	// is truncated with an ellipsis. Nil or non-positive means no
+	// limit. Truncation happens here, at encode time, so every
+	// renderer consuming the Scene IR agrees on the shortened text.
+	LabelLimit *float64
+	// Zindex draws the axis behind the marks at 0 (the default) and in
+	// front of them at any positive value.
+	Zindex int
+
+	// TickCount is the author's `axis.tick_count`: how many major
+	// ticks the continuous generators should aim for. Nil means the
+	// spec said nothing, so DefaultTickCount applies; an explicit 0
+	// means "no ticks" (and therefore no grid lines). It is a hint,
+	// not a guarantee — the nice-tick generator rounds to a readable
+	// step and may land either side of the request.
+	TickCount *int
+
+	// Values is the author's `axis.values`: an explicit tick set that
+	// replaces the generated one outright, overriding both TickCount
+	// and TickMinStep. Entries the axis cannot place are dropped with
+	// scene.WarnAxisValuesDropped rather than drawn off-plot.
+	Values []any
+
+	// TickMinStep is the author's `axis.tick_min_step`: the smallest
+	// gap, in domain units, allowed between adjacent generated ticks.
+	// Zero means unset. It only shapes *generated* ticks — Values
+	// pins exactly what it names.
+	TickMinStep float64
+
+	// Warnings is an optional sink for the warnings the axis builder
+	// raises (today: dropped `axis.values` entries). BuildAxisWithOpts
+	// cannot return warnings without breaking its pinned five-argument
+	// shape, which encode/axis_call_sites_test.go gates, so callers
+	// that collect warnings wire their slice in via withWarnings.
+	Warnings *[]scene.Warning
 }
+
+// withWarnings returns a copy of opts with sink wired as its warning
+// destination. Call sites read `axisOptsFor(enc.X).withWarnings(&warnings)`.
+func (o AxisOpts) withWarnings(sink *[]scene.Warning) AxisOpts {
+	o.Warnings = sink
+	return o
+}
+
+// warn appends w to the opts' warning sink, if one is wired.
+func (o AxisOpts) warn(w scene.Warning) {
+	if o.Warnings == nil {
+		return
+	}
+	*o.Warnings = append(*o.Warnings, w)
+}
+
+// tickCount returns the effective tick-count hint: the author's
+// `axis.tick_count` when set, DefaultTickCount otherwise. A negative
+// request is clamped to 0 ("no ticks").
+func (o AxisOpts) tickCount() int {
+	if o.TickCount == nil {
+		return DefaultTickCount
+	}
+	if *o.TickCount < 0 {
+		return 0
+	}
+	return *o.TickCount
+}
+
+// pinned reports whether the author pinned an explicit tick set.
+func (o AxisOpts) pinned() bool { return len(o.Values) > 0 }
 
 // DefaultAxisOpts returns the P06 defaults.
 func DefaultAxisOpts(title string) AxisOpts {
@@ -24,6 +116,9 @@ func DefaultAxisOpts(title string) AxisOpts {
 		LabelAngle:   0,
 		LabelOverlap: "parity",
 		MinorTicks:   true,
+		Labels:       true,
+		Ticks:        true,
+		Domain:       true,
 	}
 }
 
@@ -38,61 +133,100 @@ func BuildAxis(scale Scale, channel scene.Channel, position scene.AxisPosition, 
 // BuildAxisWithOpts is the full-control axis builder.
 func BuildAxisWithOpts(scale Scale, channel scene.Channel, position scene.AxisPosition, plot scene.Rect, opts AxisOpts) scene.Axis {
 	axis := scene.Axis{
-		ID:         string(channel) + "-axis",
-		Channel:    channel,
-		Position:   position,
-		Title:      opts.Title,
-		LabelAngle: opts.LabelAngle,
+		ID:           string(channel) + "-axis",
+		Channel:      channel,
+		Position:     position,
+		Title:        opts.Title,
+		LabelAngle:   opts.LabelAngle,
+		HideLabels:   !opts.Labels,
+		HideTicks:    !opts.Ticks,
+		HideDomain:   !opts.Domain,
+		TickSize:     opts.TickSize,
+		LabelPadding: opts.LabelPadding,
+		TitlePadding: opts.TitlePadding,
+		Zindex:       opts.Zindex,
 	}
 
 	switch s := scale.(type) {
 	case *LinearScale:
-		ticks := NiceTicks(s.DomainMin, s.DomainMax, 5)
+		var ticks []float64
+		if opts.pinned() {
+			ticks = pinnedNumericTicks(opts, channel, s.DomainMin, s.DomainMax, toFloatValue)
+		} else {
+			ticks = generatedLinearTicks(s.DomainMin, s.DomainMax, opts)
+		}
 		labelled, err := TicksWithLabels(ticks, s, opts.Format)
 		if err == nil {
 			axis.Ticks = labelled
 		}
-		if opts.MinorTicks {
+		// Minor ticks are midpoints of a *generated* nice sequence.
+		// A pinned tick set has no such sequence to halve, so pinning
+		// suppresses them (see docs/src/concepts/encoding.md).
+		if opts.MinorTicks && !opts.pinned() {
 			axis.Ticks = injectLinearMinorTicks(axis.Ticks, s)
 		}
 		axis.Scale = scene.ScaleSpec{
 			Type:   scene.ScaleLinear,
 			Domain: []any{s.DomainMin, s.DomainMax},
 			Range:  [2]float64{s.RangeMin, s.RangeMax},
+			Clamp:  s.Clamp,
 		}
 	case *TimeScale:
-		axis.Ticks = TimeTicks(s, 5)
+		if opts.pinned() {
+			axis.Ticks = pinnedTimeTicks(s, opts, channel)
+		} else if count := opts.tickCount(); count > 0 {
+			axis.Ticks = filterTickMinStep(TimeTicks(s, count), opts.TickMinStep)
+		}
 		axis.Scale = scene.ScaleSpec{
 			Type:   scene.ScaleTime,
 			Domain: []any{s.Linear.DomainMin, s.Linear.DomainMax},
 			Range:  [2]float64{s.Linear.RangeMin, s.Linear.RangeMax},
+			Clamp:  s.Linear.Clamp,
 		}
 	case *LogScale:
-		axis.Ticks = LogTicks(s)
+		if opts.pinned() {
+			axis.Ticks = pinnedScaleTicks(s, opts, channel,
+				s.DomainMin, s.DomainMax, toFloatValue, formatLogTick)
+		} else if count := opts.tickCount(); count > 0 {
+			axis.Ticks = filterTickMinStep(thinLogTicks(LogTicks(s), count), opts.TickMinStep)
+		}
 		axis.Scale = scene.ScaleSpec{
 			Type:   scene.ScaleLog,
 			Domain: []any{s.DomainMin, s.DomainMax},
 			Range:  [2]float64{s.RangeMin, s.RangeMax},
 			Base:   s.Base,
+			Clamp:  s.Clamp,
 		}
 	case *PowScale:
-		axis.Ticks = PowTicks(s, 5)
+		if opts.pinned() {
+			axis.Ticks = pinnedScaleTicks(s, opts, channel,
+				s.DomainMin, s.DomainMax, toFloatValue, powTickLabel(opts.Format))
+		} else if count := opts.tickCount(); count > 0 {
+			axis.Ticks = filterTickMinStep(PowTicks(s, count), opts.TickMinStep)
+		}
 		axis.Scale = scene.ScaleSpec{
 			Type:   scene.ScalePow,
 			Domain: []any{s.DomainMin, s.DomainMax},
 			Range:  [2]float64{s.RangeMin, s.RangeMax},
 			Exp:    s.Exp,
+			Clamp:  s.Clamp,
 		}
 	case *SqrtScale:
-		axis.Ticks = SqrtTicks(s, 5)
+		if opts.pinned() {
+			axis.Ticks = pinnedScaleTicks(s, opts, channel,
+				s.Inner.DomainMin, s.Inner.DomainMax, toFloatValue, powTickLabel(opts.Format))
+		} else if count := opts.tickCount(); count > 0 {
+			axis.Ticks = filterTickMinStep(SqrtTicks(s, count), opts.TickMinStep)
+		}
 		axis.Scale = scene.ScaleSpec{
 			Type:   scene.ScaleSqrt,
 			Domain: []any{s.Inner.DomainMin, s.Inner.DomainMax},
 			Range:  [2]float64{s.Inner.RangeMin, s.Inner.RangeMax},
 			Exp:    0.5,
+			Clamp:  s.Inner.Clamp,
 		}
 	case *BandScale:
-		axis.Ticks = BandTicks(s)
+		axis.Ticks = pinnedCategoryTicks(BandTicks(s), opts, channel)
 		dom := make([]any, len(s.Categories))
 		for i, c := range s.Categories {
 			dom[i] = c
@@ -101,7 +235,7 @@ func BuildAxisWithOpts(scale Scale, channel scene.Channel, position scene.AxisPo
 			Type:    scene.ScaleBand,
 			Domain:  dom,
 			Range:   [2]float64{s.RangeMin, s.RangeMax},
-			Padding: s.Padding,
+			Padding: s.PaddingInner,
 		}
 	case *PointScale:
 		ticks := make([]scene.Tick, 0, len(s.Categories))
@@ -112,7 +246,7 @@ func BuildAxisWithOpts(scale Scale, channel scene.Channel, position scene.AxisPo
 			}
 			ticks = append(ticks, scene.Tick{Value: c, Pixel: pix, Label: c})
 		}
-		axis.Ticks = ticks
+		axis.Ticks = pinnedCategoryTicks(ticks, opts, channel)
 		dom := make([]any, len(s.Categories))
 		for i, c := range s.Categories {
 			dom[i] = c
@@ -127,7 +261,7 @@ func BuildAxisWithOpts(scale Scale, channel scene.Channel, position scene.AxisPo
 		for i, c := range s.Categories {
 			ticks[i] = scene.Tick{Value: c, Pixel: s.Positions[i], Label: c}
 		}
-		axis.Ticks = ticks
+		axis.Ticks = pinnedCategoryTicks(ticks, opts, channel)
 		dom := make([]any, len(s.Categories))
 		for i, c := range s.Categories {
 			dom[i] = c
@@ -138,6 +272,11 @@ func BuildAxisWithOpts(scale Scale, channel scene.Channel, position scene.AxisPo
 			Range:  s.Range(),
 		}
 	}
+
+	// Label truncation (E3-S2) runs before overlap detection: a
+	// truncated label is narrower, so it may no longer collide with
+	// its neighbour and should keep its slot.
+	axis.Ticks = applyLabelLimit(axis.Ticks, opts.LabelLimit)
 
 	// Overlap handling: parity-skip when adjacent labels collide.
 	if opts.LabelOverlap != "none" {
@@ -191,6 +330,55 @@ func horizontalGrid(ticks []scene.Tick, plot scene.Rect, vertical bool) []scene.
 	return out
 }
 
+// axisLabelCharWidth is Prism's standing approximation of one tick
+// label character's advance width in pixels. Prism runs no text
+// measurement pass, so both the overlap heuristic and the label_limit
+// truncation below estimate from this constant rather than from font
+// metrics. It aliases scene.LabelCharWidth so the axis heuristic and
+// the node-label placement in encode/marks share one number.
+const axisLabelCharWidth = scene.LabelCharWidth
+
+// axisLabelEllipsis is appended to a label shortened by label_limit.
+const axisLabelEllipsis = "…"
+
+// applyLabelLimit truncates every tick label whose estimated width
+// exceeds limit pixels, appending an ellipsis. A nil or non-positive
+// limit means "no limit" (Vega-Lite's convention) and returns the
+// ticks untouched. A limit too small to hold even the ellipsis drops
+// the label entirely rather than emitting a lone "…" the reader
+// cannot decode.
+func applyLabelLimit(ticks []scene.Tick, limit *float64) []scene.Tick {
+	if limit == nil || *limit <= 0 || len(ticks) == 0 {
+		return ticks
+	}
+	max := *limit
+	out := make([]scene.Tick, len(ticks))
+	copy(out, ticks)
+	for i := range out {
+		out[i].Label = truncateToWidth(out[i].Label, max)
+	}
+	return out
+}
+
+// truncateToWidth shortens label so its estimated pixel width fits
+// within max, appending an ellipsis when characters were dropped.
+// Operates on runes so a multi-byte label is never cut mid-character.
+func truncateToWidth(label string, max float64) string {
+	if label == "" {
+		return label
+	}
+	runes := []rune(label)
+	if float64(len(runes))*axisLabelCharWidth <= max {
+		return label
+	}
+	// Room for the ellipsis itself, or the label cannot be shown.
+	keep := int(max/axisLabelCharWidth) - 1
+	if keep < 1 {
+		return ""
+	}
+	return string(runes[:keep]) + axisLabelEllipsis
+}
+
 // injectLinearMinorTicks inserts a Minor=true tick at each midpoint
 // between consecutive majors. Returns the merged + sorted slice.
 func injectLinearMinorTicks(majors []scene.Tick, s *LinearScale) []scene.Tick {
@@ -232,9 +420,10 @@ func applyLabelOverlap(ticks []scene.Tick, mode string, position scene.AxisPosit
 	}
 	out := make([]scene.Tick, len(ticks))
 	copy(out, ticks)
-	// Approximate label dimensions: 6px per character horizontally,
-	// 12px tall vertically.
-	const charW, lineH = 6.0, 12.0
+	// Approximate label dimensions: axisLabelCharWidth per character
+	// horizontally, 12px tall vertically.
+	const lineH = scene.LabelLineHeight
+	const charW = axisLabelCharWidth
 	var horizontal bool
 	switch position {
 	case scene.AxisPositionBottom, scene.AxisPositionTop:

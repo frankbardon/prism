@@ -35,10 +35,10 @@ func TestPrismLinearScale(t *testing.T) {
 
 func TestPrismBandScale(t *testing.T) {
 	s := &BandScale{
-		Categories: []string{"a", "b", "c"},
-		RangeMin:   0,
-		RangeMax:   300,
-		Padding:    0,
+		Categories:   []string{"a", "b", "c"},
+		RangeMin:     0,
+		RangeMax:     300,
+		PaddingInner: 0,
 	}
 	if s.BandWidth() != 100 {
 		t.Errorf("BandWidth() = %g, want 100", s.BandWidth())
@@ -68,10 +68,12 @@ func TestPrismBandScale(t *testing.T) {
 
 func TestPrismBandScalePadding(t *testing.T) {
 	s := &BandScale{
-		Categories: []string{"a", "b"},
-		RangeMin:   0,
-		RangeMax:   200,
-		Padding:    0.1,
+		Categories:   []string{"a", "b"},
+		RangeMin:     0,
+		RangeMax:     200,
+		PaddingInner: 0.1,
+		PaddingOuter: 0.05,
+		Align:        0.5,
 	}
 	// Step = 100, pad = 100 * 0.1 / 2 = 5; first band at 5, second at 105.
 	gotA, _ := s.Apply("a")

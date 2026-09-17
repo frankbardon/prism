@@ -47,9 +47,10 @@
         {"$ref": "transform.schema.json#/$defs/limit_transform"},
         {"$ref": "transform.schema.json#/$defs/crosstab_transform"},
         {"$ref": "transform.schema.json#/$defs/regression_transform"},
-        {"$ref": "transform.schema.json#/$defs/timeunit_transform"}
+        {"$ref": "transform.schema.json#/$defs/timeunit_transform"},
+        {"$ref": "transform.schema.json#/$defs/stack_transform"}
       ],
-      "description": "Single transform step; exactly one of the 15 variants identified by its discriminator key."
+      "description": "Single transform step; exactly one of the 16 variants identified by its discriminator key."
     },
     "filter_transform": {
       "type": "object",
@@ -355,7 +356,7 @@
             "required": ["field"],
             "properties": {
               "field": {"$ref": "shared.schema.json#/$defs/field_ref"},
-              "order": {"type": "string", "enum": ["ascending", "descending"], "description": "Sort direction."}
+              "order": {"type": "string", "enum": ["ascending", "descending", "asc", "desc"], "description": "Sort direction; \"ascending\" (default) or \"descending\". \"asc\" / \"desc\" are accepted aliases."}
             }
           }
         },
@@ -487,7 +488,7 @@
             "required": ["field"],
             "properties": {
               "field": {"$ref": "shared.schema.json#/$defs/field_ref"},
-              "order": {"type": "string", "enum": ["ascending", "descending"], "description": "Sort direction."}
+              "order": {"type": "string", "enum": ["ascending", "descending", "asc", "desc"], "description": "Sort direction; \"ascending\" (default) or \"descending\". \"asc\" / \"desc\" are accepted aliases."}
             }
           }
         },
@@ -577,6 +578,20 @@
         "field":    {"$ref": "shared.schema.json#/$defs/field_ref", "description": "Temporal field to truncate."},
         "as":       {"type": "string", "minLength": 1, "description": "Output date column name."},
         "data":     {"type": "string", "minLength": 1, "description": "Optional input alias."}
+      }
+    },
+
+    "stack_transform": {
+      "type": "object",
+      "description": "Cumulative stacking (E5-S2): accumulate one quantitative field into per-row [start, end] bounds within each stack, so a bar / area mark can draw each segment as a span. Positives and negatives accumulate independently from zero. Segment order inside a stack is upstream row order — shape it with a preceding sort transform, or with the encoding.order channel (E5-S4), which sorts the rows before the stack accumulates.",
+      "additionalProperties": false,
+      "required": ["stack"],
+      "properties": {
+        "stack":   {"$ref": "shared.schema.json#/$defs/field_ref", "description": "Quantitative field to accumulate."},
+        "groupby": {"type": "array", "items": {"$ref": "shared.schema.json#/$defs/field_ref"}, "description": "Fields delimiting one stack; typically the dimension position channel. Omitted stacks the whole table as a single group."},
+        "offset":  {"type": "string", "enum": ["zero", "normalize", "center"], "description": "Accumulation mode. zero stacks from the baseline (default); normalize rescales each stack to a 0..1 share; center slides each stack so its own midpoint lands on zero, giving the streamgraph silhouette and a signed output range."},
+        "as":      {"type": "array", "minItems": 2, "maxItems": 2, "items": {"type": "string", "minLength": 1}, "description": "Output column pair [start, end]. Defaults to [\"<field>_start\", \"<field>_end\"]. These are column names, not a dataset alias."},
+        "data":    {"type": "string", "minLength": 1, "description": "Optional input alias."}
       }
     },
 

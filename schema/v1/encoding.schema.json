@@ -53,16 +53,16 @@
     },
     "position_channel": {
       "type": "object",
-      "description": "Spatial position channel (x, y, x2, y2).",
+      "description": "Spatial position channel (x, y, x2, y2, theta, radius).",
       "additionalProperties": false,
       "properties": {
         "field":     {"$ref": "shared.schema.json#/$defs/field_ref"},
         "type":      {"$ref": "shared.schema.json#/$defs/measure_type"},
         "aggregate": {"$ref": "transform.schema.json#/$defs/aggregate_op"},
         "scale":     {"$ref": "scale.schema.json#/$defs/scale"},
-        "axis":      {"$ref": "axis.schema.json#/$defs/axis", "description": "Axis configuration for the position channel."},
-        "title":     {"type": "string"},
-        "format":    {"type": "string"},
+        "axis":      {"$ref": "axis.schema.json#/$defs/axis", "description": "Axis configuration for the position channel. Null hides the axis; an absent key keeps the default axis."},
+        "title":     {"type": "string", "description": "Column header text. Falls back to the field name."},
+        "format":    {"type": "string", "description": "d3-format specifier applied to this column's cell text (the subset in encode/format — no currency prefix, so write \",.0f\" not \"$,.0f\"). Validated by PRISM_SPEC_011. Ignored on a column that also binds a sub-mark, which draws geometry rather than text."},
         "bin":       {"type": ["boolean", "object"]},
         "sort":      {
           "oneOf": [
@@ -71,7 +71,7 @@
             {"type": "null"}
           ]
         },
-        "stack":     {"type": ["string", "null", "boolean"], "enum": ["zero", "normalize", "center", null, false, true], "description": "Stacking behavior for the position channel."},
+        "stack":     {"type": ["string", "null", "boolean"], "enum": ["zero", "normalize", "center", null, false, true], "description": "Stacking behavior for the position channel. \"zero\" (or true) accumulates segments from the baseline, \"normalize\" rescales each stack onto 0..1, \"center\" floats each stack's baseline so the band is symmetric about zero (the streamgraph — area marks only, and it orders segments inside-out unless an `order` channel says otherwise), null/false opt out of the implicit bar/area default."},
         "value":     {},
         "condition": {"$ref": "encoding.schema.json#/$defs/condition"},
         "key":       {"type": "boolean", "description": "Marks this channel as the join key used by client-side tween for object-constancy. At most one channel per encoding may set this."}
@@ -86,7 +86,7 @@
         "type":      {"$ref": "shared.schema.json#/$defs/measure_type"},
         "aggregate": {"$ref": "transform.schema.json#/$defs/aggregate_op"},
         "scale":     {"$ref": "scale.schema.json#/$defs/scale"},
-        "legend":    {"$ref": "legend.schema.json#/$defs/legend", "description": "Legend configuration."},
+        "legend":    {"$ref": "legend.schema.json#/$defs/legend", "description": "Legend configuration. Null hides the legend; an absent key keeps the default legend."},
         "title":     {"type": "string"},
         "format":    {"type": "string"},
         "bin":       {"type": ["boolean", "object"]},
@@ -135,7 +135,7 @@
             "field":     {"$ref": "shared.schema.json#/$defs/field_ref"},
             "type":      {"$ref": "shared.schema.json#/$defs/measure_type"},
             "aggregate": {"$ref": "transform.schema.json#/$defs/aggregate_op"},
-            "sort":      {"type": "string", "enum": ["ascending", "descending"]}
+            "sort":      {"type": "string", "enum": ["ascending", "descending", "asc", "desc"], "description": "Sort direction; \"ascending\" (default) or \"descending\". \"asc\" / \"desc\" are accepted aliases."}
           }
         },
         {
@@ -147,12 +147,12 @@
               "field":     {"$ref": "shared.schema.json#/$defs/field_ref"},
               "type":      {"$ref": "shared.schema.json#/$defs/measure_type"},
               "aggregate": {"$ref": "transform.schema.json#/$defs/aggregate_op"},
-              "sort":      {"type": "string", "enum": ["ascending", "descending"]}
+              "sort":      {"type": "string", "enum": ["ascending", "descending", "asc", "desc"], "description": "Sort direction; \"ascending\" (default) or \"descending\". \"asc\" / \"desc\" are accepted aliases."}
             }
           }
         }
       ],
-      "description": "Drawing order channel; single field or array."
+      "description": "Row-order channel; single entry or array of entries, applied left to right. Binding it sorts the rows before anything reads them, which sets three things at once: stack order (which segment sits at the bottom), draw order (later-ordered marks paint on top), and point sequence along a line or area path. Leave it unbound to keep the table's own row order. `aggregate` is rejected here — see PRISM_SPEC_056."
     },
     "detail_channel": {
       "oneOf": [
@@ -237,8 +237,8 @@
       "properties": {
         "x":       {"$ref": "encoding.schema.json#/$defs/position_channel", "description": "Primary horizontal position channel."},
         "y":       {"$ref": "encoding.schema.json#/$defs/position_channel", "description": "Primary vertical position channel."},
-        "x2":      {"$ref": "encoding.schema.json#/$defs/position_channel", "description": "Secondary horizontal position (for ranged marks)."},
-        "y2":      {"$ref": "encoding.schema.json#/$defs/position_channel", "description": "Secondary vertical position (for ranged marks)."},
+        "x2":      {"$ref": "encoding.schema.json#/$defs/position_channel", "description": "Secondary horizontal position: spans x -> x2. Measured on x's scale, so x2.type must equal x.type. Drawn by bar, rect and rule; rejected on every other mark (PRISM_SPEC_041)."},
+        "y2":      {"$ref": "encoding.schema.json#/$defs/position_channel", "description": "Secondary vertical position: spans y -> y2. Measured on y's scale, so y2.type must equal y.type. Drawn by bar, rect, rule, and area (as its explicit lower edge); rejected on every other mark (PRISM_SPEC_041)."},
         "theta":   {"$ref": "encoding.schema.json#/$defs/position_channel", "description": "Angle position for arc/pie/donut."},
         "radius":  {"$ref": "encoding.schema.json#/$defs/position_channel", "description": "Radial position for arc/pie/donut."},
         "color":   {"$ref": "encoding.schema.json#/$defs/mark_channel", "description": "Color encoding."},
@@ -249,7 +249,7 @@
         "shape":   {"$ref": "encoding.schema.json#/$defs/mark_channel", "description": "Point shape encoding."},
         "text":    {"$ref": "encoding.schema.json#/$defs/text_channel", "description": "Text encoding for text marks."},
         "tooltip": {"$ref": "encoding.schema.json#/$defs/tooltip_channel", "description": "Tooltip encoding."},
-        "order":   {"$ref": "encoding.schema.json#/$defs/order_channel", "description": "Drawing order encoding."},
+        "order":   {"$ref": "encoding.schema.json#/$defs/order_channel", "description": "Row-order encoding: stack order, draw order and path point sequence."},
         "detail":  {"$ref": "encoding.schema.json#/$defs/detail_channel", "description": "Detail (grouping) encoding."},
         "row":     {"$ref": "encoding.schema.json#/$defs/facet_channel", "description": "Row facet channel."},
         "column":  {"$ref": "encoding.schema.json#/$defs/facet_channel", "description": "Column facet channel."},

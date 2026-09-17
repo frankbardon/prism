@@ -43,6 +43,7 @@ var validMarkTypes = map[string]bool{
 	"winloss":    true,
 	"sparkarea":  true,
 	"bullet":     true,
+	"progress":   true,
 	"image":      true,
 	"path":       true,
 	"geoshape":   true,

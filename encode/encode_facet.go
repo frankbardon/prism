@@ -101,8 +101,30 @@ func encodeFacetComposite(s *spec.Spec, composite *plan.CompositeDAG, childTable
 	// (the package defaults), so we do nothing extra for the default
 	// path.
 
-	// Pre-compute shared scales when requested.
-	cellLayout := Compute(cellW, cellH, false)
+	// Pre-compute shared scales when requested. Every cell renders the
+	// same child spec, so its `"axis": null` suppression applies to the
+	// whole grid: the shared axis is dropped and each cell's plot rect
+	// (computed by the flat Encode path from the same flags) expands.
+	placement := DefaultAxisPlacement()
+	placement.XHidden = specAxisHidden(child.Spec, scene.ChannelX)
+	placement.YHidden = specAxisHidden(child.Spec, scene.ChannelY)
+	// E1-S2: the child spec's `axis.orient` places the shared axes and
+	// reserves the cell padding on the same side. A facet has exactly
+	// one child spec, so the shared fold can never conflict.
+	facetEncodings := []labelledEncoding{{Label: "facet-child", Enc: childEncoding(child.Spec)}}
+	placement = sharedAxisPlacement(placement, facetEncodings)
+	// E3-S2: every cell renders the same child spec, so its component
+	// suppression narrows the cell reservation uniformly — the same
+	// narrowing the flat Encode path applies inside each cell.
+	facetSpecs := []*spec.Spec{child.Spec}
+	placement.ReserveFrom(
+		specSharedAxisOpts(scene.ChannelX, facetSpecs),
+		specSharedAxisOpts(scene.ChannelY, facetSpecs))
+	cellLayout := Compute(LayoutOpts{
+		Width:  cellW,
+		Height: cellH,
+		Sides:  placement.Sides(),
+	})
 	xMode := resolution[scene.ChannelX]
 	yMode := resolution[scene.ChannelY]
 
@@ -172,7 +194,7 @@ func encodeFacetComposite(s *spec.Spec, composite *plan.CompositeDAG, childTable
 			for ii, inner := range cellDoc.Grid.Cells {
 				innerScene := inner.Scene
 				offsetScene(&innerScene, dx, dy)
-				innerScene.ID = fmt.Sprintf("scene-r%d-c%d-%d", ri, ci, ii)
+				renameScene(&innerScene, fmt.Sprintf("scene-r%d-c%d-%d", ri, ci, ii))
 
 				// Strip per-cell axes for shared channels (D051).
 				if xShared != nil {
@@ -206,14 +228,30 @@ func encodeFacetComposite(s *spec.Spec, composite *plan.CompositeDAG, childTable
 		Cells: cells,
 	}
 	// Shared axes anchored to the first surviving cell's Plot rect.
-	if xShared != nil && len(cells) > 0 {
-		ax := BuildAxisWithOpts(xShared, scene.ChannelX, scene.AxisPositionBottom, cells[len(cells)-1].Scene.Plot,
-			DefaultAxisOpts(facetFieldFromChildSpec(child.Spec, scene.ChannelX)))
+	// E3-S5: they resolve the child's per-channel `axis` config through
+	// the same first-specified-wins path the layer composite uses; a
+	// facet has one child spec, so no conflict is possible.
+	// The anchor cell follows the axis: cells are row-major, so the
+	// first cell is the top-left one and the last is the bottom-right.
+	// A bottom x axis hangs off the bottom row and a left y axis off
+	// the left column — moving either to the opposite side moves the
+	// anchor with it.
+	if xShared != nil && len(cells) > 0 && !placement.XHidden {
+		opts, axWarn := sharedAxisOpts(scene.ChannelX,
+			sharedAxisBlocksFrom(scene.ChannelX, facetEncodings),
+			facetFieldFromChildSpec(child.Spec, scene.ChannelX))
+		warnings = append(warnings, axWarn...)
+		ax := BuildAxisWithOpts(xShared, scene.ChannelX, placement.X,
+			facetAnchorPlot(cells, placement.X == scene.AxisPositionTop), opts.withWarnings(&warnings))
 		doc.Grid.Shared.X = &ax
 	}
-	if yShared != nil && len(cells) > 0 {
-		ax := BuildAxisWithOpts(yShared, scene.ChannelY, scene.AxisPositionLeft, cells[0].Scene.Plot,
-			DefaultAxisOpts(facetFieldFromChildSpec(child.Spec, scene.ChannelY)))
+	if yShared != nil && len(cells) > 0 && !placement.YHidden {
+		opts, axWarn := sharedAxisOpts(scene.ChannelY,
+			sharedAxisBlocksFrom(scene.ChannelY, facetEncodings),
+			facetFieldFromChildSpec(child.Spec, scene.ChannelY))
+		warnings = append(warnings, axWarn...)
+		ax := BuildAxisWithOpts(yShared, scene.ChannelY, placement.Y,
+			facetAnchorPlot(cells, placement.Y != scene.AxisPositionRight), opts.withWarnings(&warnings))
 		doc.Grid.Shared.Y = &ax
 	}
 	doc.Warnings = warnings
@@ -410,14 +448,21 @@ func buildSharedScaleForFacet(childSpec *spec.Spec, parts *facetPartitions, chan
 		return nil, nil
 	}
 	var ch *spec.PositionChannel
+	// span is the channel's `2` companion (E9-S3). It shares this
+	// scale, so its values join the shared domain below. nil unless
+	// x2 / y2 is bound.
+	var span *spec.PositionChannel
 	switch channel {
 	case scene.ChannelX:
-		ch = childSpec.Encoding.X
+		ch, span = childSpec.Encoding.X, childSpec.Encoding.X2
 	case scene.ChannelY:
-		ch = childSpec.Encoding.Y
+		ch, span = childSpec.Encoding.Y, childSpec.Encoding.Y2
 	}
 	if ch == nil || ch.Field == "" {
 		return nil, nil
+	}
+	if span != nil && span.Field == "" {
+		span = nil
 	}
 
 	// Union the per-partition values into one big slice in a stable
@@ -450,24 +495,40 @@ func buildSharedScaleForFacet(childSpec *spec.Spec, parts *facetPartitions, chan
 			for i := 0; i < col.Len(); i++ {
 				allValues = append(allValues, col.ValueAt(i))
 			}
+			if span != nil {
+				allValues = append(allValues, spanDomainValues(span, tbl)...)
+			}
 		}
 	}
 	if len(allValues) == 0 || firstCol == nil {
 		return nil, nil
 	}
+	opts := ScaleOptsFromSpec(ch.Scale)
 	if ch.Scale != nil && ch.Scale.Type != "" {
-		opts := ScaleOpts{}
-		if ch.Scale.Base != nil {
-			opts.Base = *ch.Scale.Base
-		}
-		if ch.Scale.Exponent != nil {
-			opts.Exp = *ch.Scale.Exponent
-		}
 		sc, _, err := ResolveScaleTyped(scene.ScaleType(ch.Scale.Type), allValues, rmin, rmax, opts)
 		return sc, err
 	}
-	sc, _, err := ResolveScale(ch.Type, firstCol.Kind(), allValues, rmin, rmax)
+	sc, _, err := ResolveScaleWithOpts(ch.Type, firstCol.Kind(), allValues, rmin, rmax, opts)
 	return sc, err
+}
+
+// childEncoding returns a spec's encoding block, tolerating a nil
+// spec (a composite facet child carries no top-level encoding).
+// facetAnchorPlot returns the plot rect a shared facet axis anchors
+// to: the first cell (top-left) when first is true, otherwise the last
+// (bottom-right). Callers guarantee cells is non-empty.
+func facetAnchorPlot(cells []scene.SceneCell, first bool) scene.Rect {
+	if first {
+		return cells[0].Scene.Plot
+	}
+	return cells[len(cells)-1].Scene.Plot
+}
+
+func childEncoding(s *spec.Spec) *spec.Encoding {
+	if s == nil {
+		return nil
+	}
+	return s.Encoding
 }
 
 // facetFieldFromChildSpec returns the field bound on the child

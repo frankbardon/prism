@@ -13,7 +13,7 @@ bundle:
 ```
 <out-dir>/
 ├── prism.wasm           # cmd/prismwasm binary (TinyGo, GOARCH=wasm); ~6.9 MiB raw
-├── prism.wasm.gz        # gzipped binary (~2.2 MiB) — what the loader fetches
+├── prism.wasm.gz        # gzipped binary (~2.5 MiB) — what the loader fetches
 ├── wasm_exec.js         # TinyGo's WASM loader (paired with the TinyGo binary)
 ├── prism.mjs            # thin bootstrapper + SceneHandle facade
 ├── prism-element.mjs    # <prism-chart> / <prism-dataset> / <prism-coordinator>
@@ -29,7 +29,7 @@ browser artifact:
 
 | Build | Command | Raw | Gzipped | Loader |
 |---|---|---|---|---|
-| **TinyGo** | `make build-wasm-tinygo` | ~6.9 MiB (7,239,767 B) | **~2.2 MiB (2,232,605 B)** | TinyGo's `wasm_exec.js` |
+| **TinyGo** | `make build-wasm-tinygo` | ~7.6 MiB (8,022,421 B) | **~2.4 MiB (2,547,567 B)** | TinyGo's `wasm_exec.js` |
 
 TinyGo links a lean runtime and GC, producing a module roughly half
 the size the standard Go toolchain would emit. `make build-wasm-tinygo`
@@ -341,6 +341,15 @@ the default clear-and-replace path.
 3. A `requestAnimationFrame` loop interpolates numeric attrs
    (`x`/`y`/`width`/`height`/`cx`/`cy`/`r`/`opacity`/...) on the
    **live** SVG, writing target values read from the staged SVG.
+   The tweenable set is per element tag (`NUMERIC_ATTRS` in
+   `prism-animator.mjs`) and includes the mark-def style vocabulary:
+   `fill-opacity` / `stroke-opacity` on filled and stroked marks, and
+   `dx` / `dy` (a text mark's anchor offset) on `<text>`.
+   The tween set is per SVG element tag; `<path>` covers
+   `stroke-width` alongside the opacity trio, because a line mark with
+   a non-linear `interpolate` ([Marks:
+   Interpolation](marks.md#interpolation-line-and-area-curves))
+   renders as `<path>` rather than `<polyline>`.
    Color attrs (`fill`, `stroke`) interpolate through OKLab via
    `oklab.mjs` for perceptually smooth transitions.
 4. At `t = 1` the previous SVG is removed and the staged SVG becomes

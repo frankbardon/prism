@@ -112,7 +112,7 @@ func encodeRepeatComposite(s *spec.Spec, composite *plan.CompositeDAG, childTabl
 		childOpts.OverrideXScale = nil
 		childOpts.OverrideYScale = nil
 
-		childDoc, err := Encode(child.Spec, childTables[i], child.Tip, childOpts)
+		childDoc, err := encodeLeaf(child.Spec, childTables[i], child.Tip, childOpts)
 		if err != nil {
 			return nil, fmt.Errorf("repeat child %d: %w", i, err)
 		}
@@ -121,7 +121,7 @@ func encodeRepeatComposite(s *spec.Spec, composite *plan.CompositeDAG, childTabl
 		}
 		childScene := childDoc.Grid.Cells[0].Scene
 		offsetScene(&childScene, offsetX, offsetY)
-		childScene.ID = fmt.Sprintf("scene-%d", i)
+		renameScene(&childScene, fmt.Sprintf("scene-%d", i))
 		cells = append(cells, scene.SceneCell{
 			Row:   row,
 			Col:   col,
