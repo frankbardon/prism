@@ -37,7 +37,7 @@
             const path_to_root = "";
             const default_light_theme = "navy";
             const default_dark_theme = "navy";
-            window.path_to_searchindex_js = "searchindex-19c653e4.js";
+            window.path_to_searchindex_js = "searchindex-587554bb.js";
         </script>
         <!-- Start loading toc.js asap -->
         <script src="toc-a4924ec0.js"></script>
@@ -364,6 +364,7 @@ guide to port specs in minutes.</p>
 <tr><td><code>layer</code>, <code>concat</code>, <code>facet</code>, <code>repeat</code></td><td>same</td><td>full composition v1</td></tr>
 <tr><td><code>condition</code> encodings</td><td>same shape</td><td>selection + test predicate conditions supported</td></tr>
 <tr><td><code>strokeWidth</code> (camelCase)</td><td><code>stroke_width</code></td><td>snake_case throughout</td></tr>
+<tr><td><code>xOffset</code> / <code>yOffset</code></td><td><code>x_offset</code> / <code>y_offset</code></td><td>snake_case; same grouped-bar primitive — see <a href="#offset-dodge-channels">Offset (dodge) channels</a></td></tr>
 <tr><td>Vega expression language</td><td>structured <code>filter</code> / <code>calculate</code> built-ins</td><td>no expression language, no JS eval</td></tr>
 </tbody>
 </table>
@@ -383,9 +384,54 @@ Vega-Lite vocabulary (<code>mark</code>, <code>encoding</code>, <code>transform<
 <tr><td><code>fontSize</code></td><td><code>font_size</code></td></tr>
 <tr><td><code>tickCount</code></td><td><code>tick_count</code></td></tr>
 <tr><td><code>labelOverlap</code></td><td><code>label_overlap</code></td></tr>
+<tr><td><code>xOffset</code></td><td><code>x_offset</code></td></tr>
+<tr><td><code>yOffset</code></td><td><code>y_offset</code></td></tr>
 </tbody>
 </table>
 </div>
+<h2 id="offset-dodge-channels"><a class="header" href="#offset-dodge-channels">Offset (dodge) channels</a></h2>
+<p>Vega-Lite’s <code>xOffset</code> / <code>yOffset</code> are <code>x_offset</code> / <code>y_offset</code> here —
+the same grouped-bar primitive, renamed by the snake_case rule above.
+The camelCase spelling is <strong>rejected at decode</strong> (<code>PRISM_SPEC_009</code>,
+unknown field), never silently dropped, so a ported spec tells you
+immediately rather than rendering an ungrouped chart.</p>
+<pre><code class="language-json">{
+  "$schema": "urn:prism:schema:v1:spec",
+  "data": {"values": [
+    {"metric": "Awareness",     "series": "Acme",             "score": 62},
+    {"metric": "Awareness",     "series": "category average", "score": 48},
+    {"metric": "Consideration", "series": "Acme",             "score": 41},
+    {"metric": "Consideration", "series": "category average", "score": 44}
+  ]},
+  "mark": {"type": "bar"},
+  "encoding": {
+    "x":        {"field": "metric", "type": "nominal"},
+    "y":        {"field": "score",  "type": "quantitative"},
+    "x_offset": {"field": "series", "type": "nominal"},
+    "color":    {"field": "series", "type": "nominal"}
+  }
+}
+</code></pre>
+<p>Two behavioural divergences to know before porting a dodged chart:</p>
+<p><strong>Grouped <em>and</em> stacked bars are not supported.</strong> An explicit <code>stack</code>
+written beside a bound offset is rejected with <code>PRISM_SPEC_065</code> rather
+than half-applied — the two spend the same geometry on the same
+grouping. Dodging alone needs no <code>stack</code> key at all, because the
+implicit bar/area stack yields to a bound offset. For a stack inside
+each dodged group, draw the dodged chart and split the stacking field
+out with <code>facet</code>.</p>
+<p><strong>Horizontal groups are mirrored.</strong> Prism’s <code>y</code> band scale runs
+bottom-to-top, and sub-bands run in the same direction the parent band
+assigns its own categories, so with <code>y_offset</code> the <strong>first</strong> offset
+category takes the <strong>lower</strong> sub-band of each slot. Vega-Lite’s <code>y</code>
+band runs top-to-bottom, so the identical spec placed side by side
+looks flipped. Pin the order explicitly with
+<code>"x_offset": {"scale": {"domain": [...]}}</code> (or <code>y_offset</code>) when the
+comparison matters.</p>
+<p>Sub-band ordering otherwise matches Vega-Lite: <code>scale.domain</code> first,
+then a <code>sort</code> naming categories, then a <code>sort</code> direction, then the
+distinct values ascending. See
+<a href="#offset-channels-x_offset--y_offset">Encoding › Offset channels</a>.</p>
 <h2 id="structured-transforms-d005"><a class="header" href="#structured-transforms-d005">Structured transforms (D005)</a></h2>
 <p>Prism has <strong>no expression language</strong>. Vega-Lite’s inline expression
 strings for <code>filter</code> predicates and <code>calculate</code> computed columns are
@@ -901,6 +947,185 @@ every Prism transform, composes anywhere in a chain.</p>
 </div>
 <p><code>day_of_week</code> and other component-extraction units (which return an
 ordinal, not a date) land in a follow-up.</p>
+<h2 id="unpivot-transform"><a class="header" href="#unpivot-transform">Unpivot transform</a></h2>
+<p>The <code>unpivot</code> transform reshapes wide → long: one input row carrying N
+measure columns becomes N output rows, each repeating the untouched
+remaining columns, naming the measure in a key column and carrying its
+value in a value column. It is the Vega-Lite <code>fold</code> analogue, and the
+usual way to get several wide metric columns onto one categorical
+axis (colour or dodge by the key column).</p>
+<pre><code class="language-json">{
+  "data": {"values": [
+    {"region": "east", "q1": 1, "q2": 2},
+    {"region": "west", "q1": 3, "q2": 4}
+  ]},
+  "transform": [{"unpivot": ["q1", "q2"], "as": ["quarter", "amount"]}],
+  "mark": "bar",
+  "encoding": {
+    "x": {"field": "region", "type": "nominal"},
+    "y": {"field": "amount", "type": "quantitative"},
+    "color": {"field": "quarter", "type": "nominal"}
+  }
+}
+</code></pre>
+<div class="table-wrapper">
+<table>
+<thead>
+<tr><th>Field</th><th>Required</th><th>Notes</th></tr>
+</thead>
+<tbody>
+<tr><td><code>unpivot</code></td><td>yes</td><td>Columns to stack. Each must be numeric — the value column is <code>f64</code>.</td></tr>
+<tr><td><code>as</code></td><td>no</td><td><code>[key_column, value_column]</code> output names. Defaults to <code>["key", "value"]</code>.</td></tr>
+<tr><td><code>data</code></td><td>no</td><td>Optional input alias, like every other transform.</td></tr>
+</tbody>
+</table>
+</div>
+<p>Output schema is the input schema minus the unpivoted fields, plus the
+key column (categorical, carrying the source <strong>column name</strong>) and the
+value column (numeric), in that order.</p>
+<ul>
+<li><strong>Row count</strong> is <code>input_rows × len(unpivot)</code>. The reshape multiplies
+rows, so the product is checked against <code>PRISM_TABLE_MAX_ROWS</code> before
+anything is materialised; an overflow is <code>PRISM_RESOLVE_007</code>.</li>
+<li><strong>Row order</strong> is row-major: every measure of input row 0 in <code>unpivot</code>
+declaration order, then every measure of input row 1, and so on. A
+source row’s outputs stay adjacent.</li>
+<li><strong>Nulls</strong> survive. A null measure cell produces an output row whose
+value is null — the row is not dropped and the value is never
+coerced to zero. What happens to it next is the encode-time null
+policy (see <a href="#multi-source">Multi-source</a>).</li>
+<li><strong>Types.</strong> A categorical, boolean or date column cannot fill a
+numeric value column; naming one in <code>unpivot</code> is refused with
+<code>PRISM_COMPILE_002</code> rather than yielding zeros or NaN. A key / value
+name that collides with a carried column is refused the same way —
+rename through <code>as</code>.</li>
+</ul>
+<h3 id="worked-example-wide--long--grouped-bar"><a class="header" href="#worked-example-wide--long--grouped-bar">Worked example: wide → long → grouped bar</a></h3>
+<p>The usual reason to reshape is that the stored table is <strong>wide</strong> — one
+row per series, one <em>column</em> per metric, because in the source schema
+a metric is a column and not a dimension. A grouped bar wants the
+opposite: the metric on the category axis, the series dodged inside
+each slot. <code>unpivot</code> is the step between the two, and the
+<a href="#offset-channels-x_offset--y_offset"><code>x_offset</code> channel</a>
+is what dodges the result.</p>
+<p>Start from the wide table:</p>
+<div class="table-wrapper">
+<table>
+<thead>
+<tr><th>series</th><th>awareness</th><th>consideration</th><th>familiarity</th><th>trust</th></tr>
+</thead>
+<tbody>
+<tr><td>Northwind</td><td>68</td><td>47</td><td>61</td><td>72</td></tr>
+<tr><td>Category average</td><td>54</td><td>51</td><td>57</td><td>58</td></tr>
+</tbody>
+</table>
+</div>
+<pre><code class="language-json">{
+  "$schema": "urn:prism:schema:v1:spec",
+  "data": {"values": [
+    {"series": "Northwind",        "awareness": 68, "consideration": 47, "familiarity": 61, "trust": 72},
+    {"series": "Category average", "awareness": 54, "consideration": 51, "familiarity": 57, "trust": 58}
+  ]},
+  "transform": [
+    {"unpivot": ["awareness", "consideration", "familiarity", "trust"],
+     "as": ["metric", "score"]}
+  ],
+  "mark": "bar",
+  "encoding": {
+    "x": {"field": "metric", "type": "nominal"},
+    "y": {"field": "score", "type": "quantitative"},
+    "x_offset": {
+      "field": "series",
+      "type": "nominal",
+      "scale": {"domain": ["Northwind", "Category average"]}
+    },
+    "color": {
+      "field": "series",
+      "type": "nominal",
+      "scale": {"domain": ["Northwind", "Category average"]}
+    }
+  }
+}
+</code></pre>
+<p>The transform turns 2 rows × 4 measures into 8 long rows — <code>series</code>
+carried through untouched, <code>metric</code> naming the source column, <code>score</code>
+carrying its value:</p>
+<div class="table-wrapper">
+<table>
+<thead>
+<tr><th>series</th><th>metric</th><th>score</th></tr>
+</thead>
+<tbody>
+<tr><td>Northwind</td><td>awareness</td><td>68</td></tr>
+<tr><td>Northwind</td><td>consideration</td><td>47</td></tr>
+<tr><td>Northwind</td><td>familiarity</td><td>61</td></tr>
+<tr><td>Northwind</td><td>trust</td><td>72</td></tr>
+<tr><td>Category average</td><td>awareness</td><td>54</td></tr>
+<tr><td>…</td><td>…</td><td>…</td></tr>
+</tbody>
+</table>
+</div>
+<p>Four things are worth reading off that spec:</p>
+<ul>
+<li><strong><code>series</code> survives because it is not named in <code>unpivot</code>.</strong> Every
+column the transform does not stack is repeated on each output row,
+which is what leaves a dimension for the offset channel to dodge on.</li>
+<li><strong>The x axis order is the <code>unpivot</code> declaration order.</strong> Output is
+row-major, so the first input row emits its measures in the order
+they are listed, and the band scale assigns slots first-seen from
+there. Reordering the <code>unpivot</code> list reorders the axis.</li>
+<li><strong><code>x_offset</code> and <code>color</code> bind the same field, and both pin the same
+<code>scale.domain</code>.</strong> Pinning is what keeps the legend order and the
+sub-band order in agreement, and what keeps a template’s pair order
+from moving when the underlying category set changes between
+renders — see
+<a href="#ordering-the-sub-bands">Encoding › Ordering the sub-bands</a>.</li>
+<li><strong>The bars dodge, they do not stack.</strong> Every bar keeps its own
+baseline; the offset scale subdivides the metric’s band slot and its
+padding defaults to zero, so the pair touches and together fills the
+slot.</li>
+</ul>
+<p>The rendered result is the
+<a href="gallery/transforms/unpivot_grouped_bar.prism.json"><code>unpivot_grouped_bar</code></a>
+gallery fixture.</p>
+<h2 id="pivot-transform--parses-does-not-execute"><a class="header" href="#pivot-transform--parses-does-not-execute">Pivot transform — parses, does not execute</a></h2>
+<p><code>pivot</code> is the long → wide counterpart of <code>unpivot</code>, and it is the <strong>one
+transform the spec grammar accepts that no backend can run</strong>. It decodes,
+it has a JSON Schema variant, it builds a plan node — and nothing
+implements that node’s execution.</p>
+<p>Rather than let it fail mid-pipeline, validate refuses it up front:</p>
+<pre><code>PRISM_SPEC_067: Transform "pivot" at transform[0] is accepted by the spec
+grammar but no backend can execute it.
+</code></pre>
+<p>This moved an existing failure earlier; it did not create one. Before the
+rule, a <code>pivot</code> spec validated cleanly and then died inside execute as
+<code>PRISM_COMPILE_001</code>, naming an internal node kind (<code>PivotNode</code>) the
+author never wrote. Every other transform variant executes — <code>filter</code>,
+<code>calculate</code>, <code>aggregate</code>, <code>bin</code>, <code>window</code>, <code>join</code>, <code>union</code>, <code>unpivot</code>,
+<code>sample</code>, <code>sort</code>, <code>limit</code>, <code>crosstab</code>, <code>regression</code>, <code>timeunit</code>, <code>stack</code>.
+That list is not a promise typed into a doc: <code>validate/rules/transform_executable.go</code>
+states it, and a repo gate drives one minimal spec per variant through
+the real planner and the real in-memory backend, failing just as loudly
+when a transform named there stops working as when one omitted there
+starts.</p>
+<p><strong>Use <a href="#crosstab-transform"><code>crosstab</code></a> for the same long → wide shape.</strong>
+It spreads the distinct values of one field across columns and does
+execute:</p>
+<pre><code class="language-json">{
+  "transform": [
+    {"crosstab": {
+      "rows":    [{"field": "region"}],
+      "columns": [{"field": "quarter"}],
+      "cell":    {"aggregate": "sum", "field": "revenue"}
+    }}
+  ]
+}
+</code></pre>
+<p>The general answer, when a reshape is outside what the built-in
+transforms express, is the same one Prism gives everywhere: it consumes
+already-materialized rows, so do the reshape upstream and hand it the
+finished table — inline as <code>data.values</code>, through the <code>datasets</code> block,
+or at runtime via a <code>DataResolver</code> and a <code>data: {"ref": …}</code> binding.</p>
 <h2 id="stack-transform"><a class="header" href="#stack-transform">Stack transform</a></h2>
 <p>The <code>stack</code> transform accumulates one quantitative field into per-row
 <code>[start, end]</code> bounds inside each stack, so a bar or area mark can draw
@@ -1111,7 +1336,7 @@ arcs, etc. Specify via top-level <code>mark</code> (shorthand string) or
 <tr><th>Mark</th><th>When to use</th></tr>
 </thead>
 <tbody>
-<tr><td><code>bar</code></td><td>Compare categories. The default. Stacks by segment — see <a href="#stacking">Encoding › Stacking</a>.</td></tr>
+<tr><td><code>bar</code></td><td>Compare categories. The default. Stacks by segment — see <a href="#stacking">Encoding › Stacking</a> — or draws side-by-side groups when an offset channel is bound, see <a href="#grouped-bars-dodging">Grouped bars</a>.</td></tr>
 <tr><td><code>line</code></td><td>Continuous trends; ordered x-axis.</td></tr>
 <tr><td><code>area</code></td><td>Filled trends. Supports negative values, an explicit <code>y2</code> lower edge, stacking — see <a href="#stacking">Encoding › Stacking</a> — and <a href="#orientation-markorient"><code>orient</code></a>.</td></tr>
 <tr><td><code>point</code></td><td>Scatter, dot plots.</td></tr>
@@ -1675,51 +1900,155 @@ annotates:</p>
     "x": {"field": "quarter", "type": "nominal"},
     "y": {"field": "revenue", "type": "quantitative"},
     "text": {"field": "revenue", "type": "quantitative"}
-## Orientation (`mark.orient`)
-
-A bar does not really have an "x axis" and a "y axis" — it has a
-**category** axis (the discrete band the bar sits in, which sets its
-thickness) and a **measure** axis (the continuous value, along which it
+  }
+}
+</code></pre>
+<h2 id="grouped-bars-dodging"><a class="header" href="#grouped-bars-dodging">Grouped bars (dodging)</a></h2>
+<p>A <code>bar</code> normally fills the whole band slot its category owns. Bind an
+<a href="#offset-channels-x_offset--y_offset">offset channel</a> —
+<code>x_offset</code> or <code>y_offset</code> — and the slot is cut into one sub-band per
+distinct value of the offset field, so the rows sharing a category
+draw side by side:</p>
+<pre><code class="language-json">{
+  "$schema": "urn:prism:schema:v1:spec",
+  "data": {"values": [
+    {"metric": "Awareness",     "series": "Acme",             "score": 62},
+    {"metric": "Awareness",     "series": "category average", "score": 48},
+    {"metric": "Consideration", "series": "Acme",             "score": 41},
+    {"metric": "Consideration", "series": "category average", "score": 44},
+    {"metric": "Preference",    "series": "Acme",             "score": 28},
+    {"metric": "Preference",    "series": "category average", "score": 31}
+  ]},
+  "mark": {"type": "bar"},
+  "encoding": {
+    "x":        {"field": "metric", "type": "nominal"},
+    "y":        {"field": "score",  "type": "quantitative"},
+    "x_offset": {"field": "series", "type": "nominal"},
+    "color":    {"field": "series", "type": "nominal"}
+  }
+}
+</code></pre>
+<p>Three metric slots, two bars in each: the brand’s score beside its
+category average. The sub-bands touch and together fill the slot
+exactly, so the grouped bars read as one block per metric.</p>
+<p>Runnable versions of both orientations live in the gallery:
+<a href="gallery/basic-marks/grouped_bar.prism.json">grouped_bar</a> and
+<a href="gallery/basic-marks/grouped_bar_horizontal.prism.json">grouped_bar_horizontal</a>.</p>
+<p><code>bar</code> is the <strong>only</strong> mark that draws this. Every other band-seated
+mark fills its slot with a single shape — a <code>tick</code> is one line, a
+<code>heatmap</code> cell one rect, a <code>boxplot</code> one summary of the whole
+category — so there is nothing to divide, and an offset bound on one
+of them is rejected with <code>PRISM_SPEC_063</code> rather than quietly changing
+the geometry.</p>
+<h3 id="both-orientations"><a class="header" href="#both-orientations">Both orientations</a></h3>
+<p>Dodging follows <a href="#orientation-markorient">orientation</a> like everything
+else about the mark. Put the category on <code>y</code> and the measure on <code>x</code>
+and use <code>y_offset</code>:</p>
+<pre><code class="language-json">{
+  "$schema": "urn:prism:schema:v1:spec",
+  "data": {"values": [
+    {"metric": "Awareness",     "series": "Acme",             "score": 62},
+    {"metric": "Awareness",     "series": "category average", "score": 48},
+    {"metric": "Consideration", "series": "Acme",             "score": 41},
+    {"metric": "Consideration", "series": "category average", "score": 44},
+    {"metric": "Preference",    "series": "Acme",             "score": 28},
+    {"metric": "Preference",    "series": "category average", "score": 31}
+  ]},
+  "mark": {"type": "bar"},
+  "encoding": {
+    "y":        {"field": "metric", "type": "nominal"},
+    "x":        {"field": "score",  "type": "quantitative"},
+    "y_offset": {"field": "series", "type": "nominal"},
+    "color":    {"field": "series", "type": "nominal"}
+  }
+}
+</code></pre>
+<p>The offset must sit on the <strong>band</strong> axis — the one carrying the
+categories. <code>x_offset</code> against a quantitative <code>x</code> has no slot to cut
+and is rejected with <code>PRISM_SPEC_064</code>, as is binding both offset
+channels at once.</p>
+<p>Sub-bands run in the same direction the parent band assigns its own
+categories. Prism’s <code>y</code> scale runs bottom-to-top, so in the horizontal
+form above the <strong>first</strong> offset category takes the <strong>lower</strong> sub-band
+of each slot.</p>
+<h3 id="dodging-replaces-stacking"><a class="header" href="#dodging-replaces-stacking">Dodging replaces stacking</a></h3>
+<p>A bar that would <a href="#stacking">stack</a> implicitly — aggregated
+measure, discrete grouping — stops doing so the moment an offset is
+bound. The two spend the same geometry on the same grouping: a stack
+accumulates the segments along the measure axis, a dodge spreads them
+across the category band. The offset is what the author asked for
+explicitly, so the inferred stack yields to it and no <code>stack</code> key is
+needed.</p>
+<p>Writing an explicit <code>stack</code> beside an offset is a contradiction and is
+rejected with <code>PRISM_SPEC_065</code>. Remove the <code>stack</code>, not the offset:
+dodging is the thing the spec asked for outright, and Prism refuses
+rather than drawing half of each. <code>"stack": null</code> and <code>"stack": false</code>
+are opt-outs, agree with the offset, and are accepted in silence.</p>
+<p>Prism does not combine the two on one mark. A chart that stacks within
+each dodged group is built by composition instead: draw the dodged
+chart and split the stacking field out with <code>facet</code>.</p>
+<h3 id="what-else-to-know"><a class="header" href="#what-else-to-know">What else to know</a></h3>
+<ul>
+<li>The sub-band domain is the distinct offset values across the
+<strong>whole</strong> table, so every bar is the same width and a category
+missing a series leaves that series’ sub-band empty.</li>
+<li>The offset builds <strong>no legend</strong>. Bind <code>color</code> to the same field, as
+both examples above do.</li>
+<li><code>y2</code> together with <code>x_offset</code> is a legal ranged, dodged bar; a span
+on the offset’s <em>own</em> axis is rejected with <code>PRISM_SPEC_066</code>.</li>
+<li>Sub-band order, padding, composition behaviour and the diagnostics
+are all covered in
+<a href="#offset-channels-x_offset--y_offset">Encoding › Offset channels</a>.</li>
+</ul>
+<h2 id="orientation-markorient"><a class="header" href="#orientation-markorient">Orientation (<code>mark.orient</code>)</a></h2>
+<p>A bar does not really have an “x axis” and a “y axis” — it has a
+<strong>category</strong> axis (the discrete band the bar sits in, which sets its
+thickness) and a <strong>measure</strong> axis (the continuous value, along which it
 grows from the data-zero baseline). Which physical axis plays which
-role is the mark's orientation.
-
-| `orient` | Category axis | Measure axis | Bars grow |
-|---|---|---|---|
-| `vertical` | `x` | `y` | up/down from a baseline at `y = 0` |
-| `horizontal` | `y` | `x` | right/left from a baseline at `x = 0` |
-
-The same split applies to every cartesian family, not just `bar` —
-a boxplot's band and whisker caps sit on the category axis while its
-quantiles walk the measure axis, an area's series runs along the
+role is the mark’s orientation.</p>
+<div class="table-wrapper">
+<table>
+<thead>
+<tr><th><code>orient</code></th><th>Category axis</th><th>Measure axis</th><th>Bars grow</th></tr>
+</thead>
+<tbody>
+<tr><td><code>vertical</code></td><td><code>x</code></td><td><code>y</code></td><td>up/down from a baseline at <code>y = 0</code></td></tr>
+<tr><td><code>horizontal</code></td><td><code>y</code></td><td><code>x</code></td><td>right/left from a baseline at <code>x = 0</code></td></tr>
+</tbody>
+</table>
+</div>
+<p>The same split applies to every cartesian family, not just <code>bar</code> —
+a boxplot’s band and whisker caps sit on the category axis while its
+quantiles walk the measure axis, an area’s series runs along the
 category axis and fills to a baseline on the measure axis, and a tick
-draws a short segment along the measure axis at its category's centre.
-
-### Inference
-
-**You usually do not write `orient` at all.** It is inferred from
+draws a short segment along the measure axis at its category’s centre.</p>
+<h3 id="inference"><a class="header" href="#inference">Inference</a></h3>
+<p><strong>You usually do not write <code>orient</code> at all.</strong> It is inferred from
 whichever axis carries the discrete (band) scale, the same way
-Vega-Lite infers it:
-
-| `x` scale | `y` scale | Inferred |
-|---|---|---|
-| band | continuous | `vertical` |
-| continuous | band | `horizontal` |
-| band | band | `vertical` (ambiguous; the default wins) |
-| continuous | continuous | error — neither axis can host the category |
-
-The last row holds for the marks that *need* a band to sit in (`bar`,
-`rect`, `boxplot`, `violin`, `winloss`). `area` and `tick` position
+Vega-Lite infers it:</p>
+<div class="table-wrapper">
+<table>
+<thead>
+<tr><th><code>x</code> scale</th><th><code>y</code> scale</th><th>Inferred</th></tr>
+</thead>
+<tbody>
+<tr><td>band</td><td>continuous</td><td><code>vertical</code></td></tr>
+<tr><td>continuous</td><td>band</td><td><code>horizontal</code></td></tr>
+<tr><td>band</td><td>band</td><td><code>vertical</code> (ambiguous; the default wins)</td></tr>
+<tr><td>continuous</td><td>continuous</td><td>error — neither axis can host the category</td></tr>
+</tbody>
+</table>
+</div>
+<p>The last row holds for the marks that <em>need</em> a band to sit in (<code>bar</code>,
+<code>rect</code>, <code>boxplot</code>, <code>violin</code>, <code>winloss</code>). <code>area</code> and <code>tick</code> position
 rows along an axis that is usually continuous or temporal, so two
-continuous axes are perfectly legal there and fall back to the mark's
-historic direction — `vertical` for `area`, `horizontal` for `tick`.
-An explicit `orient` still wins on those marks, and is the only way to
-draw a horizontal area.
-
-So a nominal `y` against a quantitative `x` already draws a horizontal
-bar chart:
-
-```json
-{
+continuous axes are perfectly legal there and fall back to the mark’s
+historic direction — <code>vertical</code> for <code>area</code>, <code>horizontal</code> for <code>tick</code>.
+An explicit <code>orient</code> still wins on those marks, and is the only way to
+draw a horizontal area.</p>
+<p>So a nominal <code>y</code> against a quantitative <code>x</code> already draws a horizontal
+bar chart:</p>
+<pre><code class="language-json">{
   "mark": "bar",
   "encoding": {
     "y": {"field": "channel", "type": "nominal"},
@@ -1902,6 +2231,12 @@ when every row is null.</p>
 <p>Not every channel is valid for every mark — <code>theta</code> only makes sense
 on <code>arc</code>, <code>source</code>/<code>target</code> only on <code>sankey</code>, etc. The validator
 catches mismatches with <code>PRISM_SPEC_003</code>.</p>
+<p>Three capabilities are gated by their own codes rather than by the
+general allowlist, because the mark accepts the channel’s <em>shape</em> and
+simply cannot draw what it asks for: the <a href="#span-channels">span channels</a>
+(<code>PRISM_SPEC_042</code>), <a href="#orientation-markorient"><code>mark.orient</code></a>
+(<code>PRISM_SPEC_046</code>) and the <a href="#grouped-bars-dodging">offset channels</a>
+(<code>PRISM_SPEC_063</code>). All three reject rather than ignore.</p>
 <h2 id="renderer-compatibility"><a class="header" href="#renderer-compatibility">Renderer compatibility</a></h2>
 <p>Every mark listed above renders through both Go backends
 (<code>render/svg</code> and <code>render/html</code> — see <a href="#rendering-backends">Themes: Rendering
@@ -1965,6 +2300,7 @@ instead. Start the gallery tour with:</p>
 </thead>
 <tbody>
 <tr><td>Position</td><td><code>x</code>, <code>y</code>, <code>x2</code>, <code>y2</code> (see <a href="#span-channels">Span channels</a>), <code>theta</code>, <code>radius</code></td></tr>
+<tr><td>Offset</td><td><code>x_offset</code>, <code>y_offset</code> — see <a href="#offset-channels-x_offset--y_offset">Offset channels</a></td></tr>
 <tr><td>Color &amp; opacity</td><td><code>color</code>, <code>fill</code>, <code>stroke</code>, <code>opacity</code></td></tr>
 <tr><td>Size &amp; shape</td><td><code>size</code>, <code>shape</code></td></tr>
 <tr><td>Text &amp; order</td><td><code>text</code> (see <a href="#text-channel">Text channel</a>), <code>tooltip</code>, <code>order</code> — see <a href="#order-channel">Order channel</a></td></tr>
@@ -2397,7 +2733,8 @@ orient is moot (see <a href="#hiding-an-axis-or-legend">Hiding an axis or legend
 across them first-specified-wins like every other axis property — the
 first layer that sets it decides the side, and a later layer asking
 for a different one raises <code>PRISM_WARN_AXIS_CONFIG_CONFLICT</code> and is
-ignored. Under <code>facet</code> and <code>repeat</code>, every cell renders the same child
+ignored (see <a href="#where-warnings-surface">Where warnings surface</a> for
+where that reaches you). Under <code>facet</code> and <code>repeat</code>, every cell renders the same child
 spec, so the child’s <code>orient</code> places the shared axis for the whole
 grid: a top-oriented x axis anchors to the top row instead of the
 bottom, and a right-oriented y axis to the last column instead of the
@@ -2516,7 +2853,9 @@ unreadable for the scale family, or a category the domain does not
 contain — is <strong>dropped</strong>, not drawn off-plot, and reported as
 <code>PRISM_WARN_AXIS_VALUES_DROPPED</code> listing every casualty. A dropped
 value takes its gridline with it. If the values are the ones you want,
-widen the domain with <a href="#scales"><code>scale.domain</code></a>.</p>
+widen the domain with <a href="#scales"><code>scale.domain</code></a>. The warning reaches
+you through <code>SceneDoc.Warnings</code> — see
+<a href="#where-warnings-surface">Where warnings surface</a>.</p>
 <p><strong>Pinning suppresses minor ticks.</strong> Minor ticks are midpoints of a
 generated nice sequence; an author-chosen set has no such sequence to
 halve, and inventing midpoints between arbitrary pinned values would
@@ -2892,6 +3231,247 @@ new series starts at each distinct combination:</p>
 palette entry), whereas a <code>detail</code> key is the value’s string form —
 a numeric series id groups per distinct number rather than collapsing
 into one bucket.</p>
+<h2 id="offset-channels-x_offset--y_offset"><a class="header" href="#offset-channels-x_offset--y_offset">Offset channels (<code>x_offset</code> / <code>y_offset</code>)</a></h2>
+<p><code>x_offset</code> and <code>y_offset</code> cut the band slot a category owns into
+sub-bands, so the rows sharing that category draw <strong>side by side</strong>
+instead of on top of one another. That is the grouped — or dodged —
+bar. Vega-Lite spells the channels <code>xOffset</code> / <code>yOffset</code>; Prism is
+snake_case throughout, so they are <code>x_offset</code> / <code>y_offset</code>.</p>
+<p><code>x_offset</code> subdivides <code>x</code>’s slot, <code>y_offset</code> subdivides <code>y</code>’s. Bind
+one or the other, never both: a mark dodges along a single axis, while
+the measure runs along the other.</p>
+<pre><code class="language-json">{
+  "$schema": "urn:prism:schema:v1:spec",
+  "data": {"values": [
+    {"metric": "Awareness",     "series": "Acme",             "score": 62},
+    {"metric": "Awareness",     "series": "category average", "score": 48},
+    {"metric": "Consideration", "series": "Acme",             "score": 41},
+    {"metric": "Consideration", "series": "category average", "score": 44},
+    {"metric": "Preference",    "series": "Acme",             "score": 28},
+    {"metric": "Preference",    "series": "category average", "score": 31}
+  ]},
+  "mark": {"type": "bar"},
+  "encoding": {
+    "x":        {"field": "metric", "type": "nominal"},
+    "y":        {"field": "score",  "type": "quantitative"},
+    "x_offset": {"field": "series", "type": "nominal"},
+    "color":    {"field": "series", "type": "nominal"}
+  }
+}
+</code></pre>
+<p>Three metric slots, each split in two: one bar for the brand and one
+for its category average, adjacent and equally wide. Only <code>bar</code> draws
+this geometry — see <a href="#grouped-bars-dodging">Marks › Grouped bars</a>
+for the mark-side rules and the horizontal form.</p>
+<h3 id="the-four-keys"><a class="header" href="#the-four-keys">The four keys</a></h3>
+<p>An offset channel takes <code>field</code>, <code>type</code>, <code>sort</code> and <code>scale</code>, and
+nothing else.</p>
+<div class="table-wrapper">
+<table>
+<thead>
+<tr><th>Key</th><th>Purpose</th></tr>
+</thead>
+<tbody>
+<tr><td><code>field</code></td><td>The column whose distinct values become the sub-bands. It is what makes the channel do anything: an offset object carrying no field binds nothing and behaves exactly as an absent channel.</td></tr>
+<tr><td><code>type</code></td><td><code>nominal</code> or <code>ordinal</code>. A slot is subdivided by a discrete field; <code>quantitative</code> / <code>temporal</code> describes no subdivision and is refused. Omitting the key is read as discrete.</td></tr>
+<tr><td><code>sort</code></td><td>The sub-band order: a direction (<code>"ascending"</code> / <code>"descending"</code>, with <code>"asc"</code> / <code>"desc"</code> as aliases) or an array naming the categories outright.</td></tr>
+<tr><td><code>scale</code></td><td>The sub-band scale’s own band geometry: <code>domain</code>, <code>padding</code>, <code>padding_inner</code>, <code>padding_outer</code>, <code>align</code>, <code>reverse</code>, <code>round</code>. Independent of the parent band’s own settings.</td></tr>
+</tbody>
+</table>
+</div>
+<p><strong>The omissions are the point.</strong> Reusing the <code>x</code> / <code>y</code> channel shape
+would have admitted <code>axis</code>, <code>stack</code>, <code>aggregate</code>, <code>condition</code>,
+<code>format</code>, <code>bin</code>, <code>value</code>, <code>title</code> and <code>key</code> — nine keys nothing on the
+offset path reads, which would decode, validate and then quietly do
+nothing. An unknown key inside an <code>x_offset</code> / <code>y_offset</code> object is
+rejected at decode instead. Keys on the <code>scale</code> block that describe
+something other than a band subdivision (<code>type</code>, <code>zero</code>, <code>nice</code>,
+<code>scheme</code>, <code>range</code>, …) are likewise unread there: write only the
+band-geometry keys listed above.</p>
+<h3 id="the-sub-band-domain-is-global-not-per-category"><a class="header" href="#the-sub-band-domain-is-global-not-per-category">The sub-band domain is global, not per category</a></h3>
+<p>The sub-bands come from the distinct values of the offset field across
+the <strong>whole table</strong>, not from the values present in each category.</p>
+<p>That is what makes bar widths comparable. A per-category domain would
+give a lone member of one group the full slot while a two-member group
+got half-slots each, and the eye would read the wider bar as the
+bigger number. With a global domain every group is cut the same way,
+so a series sits in the same place in every group and every bar is the
+same width — which is the one thing a grouped bar exists to make
+possible.</p>
+<p>The consequence for ragged data: a category missing a series leaves
+that series’ sub-band <strong>empty</strong>. The gap is the honest reading — the
+series has no value here — and the neighbouring bars do not widen to
+absorb it.</p>
+<h3 id="padding--sub-bands-touch-by-default"><a class="header" href="#padding--sub-bands-touch-by-default">Padding — sub-bands touch by default</a></h3>
+<p>The offset scale is a band scale in its own right, with its <strong>own</strong>
+padding, defaulting to <code>padding_inner: 0</code> and <code>padding_outer: 0</code>. The
+sub-bands therefore touch each other and together fill the parent slot
+exactly, which is the classic grouped-bar look and matches Vega-Lite’s
+offset-scale defaults.</p>
+<p>The parent band’s defaults (inner <code>0.1</code>, outer <code>0.05</code>) are untouched,
+so the spacing <em>between</em> groups and the spacing <em>within</em> a group are
+configured separately:</p>
+<pre><code class="language-json">"x":        {"field": "metric", "type": "nominal", "scale": {"padding_inner": 0.3}},
+"x_offset": {"field": "series", "type": "nominal", "scale": {"padding_inner": 0.1}}
+</code></pre>
+<p>Zero inner padding also buys a guarantee worth relying on: a field
+with a <strong>single</strong> distinct value reduces to one sub-band spanning the
+whole slot at zero displacement, so the chart is geometrically
+identical to the same spec with the offset channel removed. Any
+non-zero padding would break that.</p>
+<h3 id="it-builds-no-legend"><a class="header" href="#it-builds-no-legend">It builds no legend</a></h3>
+<p>Like <a href="#detail-channel"><code>detail</code></a>, an offset channel is a pure
+positional grouping. It consumes no palette slot, changes no colour
+and emits no legend entry — a dodged chart with nothing else bound
+draws every bar in the same fill.</p>
+<p>To name the series, bind <code>color</code> to <strong>the same field</strong>:</p>
+<pre><code class="language-json">"x_offset": {"field": "series", "type": "nominal"},
+"color":    {"field": "series", "type": "nominal"}
+</code></pre>
+<p>The legend is then built from <code>color</code> in the ordinary way. The two
+channels are resolved independently, so nothing forces them to agree:
+binding <code>color</code> to a <em>different</em> field is legal and produces bars that
+dodge by one dimension and are coloured by another.</p>
+<h3 id="ordering-the-sub-bands"><a class="header" href="#ordering-the-sub-bands">Ordering the sub-bands</a></h3>
+<p>Which series sits left and which sits right is decided by one
+precedence chain, highest first:</p>
+<div class="table-wrapper">
+<table>
+<thead>
+<tr><th>Tier</th><th>Form</th><th>Effect</th></tr>
+</thead>
+<tbody>
+<tr><td>1</td><td><code>"scale": {"domain": [...]}</code></td><td>Pins the order outright. A partial domain leads, and any value it does not name is <strong>appended</strong> after it rather than dropped.</td></tr>
+<tr><td>2</td><td><code>"sort": ["b", "a"]</code></td><td>Names the categories in order. Same append rule.</td></tr>
+<tr><td>3</td><td><code>"sort": "descending"</code></td><td>A direction over the distinct values. All four spellings are honoured.</td></tr>
+<tr><td>4</td><td>nothing</td><td>The distinct values <strong>ascending</strong>.</td></tr>
+</tbody>
+</table>
+</div>
+<p>An unrecognised <code>sort</code> spelling is an error, not a silent fall back to
+ascending.</p>
+<p>Note the default in tier 4: <strong>ascending, not first-seen table order.</strong>
+This diverges from Prism’s <code>x</code> / <code>y</code> band scales on purpose. An
+offset’s order decides which sub-band a series occupies, and deriving
+it from row order would make the same data draw differently after an
+upstream sort — an unreadable chart change with no spec change behind
+it. Ascending is also Vega-Lite’s documented default for a discrete
+channel.</p>
+<p>It does mean <strong>a chart’s category axis is in first-seen order while
+its sub-bands are alphabetical.</strong> That inconsistency is real and you
+will notice it: the metrics run along the x axis in the order the rows
+arrived, while the two series inside each slot are sorted by name. Pin
+whichever you care about.</p>
+<h4 id="stable-for-a-set-of-values-not-across-datasets"><a class="header" href="#stable-for-a-set-of-values-not-across-datasets">Stable for a set of values, not across datasets</a></h4>
+<p>This is the caveat that matters for anything rendered more than once.</p>
+<p>The ascending default is deterministic <strong>for a given set of values</strong> —
+permute the rows, add a transform, re-run the query, and the sub-bands
+stay put. It is <em>not</em> stable <strong>across datasets</strong>, and a spec written
+once as a template is run against many.</p>
+<p>Consider two sub-bands, a brand name and the literal
+<code>"category average"</code>. Ascending is byte order, and every ASCII capital
+sorts before every lowercase letter, so <code>"Zenith"</code> takes the left
+sub-band — but the same brand styled <code>"zenith"</code> takes the right one,
+and the same template, on the same chart kind, has swapped the pair.
+The order hinges on a label’s first byte.</p>
+<p>So: <strong>any chart whose category set varies between renders should pin
+<code>scale.domain</code> on the offset channel.</strong></p>
+<pre><code class="language-json">"x_offset": {
+  "field": "series",
+  "type": "nominal",
+  "scale": {"domain": ["category average", "Acme"]}
+}
+</code></pre>
+<p>Prefer <code>scale.domain</code> over <code>sort</code> for this. It is the higher-precedence
+tier, it reads as a statement of intent rather than a rule, and a
+partial domain appends unlisted categories rather than dropping their
+rows — so a series that appears for the first time next month lands on
+the end of the group instead of breaking the chart.</p>
+<h3 id="stacking-steps-aside"><a class="header" href="#stacking-steps-aside">Stacking steps aside</a></h3>
+<p>A <code>bar</code> that would <a href="#stacking">stack</a> implicitly stops doing so the
+moment an offset is bound. Stacking and dodging spend the same
+geometry on the same grouping, and the offset is the thing the author
+asked for explicitly, so the inferred stack yields to it. No <code>stack</code>
+key is needed to get grouped columns.</p>
+<p>An <strong>explicit</strong> <code>stack</code> written beside an offset is a contradiction
+and is rejected with <code>PRISM_SPEC_065</code> rather than half-honoured. Both
+opt-outs (<code>"stack": null</code> and <code>"stack": false</code>) agree with the offset
+and stay silent.</p>
+<h3 id="what-it-rejects"><a class="header" href="#what-it-rejects">What it rejects</a></h3>
+<p>Every one of these is refused with a code rather than ignored.</p>
+<div class="table-wrapper">
+<table>
+<thead>
+<tr><th>Code</th><th>Condition</th></tr>
+</thead>
+<tbody>
+<tr><td><code>PRISM_SPEC_063</code></td><td>The mark cannot dodge. Only <code>bar</code> implements the geometry; every other band-seated mark (<code>rect</code>, <code>tick</code>, <code>heatmap</code>, <code>boxplot</code>, <code>violin</code>, <code>winloss</code>, <code>progress</code>, the spark adornments) fills its slot with a single shape, so there is nothing to divide.</td></tr>
+<tr><td><code>PRISM_SPEC_064</code></td><td>The binding is incoherent: <strong>both</strong> offset channels bound, or the position channel the offset subdivides is unbound, quantitative / temporal, or declares a <code>scale.type</code> that resolves to no band. An offset needs a band slot to cut.</td></tr>
+<tr><td><code>PRISM_SPEC_065</code></td><td>An explicit <code>stack</code> on a position channel sits beside a bound offset — see above.</td></tr>
+<tr><td><code>PRISM_SPEC_066</code></td><td>A span channel claims the offset’s own axis.</td></tr>
+</tbody>
+</table>
+</div>
+<p><code>PRISM_SPEC_066</code> is <strong>per axis, and only per axis.</strong> <code>x2</code> states both
+ends of the mark along <code>x</code>, which leaves <code>x</code>’s slot with nothing to
+subdivide — so <code>x2</code> + <code>x_offset</code> is refused. The other axis is
+untouched: <strong><code>y2</code> together with <code>x_offset</code> is a legal ranged, dodged
+bar</strong>, and so is <code>x2</code> together with <code>y_offset</code>.</p>
+<p>Two shapes are decided later than the rest, because the spec alone
+cannot answer them: an offset channel declaring <code>"type": "quantitative"</code>, and a <code>sort</code> spelling nothing acts on, both surface at
+encode time as <code>PRISM_ENCODE_001</code> naming the channel. Named, but later
+than <code>PRISM_SPEC_06*</code>.</p>
+<h3 id="duplicate-sub-bands-warn"><a class="header" href="#duplicate-sub-bands-warn">Duplicate sub-bands warn</a></h3>
+<p>A sub-band is identified by the pair <em>(category value, offset value)</em>.
+Two rows carrying the same pair land on exactly the same rect, and
+only the last one drawn stays visible — the marks overlap, which is
+the one thing binding an offset was supposed to stop.</p>
+<p>Nothing geometric changes, but it is reported:
+<code>PRISM_WARN_OFFSET_COLLISION</code>, naming how many rows repeated and one
+key that did.</p>
+<p>It is unreachable once the measure channel aggregates. The synthetic
+group-by keeps both the category field and the offset field — an
+offset is a pure grouping binding, exactly like <code>detail</code> — so each
+pair yields exactly one row:</p>
+<pre><code class="language-json">"y":        {"aggregate": "mean", "field": "score", "type": "quantitative"},
+"x_offset": {"field": "series", "type": "nominal"}
+</code></pre>
+<p>Raw, un-aggregated tables are the only place duplicates survive to
+encode.</p>
+<h3 id="where-warnings-surface"><a class="header" href="#where-warnings-surface">Where warnings surface</a></h3>
+<p><code>PRISM_WARN_OFFSET_COLLISION</code> and
+<code>PRISM_WARN_OFFSET_CONFIG_CONFLICT</code> — and every other <code>PRISM_WARN_*</code>
+this page mentions — land on <strong><code>SceneDoc.Warnings</code></strong>, surfaced as
+<code>CompiledPlan.Diagnostics</code> from the Go API.</p>
+<ul>
+<li><code>prism plot</code> and <code>prism scene</code> print them to <strong>stderr</strong>, so a CLI
+user sees them without asking.</li>
+<li><code>prism scene</code> also writes them into the Scene IR document itself,
+as its <code>warnings</code> array, so a consumer of that JSON gets them for
+free. (<code>prism validate</code> does not: it runs no rows, so an
+encode-time warning has not happened yet.)</li>
+<li><strong>A library embedder sees nothing unless it reads the field.</strong> A
+host that holds a <code>CompiledPlan</code>, hands <code>plan.Scene</code> to a renderer
+and never touches <code>plan.Diagnostics</code> drops every warning on the
+floor — including <code>PRISM_WARN_NULL_DROPPED</code>, which means rows have
+silently left the chart.</li>
+</ul>
+<p>If you embed Prism, read the diagnostics and log them. A warning is
+only as good as the consumer reading it.</p>
+<h3 id="under-composition"><a class="header" href="#under-composition">Under composition</a></h3>
+<p>An offset scale is <strong>shared by default</strong> across the children of a
+<code>layer</code> and the cells of a <code>facet</code>, exactly as <code>x</code> and <code>y</code> are, so a
+series sits in the same sub-band in every layer and every cell even
+when a child binds only some of the values. Opt out per channel:</p>
+<pre><code class="language-json">"resolve": {"scale": {"x_offset": "independent"}}
+</code></pre>
+<p><code>concat</code> / <code>hconcat</code> / <code>vconcat</code> / <code>repeat</code> cells are separate charts
+with their own position scales, so their offsets are independent too —
+there is nothing to opt out of. Children that describe a shared offset
+differently fold first-specified-wins per property and raise
+<code>PRISM_WARN_OFFSET_CONFIG_CONFLICT</code>; it is never settled in silence.
+See <a href="#offset-dodge-scales">Composition › Offset (dodge) scales</a>
+for the full rule.</p>
 <h2 id="stacking"><a class="header" href="#stacking">Stacking</a></h2>
 <p>A <code>bar</code> or <code>area</code> whose measure channel is <strong>aggregated</strong> and whose
 marks are split by a grouping channel (<code>color</code> or <code>detail</code>) stacks by
@@ -2919,6 +3499,11 @@ the shorter ones.</p>
 </tbody>
 </table>
 </div>
+<p>Stacking and dodging are alternatives, not layers: binding an
+<a href="#offset-channels-x_offset--y_offset">offset channel</a> suppresses the
+implicit stack above, and an <strong>explicit</strong> <code>stack</code> written beside an
+offset is rejected with <code>PRISM_SPEC_065</code> rather than half-applied.
+<code>"stack": null</code> / <code>false</code> agree with the offset and stay silent.</p>
 <p>Semantics:</p>
 <div class="table-wrapper">
 <table>
@@ -2931,7 +3516,7 @@ the shorter ones.</p>
 <tr><td>Segment order</td><td>First-appearance order of the (colour, detail…) tuple across the whole table — the same order the mark partitioner and the legend use, so a segment sits in the same slot in every stack. A centred stack reorders inside-out instead; see below.</td></tr>
 <tr><td>Axis domain</td><td>The stacked totals reach scale resolution, so the measure axis spans <code>0…sum</code>, not <code>0…max</code>.</td></tr>
 <tr><td>Negatives</td><td>Positive and negative values accumulate independently from zero, so a mixed-sign stack grows in both directions.</td></tr>
-<tr><td>Opt-outs</td><td>An explicit <code>x2</code> / <code>y2</code> span wins (the mark already knows both edges), as does a non-linear measure scale.</td></tr>
+<tr><td>Opt-outs</td><td>An explicit <code>x2</code> / <code>y2</code> span wins (the mark already knows both edges), as does a non-linear measure scale, as does a bound <a href="#offset-channels-x_offset--y_offset">offset channel</a> — a dodged mark already spends the band slot on its grouping.</td></tr>
 </tbody>
 </table>
 </div>
@@ -3231,20 +3816,52 @@ fallback, so a per-cell fill override on a bar chart should target
 orthogonal to <code>resolve.scale</code> below — a per-cell theme override never
 changes whether scales/axes are shared or independent across cells.</p>
 <h2 id="scale-resolution"><a class="header" href="#scale-resolution">Scale resolution</a></h2>
-<p><code>resolve.scale.{x,y,color,size}</code> controls cross-cell scale sharing:</p>
+<p><code>resolve.scale.{x,y,x_offset,y_offset,color,size}</code> controls cross-cell
+scale sharing:</p>
 <div class="table-wrapper">
 <table>
 <thead>
 <tr><th>Value</th><th>Behavior</th></tr>
 </thead>
 <tbody>
-<tr><td><code>shared</code> (default for x/y)</td><td>Union of domains across cells/layers, single axis.</td></tr>
+<tr><td><code>shared</code> (default for x/y and x_offset/y_offset)</td><td>Union of domains across cells/layers, single axis.</td></tr>
 <tr><td><code>independent</code> (default for color)</td><td>Per-cell domains, per-cell axes.</td></tr>
 </tbody>
 </table>
 </div>
 <p>Mixing incompatible types on a shared scale (quantitative + nominal)
 raises <code>PRISM_PLAN_005</code>.</p>
+<h3 id="offset-dodge-scales"><a class="header" href="#offset-dodge-scales">Offset (dodge) scales</a></h3>
+<p><code>x_offset</code> / <code>y_offset</code> subdivide a category’s band slot so rows
+sharing that category draw side by side. They resolve <strong>shared by
+default</strong>, exactly as <code>x</code> and <code>y</code> do, and for the same reason: two
+children that divide one slot differently produce marks that do not
+line up, which reads as a rendering fault rather than a configuration
+one. A child that binds only two of three series still reserves three
+sub-bands, so a bar is the same width everywhere and a series sits in
+the same place in every layer and every facet cell.</p>
+<p>What is shared is the sub-band <strong>order</strong>, not a scale object — an
+offset scale’s range is the parent band width of the cell being drawn,
+so only the domain can be resolved once. The order comes from the
+usual precedence chain, applied to the union of every child’s values:
+<code>scale.domain</code>, then a <code>sort</code> naming categories, then a <code>sort</code>
+direction, then the distinct values ascending.</p>
+<p>Children that describe the shared offset scale differently are folded
+<strong>first specified wins, per property</strong> — the same rule a shared axis
+uses — and a disagreement raises <code>PRISM_WARN_OFFSET_CONFIG_CONFLICT</code>
+naming the channel, the property, the winning child and the ignored
+value. It is never settled in silence.</p>
+<pre><code class="language-json">{
+  "resolve": {"scale": {"x_offset": "independent"}}
+}
+</code></pre>
+<p>opts out, and each child divides its band slot from its own rows.
+<code>concat</code> / <code>hconcat</code> / <code>vconcat</code> / <code>repeat</code> cells are separate charts
+with their own position scales, so their offsets are independent too;
+the fold applies to <code>layer</code> and <code>facet</code>.</p>
+<p>Warnings land on <code>SceneDoc.Warnings</code> (<code>CompiledPlan.Diagnostics</code> from
+the Go API). <code>prism plot</code> and <code>prism scene</code> print them to stderr; a
+library embedder sees nothing unless it reads the field.</p>
 <h2 id="axis-config-under-shared-vs-independent-scales"><a class="header" href="#axis-config-under-shared-vs-independent-scales">Axis config under shared vs independent scales</a></h2>
 <p>A channel’s <code>axis</code> block (<code>grid</code>, <code>title</code>, <code>label_angle</code>,
 <code>label_overlap</code>, <code>format</code>, …) is honoured under <strong>both</strong> resolve modes —
@@ -6544,7 +7161,7 @@ debounces keystrokes, marshals JSON across the bridge, and updates
 the DOM.</p>
 <div style="break-before: page; page-break-before: always;"></div>
 <h1 id="prism-gallery"><a class="header" href="#prism-gallery">Prism Gallery</a></h1>
-<p>126 fixture specs across 18 categories. Each entry pairs a <code>*.prism.json</code>
+<p>129 fixture specs across 18 categories. Each entry pairs a <code>*.prism.json</code>
 spec with a rendered <code>*.svg</code>. Browse the source to learn the spec
 shapes; open the SVGs to see what they render. The <code>table/</code> fixtures
 are one exception — a top-level <code>table</code> mark renders only through
@@ -6583,6 +7200,8 @@ that section for why.</p>
 <tr><td><a href="gallery/basic-marks/area_horizontal.prism.json">area_horizontal</a></td><td><img src="gallery/basic-marks/area_horizontal.svg" width="240"></td></tr>
 <tr><td><a href="gallery/basic-marks/tick_strip_horizontal.prism.json">tick_strip_horizontal</a></td><td><img src="gallery/basic-marks/tick_strip_horizontal.svg" width="240"></td></tr>
 <tr><td><a href="gallery/basic-marks/streamgraph.prism.json">streamgraph</a></td><td><img src="gallery/basic-marks/streamgraph.svg" width="240"></td></tr>
+<tr><td><a href="gallery/basic-marks/grouped_bar.prism.json">grouped_bar</a></td><td><img src="gallery/basic-marks/grouped_bar.svg" width="240"></td></tr>
+<tr><td><a href="gallery/basic-marks/grouped_bar_horizontal.prism.json">grouped_bar_horizontal</a></td><td><img src="gallery/basic-marks/grouped_bar_horizontal.svg" width="240"></td></tr>
 </tbody>
 </table>
 </div>
@@ -6756,6 +7375,7 @@ source.</p>
 <tr><td><a href="gallery/transforms/filter_structured.prism.json">filter_structured</a></td><td><img src="gallery/transforms/filter_structured.svg" width="240"></td></tr>
 <tr><td><a href="gallery/transforms/calculate_structured.prism.json">calculate_structured</a></td><td><img src="gallery/transforms/calculate_structured.svg" width="240"></td></tr>
 <tr><td><a href="gallery/transforms/stack_explicit.prism.json">stack_explicit</a></td><td><img src="gallery/transforms/stack_explicit.svg" width="240"></td></tr>
+<tr><td><a href="gallery/transforms/unpivot_grouped_bar.prism.json">unpivot_grouped_bar</a></td><td><img src="gallery/transforms/unpivot_grouped_bar.svg" width="240"></td></tr>
 </tbody>
 </table>
 </div>

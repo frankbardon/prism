@@ -36,7 +36,7 @@
             const path_to_root = "../";
             const default_light_theme = "navy";
             const default_dark_theme = "navy";
-            window.path_to_searchindex_js = "../searchindex-19c653e4.js";
+            window.path_to_searchindex_js = "../searchindex-587554bb.js";
         </script>
         <!-- Start loading toc.js asap -->
         <script src="../toc-a4924ec0.js"></script>
@@ -334,20 +334,52 @@ fallback, so a per-cell fill override on a bar chart should target
 orthogonal to <code>resolve.scale</code> below — a per-cell theme override never
 changes whether scales/axes are shared or independent across cells.</p>
 <h2 id="scale-resolution"><a class="header" href="#scale-resolution">Scale resolution</a></h2>
-<p><code>resolve.scale.{x,y,color,size}</code> controls cross-cell scale sharing:</p>
+<p><code>resolve.scale.{x,y,x_offset,y_offset,color,size}</code> controls cross-cell
+scale sharing:</p>
 <div class="table-wrapper">
 <table>
 <thead>
 <tr><th>Value</th><th>Behavior</th></tr>
 </thead>
 <tbody>
-<tr><td><code>shared</code> (default for x/y)</td><td>Union of domains across cells/layers, single axis.</td></tr>
+<tr><td><code>shared</code> (default for x/y and x_offset/y_offset)</td><td>Union of domains across cells/layers, single axis.</td></tr>
 <tr><td><code>independent</code> (default for color)</td><td>Per-cell domains, per-cell axes.</td></tr>
 </tbody>
 </table>
 </div>
 <p>Mixing incompatible types on a shared scale (quantitative + nominal)
 raises <code>PRISM_PLAN_005</code>.</p>
+<h3 id="offset-dodge-scales"><a class="header" href="#offset-dodge-scales">Offset (dodge) scales</a></h3>
+<p><code>x_offset</code> / <code>y_offset</code> subdivide a category’s band slot so rows
+sharing that category draw side by side. They resolve <strong>shared by
+default</strong>, exactly as <code>x</code> and <code>y</code> do, and for the same reason: two
+children that divide one slot differently produce marks that do not
+line up, which reads as a rendering fault rather than a configuration
+one. A child that binds only two of three series still reserves three
+sub-bands, so a bar is the same width everywhere and a series sits in
+the same place in every layer and every facet cell.</p>
+<p>What is shared is the sub-band <strong>order</strong>, not a scale object — an
+offset scale’s range is the parent band width of the cell being drawn,
+so only the domain can be resolved once. The order comes from the
+usual precedence chain, applied to the union of every child’s values:
+<code>scale.domain</code>, then a <code>sort</code> naming categories, then a <code>sort</code>
+direction, then the distinct values ascending.</p>
+<p>Children that describe the shared offset scale differently are folded
+<strong>first specified wins, per property</strong> — the same rule a shared axis
+uses — and a disagreement raises <code>PRISM_WARN_OFFSET_CONFIG_CONFLICT</code>
+naming the channel, the property, the winning child and the ignored
+value. It is never settled in silence.</p>
+<pre><code class="language-json">{
+  "resolve": {"scale": {"x_offset": "independent"}}
+}
+</code></pre>
+<p>opts out, and each child divides its band slot from its own rows.
+<code>concat</code> / <code>hconcat</code> / <code>vconcat</code> / <code>repeat</code> cells are separate charts
+with their own position scales, so their offsets are independent too;
+the fold applies to <code>layer</code> and <code>facet</code>.</p>
+<p>Warnings land on <code>SceneDoc.Warnings</code> (<code>CompiledPlan.Diagnostics</code> from
+the Go API). <code>prism plot</code> and <code>prism scene</code> print them to stderr; a
+library embedder sees nothing unless it reads the field.</p>
 <h2 id="axis-config-under-shared-vs-independent-scales"><a class="header" href="#axis-config-under-shared-vs-independent-scales">Axis config under shared vs independent scales</a></h2>
 <p>A channel’s <code>axis</code> block (<code>grid</code>, <code>title</code>, <code>label_angle</code>,
 <code>label_overlap</code>, <code>format</code>, …) is honoured under <strong>both</strong> resolve modes —

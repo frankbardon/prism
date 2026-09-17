@@ -36,7 +36,7 @@
             const path_to_root = "../";
             const default_light_theme = "navy";
             const default_dark_theme = "navy";
-            window.path_to_searchindex_js = "../searchindex-19c653e4.js";
+            window.path_to_searchindex_js = "../searchindex-587554bb.js";
         </script>
         <!-- Start loading toc.js asap -->
         <script src="../toc-a4924ec0.js"></script>
@@ -193,7 +193,7 @@ arcs, etc. Specify via top-level <code>mark</code> (shorthand string) or
 <tr><th>Mark</th><th>When to use</th></tr>
 </thead>
 <tbody>
-<tr><td><code>bar</code></td><td>Compare categories. The default. Stacks by segment — see <a href="encoding.html#stacking">Encoding › Stacking</a>.</td></tr>
+<tr><td><code>bar</code></td><td>Compare categories. The default. Stacks by segment — see <a href="encoding.html#stacking">Encoding › Stacking</a> — or draws side-by-side groups when an offset channel is bound, see <a href="#grouped-bars-dodging">Grouped bars</a>.</td></tr>
 <tr><td><code>line</code></td><td>Continuous trends; ordered x-axis.</td></tr>
 <tr><td><code>area</code></td><td>Filled trends. Supports negative values, an explicit <code>y2</code> lower edge, stacking — see <a href="encoding.html#stacking">Encoding › Stacking</a> — and <a href="#orientation-markorient"><code>orient</code></a>.</td></tr>
 <tr><td><code>point</code></td><td>Scatter, dot plots.</td></tr>
@@ -757,51 +757,155 @@ annotates:</p>
     "x": {"field": "quarter", "type": "nominal"},
     "y": {"field": "revenue", "type": "quantitative"},
     "text": {"field": "revenue", "type": "quantitative"}
-## Orientation (`mark.orient`)
-
-A bar does not really have an "x axis" and a "y axis" — it has a
-**category** axis (the discrete band the bar sits in, which sets its
-thickness) and a **measure** axis (the continuous value, along which it
+  }
+}
+</code></pre>
+<h2 id="grouped-bars-dodging"><a class="header" href="#grouped-bars-dodging">Grouped bars (dodging)</a></h2>
+<p>A <code>bar</code> normally fills the whole band slot its category owns. Bind an
+<a href="encoding.html#offset-channels-x_offset--y_offset">offset channel</a> —
+<code>x_offset</code> or <code>y_offset</code> — and the slot is cut into one sub-band per
+distinct value of the offset field, so the rows sharing a category
+draw side by side:</p>
+<pre><code class="language-json">{
+  "$schema": "urn:prism:schema:v1:spec",
+  "data": {"values": [
+    {"metric": "Awareness",     "series": "Acme",             "score": 62},
+    {"metric": "Awareness",     "series": "category average", "score": 48},
+    {"metric": "Consideration", "series": "Acme",             "score": 41},
+    {"metric": "Consideration", "series": "category average", "score": 44},
+    {"metric": "Preference",    "series": "Acme",             "score": 28},
+    {"metric": "Preference",    "series": "category average", "score": 31}
+  ]},
+  "mark": {"type": "bar"},
+  "encoding": {
+    "x":        {"field": "metric", "type": "nominal"},
+    "y":        {"field": "score",  "type": "quantitative"},
+    "x_offset": {"field": "series", "type": "nominal"},
+    "color":    {"field": "series", "type": "nominal"}
+  }
+}
+</code></pre>
+<p>Three metric slots, two bars in each: the brand’s score beside its
+category average. The sub-bands touch and together fill the slot
+exactly, so the grouped bars read as one block per metric.</p>
+<p>Runnable versions of both orientations live in the gallery:
+<a href="../gallery/basic-marks/grouped_bar.prism.json">grouped_bar</a> and
+<a href="../gallery/basic-marks/grouped_bar_horizontal.prism.json">grouped_bar_horizontal</a>.</p>
+<p><code>bar</code> is the <strong>only</strong> mark that draws this. Every other band-seated
+mark fills its slot with a single shape — a <code>tick</code> is one line, a
+<code>heatmap</code> cell one rect, a <code>boxplot</code> one summary of the whole
+category — so there is nothing to divide, and an offset bound on one
+of them is rejected with <code>PRISM_SPEC_063</code> rather than quietly changing
+the geometry.</p>
+<h3 id="both-orientations"><a class="header" href="#both-orientations">Both orientations</a></h3>
+<p>Dodging follows <a href="#orientation-markorient">orientation</a> like everything
+else about the mark. Put the category on <code>y</code> and the measure on <code>x</code>
+and use <code>y_offset</code>:</p>
+<pre><code class="language-json">{
+  "$schema": "urn:prism:schema:v1:spec",
+  "data": {"values": [
+    {"metric": "Awareness",     "series": "Acme",             "score": 62},
+    {"metric": "Awareness",     "series": "category average", "score": 48},
+    {"metric": "Consideration", "series": "Acme",             "score": 41},
+    {"metric": "Consideration", "series": "category average", "score": 44},
+    {"metric": "Preference",    "series": "Acme",             "score": 28},
+    {"metric": "Preference",    "series": "category average", "score": 31}
+  ]},
+  "mark": {"type": "bar"},
+  "encoding": {
+    "y":        {"field": "metric", "type": "nominal"},
+    "x":        {"field": "score",  "type": "quantitative"},
+    "y_offset": {"field": "series", "type": "nominal"},
+    "color":    {"field": "series", "type": "nominal"}
+  }
+}
+</code></pre>
+<p>The offset must sit on the <strong>band</strong> axis — the one carrying the
+categories. <code>x_offset</code> against a quantitative <code>x</code> has no slot to cut
+and is rejected with <code>PRISM_SPEC_064</code>, as is binding both offset
+channels at once.</p>
+<p>Sub-bands run in the same direction the parent band assigns its own
+categories. Prism’s <code>y</code> scale runs bottom-to-top, so in the horizontal
+form above the <strong>first</strong> offset category takes the <strong>lower</strong> sub-band
+of each slot.</p>
+<h3 id="dodging-replaces-stacking"><a class="header" href="#dodging-replaces-stacking">Dodging replaces stacking</a></h3>
+<p>A bar that would <a href="encoding.html#stacking">stack</a> implicitly — aggregated
+measure, discrete grouping — stops doing so the moment an offset is
+bound. The two spend the same geometry on the same grouping: a stack
+accumulates the segments along the measure axis, a dodge spreads them
+across the category band. The offset is what the author asked for
+explicitly, so the inferred stack yields to it and no <code>stack</code> key is
+needed.</p>
+<p>Writing an explicit <code>stack</code> beside an offset is a contradiction and is
+rejected with <code>PRISM_SPEC_065</code>. Remove the <code>stack</code>, not the offset:
+dodging is the thing the spec asked for outright, and Prism refuses
+rather than drawing half of each. <code>"stack": null</code> and <code>"stack": false</code>
+are opt-outs, agree with the offset, and are accepted in silence.</p>
+<p>Prism does not combine the two on one mark. A chart that stacks within
+each dodged group is built by composition instead: draw the dodged
+chart and split the stacking field out with <code>facet</code>.</p>
+<h3 id="what-else-to-know"><a class="header" href="#what-else-to-know">What else to know</a></h3>
+<ul>
+<li>The sub-band domain is the distinct offset values across the
+<strong>whole</strong> table, so every bar is the same width and a category
+missing a series leaves that series’ sub-band empty.</li>
+<li>The offset builds <strong>no legend</strong>. Bind <code>color</code> to the same field, as
+both examples above do.</li>
+<li><code>y2</code> together with <code>x_offset</code> is a legal ranged, dodged bar; a span
+on the offset’s <em>own</em> axis is rejected with <code>PRISM_SPEC_066</code>.</li>
+<li>Sub-band order, padding, composition behaviour and the diagnostics
+are all covered in
+<a href="encoding.html#offset-channels-x_offset--y_offset">Encoding › Offset channels</a>.</li>
+</ul>
+<h2 id="orientation-markorient"><a class="header" href="#orientation-markorient">Orientation (<code>mark.orient</code>)</a></h2>
+<p>A bar does not really have an “x axis” and a “y axis” — it has a
+<strong>category</strong> axis (the discrete band the bar sits in, which sets its
+thickness) and a <strong>measure</strong> axis (the continuous value, along which it
 grows from the data-zero baseline). Which physical axis plays which
-role is the mark's orientation.
-
-| `orient` | Category axis | Measure axis | Bars grow |
-|---|---|---|---|
-| `vertical` | `x` | `y` | up/down from a baseline at `y = 0` |
-| `horizontal` | `y` | `x` | right/left from a baseline at `x = 0` |
-
-The same split applies to every cartesian family, not just `bar` —
-a boxplot's band and whisker caps sit on the category axis while its
-quantiles walk the measure axis, an area's series runs along the
+role is the mark’s orientation.</p>
+<div class="table-wrapper">
+<table>
+<thead>
+<tr><th><code>orient</code></th><th>Category axis</th><th>Measure axis</th><th>Bars grow</th></tr>
+</thead>
+<tbody>
+<tr><td><code>vertical</code></td><td><code>x</code></td><td><code>y</code></td><td>up/down from a baseline at <code>y = 0</code></td></tr>
+<tr><td><code>horizontal</code></td><td><code>y</code></td><td><code>x</code></td><td>right/left from a baseline at <code>x = 0</code></td></tr>
+</tbody>
+</table>
+</div>
+<p>The same split applies to every cartesian family, not just <code>bar</code> —
+a boxplot’s band and whisker caps sit on the category axis while its
+quantiles walk the measure axis, an area’s series runs along the
 category axis and fills to a baseline on the measure axis, and a tick
-draws a short segment along the measure axis at its category's centre.
-
-### Inference
-
-**You usually do not write `orient` at all.** It is inferred from
+draws a short segment along the measure axis at its category’s centre.</p>
+<h3 id="inference"><a class="header" href="#inference">Inference</a></h3>
+<p><strong>You usually do not write <code>orient</code> at all.</strong> It is inferred from
 whichever axis carries the discrete (band) scale, the same way
-Vega-Lite infers it:
-
-| `x` scale | `y` scale | Inferred |
-|---|---|---|
-| band | continuous | `vertical` |
-| continuous | band | `horizontal` |
-| band | band | `vertical` (ambiguous; the default wins) |
-| continuous | continuous | error — neither axis can host the category |
-
-The last row holds for the marks that *need* a band to sit in (`bar`,
-`rect`, `boxplot`, `violin`, `winloss`). `area` and `tick` position
+Vega-Lite infers it:</p>
+<div class="table-wrapper">
+<table>
+<thead>
+<tr><th><code>x</code> scale</th><th><code>y</code> scale</th><th>Inferred</th></tr>
+</thead>
+<tbody>
+<tr><td>band</td><td>continuous</td><td><code>vertical</code></td></tr>
+<tr><td>continuous</td><td>band</td><td><code>horizontal</code></td></tr>
+<tr><td>band</td><td>band</td><td><code>vertical</code> (ambiguous; the default wins)</td></tr>
+<tr><td>continuous</td><td>continuous</td><td>error — neither axis can host the category</td></tr>
+</tbody>
+</table>
+</div>
+<p>The last row holds for the marks that <em>need</em> a band to sit in (<code>bar</code>,
+<code>rect</code>, <code>boxplot</code>, <code>violin</code>, <code>winloss</code>). <code>area</code> and <code>tick</code> position
 rows along an axis that is usually continuous or temporal, so two
-continuous axes are perfectly legal there and fall back to the mark's
-historic direction — `vertical` for `area`, `horizontal` for `tick`.
-An explicit `orient` still wins on those marks, and is the only way to
-draw a horizontal area.
-
-So a nominal `y` against a quantitative `x` already draws a horizontal
-bar chart:
-
-```json
-{
+continuous axes are perfectly legal there and fall back to the mark’s
+historic direction — <code>vertical</code> for <code>area</code>, <code>horizontal</code> for <code>tick</code>.
+An explicit <code>orient</code> still wins on those marks, and is the only way to
+draw a horizontal area.</p>
+<p>So a nominal <code>y</code> against a quantitative <code>x</code> already draws a horizontal
+bar chart:</p>
+<pre><code class="language-json">{
   "mark": "bar",
   "encoding": {
     "y": {"field": "channel", "type": "nominal"},
@@ -984,6 +1088,12 @@ when every row is null.</p>
 <p>Not every channel is valid for every mark — <code>theta</code> only makes sense
 on <code>arc</code>, <code>source</code>/<code>target</code> only on <code>sankey</code>, etc. The validator
 catches mismatches with <code>PRISM_SPEC_003</code>.</p>
+<p>Three capabilities are gated by their own codes rather than by the
+general allowlist, because the mark accepts the channel’s <em>shape</em> and
+simply cannot draw what it asks for: the <a href="encoding.html#span-channels">span channels</a>
+(<code>PRISM_SPEC_042</code>), <a href="#orientation-markorient"><code>mark.orient</code></a>
+(<code>PRISM_SPEC_046</code>) and the <a href="#grouped-bars-dodging">offset channels</a>
+(<code>PRISM_SPEC_063</code>). All three reject rather than ignore.</p>
 <h2 id="renderer-compatibility"><a class="header" href="#renderer-compatibility">Renderer compatibility</a></h2>
 <p>Every mark listed above renders through both Go backends
 (<code>render/svg</code> and <code>render/html</code> — see <a href="themes.html#rendering-backends">Themes: Rendering

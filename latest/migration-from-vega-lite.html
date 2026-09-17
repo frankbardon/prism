@@ -36,7 +36,7 @@
             const path_to_root = "";
             const default_light_theme = "navy";
             const default_dark_theme = "navy";
-            window.path_to_searchindex_js = "searchindex-19c653e4.js";
+            window.path_to_searchindex_js = "searchindex-587554bb.js";
         </script>
         <!-- Start loading toc.js asap -->
         <script src="toc-a4924ec0.js"></script>
@@ -203,6 +203,7 @@ guide to port specs in minutes.</p>
 <tr><td><code>layer</code>, <code>concat</code>, <code>facet</code>, <code>repeat</code></td><td>same</td><td>full composition v1</td></tr>
 <tr><td><code>condition</code> encodings</td><td>same shape</td><td>selection + test predicate conditions supported</td></tr>
 <tr><td><code>strokeWidth</code> (camelCase)</td><td><code>stroke_width</code></td><td>snake_case throughout</td></tr>
+<tr><td><code>xOffset</code> / <code>yOffset</code></td><td><code>x_offset</code> / <code>y_offset</code></td><td>snake_case; same grouped-bar primitive — see <a href="#offset-dodge-channels">Offset (dodge) channels</a></td></tr>
 <tr><td>Vega expression language</td><td>structured <code>filter</code> / <code>calculate</code> built-ins</td><td>no expression language, no JS eval</td></tr>
 </tbody>
 </table>
@@ -222,9 +223,54 @@ Vega-Lite vocabulary (<code>mark</code>, <code>encoding</code>, <code>transform<
 <tr><td><code>fontSize</code></td><td><code>font_size</code></td></tr>
 <tr><td><code>tickCount</code></td><td><code>tick_count</code></td></tr>
 <tr><td><code>labelOverlap</code></td><td><code>label_overlap</code></td></tr>
+<tr><td><code>xOffset</code></td><td><code>x_offset</code></td></tr>
+<tr><td><code>yOffset</code></td><td><code>y_offset</code></td></tr>
 </tbody>
 </table>
 </div>
+<h2 id="offset-dodge-channels"><a class="header" href="#offset-dodge-channels">Offset (dodge) channels</a></h2>
+<p>Vega-Lite’s <code>xOffset</code> / <code>yOffset</code> are <code>x_offset</code> / <code>y_offset</code> here —
+the same grouped-bar primitive, renamed by the snake_case rule above.
+The camelCase spelling is <strong>rejected at decode</strong> (<code>PRISM_SPEC_009</code>,
+unknown field), never silently dropped, so a ported spec tells you
+immediately rather than rendering an ungrouped chart.</p>
+<pre><code class="language-json">{
+  "$schema": "urn:prism:schema:v1:spec",
+  "data": {"values": [
+    {"metric": "Awareness",     "series": "Acme",             "score": 62},
+    {"metric": "Awareness",     "series": "category average", "score": 48},
+    {"metric": "Consideration", "series": "Acme",             "score": 41},
+    {"metric": "Consideration", "series": "category average", "score": 44}
+  ]},
+  "mark": {"type": "bar"},
+  "encoding": {
+    "x":        {"field": "metric", "type": "nominal"},
+    "y":        {"field": "score",  "type": "quantitative"},
+    "x_offset": {"field": "series", "type": "nominal"},
+    "color":    {"field": "series", "type": "nominal"}
+  }
+}
+</code></pre>
+<p>Two behavioural divergences to know before porting a dodged chart:</p>
+<p><strong>Grouped <em>and</em> stacked bars are not supported.</strong> An explicit <code>stack</code>
+written beside a bound offset is rejected with <code>PRISM_SPEC_065</code> rather
+than half-applied — the two spend the same geometry on the same
+grouping. Dodging alone needs no <code>stack</code> key at all, because the
+implicit bar/area stack yields to a bound offset. For a stack inside
+each dodged group, draw the dodged chart and split the stacking field
+out with <code>facet</code>.</p>
+<p><strong>Horizontal groups are mirrored.</strong> Prism’s <code>y</code> band scale runs
+bottom-to-top, and sub-bands run in the same direction the parent band
+assigns its own categories, so with <code>y_offset</code> the <strong>first</strong> offset
+category takes the <strong>lower</strong> sub-band of each slot. Vega-Lite’s <code>y</code>
+band runs top-to-bottom, so the identical spec placed side by side
+looks flipped. Pin the order explicitly with
+<code>"x_offset": {"scale": {"domain": [...]}}</code> (or <code>y_offset</code>) when the
+comparison matters.</p>
+<p>Sub-band ordering otherwise matches Vega-Lite: <code>scale.domain</code> first,
+then a <code>sort</code> naming categories, then a <code>sort</code> direction, then the
+distinct values ascending. See
+<a href="concepts/encoding.html#offset-channels-x_offset--y_offset">Encoding › Offset channels</a>.</p>
 <h2 id="structured-transforms-d005"><a class="header" href="#structured-transforms-d005">Structured transforms (D005)</a></h2>
 <p>Prism has <strong>no expression language</strong>. Vega-Lite’s inline expression
 strings for <code>filter</code> predicates and <code>calculate</code> computed columns are

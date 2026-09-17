@@ -36,7 +36,7 @@
             const path_to_root = "../";
             const default_light_theme = "navy";
             const default_dark_theme = "navy";
-            window.path_to_searchindex_js = "../searchindex-19c653e4.js";
+            window.path_to_searchindex_js = "../searchindex-587554bb.js";
         </script>
         <!-- Start loading toc.js asap -->
         <script src="../toc-a4924ec0.js"></script>
@@ -600,6 +600,185 @@ every Prism transform, composes anywhere in a chain.</p>
 </div>
 <p><code>day_of_week</code> and other component-extraction units (which return an
 ordinal, not a date) land in a follow-up.</p>
+<h2 id="unpivot-transform"><a class="header" href="#unpivot-transform">Unpivot transform</a></h2>
+<p>The <code>unpivot</code> transform reshapes wide → long: one input row carrying N
+measure columns becomes N output rows, each repeating the untouched
+remaining columns, naming the measure in a key column and carrying its
+value in a value column. It is the Vega-Lite <code>fold</code> analogue, and the
+usual way to get several wide metric columns onto one categorical
+axis (colour or dodge by the key column).</p>
+<pre><code class="language-json">{
+  "data": {"values": [
+    {"region": "east", "q1": 1, "q2": 2},
+    {"region": "west", "q1": 3, "q2": 4}
+  ]},
+  "transform": [{"unpivot": ["q1", "q2"], "as": ["quarter", "amount"]}],
+  "mark": "bar",
+  "encoding": {
+    "x": {"field": "region", "type": "nominal"},
+    "y": {"field": "amount", "type": "quantitative"},
+    "color": {"field": "quarter", "type": "nominal"}
+  }
+}
+</code></pre>
+<div class="table-wrapper">
+<table>
+<thead>
+<tr><th>Field</th><th>Required</th><th>Notes</th></tr>
+</thead>
+<tbody>
+<tr><td><code>unpivot</code></td><td>yes</td><td>Columns to stack. Each must be numeric — the value column is <code>f64</code>.</td></tr>
+<tr><td><code>as</code></td><td>no</td><td><code>[key_column, value_column]</code> output names. Defaults to <code>["key", "value"]</code>.</td></tr>
+<tr><td><code>data</code></td><td>no</td><td>Optional input alias, like every other transform.</td></tr>
+</tbody>
+</table>
+</div>
+<p>Output schema is the input schema minus the unpivoted fields, plus the
+key column (categorical, carrying the source <strong>column name</strong>) and the
+value column (numeric), in that order.</p>
+<ul>
+<li><strong>Row count</strong> is <code>input_rows × len(unpivot)</code>. The reshape multiplies
+rows, so the product is checked against <code>PRISM_TABLE_MAX_ROWS</code> before
+anything is materialised; an overflow is <code>PRISM_RESOLVE_007</code>.</li>
+<li><strong>Row order</strong> is row-major: every measure of input row 0 in <code>unpivot</code>
+declaration order, then every measure of input row 1, and so on. A
+source row’s outputs stay adjacent.</li>
+<li><strong>Nulls</strong> survive. A null measure cell produces an output row whose
+value is null — the row is not dropped and the value is never
+coerced to zero. What happens to it next is the encode-time null
+policy (see <a href="multi-source.html">Multi-source</a>).</li>
+<li><strong>Types.</strong> A categorical, boolean or date column cannot fill a
+numeric value column; naming one in <code>unpivot</code> is refused with
+<code>PRISM_COMPILE_002</code> rather than yielding zeros or NaN. A key / value
+name that collides with a carried column is refused the same way —
+rename through <code>as</code>.</li>
+</ul>
+<h3 id="worked-example-wide--long--grouped-bar"><a class="header" href="#worked-example-wide--long--grouped-bar">Worked example: wide → long → grouped bar</a></h3>
+<p>The usual reason to reshape is that the stored table is <strong>wide</strong> — one
+row per series, one <em>column</em> per metric, because in the source schema
+a metric is a column and not a dimension. A grouped bar wants the
+opposite: the metric on the category axis, the series dodged inside
+each slot. <code>unpivot</code> is the step between the two, and the
+<a href="encoding.html#offset-channels-x_offset--y_offset"><code>x_offset</code> channel</a>
+is what dodges the result.</p>
+<p>Start from the wide table:</p>
+<div class="table-wrapper">
+<table>
+<thead>
+<tr><th>series</th><th>awareness</th><th>consideration</th><th>familiarity</th><th>trust</th></tr>
+</thead>
+<tbody>
+<tr><td>Northwind</td><td>68</td><td>47</td><td>61</td><td>72</td></tr>
+<tr><td>Category average</td><td>54</td><td>51</td><td>57</td><td>58</td></tr>
+</tbody>
+</table>
+</div>
+<pre><code class="language-json">{
+  "$schema": "urn:prism:schema:v1:spec",
+  "data": {"values": [
+    {"series": "Northwind",        "awareness": 68, "consideration": 47, "familiarity": 61, "trust": 72},
+    {"series": "Category average", "awareness": 54, "consideration": 51, "familiarity": 57, "trust": 58}
+  ]},
+  "transform": [
+    {"unpivot": ["awareness", "consideration", "familiarity", "trust"],
+     "as": ["metric", "score"]}
+  ],
+  "mark": "bar",
+  "encoding": {
+    "x": {"field": "metric", "type": "nominal"},
+    "y": {"field": "score", "type": "quantitative"},
+    "x_offset": {
+      "field": "series",
+      "type": "nominal",
+      "scale": {"domain": ["Northwind", "Category average"]}
+    },
+    "color": {
+      "field": "series",
+      "type": "nominal",
+      "scale": {"domain": ["Northwind", "Category average"]}
+    }
+  }
+}
+</code></pre>
+<p>The transform turns 2 rows × 4 measures into 8 long rows — <code>series</code>
+carried through untouched, <code>metric</code> naming the source column, <code>score</code>
+carrying its value:</p>
+<div class="table-wrapper">
+<table>
+<thead>
+<tr><th>series</th><th>metric</th><th>score</th></tr>
+</thead>
+<tbody>
+<tr><td>Northwind</td><td>awareness</td><td>68</td></tr>
+<tr><td>Northwind</td><td>consideration</td><td>47</td></tr>
+<tr><td>Northwind</td><td>familiarity</td><td>61</td></tr>
+<tr><td>Northwind</td><td>trust</td><td>72</td></tr>
+<tr><td>Category average</td><td>awareness</td><td>54</td></tr>
+<tr><td>…</td><td>…</td><td>…</td></tr>
+</tbody>
+</table>
+</div>
+<p>Four things are worth reading off that spec:</p>
+<ul>
+<li><strong><code>series</code> survives because it is not named in <code>unpivot</code>.</strong> Every
+column the transform does not stack is repeated on each output row,
+which is what leaves a dimension for the offset channel to dodge on.</li>
+<li><strong>The x axis order is the <code>unpivot</code> declaration order.</strong> Output is
+row-major, so the first input row emits its measures in the order
+they are listed, and the band scale assigns slots first-seen from
+there. Reordering the <code>unpivot</code> list reorders the axis.</li>
+<li><strong><code>x_offset</code> and <code>color</code> bind the same field, and both pin the same
+<code>scale.domain</code>.</strong> Pinning is what keeps the legend order and the
+sub-band order in agreement, and what keeps a template’s pair order
+from moving when the underlying category set changes between
+renders — see
+<a href="encoding.html#ordering-the-sub-bands">Encoding › Ordering the sub-bands</a>.</li>
+<li><strong>The bars dodge, they do not stack.</strong> Every bar keeps its own
+baseline; the offset scale subdivides the metric’s band slot and its
+padding defaults to zero, so the pair touches and together fills the
+slot.</li>
+</ul>
+<p>The rendered result is the
+<a href="../gallery/transforms/unpivot_grouped_bar.prism.json"><code>unpivot_grouped_bar</code></a>
+gallery fixture.</p>
+<h2 id="pivot-transform--parses-does-not-execute"><a class="header" href="#pivot-transform--parses-does-not-execute">Pivot transform — parses, does not execute</a></h2>
+<p><code>pivot</code> is the long → wide counterpart of <code>unpivot</code>, and it is the <strong>one
+transform the spec grammar accepts that no backend can run</strong>. It decodes,
+it has a JSON Schema variant, it builds a plan node — and nothing
+implements that node’s execution.</p>
+<p>Rather than let it fail mid-pipeline, validate refuses it up front:</p>
+<pre><code>PRISM_SPEC_067: Transform "pivot" at transform[0] is accepted by the spec
+grammar but no backend can execute it.
+</code></pre>
+<p>This moved an existing failure earlier; it did not create one. Before the
+rule, a <code>pivot</code> spec validated cleanly and then died inside execute as
+<code>PRISM_COMPILE_001</code>, naming an internal node kind (<code>PivotNode</code>) the
+author never wrote. Every other transform variant executes — <code>filter</code>,
+<code>calculate</code>, <code>aggregate</code>, <code>bin</code>, <code>window</code>, <code>join</code>, <code>union</code>, <code>unpivot</code>,
+<code>sample</code>, <code>sort</code>, <code>limit</code>, <code>crosstab</code>, <code>regression</code>, <code>timeunit</code>, <code>stack</code>.
+That list is not a promise typed into a doc: <code>validate/rules/transform_executable.go</code>
+states it, and a repo gate drives one minimal spec per variant through
+the real planner and the real in-memory backend, failing just as loudly
+when a transform named there stops working as when one omitted there
+starts.</p>
+<p><strong>Use <a href="#crosstab-transform"><code>crosstab</code></a> for the same long → wide shape.</strong>
+It spreads the distinct values of one field across columns and does
+execute:</p>
+<pre><code class="language-json">{
+  "transform": [
+    {"crosstab": {
+      "rows":    [{"field": "region"}],
+      "columns": [{"field": "quarter"}],
+      "cell":    {"aggregate": "sum", "field": "revenue"}
+    }}
+  ]
+}
+</code></pre>
+<p>The general answer, when a reshape is outside what the built-in
+transforms express, is the same one Prism gives everywhere: it consumes
+already-materialized rows, so do the reshape upstream and hand it the
+finished table — inline as <code>data.values</code>, through the <code>datasets</code> block,
+or at runtime via a <code>DataResolver</code> and a <code>data: {"ref": …}</code> binding.</p>
 <h2 id="stack-transform"><a class="header" href="#stack-transform">Stack transform</a></h2>
 <p>The <code>stack</code> transform accumulates one quantitative field into per-row
 <code>[start, end]</code> bounds inside each stack, so a bar or area mark can draw
