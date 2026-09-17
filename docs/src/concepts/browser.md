@@ -13,7 +13,7 @@ bundle:
 ```
 <out-dir>/
 ├── prism.wasm           # cmd/prismwasm binary (TinyGo, GOARCH=wasm); ~6.9 MiB raw
-├── prism.wasm.gz        # gzipped binary (~2.2 MiB) — what the loader fetches
+├── prism.wasm.gz        # gzipped binary (~2.5 MiB) — what the loader fetches
 ├── wasm_exec.js         # TinyGo's WASM loader (paired with the TinyGo binary)
 ├── prism.mjs            # thin bootstrapper + SceneHandle facade
 ├── prism-element.mjs    # <prism-chart> / <prism-dataset> / <prism-coordinator>

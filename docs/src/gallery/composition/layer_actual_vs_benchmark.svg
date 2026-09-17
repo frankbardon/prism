@@ -8,7 +8,7 @@
         <polyline class="prism-mark-line" data-prism-id="line-0" data-prism-datum-row="0" points="40,220 780,126.5" fill="none" stroke="#3366cc" stroke-width="1.5"/>
       </g>
       <g class="prism-layer" data-layer-id="layer-1" data-prism-layer="layer-1">
-        <polyline class="prism-mark-line" data-prism-id="line-0" data-prism-datum-row="0" points="40,135 780,135" fill="none" stroke="#999999" stroke-width="1.5"/>
+        <polyline class="prism-mark-line" data-prism-id="line-0" data-prism-datum-row="0" points="40,135 780,135" fill="none" stroke="#999999" stroke-width="1.5" stroke-dasharray="4 2"/>
       </g>
     </g>
   </g>

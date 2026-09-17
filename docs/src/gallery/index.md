@@ -1,6 +1,6 @@
 # Prism Gallery
 
-121 fixture specs across 17 categories. Each entry pairs a `*.prism.json`
+125 fixture specs across 18 categories. Each entry pairs a `*.prism.json`
 spec with a rendered `*.svg`. Browse the source to learn the spec
 shapes; open the SVGs to see what they render. The `table/` fixtures
 are one exception — a top-level `table` mark renders only through
@@ -89,6 +89,7 @@ Progress](../concepts/marks.md#progress).
 | Spec | Preview |
 |---|---|
 | [progress_brand_funnel](progress/progress_brand_funnel.prism.json) | <img src="progress/progress_brand_funnel.svg" width="240"> |
+| [progress_metric_row](progress/progress_metric_row.prism.json) | <img src="progress/progress_metric_row.svg" width="240"> |
 | [progress_team_quota](progress/progress_team_quota.prism.json) | <img src="progress/progress_team_quota.svg" width="240"> |
 | [progress_vertical_capacity](progress/progress_vertical_capacity.prism.json) | <img src="progress/progress_vertical_capacity.svg" width="240"> |
 
@@ -189,6 +190,20 @@ source.
 |---|---|
 | [axis_orient_top](axes/axis_orient_top.prism.json) | <img src="axes/axis_orient_top.svg" width="240"> |
 | [axis_orient_layer](axes/axis_orient_layer.prism.json) | <img src="axes/axis_orient_layer.svg" width="240"> |
+
+## Legends
+
+Everything the `legend` block controls — content (`title`, `values`,
+`label_limit`), layout (`orient`, `direction`, `symbol_type`,
+`symbol_size`), and the gradient legend a continuous colour channel
+builds. See [Encoding ›
+Legends](../concepts/encoding.md#legend-placement).
+
+| Spec | Preview |
+|---|---|
+| [legend_content](legends/legend_content.prism.json) | <img src="legends/legend_content.svg" width="240"> |
+| [legend_layout](legends/legend_layout.prism.json) | <img src="legends/legend_layout.svg" width="240"> |
+| [legend_gradient](legends/legend_gradient.prism.json) | <img src="legends/legend_gradient.svg" width="240"> |
 
 ## Selections
 

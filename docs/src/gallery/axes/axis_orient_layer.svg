@@ -11,10 +11,10 @@
         <rect class="prism-mark-bar" data-prism-id="bar-3" data-prism-datum-row="3" x="604.25" y="151.6" width="166.5" height="428.4" fill="#4c78a8"/>
       </g>
       <g class="prism-layer" data-layer-id="layer-1" data-prism-layer="layer-1">
-        <line class="prism-mark-rule" data-prism-id="rule-0" data-prism-datum-row="0" x1="48.75" y1="274" x2="49.75" y2="274" fill="#4c78a8" stroke="#dc2626" stroke-width="1"/>
-        <line class="prism-mark-rule" data-prism-id="rule-1" data-prism-datum-row="1" x1="233.75" y1="274" x2="234.75" y2="274" fill="#4c78a8" stroke="#dc2626" stroke-width="1"/>
-        <line class="prism-mark-rule" data-prism-id="rule-2" data-prism-datum-row="2" x1="418.75" y1="274" x2="419.75" y2="274" fill="#4c78a8" stroke="#dc2626" stroke-width="1"/>
-        <line class="prism-mark-rule" data-prism-id="rule-3" data-prism-datum-row="3" x1="603.75" y1="274" x2="604.75" y2="274" fill="#4c78a8" stroke="#dc2626" stroke-width="1"/>
+        <line class="prism-mark-rule" data-prism-id="rule-0" data-prism-datum-row="0" x1="48.75" y1="274" x2="49.75" y2="274" fill="#4c78a8" stroke="#dc2626" stroke-width="1" stroke-dasharray="4 2"/>
+        <line class="prism-mark-rule" data-prism-id="rule-1" data-prism-datum-row="1" x1="233.75" y1="274" x2="234.75" y2="274" fill="#4c78a8" stroke="#dc2626" stroke-width="1" stroke-dasharray="4 2"/>
+        <line class="prism-mark-rule" data-prism-id="rule-2" data-prism-datum-row="2" x1="418.75" y1="274" x2="419.75" y2="274" fill="#4c78a8" stroke="#dc2626" stroke-width="1" stroke-dasharray="4 2"/>
+        <line class="prism-mark-rule" data-prism-id="rule-3" data-prism-datum-row="3" x1="603.75" y1="274" x2="604.75" y2="274" fill="#4c78a8" stroke="#dc2626" stroke-width="1" stroke-dasharray="4 2"/>
       </g>
     </g>
   </g>
