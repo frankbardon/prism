@@ -1,0 +1,69 @@
+{
+  "$schema": "urn:prism:schema:v1:spec",
+  "title": "Prism PDF Dashboard Demo",
+  "vconcat": [
+    {
+      "$schema": "urn:prism:schema:v1:spec",
+      "title": "Bar — quarterly revenue",
+      "data": {"values": [
+        {"q": "Q1", "rev": 120},
+        {"q": "Q2", "rev": 145},
+        {"q": "Q3", "rev": 132},
+        {"q": "Q4", "rev": 168}
+      ]},
+      "mark": "bar",
+      "encoding": {
+        "x": {"field": "q", "type": "nominal"},
+        "y": {"field": "rev", "type": "quantitative"}
+      }
+    },
+    {
+      "$schema": "urn:prism:schema:v1:spec",
+      "title": "Line — weekly active users",
+      "data": {"values": [
+        {"week": 1, "wau": 320},
+        {"week": 2, "wau": 380},
+        {"week": 3, "wau": 410},
+        {"week": 4, "wau": 405},
+        {"week": 5, "wau": 460}
+      ]},
+      "mark": "line",
+      "encoding": {
+        "x": {"field": "week", "type": "quantitative"},
+        "y": {"field": "wau", "type": "quantitative"}
+      }
+    },
+    {
+      "$schema": "urn:prism:schema:v1:spec",
+      "title": "Area — cumulative installs",
+      "data": {"values": [
+        {"day": 1, "n": 50},
+        {"day": 2, "n": 90},
+        {"day": 3, "n": 140},
+        {"day": 4, "n": 190},
+        {"day": 5, "n": 260}
+      ]},
+      "mark": "area",
+      "encoding": {
+        "x": {"field": "day", "type": "quantitative"},
+        "y": {"field": "n", "type": "quantitative"}
+      }
+    },
+    {
+      "$schema": "urn:prism:schema:v1:spec",
+      "title": "Point — latency vs throughput",
+      "data": {"values": [
+        {"thr": 100, "lat": 12},
+        {"thr": 200, "lat": 18},
+        {"thr": 300, "lat": 28},
+        {"thr": 400, "lat": 42},
+        {"thr": 500, "lat": 65}
+      ]},
+      "mark": "point",
+      "encoding": {
+        "x": {"field": "thr", "type": "quantitative"},
+        "y": {"field": "lat", "type": "quantitative"}
+      }
+    }
+  ]
+}

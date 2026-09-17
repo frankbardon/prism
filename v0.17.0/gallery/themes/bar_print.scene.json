@@ -1,0 +1,352 @@
+{
+  "version": "1.0",
+  "theme": {
+    "name": "print",
+    "color_axis": {
+      "r": 0,
+      "g": 0,
+      "b": 0,
+      "a": 255
+    },
+    "color_grid": {
+      "r": 204,
+      "g": 204,
+      "b": 204,
+      "a": 255
+    },
+    "color_text": {
+      "r": 0,
+      "g": 0,
+      "b": 0,
+      "a": 255
+    },
+    "background": "#ffffff",
+    "font_sans": "Georgia, Times, serif",
+    "font_mono": "Courier, monospace",
+    "css": "\u003cstyle\u003e:root{--prism-color-axis:#000000;--prism-color-grid:#cccccc;--prism-color-text:#000000;--prism-color-bg:#ffffff;--prism-font-sans:Georgia, Times, serif;--prism-font-mono:Courier, monospace;--prism-font-size-label:10px;--prism-font-size-title:14px;--prism-font-size-axis-title:11px;--prism-axis-domain-color:#000000;--prism-axis-domain-width:1px;--prism-axis-tick-color:#000000;--prism-axis-tick-width:1px;--prism-axis-tick-size:5px;--prism-grid-color:#cccccc;--prism-grid-width:0.5px;--prism-axis-label-color:#000000;--prism-axis-label-font-size:10px;--prism-axis-label-padding:4px;--prism-axis-title-color:#000000;--prism-axis-title-font-size:11px;--prism-axis-title-padding:8px;--prism-legend-padding:8px;--prism-legend-symbol-size:48px;--prism-legend-label-color:#000000;--prism-legend-label-font-size:10px;--prism-legend-title-color:#000000;--prism-legend-title-font-size:11px;--prism-legend-title-font-weight:600;--prism-legend-row-padding:4px;--prism-title-color:#000000;--prism-title-font-size:14px;--prism-title-font-weight:600;--prism-title-anchor:start;--prism-title-padding:12px;--prism-view-bg:#ffffff;--prism-view-padding:0px;--prism-mark-fill:#000000;--prism-mark-stroke-width:0px;--prism-mark-opacity:1;--prism-mark-bar-fill:#555555;--prism-mark-bar-corner-radius:0px;--prism-deselected-opacity:0.4;--prism-selected-opacity:1;}.prism-axis-domain{stroke:var(--prism-axis-domain-color,var(--prism-color-axis));stroke-width:var(--prism-axis-domain-width,1px);fill:none;}.prism-axis-tick{stroke:var(--prism-axis-tick-color,var(--prism-color-axis));stroke-width:var(--prism-axis-tick-width,1px);}.prism-axis-label{fill:var(--prism-axis-label-color,var(--prism-color-text));font-family:var(--prism-font-sans);font-size:var(--prism-axis-label-font-size,var(--prism-font-size-label,11px));font-weight:var(--prism-axis-label-font-weight,400);}.prism-axis-title{fill:var(--prism-axis-title-color,var(--prism-color-text));font-family:var(--prism-font-sans);font-size:var(--prism-axis-title-font-size,var(--prism-font-size-axis-title,12px));font-weight:var(--prism-axis-title-font-weight,600);}.prism-grid-line{stroke:var(--prism-grid-color,var(--prism-color-grid));stroke-width:var(--prism-grid-width,1px);}.prism-title{fill:var(--prism-title-color,var(--prism-color-text));font-family:var(--prism-font-sans);font-size:var(--prism-title-font-size,var(--prism-font-size-title,16px));font-weight:var(--prism-title-font-weight,600);}.prism-legend-title{fill:var(--prism-legend-title-color,var(--prism-color-text));font-family:var(--prism-font-sans);font-size:var(--prism-legend-title-font-size,12px);font-weight:var(--prism-legend-title-font-weight,600);}.prism-legend-label{fill:var(--prism-legend-label-color,var(--prism-color-text));font-family:var(--prism-font-sans);font-size:var(--prism-legend-label-font-size,11px);}.prism-legend-swatch{stroke:none;}.prism-selected{opacity:var(--prism-selected-opacity,1);}.prism-deselected{opacity:var(--prism-deselected-opacity,0.3);}\u003c/style\u003e",
+    "axis_tick_size": 5,
+    "axis_label_padding": 4,
+    "axis_title_padding": 8
+  },
+  "grid": {
+    "layout": {
+      "rows": 1,
+      "cols": 1,
+      "headers": {}
+    },
+    "cells": [
+      {
+        "row": 0,
+        "col": 0,
+        "scene": {
+          "id": "scene-0",
+          "frame": {
+            "x": 0,
+            "y": 0,
+            "w": 800,
+            "h": 600
+          },
+          "plot": {
+            "x": 40,
+            "y": 50,
+            "w": 740,
+            "h": 510
+          },
+          "title": {
+            "content": "Quarterly revenue — print theme",
+            "x": 410,
+            "y": 20,
+            "style": {}
+          },
+          "axes": [
+            {
+              "id": "x-axis",
+              "channel": "x",
+              "position": "bottom",
+              "scale": {
+                "type": "band",
+                "domain": [
+                  "Q1",
+                  "Q2",
+                  "Q3",
+                  "Q4"
+                ],
+                "range": [
+                  40,
+                  780
+                ],
+                "padding": 0.1
+              },
+              "ticks": [
+                {
+                  "value": "Q1",
+                  "pixel": 132.5,
+                  "label": "Q1"
+                },
+                {
+                  "value": "Q2",
+                  "pixel": 317.5,
+                  "label": "Q2"
+                },
+                {
+                  "value": "Q3",
+                  "pixel": 502.5,
+                  "label": "Q3"
+                },
+                {
+                  "value": "Q4",
+                  "pixel": 687.5,
+                  "label": "Q4"
+                }
+              ],
+              "title": "quarter",
+              "domain": {
+                "x1": 40,
+                "y1": 560,
+                "x2": 780,
+                "y2": 560
+              },
+              "grid": [
+                {
+                  "x1": 132.5,
+                  "y1": 50,
+                  "x2": 132.5,
+                  "y2": 560
+                },
+                {
+                  "x1": 317.5,
+                  "y1": 50,
+                  "x2": 317.5,
+                  "y2": 560
+                },
+                {
+                  "x1": 502.5,
+                  "y1": 50,
+                  "x2": 502.5,
+                  "y2": 560
+                },
+                {
+                  "x1": 687.5,
+                  "y1": 50,
+                  "x2": 687.5,
+                  "y2": 560
+                }
+              ],
+              "label_style": {},
+              "title_style": {}
+            },
+            {
+              "id": "y-axis",
+              "channel": "y",
+              "position": "left",
+              "scale": {
+                "type": "linear",
+                "domain": [
+                  0,
+                  200
+                ],
+                "range": [
+                  560,
+                  50
+                ]
+              },
+              "ticks": [
+                {
+                  "value": 0,
+                  "pixel": 560,
+                  "label": "0"
+                },
+                {
+                  "value": 25,
+                  "pixel": 496.25,
+                  "label": "",
+                  "minor": true
+                },
+                {
+                  "value": 50,
+                  "pixel": 432.5,
+                  "label": "50"
+                },
+                {
+                  "value": 75,
+                  "pixel": 368.75,
+                  "label": "",
+                  "minor": true
+                },
+                {
+                  "value": 100,
+                  "pixel": 305,
+                  "label": "100"
+                },
+                {
+                  "value": 125,
+                  "pixel": 241.25,
+                  "label": "",
+                  "minor": true
+                },
+                {
+                  "value": 150,
+                  "pixel": 177.5,
+                  "label": "150"
+                },
+                {
+                  "value": 175,
+                  "pixel": 113.75,
+                  "label": "",
+                  "minor": true
+                },
+                {
+                  "value": 200,
+                  "pixel": 50,
+                  "label": "200"
+                }
+              ],
+              "title": "revenue",
+              "domain": {
+                "x1": 40,
+                "y1": 50,
+                "x2": 40,
+                "y2": 560
+              },
+              "grid": [
+                {
+                  "x1": 40,
+                  "y1": 560,
+                  "x2": 780,
+                  "y2": 560
+                },
+                {
+                  "x1": 40,
+                  "y1": 432.5,
+                  "x2": 780,
+                  "y2": 432.5
+                },
+                {
+                  "x1": 40,
+                  "y1": 305,
+                  "x2": 780,
+                  "y2": 305
+                },
+                {
+                  "x1": 40,
+                  "y1": 177.5,
+                  "x2": 780,
+                  "y2": 177.5
+                },
+                {
+                  "x1": 40,
+                  "y1": 50,
+                  "x2": 780,
+                  "y2": 50
+                }
+              ],
+              "label_style": {},
+              "title_style": {}
+            }
+          ],
+          "layers": [
+            {
+              "id": "layer-0",
+              "mark": "rect",
+              "marks": [
+                {
+                  "type": "rect",
+                  "id": "bar-0",
+                  "style": {
+                    "fill": {
+                      "r": 85,
+                      "g": 85,
+                      "b": 85,
+                      "a": 255
+                    },
+                    "opacity": 1
+                  },
+                  "datum": {
+                    "layer_id": "layer-0",
+                    "row_id": 0
+                  },
+                  "rect": {
+                    "x": 49.25,
+                    "y": 254,
+                    "w": 166.5,
+                    "h": 306
+                  }
+                },
+                {
+                  "type": "rect",
+                  "id": "bar-1",
+                  "style": {
+                    "fill": {
+                      "r": 85,
+                      "g": 85,
+                      "b": 85,
+                      "a": 255
+                    },
+                    "opacity": 1
+                  },
+                  "datum": {
+                    "layer_id": "layer-0",
+                    "row_id": 1
+                  },
+                  "rect": {
+                    "x": 234.25,
+                    "y": 190.25,
+                    "w": 166.5,
+                    "h": 369.75
+                  }
+                },
+                {
+                  "type": "rect",
+                  "id": "bar-2",
+                  "style": {
+                    "fill": {
+                      "r": 85,
+                      "g": 85,
+                      "b": 85,
+                      "a": 255
+                    },
+                    "opacity": 1
+                  },
+                  "datum": {
+                    "layer_id": "layer-0",
+                    "row_id": 2
+                  },
+                  "rect": {
+                    "x": 419.25,
+                    "y": 208.10000000000002,
+                    "w": 166.5,
+                    "h": 351.9
+                  }
+                },
+                {
+                  "type": "rect",
+                  "id": "bar-3",
+                  "style": {
+                    "fill": {
+                      "r": 85,
+                      "g": 85,
+                      "b": 85,
+                      "a": 255
+                    },
+                    "opacity": 1
+                  },
+                  "datum": {
+                    "layer_id": "layer-0",
+                    "row_id": 3
+                  },
+                  "rect": {
+                    "x": 604.25,
+                    "y": 121.40000000000003,
+                    "w": 166.5,
+                    "h": 438.59999999999997
+                  }
+                }
+              ]
+            }
+          ]
+        }
+      }
+    ],
+    "shared": {}
+  }
+}

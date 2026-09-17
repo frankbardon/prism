@@ -1,0 +1,20 @@
+{
+  "$schema": "urn:prism:schema:v1:spec",
+  "data": {
+    "name": "weekly",
+    "values": [
+      {"day": "Mon", "v": 12},
+      {"day": "Tue", "v": 18},
+      {"day": "Wed", "v": 9},
+      {"day": "Thu", "v": 22},
+      {"day": "Fri", "v": 28},
+      {"day": "Sat", "v": 14},
+      {"day": "Sun", "v": 7}
+    ]
+  },
+  "mark": "sparkbar",
+  "encoding": {
+    "x": {"field": "day", "type": "nominal"},
+    "y": {"field": "v", "type": "quantitative"}
+  }
+}

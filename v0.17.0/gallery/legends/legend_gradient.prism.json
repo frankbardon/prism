@@ -1,0 +1,12 @@
+{"$schema":"urn:prism:schema:v1:spec",
+ "title":"Gradient legend — continuous colour",
+ "data":{"values":[
+   {"row":"North","col":"Q1","value":12},{"row":"North","col":"Q2","value":26},
+   {"row":"South","col":"Q1","value":19},{"row":"South","col":"Q2","value":8},
+   {"row":"East","col":"Q1","value":31},{"row":"East","col":"Q2","value":22}]},
+ "mark":{"type":"heatmap"},
+ "encoding":{
+   "x":{"field":"col","type":"nominal"},
+   "y":{"field":"row","type":"nominal"},
+   "color":{"field":"value","type":"quantitative",
+     "legend":{"title":"Value","tick_count":4,"format":",.0f"}}}}

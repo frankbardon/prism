@@ -1,0 +1,32 @@
+{
+  "$schema": "urn:prism:schema:v1:spec",
+  "title": "World choropleth (GDP tier)",
+  "description": "Choropleth: feature channel binds country IDs, color channel binds a categorical tier field. Adjust the color values to recolor; switch projection.type to 'mercator' or 'orthographic' to see the same data under a different lens.",
+  "data": {
+    "name": "metrics",
+    "values": [
+      {"id": "USA", "tier": "high"},
+      {"id": "CAN", "tier": "high"},
+      {"id": "GBR", "tier": "high"},
+      {"id": "FRA", "tier": "high"},
+      {"id": "DEU", "tier": "high"},
+      {"id": "JPN", "tier": "high"},
+      {"id": "AUS", "tier": "high"},
+      {"id": "ITA", "tier": "mid"},
+      {"id": "ESP", "tier": "mid"},
+      {"id": "BRA", "tier": "mid"},
+      {"id": "MEX", "tier": "mid"},
+      {"id": "RUS", "tier": "mid"},
+      {"id": "CHN", "tier": "mid"},
+      {"id": "ZAF", "tier": "low"},
+      {"id": "IND", "tier": "low"},
+      {"id": "EGY", "tier": "low"}
+    ]
+  },
+  "mark": "geoshape",
+  "projection": {"type": "naturalearth"},
+  "encoding": {
+    "feature": {"field": "id",   "type": "nominal"},
+    "color":   {"field": "tier", "type": "nominal"}
+  }
+}

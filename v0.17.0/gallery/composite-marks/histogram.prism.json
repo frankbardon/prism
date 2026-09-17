@@ -1,0 +1,16 @@
+{
+  "$schema": "urn:prism:schema:v1:spec",
+  "title": "Score histogram",
+  "data": {
+    "name": "samples",
+    "values": [
+      {"score": 0.1}, {"score": 0.2}, {"score": 0.25}, {"score": 0.4},
+      {"score": 0.45}, {"score": 0.6}, {"score": 0.62}, {"score": 0.75}
+    ]
+  },
+  "mark": "histogram",
+  "encoding": {
+    "x": {"field": "score", "type": "quantitative", "bin": true},
+    "y": {"aggregate": "count", "type": "quantitative"}
+  }
+}

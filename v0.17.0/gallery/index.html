@@ -1,0 +1,644 @@
+<!DOCTYPE HTML>
+<html lang="en" class="navy sidebar-visible" dir="ltr">
+    <head>
+        <!-- Book generated using mdBook -->
+        <meta charset="UTF-8">
+        <title>Gallery Overview - Prism Documentation</title>
+
+
+        <!-- Custom HTML head -->
+
+        <meta name="description" content="Visualization library for .pulse files">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <meta name="theme-color" content="#ffffff">
+
+        <link rel="icon" href="../favicon-de23e50b.svg">
+        <link rel="shortcut icon" href="../favicon-8114d1fc.png">
+        <link rel="stylesheet" href="../css/variables-8adf115d.css">
+        <link rel="stylesheet" href="../css/general-e96d0476.css">
+        <link rel="stylesheet" href="../css/chrome-d279d366.css">
+        <link rel="stylesheet" href="../css/print-9e4910d8.css" media="print">
+
+        <!-- Fonts -->
+        <link rel="stylesheet" href="../fonts/fonts-9644e21d.css">
+
+        <!-- Highlight.js Stylesheets -->
+        <link rel="stylesheet" id="mdbook-highlight-css" href="../highlight-493f70e1.css">
+        <link rel="stylesheet" id="mdbook-tomorrow-night-css" href="../tomorrow-night-4c0ae647.css">
+        <link rel="stylesheet" id="mdbook-ayu-highlight-css" href="../ayu-highlight-3fdfc3ac.css">
+
+        <!-- Custom theme stylesheets -->
+        <link rel="stylesheet" href="../theme/version-dropdown-7824718d.css">
+
+
+        <!-- Provide site root and default themes to javascript -->
+        <script>
+            const path_to_root = "../";
+            const default_light_theme = "navy";
+            const default_dark_theme = "navy";
+            window.path_to_searchindex_js = "../searchindex-587554bb.js";
+        </script>
+        <!-- Start loading toc.js asap -->
+        <script src="../toc-a4924ec0.js"></script>
+    </head>
+    <body>
+    <div id="mdbook-help-container">
+        <div id="mdbook-help-popup">
+            <h2 class="mdbook-help-title">Keyboard shortcuts</h2>
+            <div>
+                <p>Press <kbd>←</kbd> or <kbd>→</kbd> to navigate between chapters</p>
+                <p>Press <kbd>S</kbd> or <kbd>/</kbd> to search in the book</p>
+                <p>Press <kbd>?</kbd> to show this help</p>
+                <p>Press <kbd>Esc</kbd> to hide this help</p>
+            </div>
+        </div>
+    </div>
+    <div id="mdbook-body-container">
+        <!-- Work around some values being stored in localStorage wrapped in quotes -->
+        <script>
+            try {
+                let theme = localStorage.getItem('mdbook-theme');
+                let sidebar = localStorage.getItem('mdbook-sidebar');
+
+                if (theme.startsWith('"') && theme.endsWith('"')) {
+                    localStorage.setItem('mdbook-theme', theme.slice(1, theme.length - 1));
+                }
+
+                if (sidebar.startsWith('"') && sidebar.endsWith('"')) {
+                    localStorage.setItem('mdbook-sidebar', sidebar.slice(1, sidebar.length - 1));
+                }
+            } catch (e) { }
+        </script>
+
+        <!-- Set the theme before any content is loaded, prevents flash -->
+        <script>
+            const default_theme = window.matchMedia("(prefers-color-scheme: dark)").matches ? default_dark_theme : default_light_theme;
+            let theme;
+            try { theme = localStorage.getItem('mdbook-theme'); } catch(e) { }
+            if (theme === null || theme === undefined) { theme = default_theme; }
+            const html = document.documentElement;
+            html.classList.remove('navy')
+            html.classList.add(theme);
+            html.classList.add("js");
+        </script>
+
+        <input type="checkbox" id="mdbook-sidebar-toggle-anchor" class="hidden">
+
+        <!-- Hide / unhide sidebar before it is displayed -->
+        <script>
+            let sidebar = null;
+            const sidebar_toggle = document.getElementById("mdbook-sidebar-toggle-anchor");
+            if (document.body.clientWidth >= 1080) {
+                try { sidebar = localStorage.getItem('mdbook-sidebar'); } catch(e) { }
+                sidebar = sidebar || 'visible';
+            } else {
+                sidebar = 'hidden';
+                sidebar_toggle.checked = false;
+            }
+            if (sidebar === 'visible') {
+                sidebar_toggle.checked = true;
+            } else {
+                html.classList.remove('sidebar-visible');
+            }
+        </script>
+
+        <nav id="mdbook-sidebar" class="sidebar" aria-label="Table of contents">
+            <!-- populated by js -->
+            <mdbook-sidebar-scrollbox class="sidebar-scrollbox"></mdbook-sidebar-scrollbox>
+            <noscript>
+                <iframe class="sidebar-iframe-outer" src="../toc.html"></iframe>
+            </noscript>
+            <div id="mdbook-sidebar-resize-handle" class="sidebar-resize-handle">
+                <div class="sidebar-resize-indicator"></div>
+            </div>
+        </nav>
+
+        <div id="mdbook-page-wrapper" class="page-wrapper">
+
+            <div class="page">
+                <div id="mdbook-menu-bar-hover-placeholder"></div>
+                <div id="mdbook-menu-bar" class="menu-bar sticky">
+                    <div class="left-buttons">
+                        <label id="mdbook-sidebar-toggle" class="icon-button" for="mdbook-sidebar-toggle-anchor" title="Toggle Table of Contents" aria-label="Toggle Table of Contents" aria-controls="mdbook-sidebar">
+                            <span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M0 96C0 78.3 14.3 64 32 64H416c17.7 0 32 14.3 32 32s-14.3 32-32 32H32C14.3 128 0 113.7 0 96zM0 256c0-17.7 14.3-32 32-32H416c17.7 0 32 14.3 32 32s-14.3 32-32 32H32c-17.7 0-32-14.3-32-32zM448 416c0 17.7-14.3 32-32 32H32c-17.7 0-32-14.3-32-32s14.3-32 32-32H416c17.7 0 32 14.3 32 32z"/></svg></span>
+                        </label>
+                        <button id="mdbook-theme-toggle" class="icon-button" type="button" title="Change theme" aria-label="Change theme" aria-haspopup="true" aria-expanded="false" aria-controls="mdbook-theme-list">
+                            <span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 576 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M371.3 367.1c27.3-3.9 51.9-19.4 67.2-42.9L600.2 74.1c12.6-19.5 9.4-45.3-7.6-61.2S549.7-4.4 531.1 9.6L294.4 187.2c-24 18-38.2 46.1-38.4 76.1L371.3 367.1zm-19.6 25.4l-116-104.4C175.9 290.3 128 339.6 128 400c0 3.9 .2 7.8 .6 11.6c1.8 17.5-10.2 36.4-27.8 36.4H96c-17.7 0-32 14.3-32 32s14.3 32 32 32H240c61.9 0 112-50.1 112-112c0-2.5-.1-5-.2-7.5z"/></svg></span>
+                        </button>
+                        <ul id="mdbook-theme-list" class="theme-popup" aria-label="Themes" role="menu">
+                            <li role="none"><button role="menuitem" class="theme" id="mdbook-theme-default_theme">Auto</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="mdbook-theme-light">Light</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="mdbook-theme-rust">Rust</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="mdbook-theme-coal">Coal</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="mdbook-theme-navy">Navy</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="mdbook-theme-ayu">Ayu</button></li>
+                        </ul>
+                        <button id="mdbook-search-toggle" class="icon-button" type="button" title="Search (`/`)" aria-label="Toggle Searchbar" aria-expanded="false" aria-keyshortcuts="/ s" aria-controls="mdbook-searchbar">
+                            <span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M416 208c0 45.9-14.9 88.3-40 122.7L502.6 457.4c12.5 12.5 12.5 32.8 0 45.3s-32.8 12.5-45.3 0L330.7 376c-34.4 25.2-76.8 40-122.7 40C93.1 416 0 322.9 0 208S93.1 0 208 0S416 93.1 416 208zM208 352c79.5 0 144-64.5 144-144s-64.5-144-144-144S64 128.5 64 208s64.5 144 144 144z"/></svg></span>
+                        </button>
+                    </div>
+
+                    <h1 class="menu-title">Prism Documentation</h1>
+
+                    <div class="right-buttons">
+                        <a href="../print.html" title="Print this book" aria-label="Print this book">
+                            <span class=fa-svg id="print-button"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M128 0C92.7 0 64 28.7 64 64v96h64V64H354.7L384 93.3V160h64V93.3c0-17-6.7-33.3-18.7-45.3L400 18.7C388 6.7 371.7 0 354.7 0H128zM384 352v32 64H128V384 368 352H384zm64 32h32c17.7 0 32-14.3 32-32V256c0-35.3-28.7-64-64-64H64c-35.3 0-64 28.7-64 64v96c0 17.7 14.3 32 32 32H64v64c0 35.3 28.7 64 64 64H384c35.3 0 64-28.7 64-64V384zm-16-88c-13.3 0-24-10.7-24-24s10.7-24 24-24s24 10.7 24 24s-10.7 24-24 24z"/></svg></span>
+                        </a>
+                        <a href="https://github.com/frankbardon/prism" title="Git repository" aria-label="Git repository">
+                            <span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 496 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M165.9 397.4c0 2-2.3 3.6-5.2 3.6-3.3.3-5.6-1.3-5.6-3.6 0-2 2.3-3.6 5.2-3.6 3-.3 5.6 1.3 5.6 3.6zm-31.1-4.5c-.7 2 1.3 4.3 4.3 4.9 2.6 1 5.6 0 6.2-2s-1.3-4.3-4.3-5.2c-2.6-.7-5.5.3-6.2 2.3zm44.2-1.7c-2.9.7-4.9 2.6-4.6 4.9.3 2 2.9 3.3 5.9 2.6 2.9-.7 4.9-2.6 4.6-4.6-.3-1.9-3-3.2-5.9-2.9zM244.8 8C106.1 8 0 113.3 0 252c0 110.9 69.8 205.8 169.5 239.2 12.8 2.3 17.3-5.6 17.3-12.1 0-6.2-.3-40.4-.3-61.4 0 0-70 15-84.7-29.8 0 0-11.4-29.1-27.8-36.6 0 0-22.9-15.7 1.6-15.4 0 0 24.9 2 38.6 25.8 21.9 38.6 58.6 27.5 72.9 20.9 2.3-16 8.8-27.1 16-33.7-55.9-6.2-112.3-14.3-112.3-110.5 0-27.5 7.6-41.3 23.6-58.9-2.6-6.5-11.1-33.3 2.6-67.9 20.9-6.5 69 27 69 27 20-5.6 41.5-8.5 62.8-8.5s42.8 2.9 62.8 8.5c0 0 48.1-33.6 69-27 13.7 34.7 5.2 61.4 2.6 67.9 16 17.7 25.8 31.5 25.8 58.9 0 96.5-58.9 104.2-114.8 110.5 9.2 7.9 17 22.9 17 46.4 0 33.7-.3 75.4-.3 83.6 0 6.5 4.6 14.4 17.3 12.1C428.2 457.8 496 362.9 496 252 496 113.3 383.5 8 244.8 8zM97.2 352.9c-1.3 1-1 3.3.7 5.2 1.6 1.6 3.9 2.3 5.2 1 1.3-1 1-3.3-.7-5.2-1.6-1.6-3.9-2.3-5.2-1zm-10.8-8.1c-.7 1.3.3 2.9 2.3 3.9 1.6 1 3.6.7 4.3-.7.7-1.3-.3-2.9-2.3-3.9-2-.6-3.6-.3-4.3.7zm32.4 35.6c-1.6 1.3-1 4.3 1.3 6.2 2.3 2.3 5.2 2.6 6.5 1 1.3-1.3.7-4.3-1.3-6.2-2.2-2.3-5.2-2.6-6.5-1zm-11.4-14.7c-1.6 1-1.6 3.6 0 5.9 1.6 2.3 4.3 3.3 5.6 2.3 1.6-1.3 1.6-3.9 0-6.2-1.4-2.3-4-3.3-5.6-2z"/></svg></span>
+                        </a>
+                        <a href="https://github.com/frankbardon/prism/edit/main/docs/src/src/gallery/index.md" title="Suggest an edit" aria-label="Suggest an edit" rel="edit">
+                            <span class=fa-svg id="git-edit-button"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M421.7 220.3l-11.3 11.3-22.6 22.6-205 205c-6.6 6.6-14.8 11.5-23.8 14.1L30.8 511c-8.4 2.5-17.5 .2-23.7-6.1S-1.5 489.7 1 481.2L38.7 353.1c2.6-9 7.5-17.2 14.1-23.8l205-205 22.6-22.6 11.3-11.3 33.9 33.9 62.1 62.1 33.9 33.9zM96 353.9l-9.3 9.3c-.9 .9-1.6 2.1-2 3.4l-25.3 86 86-25.3c1.3-.4 2.5-1.1 3.4-2l9.3-9.3H112c-8.8 0-16-7.2-16-16V353.9zM453.3 19.3l39.4 39.4c25 25 25 65.5 0 90.5l-14.5 14.5-22.6 22.6-11.3 11.3-33.9-33.9-62.1-62.1L314.3 67.7l11.3-11.3 22.6-22.6 14.5-14.5c25-25 65.5-25 90.5 0z"/></svg></span>
+                        </a>
+
+                    </div>
+                </div>
+
+                <div id="mdbook-search-wrapper" class="hidden">
+                    <form id="mdbook-searchbar-outer" class="searchbar-outer">
+                        <div class="search-wrapper">
+                            <input type="search" id="mdbook-searchbar" name="searchbar" placeholder="Search this book ..." aria-controls="mdbook-searchresults-outer" aria-describedby="searchresults-header">
+                            <div class="spinner-wrapper">
+                                <span class=fa-svg id="fa-spin"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M304 48c0-26.5-21.5-48-48-48s-48 21.5-48 48s21.5 48 48 48s48-21.5 48-48zm0 416c0-26.5-21.5-48-48-48s-48 21.5-48 48s21.5 48 48 48s48-21.5 48-48zM48 304c26.5 0 48-21.5 48-48s-21.5-48-48-48s-48 21.5-48 48s21.5 48 48 48zm464-48c0-26.5-21.5-48-48-48s-48 21.5-48 48s21.5 48 48 48s48-21.5 48-48zM142.9 437c18.7-18.7 18.7-49.1 0-67.9s-49.1-18.7-67.9 0s-18.7 49.1 0 67.9s49.1 18.7 67.9 0zm0-294.2c18.7-18.7 18.7-49.1 0-67.9S93.7 56.2 75 75s-18.7 49.1 0 67.9s49.1 18.7 67.9 0zM369.1 437c18.7 18.7 49.1 18.7 67.9 0s18.7-49.1 0-67.9s-49.1-18.7-67.9 0s-18.7 49.1 0 67.9z"/></svg></span>
+                            </div>
+                        </div>
+                    </form>
+                    <div id="mdbook-searchresults-outer" class="searchresults-outer hidden">
+                        <div id="mdbook-searchresults-header" class="searchresults-header"></div>
+                        <ul id="mdbook-searchresults">
+                        </ul>
+                    </div>
+                </div>
+
+                <!-- Apply ARIA attributes after the sidebar and the sidebar toggle button are added to the DOM -->
+                <script>
+                    document.getElementById('mdbook-sidebar-toggle').setAttribute('aria-expanded', sidebar === 'visible');
+                    document.getElementById('mdbook-sidebar').setAttribute('aria-hidden', sidebar !== 'visible');
+                    Array.from(document.querySelectorAll('#mdbook-sidebar a')).forEach(function(link) {
+                        link.setAttribute('tabIndex', sidebar === 'visible' ? 0 : -1);
+                    });
+                </script>
+
+                <div id="mdbook-content" class="content">
+                    <main>
+                        <h1 id="prism-gallery"><a class="header" href="#prism-gallery">Prism Gallery</a></h1>
+<p>129 fixture specs across 18 categories. Each entry pairs a <code>*.prism.json</code>
+spec with a rendered <code>*.svg</code>. Browse the source to learn the spec
+shapes; open the SVGs to see what they render. The <code>table/</code> fixtures
+are one exception — a top-level <code>table</code> mark renders only through
+the <code>html</code> backend, so those entries link to a rendered <code>*.html</code> file
+instead of an <code>&lt;img&gt;</code> preview. The <a href="#custom-marks">Custom marks</a>
+section is the other exception, and has no <code>*.prism.json</code> at all — see
+that section for why.</p>
+<p>For live interactive rendering in a browser, see <a href="live.html"><code>live.html</code></a>.</p>
+<h2 id="basic-marks"><a class="header" href="#basic-marks">Basic marks</a></h2>
+<div class="table-wrapper">
+<table>
+<thead>
+<tr><th>Spec</th><th>Preview</th></tr>
+</thead>
+<tbody>
+<tr><td><a href="basic-marks/bar_basic.prism.json">bar_basic</a></td><td><img src="basic-marks/bar_basic.svg" width="240"></td></tr>
+<tr><td><a href="basic-marks/line_basic.prism.json">line_basic</a></td><td><img src="basic-marks/line_basic.svg" width="240"></td></tr>
+<tr><td><a href="basic-marks/line_null_break.prism.json">line_null_break</a></td><td><img src="basic-marks/line_null_break.svg" width="240"></td></tr>
+<tr><td><a href="basic-marks/area_basic.prism.json">area_basic</a></td><td><img src="basic-marks/area_basic.svg" width="240"></td></tr>
+<tr><td><a href="basic-marks/area_with_negatives.prism.json">area_with_negatives</a></td><td><img src="basic-marks/area_with_negatives.svg" width="240"></td></tr>
+<tr><td><a href="basic-marks/multi_series_area.prism.json">multi_series_area</a></td><td><img src="basic-marks/multi_series_area.svg" width="240"></td></tr>
+<tr><td><a href="basic-marks/point_scatter.prism.json">point_scatter</a></td><td><img src="basic-marks/point_scatter.svg" width="240"></td></tr>
+<tr><td><a href="basic-marks/rule_basic.prism.json">rule_basic</a></td><td><img src="basic-marks/rule_basic.svg" width="240"></td></tr>
+<tr><td><a href="basic-marks/text_basic.prism.json">text_basic</a></td><td><img src="basic-marks/text_basic.svg" width="240"></td></tr>
+<tr><td><a href="basic-marks/text_labelled_points.prism.json">text_labelled_points</a></td><td><img src="basic-marks/text_labelled_points.svg" width="240"></td></tr>
+<tr><td><a href="basic-marks/tick_strip.prism.json">tick_strip</a></td><td><img src="basic-marks/tick_strip.svg" width="240"></td></tr>
+<tr><td><a href="basic-marks/arc_basic.prism.json">arc_basic</a></td><td><img src="basic-marks/arc_basic.svg" width="240"></td></tr>
+<tr><td><a href="basic-marks/rect_heatmap_lite.prism.json">rect_heatmap_lite</a></td><td><img src="basic-marks/rect_heatmap_lite.svg" width="240"></td></tr>
+<tr><td><a href="basic-marks/bar_horizontal.prism.json">bar_horizontal</a></td><td><img src="basic-marks/bar_horizontal.svg" width="240"></td></tr>
+<tr><td><a href="basic-marks/multi_series_line.prism.json">multi_series_line</a></td><td><img src="basic-marks/multi_series_line.svg" width="240"></td></tr>
+<tr><td><a href="basic-marks/detail_series_line.prism.json">detail_series_line</a></td><td><img src="basic-marks/detail_series_line.svg" width="240"></td></tr>
+<tr><td><a href="basic-marks/line_monotone.prism.json">line_monotone</a></td><td><img src="basic-marks/line_monotone.svg" width="240"></td></tr>
+<tr><td><a href="basic-marks/area_step.prism.json">area_step</a></td><td><img src="basic-marks/area_step.svg" width="240"></td></tr>
+<tr><td><a href="basic-marks/stacked_bar.prism.json">stacked_bar</a></td><td><img src="basic-marks/stacked_bar.svg" width="240"></td></tr>
+<tr><td><a href="basic-marks/stacked_area_normalize.prism.json">stacked_area_normalize</a></td><td><img src="basic-marks/stacked_area_normalize.svg" width="240"></td></tr>
+<tr><td><a href="basic-marks/area_horizontal.prism.json">area_horizontal</a></td><td><img src="basic-marks/area_horizontal.svg" width="240"></td></tr>
+<tr><td><a href="basic-marks/tick_strip_horizontal.prism.json">tick_strip_horizontal</a></td><td><img src="basic-marks/tick_strip_horizontal.svg" width="240"></td></tr>
+<tr><td><a href="basic-marks/streamgraph.prism.json">streamgraph</a></td><td><img src="basic-marks/streamgraph.svg" width="240"></td></tr>
+<tr><td><a href="basic-marks/grouped_bar.prism.json">grouped_bar</a></td><td><img src="basic-marks/grouped_bar.svg" width="240"></td></tr>
+<tr><td><a href="basic-marks/grouped_bar_horizontal.prism.json">grouped_bar_horizontal</a></td><td><img src="basic-marks/grouped_bar_horizontal.svg" width="240"></td></tr>
+</tbody>
+</table>
+</div>
+<h2 id="composite-marks"><a class="header" href="#composite-marks">Composite marks</a></h2>
+<div class="table-wrapper">
+<table>
+<thead>
+<tr><th>Spec</th><th>Preview</th></tr>
+</thead>
+<tbody>
+<tr><td><a href="composite-marks/histogram.prism.json">histogram</a></td><td><img src="composite-marks/histogram.svg" width="240"></td></tr>
+<tr><td><a href="composite-marks/histogram_long_tail.prism.json">histogram_long_tail</a></td><td><img src="composite-marks/histogram_long_tail.svg" width="240"></td></tr>
+<tr><td><a href="composite-marks/heatmap.prism.json">heatmap</a></td><td><img src="composite-marks/heatmap.svg" width="240"></td></tr>
+<tr><td><a href="composite-marks/crosstab_heatmap.prism.json">crosstab_heatmap</a></td><td><img src="composite-marks/crosstab_heatmap.svg" width="240"></td></tr>
+<tr><td><a href="composite-marks/crosstab_overlay_share.prism.json">crosstab_overlay_share</a></td><td><img src="composite-marks/crosstab_overlay_share.svg" width="240"></td></tr>
+<tr><td><a href="composite-marks/regression_trend.prism.json">regression_trend</a></td><td><img src="composite-marks/regression_trend.svg" width="240"></td></tr>
+<tr><td><a href="composite-marks/crosstab_significance_shading.prism.json">crosstab_significance_shading</a></td><td><img src="composite-marks/crosstab_significance_shading.svg" width="240"></td></tr>
+<tr><td><a href="composite-marks/boxplot.prism.json">boxplot</a></td><td><img src="composite-marks/boxplot.svg" width="240"></td></tr>
+<tr><td><a href="composite-marks/violin_score.prism.json">violin_score</a></td><td><img src="composite-marks/violin_score.svg" width="240"></td></tr>
+<tr><td><a href="composite-marks/boxplot_horizontal.prism.json">boxplot_horizontal</a></td><td><img src="composite-marks/boxplot_horizontal.svg" width="240"></td></tr>
+<tr><td><a href="composite-marks/pie.prism.json">pie</a></td><td><img src="composite-marks/pie.svg" width="240"></td></tr>
+<tr><td><a href="composite-marks/donut.prism.json">donut</a></td><td><img src="composite-marks/donut.svg" width="240"></td></tr>
+<tr><td><a href="composite-marks/donut_traffic.prism.json">donut_traffic</a></td><td><img src="composite-marks/donut_traffic.svg" width="240"></td></tr>
+</tbody>
+</table>
+</div>
+<h2 id="specialty-marks"><a class="header" href="#specialty-marks">Specialty marks</a></h2>
+<div class="table-wrapper">
+<table>
+<thead>
+<tr><th>Spec</th><th>Preview</th></tr>
+</thead>
+<tbody>
+<tr><td><a href="specialty-marks/sankey_user_flow.prism.json">sankey_user_flow</a></td><td><img src="specialty-marks/sankey_user_flow.svg" width="240"></td></tr>
+<tr><td><a href="specialty-marks/funnel_signup.prism.json">funnel_signup</a></td><td><img src="specialty-marks/funnel_signup.svg" width="240"></td></tr>
+<tr><td><a href="specialty-marks/sparkline_inline.prism.json">sparkline_inline</a></td><td><img src="specialty-marks/sparkline_inline.svg" width="240"></td></tr>
+<tr><td><a href="specialty-marks/sparkline_inline_grid.prism.json">sparkline_inline_grid</a></td><td><img src="specialty-marks/sparkline_inline_grid.svg" width="240"></td></tr>
+<tr><td><a href="specialty-marks/sparkbar_inline.prism.json">sparkbar_inline</a></td><td><img src="specialty-marks/sparkbar_inline.svg" width="240"></td></tr>
+<tr><td><a href="specialty-marks/sparkbar_inline_grid.prism.json">sparkbar_inline_grid</a></td><td><img src="specialty-marks/sparkbar_inline_grid.svg" width="240"></td></tr>
+<tr><td><a href="specialty-marks/winloss_streak.prism.json">winloss_streak</a></td><td><img src="specialty-marks/winloss_streak.svg" width="240"></td></tr>
+<tr><td><a href="specialty-marks/winloss_streak_grid.prism.json">winloss_streak_grid</a></td><td><img src="specialty-marks/winloss_streak_grid.svg" width="240"></td></tr>
+<tr><td><a href="specialty-marks/sparkarea_inline.prism.json">sparkarea_inline</a></td><td><img src="specialty-marks/sparkarea_inline.svg" width="240"></td></tr>
+<tr><td><a href="specialty-marks/sparkarea_inline_grid.prism.json">sparkarea_inline_grid</a></td><td><img src="specialty-marks/sparkarea_inline_grid.svg" width="240"></td></tr>
+<tr><td><a href="specialty-marks/sparkline_point_last.prism.json">sparkline_point_last</a></td><td><img src="specialty-marks/sparkline_point_last.svg" width="240"></td></tr>
+<tr><td><a href="specialty-marks/sparkline_point_extent.prism.json">sparkline_point_extent</a></td><td><img src="specialty-marks/sparkline_point_extent.svg" width="240"></td></tr>
+<tr><td><a href="specialty-marks/sparkbar_point_extent.prism.json">sparkbar_point_extent</a></td><td><img src="specialty-marks/sparkbar_point_extent.svg" width="240"></td></tr>
+<tr><td><a href="specialty-marks/sparkarea_reference_band.prism.json">sparkarea_reference_band</a></td><td><img src="specialty-marks/sparkarea_reference_band.svg" width="240"></td></tr>
+<tr><td><a href="specialty-marks/bullet_revenue.prism.json">bullet_revenue</a></td><td><img src="specialty-marks/bullet_revenue.svg" width="240"></td></tr>
+<tr><td><a href="specialty-marks/bullet_satisfaction_vertical.prism.json">bullet_satisfaction_vertical</a></td><td><img src="specialty-marks/bullet_satisfaction_vertical.svg" width="240"></td></tr>
+<tr><td><a href="specialty-marks/bullet_pipeline.prism.json">bullet_pipeline</a></td><td><img src="specialty-marks/bullet_pipeline.svg" width="240"></td></tr>
+<tr><td><a href="specialty-marks/image_logo.prism.json">image_logo</a></td><td><img src="specialty-marks/image_logo.svg" width="240"></td></tr>
+<tr><td><a href="specialty-marks/path_arbitrary.prism.json">path_arbitrary</a></td><td><img src="specialty-marks/path_arbitrary.svg" width="240"></td></tr>
+</tbody>
+</table>
+</div>
+<h2 id="progress"><a class="header" href="#progress">Progress</a></h2>
+<p>One value bar per data row on a full-scale track — the multi-row
+sibling of <code>bullet</code>. See <a href="../concepts/marks.html#progress">Marks ›
+Progress</a>.</p>
+<div class="table-wrapper">
+<table>
+<thead>
+<tr><th>Spec</th><th>Preview</th></tr>
+</thead>
+<tbody>
+<tr><td><a href="progress/progress_brand_funnel.prism.json">progress_brand_funnel</a></td><td><img src="progress/progress_brand_funnel.svg" width="240"></td></tr>
+<tr><td><a href="progress/progress_metric_row.prism.json">progress_metric_row</a></td><td><img src="progress/progress_metric_row.svg" width="240"></td></tr>
+<tr><td><a href="progress/progress_team_quota.prism.json">progress_team_quota</a></td><td><img src="progress/progress_team_quota.svg" width="240"></td></tr>
+<tr><td><a href="progress/progress_vertical_capacity.prism.json">progress_vertical_capacity</a></td><td><img src="progress/progress_vertical_capacity.svg" width="240"></td></tr>
+</tbody>
+</table>
+</div>
+<h2 id="geographic-marks"><a class="header" href="#geographic-marks">Geographic marks</a></h2>
+<div class="table-wrapper">
+<table>
+<thead>
+<tr><th>Spec</th><th>Preview</th></tr>
+</thead>
+<tbody>
+<tr><td><a href="geo/world_basic.prism.json">world_basic</a></td><td><img src="geo/world_basic.svg" width="240"></td></tr>
+<tr><td><a href="geo/world_choropleth.prism.json">world_choropleth</a></td><td><img src="geo/world_choropleth.svg" width="240"></td></tr>
+<tr><td><a href="geo/usa_states.prism.json">usa_states</a></td><td><img src="geo/usa_states.svg" width="240"></td></tr>
+</tbody>
+</table>
+</div>
+<h2 id="table"><a class="header" href="#table">Table</a></h2>
+<p>The <code>table</code> mark renders as an interactive, paginated HTML <code>&lt;table&gt;</code> —
+not SVG geometry — so these fixtures link to a rendered <code>*.html</code> file
+rather than showing an <code>&lt;img&gt;</code> preview. See <a href="../concepts/marks.html#table">Marks ›
+Table</a>.</p>
+<div class="table-wrapper">
+<table>
+<thead>
+<tr><th>Spec</th><th>Preview</th></tr>
+</thead>
+<tbody>
+<tr><td><a href="table/table_accounts.prism.json">table_accounts</a></td><td><a href="table/table_accounts.html">table_accounts.html</a> — plain columns, paginated (<code>page_size: 5</code> over 7 rows)</td></tr>
+<tr><td><a href="table/table_revenue_trend.prism.json">table_revenue_trend</a></td><td><a href="table/table_revenue_trend.html">table_revenue_trend.html</a> — a <code>sparkline</code> sub-mark column</td></tr>
+</tbody>
+</table>
+</div>
+<h2 id="custom-marks"><a class="header" href="#custom-marks">Custom marks</a></h2>
+<p>A <code>custom</code> mark (<code>mark: {"type": "custom", "renderer": "…"}</code>) resolves
+its <code>renderer</code> name against a Go-level registry (<code>custommark.Register</code>)
+at render time — a mechanism only a caller-supplied binary can
+exercise, not the shared <code>prism</code> CLI, which has nothing registered
+under any name. That means these two fixtures have <strong>no</strong>
+<code>*.prism.json</code> companion (unlike every other category on this page,
+<code>table/</code> included): a spec referencing <code>quote-card</code> or <code>stat-card</code>
+cannot be plotted by <code>prism plot</code> as committed. See <a href="../cookbook/custom-marks.html#why-no-gallery-prismjson-for-these-two">Cookbook › Custom
+marks: Why no gallery <code>*.prism.json</code> for these
+two</a>
+for the full explanation, the exact spec JSON that produced each file
+below, and the registered <code>HTMLCustomRenderer</code> implementation’s full
+source.</p>
+<div class="table-wrapper">
+<table>
+<thead>
+<tr><th>Example</th><th>Preview</th></tr>
+</thead>
+<tbody>
+<tr><td>Quote card (<a href="../cookbook/custom-marks.html#quote-card">worked example</a>)</td><td><a href="custom-marks/quote_card.html">quote_card.html</a> — pull-quote + attribution</td></tr>
+<tr><td>Stat card (<a href="../cookbook/custom-marks.html#stat-card">worked example</a>)</td><td><a href="custom-marks/stat_card.html">stat_card.html</a> — metric tile with a label, value, and up/down delta</td></tr>
+</tbody>
+</table>
+</div>
+<h2 id="composition-layer--concat--facet--repeat"><a class="header" href="#composition-layer--concat--facet--repeat">Composition (layer / concat / facet / repeat)</a></h2>
+<div class="table-wrapper">
+<table>
+<thead>
+<tr><th>Spec</th><th>Preview</th></tr>
+</thead>
+<tbody>
+<tr><td><a href="composition/layer_actual_vs_benchmark.prism.json">layer_actual_vs_benchmark</a></td><td><img src="composition/layer_actual_vs_benchmark.svg" width="240"></td></tr>
+<tr><td><a href="composition/layer_independent_color.prism.json">layer_independent_color</a></td><td><img src="composition/layer_independent_color.svg" width="240"></td></tr>
+<tr><td><a href="composition/layer_shared_y_scale.prism.json">layer_shared_y_scale</a></td><td><img src="composition/layer_shared_y_scale.svg" width="240"></td></tr>
+<tr><td><a href="composition/bar_with_benchmark_rule.prism.json">bar_with_benchmark_rule</a></td><td><img src="composition/bar_with_benchmark_rule.svg" width="240"></td></tr>
+<tr><td><a href="composition/concat_h.prism.json">concat_h</a></td><td><img src="composition/concat_h.svg" width="240"></td></tr>
+<tr><td><a href="composition/concat_v.prism.json">concat_v</a></td><td><img src="composition/concat_v.svg" width="240"></td></tr>
+<tr><td><a href="composition/hconcat_two_panels.prism.json">hconcat_two_panels</a></td><td><img src="composition/hconcat_two_panels.svg" width="240"></td></tr>
+<tr><td><a href="composition/vconcat_metrics.prism.json">vconcat_metrics</a></td><td><img src="composition/vconcat_metrics.svg" width="240"></td></tr>
+<tr><td><a href="composition/facet_by_region.prism.json">facet_by_region</a></td><td><img src="composition/facet_by_region.svg" width="240"></td></tr>
+<tr><td><a href="composition/facet_nested.prism.json">facet_nested</a></td><td><img src="composition/facet_nested.svg" width="240"></td></tr>
+<tr><td><a href="composition/facet_per_cell_y.prism.json">facet_per_cell_y</a></td><td><img src="composition/facet_per_cell_y.svg" width="240"></td></tr>
+<tr><td><a href="composition/facet_cell_theme_override.prism.json">facet_cell_theme_override</a></td><td><img src="composition/facet_cell_theme_override.svg" width="240"></td></tr>
+<tr><td><a href="composition/repeat_metrics.prism.json">repeat_metrics</a></td><td><img src="composition/repeat_metrics.svg" width="240"></td></tr>
+<tr><td><a href="composition/dashboard.prism.json">dashboard</a></td><td><img src="composition/dashboard.svg" width="240"></td></tr>
+</tbody>
+</table>
+</div>
+<h2 id="multi-source"><a class="header" href="#multi-source">Multi-source</a></h2>
+<div class="table-wrapper">
+<table>
+<thead>
+<tr><th>Spec</th><th>Preview</th></tr>
+</thead>
+<tbody>
+<tr><td><a href="multi-source/actual_vs_benchmark.prism.json">actual_vs_benchmark</a></td><td><img src="multi-source/actual_vs_benchmark.svg" width="240"></td></tr>
+<tr><td><a href="multi-source/multi_source_join.prism.json">multi_source_join</a></td><td><img src="multi-source/multi_source_join.svg" width="240"></td></tr>
+<tr><td><a href="multi-source/bar_inline.prism.json">bar_inline</a></td><td><img src="multi-source/bar_inline.svg" width="240"></td></tr>
+</tbody>
+</table>
+</div>
+<h2 id="transforms"><a class="header" href="#transforms">Transforms</a></h2>
+<div class="table-wrapper">
+<table>
+<thead>
+<tr><th>Spec</th><th>Preview</th></tr>
+</thead>
+<tbody>
+<tr><td><a href="transforms/filter_structured.prism.json">filter_structured</a></td><td><img src="transforms/filter_structured.svg" width="240"></td></tr>
+<tr><td><a href="transforms/calculate_structured.prism.json">calculate_structured</a></td><td><img src="transforms/calculate_structured.svg" width="240"></td></tr>
+<tr><td><a href="transforms/stack_explicit.prism.json">stack_explicit</a></td><td><img src="transforms/stack_explicit.svg" width="240"></td></tr>
+<tr><td><a href="transforms/unpivot_grouped_bar.prism.json">unpivot_grouped_bar</a></td><td><img src="transforms/unpivot_grouped_bar.svg" width="240"></td></tr>
+</tbody>
+</table>
+</div>
+<h2 id="scales"><a class="header" href="#scales">Scales</a></h2>
+<div class="table-wrapper">
+<table>
+<thead>
+<tr><th>Spec</th><th>Preview</th></tr>
+</thead>
+<tbody>
+<tr><td><a href="scales/linear.prism.json">linear</a></td><td><img src="scales/linear.svg" width="240"></td></tr>
+<tr><td><a href="scales/log.prism.json">log</a></td><td><img src="scales/log.svg" width="240"></td></tr>
+<tr><td><a href="scales/log_revenue.prism.json">log_revenue</a></td><td><img src="scales/log_revenue.svg" width="240"></td></tr>
+<tr><td><a href="scales/pow.prism.json">pow</a></td><td><img src="scales/pow.svg" width="240"></td></tr>
+<tr><td><a href="scales/sqrt.prism.json">sqrt</a></td><td><img src="scales/sqrt.svg" width="240"></td></tr>
+<tr><td><a href="scales/time.prism.json">time</a></td><td><img src="scales/time.svg" width="240"></td></tr>
+<tr><td><a href="scales/band.prism.json">band</a></td><td><img src="scales/band.svg" width="240"></td></tr>
+<tr><td><a href="scales/point.prism.json">point</a></td><td><img src="scales/point.svg" width="240"></td></tr>
+<tr><td><a href="scales/ordinal.prism.json">ordinal</a></td><td><img src="scales/ordinal.svg" width="240"></td></tr>
+<tr><td><a href="scales/axis_tick_values.prism.json">axis_tick_values</a></td><td><img src="scales/axis_tick_values.svg" width="240"></td></tr>
+</tbody>
+</table>
+</div>
+<h2 id="axes"><a class="header" href="#axes">Axes</a></h2>
+<div class="table-wrapper">
+<table>
+<thead>
+<tr><th>Spec</th><th>Preview</th></tr>
+</thead>
+<tbody>
+<tr><td><a href="axes/axis_orient_top.prism.json">axis_orient_top</a></td><td><img src="axes/axis_orient_top.svg" width="240"></td></tr>
+<tr><td><a href="axes/axis_orient_layer.prism.json">axis_orient_layer</a></td><td><img src="axes/axis_orient_layer.svg" width="240"></td></tr>
+</tbody>
+</table>
+</div>
+<h2 id="legends"><a class="header" href="#legends">Legends</a></h2>
+<p>Everything the <code>legend</code> block controls — content (<code>title</code>, <code>values</code>,
+<code>label_limit</code>), layout (<code>orient</code>, <code>direction</code>, <code>symbol_type</code>,
+<code>symbol_size</code>), and the gradient legend a continuous colour channel
+builds. See <a href="../concepts/encoding.html#legend-placement">Encoding ›
+Legends</a>.</p>
+<div class="table-wrapper">
+<table>
+<thead>
+<tr><th>Spec</th><th>Preview</th></tr>
+</thead>
+<tbody>
+<tr><td><a href="legends/legend_content.prism.json">legend_content</a></td><td><img src="legends/legend_content.svg" width="240"></td></tr>
+<tr><td><a href="legends/legend_layout.prism.json">legend_layout</a></td><td><img src="legends/legend_layout.svg" width="240"></td></tr>
+<tr><td><a href="legends/legend_gradient.prism.json">legend_gradient</a></td><td><img src="legends/legend_gradient.svg" width="240"></td></tr>
+</tbody>
+</table>
+</div>
+<h2 id="selections"><a class="header" href="#selections">Selections</a></h2>
+<div class="table-wrapper">
+<table>
+<thead>
+<tr><th>Spec</th><th>Preview</th></tr>
+</thead>
+<tbody>
+<tr><td><a href="selections/selection_point.prism.json">selection_point</a></td><td><img src="selections/selection_point.svg" width="240"></td></tr>
+<tr><td><a href="selections/selection_interval.prism.json">selection_interval</a></td><td><img src="selections/selection_interval.svg" width="240"></td></tr>
+<tr><td><a href="selections/selection_point_bar.prism.json">selection_point_bar</a></td><td><img src="selections/selection_point_bar.svg" width="240"></td></tr>
+<tr><td><a href="selections/selection_interval_brush.prism.json">selection_interval_brush</a></td><td><img src="selections/selection_interval_brush.svg" width="240"></td></tr>
+<tr><td><a href="selections/selection_cross_chart_overview.prism.json">selection_cross_chart_overview</a></td><td><img src="selections/selection_cross_chart_overview.svg" width="240"></td></tr>
+<tr><td><a href="selections/selection_cross_chart_detail.prism.json">selection_cross_chart_detail</a></td><td><img src="selections/selection_cross_chart_detail.svg" width="240"></td></tr>
+</tbody>
+</table>
+</div>
+<h2 id="conditions"><a class="header" href="#conditions">Conditions</a></h2>
+<p>Per-channel <code>condition</code> clauses switch a channel’s value based on a
+selection or a structured predicate <code>test</code>. See
+<a href="../concepts/encoding.html#conditions">Encoding › Conditions</a>.</p>
+<div class="table-wrapper">
+<table>
+<thead>
+<tr><th>Spec</th><th>Preview</th></tr>
+</thead>
+<tbody>
+<tr><td><a href="conditions/brush_highlight.prism.json">brush_highlight</a></td><td><img src="conditions/brush_highlight.svg" width="240"></td></tr>
+<tr><td><a href="conditions/test_predicate.prism.json">test_predicate</a></td><td><img src="conditions/test_predicate.svg" width="240"></td></tr>
+</tbody>
+</table>
+</div>
+<h2 id="tree"><a class="header" href="#tree">Tree</a></h2>
+<p>Rooted hierarchies laid out with tidy-tree, plus the <code>dendrogram</code>
+variant (step links, hidden nodes). All three bind the <code>text</code> channel
+to label their nodes. See
+<a href="../concepts/marks.html#tree--dendrogram--network">Marks › Tree / dendrogram / network</a>.</p>
+<div class="table-wrapper">
+<table>
+<thead>
+<tr><th>Spec</th><th>Preview</th></tr>
+</thead>
+<tbody>
+<tr><td><a href="tree/org_chart.prism.json">org_chart</a></td><td><img src="tree/org_chart.svg" width="240"></td></tr>
+<tr><td><a href="tree/decision_tree.prism.json">decision_tree</a></td><td><img src="tree/decision_tree.svg" width="240"></td></tr>
+<tr><td><a href="tree/cluster_dendrogram.prism.json">cluster_dendrogram</a></td><td><img src="tree/cluster_dendrogram.svg" width="240"></td></tr>
+</tbody>
+</table>
+</div>
+<h2 id="network"><a class="header" href="#network">Network</a></h2>
+<p>Force-directed node-link diagrams with deterministic seeded layouts.
+Bind the <code>text</code> channel to label the nodes.
+See <a href="../concepts/marks.html#tree--dendrogram--network">Marks › Tree / dendrogram / network</a>.</p>
+<div class="table-wrapper">
+<table>
+<thead>
+<tr><th>Spec</th><th>Preview</th></tr>
+</thead>
+<tbody>
+<tr><td><a href="network/citation_network.prism.json">citation_network</a></td><td><img src="network/citation_network.svg" width="240"></td></tr>
+<tr><td><a href="network/dependency_graph.prism.json">dependency_graph</a></td><td><img src="network/dependency_graph.svg" width="240"></td></tr>
+<tr><td><a href="network/labelled_network.prism.json">labelled_network</a></td><td><img src="network/labelled_network.svg" width="240"></td></tr>
+</tbody>
+</table>
+</div>
+<h2 id="themes"><a class="header" href="#themes">Themes</a></h2>
+<p>Themes are applied via the <code>--theme</code> CLI flag at plot time. Each spec
+below is identical; only the rendering theme differs.</p>
+<div class="table-wrapper">
+<table>
+<thead>
+<tr><th>Spec</th><th>Preview</th></tr>
+</thead>
+<tbody>
+<tr><td><a href="themes/bar_light.prism.json">bar_light</a></td><td><img src="themes/bar_light.svg" width="240"></td></tr>
+<tr><td><a href="themes/bar_dark.prism.json">bar_dark</a></td><td><img src="themes/bar_dark.svg" width="240"></td></tr>
+<tr><td><a href="themes/bar_print.prism.json">bar_print</a></td><td><img src="themes/bar_print.svg" width="240"></td></tr>
+<tr><td><a href="themes/bar_high_contrast.prism.json">bar_high_contrast</a></td><td><img src="themes/bar_high_contrast.svg" width="240"></td></tr>
+<tr><td><a href="themes/bar_colorblind.prism.json">bar_colorblind</a></td><td><img src="themes/bar_colorblind.svg" width="240"></td></tr>
+<tr><td><a href="themes/bar_filter.prism.json">bar_filter</a></td><td><img src="themes/bar_filter.svg" width="240"></td></tr>
+<tr><td><a href="themes/bar_gradient.prism.json">bar_gradient</a></td><td><img src="themes/bar_gradient.svg" width="240"></td></tr>
+<tr><td><a href="themes/bar_pattern.prism.json">bar_pattern</a></td><td><img src="themes/bar_pattern.svg" width="240"></td></tr>
+<tr><td><a href="themes/bar_dark_variant.prism.json">bar_dark_variant</a></td><td><img src="themes/bar_dark_variant.svg" width="240"></td></tr>
+<tr><td><a href="themes/bar_category_styles.prism.json">bar_category_styles</a></td><td><img src="themes/bar_category_styles.svg" width="240"></td></tr>
+<tr><td><a href="themes/bar_per_axis_grid.prism.json">bar_per_axis_grid</a></td><td><img src="themes/bar_per_axis_grid.svg" width="240"></td></tr>
+</tbody>
+</table>
+</div>
+<p><code>bar_dark_variant</code> is different from the row above it: its spec sets
+<code>theme: {"dark_variant": "dark"}</code> instead of picking a theme with
+<code>--theme</code>, so the <strong>one</strong> rendered SVG embeds both the light and dark
+palettes and switches between them via <code>@media (prefers-color-scheme: dark)</code> — see <a href="../concepts/themes.html#dark-variant-pairing">Dark variant
+pairing</a>. The static
+preview above can only show the light rendering (the one your browser
+is currently in), so verify the effect one of two ways:</p>
+<ul>
+<li>Toggle your OS or browser dark-mode setting while viewing the
+<code>&lt;img&gt;</code> above (or open <a href="themes/bar_dark_variant.svg">the raw SVG</a>
+directly) — the axes, grid, legend, and bar colors all swap without
+a re-render.</li>
+<li>View source on <code>themes/bar_dark_variant.svg</code> and look for the
+<code>@media (prefers-color-scheme: dark)</code> block inside the <code>&lt;style&gt;</code>
+element, plus <code>fill="var(--prism-resolved-N)"</code> on the <code>&lt;rect&gt;</code>
+elements — those are the doubled CSS custom properties described in
+the docs.</li>
+</ul>
+<p><code>bar_category_styles</code> demonstrates <code>theme.category_styles</code>: the theme
+maps each <code>quarter</code> value to its own <code>MarkStyle</code> (<code>Q1</code>/<code>Q2</code>/<code>Q3</code>/<code>Q4</code>
+each get a distinct <code>fill</code>), and every bar picks up its category’s
+color automatically — no spec-level <code>condition</code> block at all. See
+<a href="../concepts/themes.html#category-styles">Category styles</a> for the
+field→value→style shape and how a spec-level <code>condition</code> on the same
+field/value would win if one were present.</p>
+<p><code>bar_per_axis_grid</code> demonstrates <code>theme.axis_x</code> / <code>theme.axis_y</code>: the
+shared <code>axis</code> block sets one grid colour, then each per-axis block
+overrides it for one orientation only — the vertical grid lines (drawn
+by the <strong>x</strong> axis) become dashed amber, the horizontal ones (drawn by
+the <strong>y</strong> axis) stay slate. It also exercises the axis-title gap: the
+y channel’s spec-level <code>axis.title_padding</code> outranks the
+<code>axis_y.title_padding</code> the theme asks for, while the x axis, which
+nobody configures, keeps the built-in 8 px. See <a href="../concepts/themes.html#per-axis-blocks">Per-axis
+blocks</a> and <a href="../concepts/themes.html#axis-geometry-precedence">Axis geometry
+precedence</a>.</p>
+<h2 id="animation"><a class="header" href="#animation">Animation</a></h2>
+<p>Each spec declares an <code>animation</code> block plus a <code>key: true</code> channel; the
+SVG previews show the <strong>initial frame</strong>. The tween fires in the browser
+web component / WASM runtime when the spec swaps or a new dataset
+arrives — see <a href="../concepts/spec.html#animation">Spec › Animation</a> and
+<a href="../concepts/browser.html#animation">Browser › Animation</a>.</p>
+<div class="table-wrapper">
+<table>
+<thead>
+<tr><th>Spec</th><th>Preview</th></tr>
+</thead>
+<tbody>
+<tr><td><a href="animation/swap_bars.prism.json">swap_bars</a></td><td><img src="animation/swap_bars.svg" width="240"></td></tr>
+<tr><td><a href="animation/race_bars.prism.json">race_bars</a></td><td><img src="animation/race_bars.svg" width="240"></td></tr>
+</tbody>
+</table>
+</div>
+
+                    </main>
+
+                    <nav class="nav-wrapper" aria-label="Page navigation">
+                        <!-- Mobile navigation buttons -->
+                            <a rel="prev" href="../playground/about.html" class="mobile-nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
+                                <span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M41.4 233.4c-12.5 12.5-12.5 32.8 0 45.3l160 160c12.5 12.5 32.8 12.5 45.3 0s12.5-32.8 0-45.3L109.3 256 246.6 118.6c12.5-12.5 12.5-32.8 0-45.3s-32.8-12.5-45.3 0l-160 160z"/></svg></span>
+                            </a>
+
+
+                        <div style="clear: both"></div>
+                    </nav>
+                </div>
+            </div>
+
+            <nav class="nav-wide-wrapper" aria-label="Page navigation">
+                    <a rel="prev" href="../playground/about.html" class="nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
+                        <span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M41.4 233.4c-12.5 12.5-12.5 32.8 0 45.3l160 160c12.5 12.5 32.8 12.5 45.3 0s12.5-32.8 0-45.3L109.3 256 246.6 118.6c12.5-12.5 12.5-32.8 0-45.3s-32.8-12.5-45.3 0l-160 160z"/></svg></span>
+                    </a>
+
+            </nav>
+
+        </div>
+
+        <template id=fa-eye><span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 576 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M288 32c-80.8 0-145.5 36.8-192.6 80.6C48.6 156 17.3 208 2.5 243.7c-3.3 7.9-3.3 16.7 0 24.6C17.3 304 48.6 356 95.4 399.4C142.5 443.2 207.2 480 288 480s145.5-36.8 192.6-80.6c46.8-43.5 78.1-95.4 93-131.1c3.3-7.9 3.3-16.7 0-24.6c-14.9-35.7-46.2-87.7-93-131.1C433.5 68.8 368.8 32 288 32zM432 256c0 79.5-64.5 144-144 144s-144-64.5-144-144s64.5-144 144-144s144 64.5 144 144zM288 192c0 35.3-28.7 64-64 64c-11.5 0-22.3-3-31.6-8.4c-.2 2.8-.4 5.5-.4 8.4c0 53 43 96 96 96s96-43 96-96s-43-96-96-96c-2.8 0-5.6 .1-8.4 .4c5.3 9.3 8.4 20.1 8.4 31.6z"/></svg></span></template>
+        <template id=fa-eye-slash><span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M38.8 5.1C28.4-3.1 13.3-1.2 5.1 9.2S-1.2 34.7 9.2 42.9l592 464c10.4 8.2 25.5 6.3 33.7-4.1s6.3-25.5-4.1-33.7L525.6 386.7c39.6-40.6 66.4-86.1 79.9-118.4c3.3-7.9 3.3-16.7 0-24.6c-14.9-35.7-46.2-87.7-93-131.1C465.5 68.8 400.8 32 320 32c-68.2 0-125 26.3-169.3 60.8L38.8 5.1zM223.1 149.5C248.6 126.2 282.7 112 320 112c79.5 0 144 64.5 144 144c0 24.9-6.3 48.3-17.4 68.7L408 294.5c5.2-11.8 8-24.8 8-38.5c0-53-43-96-96-96c-2.8 0-5.6 .1-8.4 .4c5.3 9.3 8.4 20.1 8.4 31.6c0 10.2-2.4 19.8-6.6 28.3l-90.3-70.8zm223.1 298L373 389.9c-16.4 6.5-34.3 10.1-53 10.1c-79.5 0-144-64.5-144-144c0-6.9 .5-13.6 1.4-20.2L83.1 161.5C60.3 191.2 44 220.8 34.5 243.7c-3.3 7.9-3.3 16.7 0 24.6c14.9 35.7 46.2 87.7 93 131.1C174.5 443.2 239.2 480 320 480c47.8 0 89.9-12.9 126.2-32.5z"/></svg></span></template>
+        <template id=fa-copy><span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M502.6 70.63l-61.25-61.25C435.4 3.371 427.2 0 418.7 0H255.1c-35.35 0-64 28.66-64 64l.0195 256C192 355.4 220.7 384 256 384h192c35.2 0 64-28.8 64-64V93.25C512 84.77 508.6 76.63 502.6 70.63zM464 320c0 8.836-7.164 16-16 16H255.1c-8.838 0-16-7.164-16-16L239.1 64.13c0-8.836 7.164-16 16-16h128L384 96c0 17.67 14.33 32 32 32h47.1V320zM272 448c0 8.836-7.164 16-16 16H63.1c-8.838 0-16-7.164-16-16L47.98 192.1c0-8.836 7.164-16 16-16H160V128H63.99c-35.35 0-64 28.65-64 64l.0098 256C.002 483.3 28.66 512 64 512h192c35.2 0 64-28.8 64-64v-32h-47.1L272 448z"/></svg></span></template>
+        <template id=fa-play><span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 384 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M73 39c-14.8-9.1-33.4-9.4-48.5-.9S0 62.6 0 80V432c0 17.4 9.4 33.4 24.5 41.9s33.7 8.1 48.5-.9L361 297c14.3-8.7 23-24.2 23-41s-8.7-32.2-23-41L73 39z"/></svg></span></template>
+        <template id=fa-clock-rotate-left><span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M75 75L41 41C25.9 25.9 0 36.6 0 57.9V168c0 13.3 10.7 24 24 24H134.1c21.4 0 32.1-25.9 17-41l-30.8-30.8C155 85.5 203 64 256 64c106 0 192 86 192 192s-86 192-192 192c-40.8 0-78.6-12.7-109.7-34.4c-14.5-10.1-34.4-6.6-44.6 7.9s-6.6 34.4 7.9 44.6C151.2 495 201.7 512 256 512c141.4 0 256-114.6 256-256S397.4 0 256 0C185.3 0 121.3 28.7 75 75zm181 53c-13.3 0-24 10.7-24 24V256c0 6.4 2.5 12.5 7 17l72 72c9.4 9.4 24.6 9.4 33.9 0s9.4-24.6 0-33.9l-65-65V152c0-13.3-10.7-24-24-24z"/></svg></span></template>
+
+
+
+        <script>
+            window.playground_copyable = true;
+        </script>
+
+
+        <script src="../elasticlunr-ef4e11c1.min.js"></script>
+        <script src="../mark-09e88c2c.min.js"></script>
+        <script src="../searcher-09f2665d.js"></script>
+
+        <script src="../clipboard-1626706a.min.js"></script>
+        <script src="../highlight-abc7f01d.js"></script>
+        <script src="../book-609e4cb8.js"></script>
+
+        <!-- Custom JS scripts -->
+        <script src="../theme/version-dropdown-686abb3a.js"></script>
+
+
+
+    </div>
+    </body>
+</html>

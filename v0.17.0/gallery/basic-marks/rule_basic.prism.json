@@ -1,0 +1,16 @@
+{
+  "$schema": "urn:prism:schema:v1:spec",
+  "title": "Thresholds (rule basic)",
+  "data": {
+    "name": "thresholds",
+    "values": [
+      {"label": "low",  "score": 0.4},
+      {"label": "mid",  "score": 0.55},
+      {"label": "high", "score": 0.7}
+    ]
+  },
+  "mark": "rule",
+  "encoding": {
+    "y": {"field": "score", "type": "quantitative"}
+  }
+}

@@ -1,0 +1,23 @@
+{
+  "$schema": "urn:prism:schema:v1:spec",
+  "title": "Hierarchical clustering dendrogram",
+  "data": {
+    "name": "clusters",
+    "values": [
+      {"id": "root", "parent": null,   "name": "all"},
+      {"id": "a",    "parent": "root", "name": "cluster a"},
+      {"id": "b",    "parent": "root", "name": "cluster b"},
+      {"id": "a1",   "parent": "a",    "name": "alpha"},
+      {"id": "a2",   "parent": "a",    "name": "beta"},
+      {"id": "b1",   "parent": "b",    "name": "gamma"},
+      {"id": "b2",   "parent": "b",    "name": "delta"},
+      {"id": "b3",   "parent": "b",    "name": "epsilon"}
+    ]
+  },
+  "mark": {"type": "dendrogram"},
+  "encoding": {
+    "source": {"field": "parent"},
+    "target": {"field": "id"},
+    "text":   {"field": "name"}
+  }
+}

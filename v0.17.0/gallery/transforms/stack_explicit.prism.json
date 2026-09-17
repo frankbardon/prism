@@ -1,0 +1,29 @@
+{
+  "$schema": "urn:prism:schema:v1:spec",
+  "title": "Explicit stack transform, bound as a y span",
+  "data": {
+    "values": [
+      {"stage": "trial", "plan": "business", "users": 260},
+      {"stage": "active", "plan": "business", "users": 340},
+      {"stage": "churned", "plan": "business", "users": 60},
+      {"stage": "trial", "plan": "team", "users": 410},
+      {"stage": "active", "plan": "team", "users": 280},
+      {"stage": "churned", "plan": "team", "users": 95}
+    ]
+  },
+  "transform": [
+    {
+      "stack": "users",
+      "groupby": ["stage"],
+      "offset": "zero",
+      "as": ["users_lo", "users_hi"]
+    }
+  ],
+  "mark": "bar",
+  "encoding": {
+    "x": {"field": "stage", "type": "nominal"},
+    "y": {"field": "users_lo", "type": "quantitative", "axis": {"title": "users"}},
+    "y2": {"field": "users_hi", "type": "quantitative"},
+    "color": {"field": "plan", "type": "nominal"}
+  }
+}

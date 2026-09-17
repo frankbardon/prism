@@ -1,0 +1,20 @@
+{
+  "$schema": "urn:prism:schema:v1:spec",
+  "title": "Score distribution by group",
+  "data": {
+    "name": "samples",
+    "values": [
+      {"group": "a", "score": 0.1},
+      {"group": "a", "score": 0.3},
+      {"group": "a", "score": 0.45},
+      {"group": "b", "score": 0.5},
+      {"group": "b", "score": 0.7},
+      {"group": "b", "score": 0.9}
+    ]
+  },
+  "mark": "boxplot",
+  "encoding": {
+    "x": {"field": "group", "type": "nominal"},
+    "y": {"field": "score", "type": "quantitative"}
+  }
+}

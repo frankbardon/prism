@@ -1,0 +1,18 @@
+{
+  "$schema": "urn:prism:schema:v1:spec",
+  "title": "Score vs latency scatter",
+  "data": {
+    "name": "trials",
+    "values": [
+      {"latency_ms": 120, "score": 0.81, "group": "a"},
+      {"latency_ms": 220, "score": 0.42, "group": "b"},
+      {"latency_ms": 300, "score": 0.30, "group": "a"}
+    ]
+  },
+  "mark": "point",
+  "encoding": {
+    "x":     {"field": "latency_ms", "type": "quantitative"},
+    "y":     {"field": "score",      "type": "quantitative"},
+    "color": {"field": "group",      "type": "nominal"}
+  }
+}

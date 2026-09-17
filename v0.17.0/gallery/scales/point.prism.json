@@ -1,0 +1,11 @@
+{
+  "$schema": "urn:prism:schema:v1:spec",
+  "data": {"name": "d", "values": [
+    {"g": "a", "y": 1.0}, {"g": "b", "y": 5.0}, {"g": "c", "y": 10.0}
+  ]},
+  "mark": "point",
+  "encoding": {
+    "x": {"field": "g", "type": "nominal", "scale": {"type": "point"}},
+    "y": {"field": "y", "type": "quantitative"}
+  }
+}

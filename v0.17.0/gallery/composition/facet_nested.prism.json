@@ -1,0 +1,30 @@
+{
+  "$schema": "urn:prism:schema:v1:spec",
+  "title": "Nested facet (region then brand then quarter score)",
+  "data": {
+    "name": "samples",
+    "values": [
+      {"region": "NA", "brand": "alpha", "qtr": "Q1", "score": 0.42},
+      {"region": "NA", "brand": "alpha", "qtr": "Q2", "score": 0.45},
+      {"region": "NA", "brand": "beta",  "qtr": "Q1", "score": 0.51},
+      {"region": "NA", "brand": "beta",  "qtr": "Q2", "score": 0.55},
+      {"region": "EU", "brand": "alpha", "qtr": "Q1", "score": 0.31},
+      {"region": "EU", "brand": "alpha", "qtr": "Q2", "score": 0.36},
+      {"region": "EU", "brand": "beta",  "qtr": "Q1", "score": 0.49},
+      {"region": "EU", "brand": "beta",  "qtr": "Q2", "score": 0.52}
+    ]
+  },
+  "facet": {"row": {"field": "region", "type": "nominal"}},
+  "spec": {
+    "$schema": "urn:prism:schema:v1:spec",
+    "facet": {"column": {"field": "brand", "type": "nominal"}},
+    "spec": {
+      "$schema": "urn:prism:schema:v1:spec",
+      "mark": "bar",
+      "encoding": {
+        "x": {"field": "qtr",   "type": "nominal"},
+        "y": {"field": "score", "type": "quantitative"}
+      }
+    }
+  }
+}

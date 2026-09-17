@@ -1,0 +1,1614 @@
+<!DOCTYPE HTML>
+<html lang="en" class="navy sidebar-visible" dir="ltr">
+    <head>
+        <!-- Book generated using mdBook -->
+        <meta charset="UTF-8">
+        <title>Encoding - Prism Documentation</title>
+
+
+        <!-- Custom HTML head -->
+
+        <meta name="description" content="Visualization library for .pulse files">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <meta name="theme-color" content="#ffffff">
+
+        <link rel="icon" href="../favicon-de23e50b.svg">
+        <link rel="shortcut icon" href="../favicon-8114d1fc.png">
+        <link rel="stylesheet" href="../css/variables-8adf115d.css">
+        <link rel="stylesheet" href="../css/general-e96d0476.css">
+        <link rel="stylesheet" href="../css/chrome-d279d366.css">
+        <link rel="stylesheet" href="../css/print-9e4910d8.css" media="print">
+
+        <!-- Fonts -->
+        <link rel="stylesheet" href="../fonts/fonts-9644e21d.css">
+
+        <!-- Highlight.js Stylesheets -->
+        <link rel="stylesheet" id="mdbook-highlight-css" href="../highlight-493f70e1.css">
+        <link rel="stylesheet" id="mdbook-tomorrow-night-css" href="../tomorrow-night-4c0ae647.css">
+        <link rel="stylesheet" id="mdbook-ayu-highlight-css" href="../ayu-highlight-3fdfc3ac.css">
+
+        <!-- Custom theme stylesheets -->
+        <link rel="stylesheet" href="../theme/version-dropdown-7824718d.css">
+
+
+        <!-- Provide site root and default themes to javascript -->
+        <script>
+            const path_to_root = "../";
+            const default_light_theme = "navy";
+            const default_dark_theme = "navy";
+            window.path_to_searchindex_js = "../searchindex-587554bb.js";
+        </script>
+        <!-- Start loading toc.js asap -->
+        <script src="../toc-a4924ec0.js"></script>
+    </head>
+    <body>
+    <div id="mdbook-help-container">
+        <div id="mdbook-help-popup">
+            <h2 class="mdbook-help-title">Keyboard shortcuts</h2>
+            <div>
+                <p>Press <kbd>←</kbd> or <kbd>→</kbd> to navigate between chapters</p>
+                <p>Press <kbd>S</kbd> or <kbd>/</kbd> to search in the book</p>
+                <p>Press <kbd>?</kbd> to show this help</p>
+                <p>Press <kbd>Esc</kbd> to hide this help</p>
+            </div>
+        </div>
+    </div>
+    <div id="mdbook-body-container">
+        <!-- Work around some values being stored in localStorage wrapped in quotes -->
+        <script>
+            try {
+                let theme = localStorage.getItem('mdbook-theme');
+                let sidebar = localStorage.getItem('mdbook-sidebar');
+
+                if (theme.startsWith('"') && theme.endsWith('"')) {
+                    localStorage.setItem('mdbook-theme', theme.slice(1, theme.length - 1));
+                }
+
+                if (sidebar.startsWith('"') && sidebar.endsWith('"')) {
+                    localStorage.setItem('mdbook-sidebar', sidebar.slice(1, sidebar.length - 1));
+                }
+            } catch (e) { }
+        </script>
+
+        <!-- Set the theme before any content is loaded, prevents flash -->
+        <script>
+            const default_theme = window.matchMedia("(prefers-color-scheme: dark)").matches ? default_dark_theme : default_light_theme;
+            let theme;
+            try { theme = localStorage.getItem('mdbook-theme'); } catch(e) { }
+            if (theme === null || theme === undefined) { theme = default_theme; }
+            const html = document.documentElement;
+            html.classList.remove('navy')
+            html.classList.add(theme);
+            html.classList.add("js");
+        </script>
+
+        <input type="checkbox" id="mdbook-sidebar-toggle-anchor" class="hidden">
+
+        <!-- Hide / unhide sidebar before it is displayed -->
+        <script>
+            let sidebar = null;
+            const sidebar_toggle = document.getElementById("mdbook-sidebar-toggle-anchor");
+            if (document.body.clientWidth >= 1080) {
+                try { sidebar = localStorage.getItem('mdbook-sidebar'); } catch(e) { }
+                sidebar = sidebar || 'visible';
+            } else {
+                sidebar = 'hidden';
+                sidebar_toggle.checked = false;
+            }
+            if (sidebar === 'visible') {
+                sidebar_toggle.checked = true;
+            } else {
+                html.classList.remove('sidebar-visible');
+            }
+        </script>
+
+        <nav id="mdbook-sidebar" class="sidebar" aria-label="Table of contents">
+            <!-- populated by js -->
+            <mdbook-sidebar-scrollbox class="sidebar-scrollbox"></mdbook-sidebar-scrollbox>
+            <noscript>
+                <iframe class="sidebar-iframe-outer" src="../toc.html"></iframe>
+            </noscript>
+            <div id="mdbook-sidebar-resize-handle" class="sidebar-resize-handle">
+                <div class="sidebar-resize-indicator"></div>
+            </div>
+        </nav>
+
+        <div id="mdbook-page-wrapper" class="page-wrapper">
+
+            <div class="page">
+                <div id="mdbook-menu-bar-hover-placeholder"></div>
+                <div id="mdbook-menu-bar" class="menu-bar sticky">
+                    <div class="left-buttons">
+                        <label id="mdbook-sidebar-toggle" class="icon-button" for="mdbook-sidebar-toggle-anchor" title="Toggle Table of Contents" aria-label="Toggle Table of Contents" aria-controls="mdbook-sidebar">
+                            <span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M0 96C0 78.3 14.3 64 32 64H416c17.7 0 32 14.3 32 32s-14.3 32-32 32H32C14.3 128 0 113.7 0 96zM0 256c0-17.7 14.3-32 32-32H416c17.7 0 32 14.3 32 32s-14.3 32-32 32H32c-17.7 0-32-14.3-32-32zM448 416c0 17.7-14.3 32-32 32H32c-17.7 0-32-14.3-32-32s14.3-32 32-32H416c17.7 0 32 14.3 32 32z"/></svg></span>
+                        </label>
+                        <button id="mdbook-theme-toggle" class="icon-button" type="button" title="Change theme" aria-label="Change theme" aria-haspopup="true" aria-expanded="false" aria-controls="mdbook-theme-list">
+                            <span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 576 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M371.3 367.1c27.3-3.9 51.9-19.4 67.2-42.9L600.2 74.1c12.6-19.5 9.4-45.3-7.6-61.2S549.7-4.4 531.1 9.6L294.4 187.2c-24 18-38.2 46.1-38.4 76.1L371.3 367.1zm-19.6 25.4l-116-104.4C175.9 290.3 128 339.6 128 400c0 3.9 .2 7.8 .6 11.6c1.8 17.5-10.2 36.4-27.8 36.4H96c-17.7 0-32 14.3-32 32s14.3 32 32 32H240c61.9 0 112-50.1 112-112c0-2.5-.1-5-.2-7.5z"/></svg></span>
+                        </button>
+                        <ul id="mdbook-theme-list" class="theme-popup" aria-label="Themes" role="menu">
+                            <li role="none"><button role="menuitem" class="theme" id="mdbook-theme-default_theme">Auto</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="mdbook-theme-light">Light</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="mdbook-theme-rust">Rust</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="mdbook-theme-coal">Coal</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="mdbook-theme-navy">Navy</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="mdbook-theme-ayu">Ayu</button></li>
+                        </ul>
+                        <button id="mdbook-search-toggle" class="icon-button" type="button" title="Search (`/`)" aria-label="Toggle Searchbar" aria-expanded="false" aria-keyshortcuts="/ s" aria-controls="mdbook-searchbar">
+                            <span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M416 208c0 45.9-14.9 88.3-40 122.7L502.6 457.4c12.5 12.5 12.5 32.8 0 45.3s-32.8 12.5-45.3 0L330.7 376c-34.4 25.2-76.8 40-122.7 40C93.1 416 0 322.9 0 208S93.1 0 208 0S416 93.1 416 208zM208 352c79.5 0 144-64.5 144-144s-64.5-144-144-144S64 128.5 64 208s64.5 144 144 144z"/></svg></span>
+                        </button>
+                    </div>
+
+                    <h1 class="menu-title">Prism Documentation</h1>
+
+                    <div class="right-buttons">
+                        <a href="../print.html" title="Print this book" aria-label="Print this book">
+                            <span class=fa-svg id="print-button"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M128 0C92.7 0 64 28.7 64 64v96h64V64H354.7L384 93.3V160h64V93.3c0-17-6.7-33.3-18.7-45.3L400 18.7C388 6.7 371.7 0 354.7 0H128zM384 352v32 64H128V384 368 352H384zm64 32h32c17.7 0 32-14.3 32-32V256c0-35.3-28.7-64-64-64H64c-35.3 0-64 28.7-64 64v96c0 17.7 14.3 32 32 32H64v64c0 35.3 28.7 64 64 64H384c35.3 0 64-28.7 64-64V384zm-16-88c-13.3 0-24-10.7-24-24s10.7-24 24-24s24 10.7 24 24s-10.7 24-24 24z"/></svg></span>
+                        </a>
+                        <a href="https://github.com/frankbardon/prism" title="Git repository" aria-label="Git repository">
+                            <span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 496 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M165.9 397.4c0 2-2.3 3.6-5.2 3.6-3.3.3-5.6-1.3-5.6-3.6 0-2 2.3-3.6 5.2-3.6 3-.3 5.6 1.3 5.6 3.6zm-31.1-4.5c-.7 2 1.3 4.3 4.3 4.9 2.6 1 5.6 0 6.2-2s-1.3-4.3-4.3-5.2c-2.6-.7-5.5.3-6.2 2.3zm44.2-1.7c-2.9.7-4.9 2.6-4.6 4.9.3 2 2.9 3.3 5.9 2.6 2.9-.7 4.9-2.6 4.6-4.6-.3-1.9-3-3.2-5.9-2.9zM244.8 8C106.1 8 0 113.3 0 252c0 110.9 69.8 205.8 169.5 239.2 12.8 2.3 17.3-5.6 17.3-12.1 0-6.2-.3-40.4-.3-61.4 0 0-70 15-84.7-29.8 0 0-11.4-29.1-27.8-36.6 0 0-22.9-15.7 1.6-15.4 0 0 24.9 2 38.6 25.8 21.9 38.6 58.6 27.5 72.9 20.9 2.3-16 8.8-27.1 16-33.7-55.9-6.2-112.3-14.3-112.3-110.5 0-27.5 7.6-41.3 23.6-58.9-2.6-6.5-11.1-33.3 2.6-67.9 20.9-6.5 69 27 69 27 20-5.6 41.5-8.5 62.8-8.5s42.8 2.9 62.8 8.5c0 0 48.1-33.6 69-27 13.7 34.7 5.2 61.4 2.6 67.9 16 17.7 25.8 31.5 25.8 58.9 0 96.5-58.9 104.2-114.8 110.5 9.2 7.9 17 22.9 17 46.4 0 33.7-.3 75.4-.3 83.6 0 6.5 4.6 14.4 17.3 12.1C428.2 457.8 496 362.9 496 252 496 113.3 383.5 8 244.8 8zM97.2 352.9c-1.3 1-1 3.3.7 5.2 1.6 1.6 3.9 2.3 5.2 1 1.3-1 1-3.3-.7-5.2-1.6-1.6-3.9-2.3-5.2-1zm-10.8-8.1c-.7 1.3.3 2.9 2.3 3.9 1.6 1 3.6.7 4.3-.7.7-1.3-.3-2.9-2.3-3.9-2-.6-3.6-.3-4.3.7zm32.4 35.6c-1.6 1.3-1 4.3 1.3 6.2 2.3 2.3 5.2 2.6 6.5 1 1.3-1.3.7-4.3-1.3-6.2-2.2-2.3-5.2-2.6-6.5-1zm-11.4-14.7c-1.6 1-1.6 3.6 0 5.9 1.6 2.3 4.3 3.3 5.6 2.3 1.6-1.3 1.6-3.9 0-6.2-1.4-2.3-4-3.3-5.6-2z"/></svg></span>
+                        </a>
+                        <a href="https://github.com/frankbardon/prism/edit/main/docs/src/src/concepts/encoding.md" title="Suggest an edit" aria-label="Suggest an edit" rel="edit">
+                            <span class=fa-svg id="git-edit-button"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M421.7 220.3l-11.3 11.3-22.6 22.6-205 205c-6.6 6.6-14.8 11.5-23.8 14.1L30.8 511c-8.4 2.5-17.5 .2-23.7-6.1S-1.5 489.7 1 481.2L38.7 353.1c2.6-9 7.5-17.2 14.1-23.8l205-205 22.6-22.6 11.3-11.3 33.9 33.9 62.1 62.1 33.9 33.9zM96 353.9l-9.3 9.3c-.9 .9-1.6 2.1-2 3.4l-25.3 86 86-25.3c1.3-.4 2.5-1.1 3.4-2l9.3-9.3H112c-8.8 0-16-7.2-16-16V353.9zM453.3 19.3l39.4 39.4c25 25 25 65.5 0 90.5l-14.5 14.5-22.6 22.6-11.3 11.3-33.9-33.9-62.1-62.1L314.3 67.7l11.3-11.3 22.6-22.6 14.5-14.5c25-25 65.5-25 90.5 0z"/></svg></span>
+                        </a>
+
+                    </div>
+                </div>
+
+                <div id="mdbook-search-wrapper" class="hidden">
+                    <form id="mdbook-searchbar-outer" class="searchbar-outer">
+                        <div class="search-wrapper">
+                            <input type="search" id="mdbook-searchbar" name="searchbar" placeholder="Search this book ..." aria-controls="mdbook-searchresults-outer" aria-describedby="searchresults-header">
+                            <div class="spinner-wrapper">
+                                <span class=fa-svg id="fa-spin"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M304 48c0-26.5-21.5-48-48-48s-48 21.5-48 48s21.5 48 48 48s48-21.5 48-48zm0 416c0-26.5-21.5-48-48-48s-48 21.5-48 48s21.5 48 48 48s48-21.5 48-48zM48 304c26.5 0 48-21.5 48-48s-21.5-48-48-48s-48 21.5-48 48s21.5 48 48 48zm464-48c0-26.5-21.5-48-48-48s-48 21.5-48 48s21.5 48 48 48s48-21.5 48-48zM142.9 437c18.7-18.7 18.7-49.1 0-67.9s-49.1-18.7-67.9 0s-18.7 49.1 0 67.9s49.1 18.7 67.9 0zm0-294.2c18.7-18.7 18.7-49.1 0-67.9S93.7 56.2 75 75s-18.7 49.1 0 67.9s49.1 18.7 67.9 0zM369.1 437c18.7 18.7 49.1 18.7 67.9 0s18.7-49.1 0-67.9s-49.1-18.7-67.9 0s-18.7 49.1 0 67.9z"/></svg></span>
+                            </div>
+                        </div>
+                    </form>
+                    <div id="mdbook-searchresults-outer" class="searchresults-outer hidden">
+                        <div id="mdbook-searchresults-header" class="searchresults-header"></div>
+                        <ul id="mdbook-searchresults">
+                        </ul>
+                    </div>
+                </div>
+
+                <!-- Apply ARIA attributes after the sidebar and the sidebar toggle button are added to the DOM -->
+                <script>
+                    document.getElementById('mdbook-sidebar-toggle').setAttribute('aria-expanded', sidebar === 'visible');
+                    document.getElementById('mdbook-sidebar').setAttribute('aria-hidden', sidebar !== 'visible');
+                    Array.from(document.querySelectorAll('#mdbook-sidebar a')).forEach(function(link) {
+                        link.setAttribute('tabIndex', sidebar === 'visible' ? 0 : -1);
+                    });
+                </script>
+
+                <div id="mdbook-content" class="content">
+                    <main>
+                        <h1 id="encoding"><a class="header" href="#encoding">Encoding</a></h1>
+<p>The <code>encoding</code> object binds data fields to visual channels.</p>
+<h2 id="channels"><a class="header" href="#channels">Channels</a></h2>
+<div class="table-wrapper">
+<table>
+<thead>
+<tr><th>Family</th><th>Channels</th></tr>
+</thead>
+<tbody>
+<tr><td>Position</td><td><code>x</code>, <code>y</code>, <code>x2</code>, <code>y2</code> (see <a href="#span-channels">Span channels</a>), <code>theta</code>, <code>radius</code></td></tr>
+<tr><td>Offset</td><td><code>x_offset</code>, <code>y_offset</code> — see <a href="#offset-channels-x_offset--y_offset">Offset channels</a></td></tr>
+<tr><td>Color &amp; opacity</td><td><code>color</code>, <code>fill</code>, <code>stroke</code>, <code>opacity</code></td></tr>
+<tr><td>Size &amp; shape</td><td><code>size</code>, <code>shape</code></td></tr>
+<tr><td>Text &amp; order</td><td><code>text</code> (see <a href="#text-channel">Text channel</a>), <code>tooltip</code>, <code>order</code> — see <a href="#order-channel">Order channel</a></td></tr>
+<tr><td>Grouping</td><td><code>detail</code> — see <a href="#detail-channel">Detail channel</a></td></tr>
+<tr><td>Facet</td><td><code>row</code>, <code>column</code></td></tr>
+<tr><td>Sankey</td><td><code>source</code>, <code>target</code>, <code>value</code></td></tr>
+</tbody>
+</table>
+</div>
+<h2 id="channel-shape"><a class="header" href="#channel-shape">Channel shape</a></h2>
+<pre><code class="language-json">"x": {
+  "field": "score",
+  "type": "quantitative",
+  "aggregate": "mean",
+  "scale": {"type": "log"},
+  "axis": {"title": "Average score", "format": ".2f"},
+  "sort": "-y"
+}
+</code></pre>
+<div class="table-wrapper">
+<table>
+<thead>
+<tr><th>Key</th><th>Purpose</th></tr>
+</thead>
+<tbody>
+<tr><td><code>field</code></td><td>Column from the source (or transform output).</td></tr>
+<tr><td><code>type</code></td><td>One of <code>nominal</code>, <code>ordinal</code>, <code>quantitative</code>, <code>temporal</code>.</td></tr>
+<tr><td><code>aggregate</code></td><td>Friendly alias: <code>mean</code>, <code>sum</code>, <code>count</code>, <code>null_count</code>, <code>median</code>, <code>q1</code>, <code>q3</code>, <code>min</code>, <code>max</code>, <code>range</code>, <code>stdev</code>, <code>variance</code>, <code>skewness</code>, <code>kurtosis</code>, <code>ci0</code>, <code>ci1</code>, <code>distinct</code>, <code>mode</code>, <code>frequency</code>, plus <code>wmean</code>, <code>ratio</code>, <code>lift</code>, <code>share</code>. <code>count</code>, <code>distinct</code>, <code>mode</code>, <code>frequency</code>, and <code>null_count</code> work on any field type; numeric aggregates require a quantitative or temporal field. <code>frequency</code> is the scalar companion to <code>mode</code> — it returns the modal count (how many times the most frequent value occurs), whereas <code>mode</code> returns the value itself.</td></tr>
+<tr><td><code>scale</code></td><td>Scale spec (<code>type</code>, <code>domain</code>, <code>range</code>, <code>scheme</code>, <code>padding</code>, …).</td></tr>
+<tr><td><code>axis</code></td><td>Axis config (<code>orient</code>, <code>title</code>, <code>format</code>, <code>grid</code>, <code>tick_count</code>, <code>label_angle</code>, …) — see <a href="#axis-placement">Axis placement</a> — or <code>null</code> to <a href="#hiding-an-axis-or-legend">hide the axis</a>.</td></tr>
+<tr><td><code>legend</code></td><td>Legend config — placement (<code>orient</code>, <code>padding</code>, <code>offset</code>; see <a href="#legend-placement">Legend placement</a>), content (<code>title</code>, <code>values</code>, <code>format</code>, <code>tick_count</code>, <code>label_limit</code>; see <a href="#legend-content">Legend content</a>) and layout (<code>type</code>, <code>direction</code>, <code>symbol_type</code>, <code>symbol_size</code>; see <a href="#symbol-or-gradient--type">Symbol or gradient</a>) — or <code>null</code> to <a href="#hiding-an-axis-or-legend">hide the legend</a>.</td></tr>
+<tr><td><code>format</code></td><td>d3-format string for label formatting. Read on the <a href="#text-channel"><code>text</code></a> and <a href="#tooltip-channel"><code>tooltip</code></a> channels and on a <a href="#table-columns">table column</a>; on any other channel it is validated and then unread — put it on <code>axis.format</code> / <code>legend.format</code> instead, and see <a href="spec.html#warnings--and-the-fields-that-do-nothing">Spec › Warnings</a> for the diagnostic that says so.</td></tr>
+<tr><td><code>sort</code></td><td><code>"ascending"</code> / <code>"descending"</code> / <code>"-y"</code> / <code>[explicit, order, ...]</code>.</td></tr>
+<tr><td><code>stack</code></td><td>Position channels only. <code>"zero"</code> / <code>"normalize"</code> / <code>"center"</code> / <code>true</code> to stack, <code>null</code> / <code>false</code> to opt out — see <a href="#stacking">Stacking</a>.</td></tr>
+<tr><td><code>key</code></td><td><code>true</code> to mark this channel as the animation join key — see <a href="spec.html#animation">Spec › Animation</a>. At most one channel per encoding may set this; only valid on position channels (<code>x</code>, <code>y</code>, <code>x2</code>, <code>y2</code>, <code>theta</code>, <code>radius</code>) and mark channels (<code>color</code>, <code>fill</code>, <code>stroke</code>, <code>opacity</code>, <code>size</code>, <code>shape</code>, sankey <code>source</code>/<code>target</code>/<code>value</code>, geo <code>longitude</code>/<code>latitude</code>/<code>feature</code>).</td></tr>
+</tbody>
+</table>
+</div>
+<h2 id="span-channels"><a class="header" href="#span-channels">Span channels</a></h2>
+<p><code>x2</code> and <code>y2</code> turn a position into an interval. They take the same
+channel shape as <code>x</code> / <code>y</code>, with one rule that shapes everything else:
+<strong>a span channel never resolves a scale of its own.</strong> It is measured on
+the scale its base channel resolved, so both ends of a span land on one
+axis and in one set of units. Two consequences follow.</p>
+<ul>
+<li>The base channel’s domain is widened with the span column’s values
+before the scale is built, so an interval reaching past the base
+column’s own range is never clipped.</li>
+<li><code>x2.type</code> must equal <code>x.type</code> (and <code>y2.type</code> must equal <code>y.type</code>).
+A mismatch is <code>PRISM_SPEC_043</code>, because declaring two types does not
+produce two scales — it produces one scale silently reading the
+second column under the first column’s rules.</li>
+</ul>
+<p>A span channel also needs its base channel: <code>x2</code> without <code>x</code> is an
+error, as is a span channel that names no field.</p>
+<h3 id="per-mark-semantics"><a class="header" href="#per-mark-semantics">Per-mark semantics</a></h3>
+<div class="table-wrapper">
+<table>
+<thead>
+<tr><th>Mark</th><th><code>x2</code></th><th><code>y2</code></th></tr>
+</thead>
+<tbody>
+<tr><td><code>bar</code></td><td>Spans <code>x</code>→<code>x2</code>. The other axis keeps its band slot, so a ranged bar still needs a categorical axis on the side that is not ranged — bind both <code>x2</code> and <code>y2</code> only when you want a free-floating rect.</td><td>Spans <code>y</code>→<code>y2</code>, replacing the baseline anchor.</td></tr>
+<tr><td><code>rect</code></td><td>Spans <code>x</code>→<code>x2</code>. An unranged axis uses its band width, or the historic 1-px cell when it is continuous.</td><td>Spans <code>y</code>→<code>y2</code>, same rules.</td></tr>
+<tr><td><code>rule</code></td><td>Draws an interval segment from <code>(x, y)</code> to <code>(x2, y2)</code> instead of spanning the plot. Both <code>x</code> and <code>y</code> must be bound; an unbound span channel holds its endpoint at the base pixel, so <code>x</code>/<code>x2</code> + <code>y</code> is a horizontal whisker, <code>y</code>/<code>y2</code> + <code>x</code> a vertical one, and all four a diagonal. Endpoints keep their authored order, so a descending interval stays descending.</td><td>As <code>x2</code>.</td></tr>
+<tr><td><code>area</code></td><td>Not supported — an area’s <code>x</code> sequence is the path it traces, not an extent.</td><td>Replaces the implicit zero baseline with an explicit lower edge read per row. Grouping, x-sorting and curve interpolation are unchanged, so a <code>color</code>- or <code>detail</code>-split band keeps parallel boundaries.</td></tr>
+<tr><td>every other mark</td><td>Rejected (<code>PRISM_SPEC_042</code>).</td><td>Rejected (<code>PRISM_SPEC_042</code>).</td></tr>
+</tbody>
+</table>
+</div>
+<p>Rejecting rather than ignoring is a design choice: a span channel a mark
+cannot draw used to disappear silently, which made a ranged bar look
+like an ordinary baseline bar with no diagnostic.</p>
+<p>A Gantt row — categorical <code>y</code>, ranged <code>x</code>:</p>
+<pre><code class="language-json">{
+  "mark": {"type": "bar"},
+  "encoding": {
+    "y":  {"field": "task",  "type": "nominal"},
+    "x":  {"field": "start", "type": "quantitative"},
+    "x2": {"field": "end",   "type": "quantitative"}
+  }
+}
+</code></pre>
+<p>A confidence band — <code>area</code> with an explicit lower edge:</p>
+<pre><code class="language-json">{
+  "mark": {"type": "area"},
+  "encoding": {
+    "x":  {"field": "day",   "type": "temporal"},
+    "y":  {"field": "upper", "type": "quantitative"},
+    "y2": {"field": "lower", "type": "quantitative"}
+  }
+}
+</code></pre>
+<p>Vega-Lite’s polar span channels <code>theta2</code> and <code>radius2</code> are <strong>not</strong>
+implemented. They are not in the schema, so a spec carrying either is
+rejected at decode.</p>
+<h2 id="conditions"><a class="header" href="#conditions">Conditions</a></h2>
+<p>A channel can carry a <code>condition</code> clause that switches its visual
+value based on a declared <a href="selections.html">selection</a> or a structured
+predicate <code>test</code>. The channel’s own <code>value</code> / <code>field</code> supplies the
+fallback (“otherwise”) branch.</p>
+<pre><code class="language-json">"color": {
+  "condition": [
+    {"selection": "brush", "value": "#22c55e"},
+    {"test": {"op": "lt", "field": "score", "value": 0}, "value": "#ef4444"}
+  ],
+  "value": "#94a3b8"
+}
+</code></pre>
+<p>Rules:</p>
+<ul>
+<li><code>selection</code> references a name declared in the spec’s <code>selection</code>
+block (validate rule <code>PRISM_SPEC_025</code>).</li>
+<li><code>test</code> is a <strong>structured predicate</strong> — the same grammar <code>filter</code>
+uses (<code>{op, field, value}</code> leaves and <code>and</code> / <code>or</code> / <code>not</code>
+combinators), not an expression string. It is evaluated row-by-row
+at encode time (<code>PRISM_SPEC_026</code>). See
+<a href="spec.html#filter-transform">Spec › Filter transform</a> for the full
+operator set.</li>
+<li>Each entry needs exactly one of <code>value</code> or <code>field</code>. A
+<code>selection</code>-form entry without <code>value</code> inherits the channel’s own
+field binding (<code>PRISM_SPEC_027</code>).</li>
+<li>Entries evaluate top-down; the first match wins.</li>
+</ul>
+<p>Where the work happens:</p>
+<ul>
+<li><strong><code>test</code>-driven entries</strong> are evaluated server-side at encode time
+and baked directly into the mark’s resolved style. SVG output
+reflects them with no client involvement.</li>
+<li><strong><code>selection</code>-driven entries</strong> land in the scene-IR as a
+<code>Mark.Conditions[]</code> slice. The browser-side <code>prism-selection</code>
+module flips the matching SVG attribute when the named selection
+becomes active, and reverts to the resolved “otherwise” branch
+when it clears.</li>
+</ul>
+<p>See the <a href="../gallery/conditions">conditions gallery</a> and the
+<a href="../cookbook/highlight-on-brush.html">highlight-on-brush recipe</a>.</p>
+<h2 id="scales"><a class="header" href="#scales">Scales</a></h2>
+<p>Eight types: <code>linear</code> (default for quantitative), <code>log</code>, <code>pow</code>, <code>sqrt</code>,
+<code>time</code> (default for temporal), <code>band</code> (default for nominal bar x),
+<code>point</code> (default for nominal point x), <code>ordinal</code> (default for color
+over nominal).</p>
+<p>See the <a href="../gallery/scales">scales gallery</a> for one fixture per type.</p>
+<h3 id="bounding-the-domain--domain-zero-nice"><a class="header" href="#bounding-the-domain--domain-zero-nice">Bounding the domain — <code>domain</code>, <code>zero</code>, <code>nice</code></a></h3>
+<p>Three keys shape the resolved domain. They compose in a fixed
+precedence: <strong><code>domain</code> wins outright</strong>, and when it is absent the data
+extent is widened by <code>zero</code> and then rounded by <code>nice</code>. How that
+resolved domain is then laid onto pixels is a separate set of keys —
+see <a href="#mapping-the-domain-onto-pixels--clamp-reverse-round">Mapping the domain onto pixels</a>.</p>
+<div class="table-wrapper">
+<table>
+<thead>
+<tr><th>Key</th><th>Type</th><th>Default</th><th>Effect</th></tr>
+</thead>
+<tbody>
+<tr><td><code>domain</code></td><td>array</td><td>data extent</td><td>Pins the domain exactly. <code>zero</code> and <code>nice</code> are not applied on top of it.</td></tr>
+<tr><td><code>zero</code></td><td>boolean</td><td><code>true</code> on <code>linear</code> / <code>pow</code> / <code>sqrt</code>; ignored on <code>log</code> and <code>time</code></td><td>Widens a positive-only extent down to 0 (or a negative-only extent up to 0).</td></tr>
+<tr><td><code>nice</code></td><td>boolean</td><td><code>true</code> on <code>linear</code> / <code>pow</code> / <code>sqrt</code> / <code>time</code>; <code>false</code> on <code>log</code></td><td>Rounds the bounds outward so the axis starts and ends on a labelled tick.</td></tr>
+</tbody>
+</table>
+</div>
+<pre><code class="language-json">"y": {
+  "field": "score", "type": "quantitative",
+  "scale": {"zero": false, "domain": [90, 130]}
+}
+</code></pre>
+<p><strong><code>domain</code> shape by family.</strong> A continuous scale (<code>linear</code>, <code>log</code>,
+<code>pow</code>, <code>sqrt</code>) takes exactly two ascending numeric bounds. A <code>time</code>
+scale takes two bounds, each an ISO-8601 date string or an
+epoch-millisecond number. A discrete scale (<code>band</code>, <code>point</code>,
+<code>ordinal</code>) takes the ordered category list:</p>
+<pre><code class="language-json">"x": {
+  "field": "size", "type": "nominal",
+  "scale": {"domain": ["small", "medium", "large"]}
+}
+</code></pre>
+<p>A discrete <code>domain</code> pins the <strong>leading</strong> order; any data category the
+list omits is appended after it in first-seen order, so a partial
+domain reorders without dropping rows. This is Prism’s one intentional
+divergence from Vega-Lite, which treats a discrete domain as the
+complete category set.</p>
+<blockquote>
+<p><strong>Retired workaround.</strong> Explicit category order used to be reachable
+only by arranging the layers so the desired category appeared in the
+first layer’s data — order fell out of the domain-union order. Set
+<code>scale.domain</code> instead; layer ordering no longer affects category
+order.</p>
+</blockquote>
+<p>A malformed <code>domain</code> — wrong arity, non-numeric bounds on a continuous
+scale, reversed or zero-width bounds, a non-string category — is
+rejected at validate time with <code>PRISM_SPEC_041</code>, and the encoder
+raises the same code for callers that skip validate.</p>
+<p><strong><code>nice</code> is boolean-only.</strong> Vega-Lite’s numeric (tick-count) and
+time-interval forms of <code>nice</code> are rejected by the schema. Control tick
+density with <code>axis.tick_count</code> instead.</p>
+<p><strong><code>log</code> has no zero-forcing, by design.</strong> A log domain cannot contain
+zero, so <code>zero</code> is ignored there — including an explicit <code>zero: true</code>.</p>
+<blockquote>
+<p><strong>Retired workaround.</strong> Because zero-forcing used to be unconditional
+on <code>linear</code>, <code>scale.type: "log"</code> was the only way to get an axis that
+did not start at zero. That is no longer necessary: use
+<code>{"zero": false}</code> on the linear scale, or pin <code>domain</code> outright, and
+reach for <code>log</code> only when the data genuinely wants a logarithmic
+mapping.</p>
+</blockquote>
+<p><code>nice</code> defaults on, so adding no scale block at all moves axis bounds
+compared with pre-E2-S1 Prism: an extent of 3..97 now resolves to
+0..100 rather than 0..97. Set <code>{"nice": false}</code> to keep the raw extent.</p>
+<h3 id="rows-outside-the-domain--overflow-and-clip"><a class="header" href="#rows-outside-the-domain--overflow-and-clip">Rows outside the domain — overflow and clip</a></h3>
+<p>Pinning <code>domain: [90, 130]</code> on a column that holds a 150 puts that row
+outside the plot rect. Prism’s answer is <strong>overflow with a clip</strong>: the
+row is encoded at its true position, and the plot region clips whatever
+reaches past its edge.</p>
+<p>Three things it is not, by design:</p>
+<ul>
+<li><strong>Not dropped.</strong> The row still produces a mark, so a line stays
+continuous through it and an aggregate still counts it.</li>
+<li><strong>Not clamped.</strong> Pulling the value back to the domain bound is
+<code>scale.clamp</code>’s job. Making it the default would make that key
+meaningless and would silently misreport the value’s magnitude.</li>
+<li><strong>Not drawn over the chrome.</strong> Without a clip, a line reaching past
+the top of the plot would cross the title, and a bar reaching past
+the left would cross the y-axis labels.</li>
+</ul>
+<p>The clip is expressed in the Scene IR, not invented by a renderer: the
+encoder registers the plot rect as a <code>defs.clips</code> entry and points
+<code>scene.clip_ref</code> at it, and every renderer applies it to the <strong>mark
+container alone</strong>. Axes, gridlines, legends and the title are siblings
+of that container and stay unclipped — including an axis raised above
+the marks with <a href="#axis-components-and-geometry"><code>axis.zindex</code></a>, which is
+emitted outside the container for exactly this reason. Gridlines need no
+clip of their own: they are generated from ticks inside the domain, so
+they can never reach past the plot edge.</p>
+<p><strong>When the clip is armed.</strong> By default, only when a position channel
+(<code>x</code>, <code>y</code>, <code>x2</code>, <code>y2</code>) pins an explicit <code>scale.domain</code>. That is the one
+way a mark can land outside the plot rect — with a data-derived domain
+the bounds come from the very rows being drawn, so every mark is inside
+by construction, and arming a clip there would only risk shaving a
+stroke or a glyph that legitimately overhangs the edge by a pixel.</p>
+<p><strong>Forcing it either way.</strong> <code>mark_def.clip</code> overrides the default:</p>
+<pre><code class="language-json">"mark": {"type": "line", "clip": true}
+</code></pre>
+<p><code>true</code> always clips, <code>false</code> never does. The clip bounds one plot rect
+rather than one mark, so in a <code>layer</code> a single <code>clip: true</code> arms it for
+every layer and a <code>clip: false</code> otherwise disarms it for all of them.
+<code>concat</code> / <code>facet</code> / <code>repeat</code> cells each own a plot rect and decide
+independently.</p>
+<h3 id="choosing-the-colors--range-scheme-interpolate"><a class="header" href="#choosing-the-colors--range-scheme-interpolate">Choosing the colors — <code>range</code>, <code>scheme</code>, <code>interpolate</code></a></h3>
+<p><code>scale.range</code> is an inline list of colors: the alternative to naming a
+<code>scheme</code>. It is the <strong>top</strong> of the palette cascade, so it beats both
+<code>scheme</code> and whatever the active theme’s
+<a href="./themes.html#color-schemes">range slots</a> supply:</p>
+<pre><code class="language-json">"color": {
+  "field": "origin", "type": "nominal",
+  "scale": {"range": ["#4c78a8", "#f58518", "#54a24b"]}
+}
+</code></pre>
+<p>Colors are <code>#rrggbb</code> or <code>#rrggbbaa</code>. An entry Prism cannot parse is
+dropped and the rest still win; a range whose every entry is
+unparseable falls through to the next tier rather than blanking the
+chart. On a discrete color channel the list is indexed positionally —
+the i-th category takes the (i mod n)-th color — which is what the
+symbol legend’s swatches show. On a quantitative color channel the
+list is the ramp’s control points, interpolated between.</p>
+<p><strong><code>range</code> is honoured on color channels only.</strong> On a position channel
+(<code>x</code>, <code>y</code>, <code>x2</code>, <code>y2</code>, <code>theta</code>, <code>radius</code>) it is rejected at validate
+with <code>PRISM_SPEC_045</code>, not silently ignored. A position scale’s range
+is the plot rect Prism computes, and the axis, the gridlines and every
+mark all measure against that same rect — a spec-supplied range would
+move the marks without moving the chrome, producing a chart whose axes
+disagree with the data they label. Bound the axis with <code>domain</code> /
+<code>zero</code> / <code>nice</code>, and size the rect with <code>width</code> / <code>height</code> or the band
+paddings. Vega-Lite’s non-color ranges (<code>size</code>, <code>opacity</code>, a named
+range reference string) are not implemented; those forms read as “no
+explicit range” and fall through to the rest of the cascade.</p>
+<p><code>scale.interpolate</code> picks the colorspace a <strong>continuous</strong> ramp is
+traversed in:</p>
+<div class="table-wrapper">
+<table>
+<thead>
+<tr><th>Value</th><th>Effect</th></tr>
+</thead>
+<tbody>
+<tr><td><code>rgb</code></td><td>Default. Blends the sRGB components directly.</td></tr>
+<tr><td><code>hsl</code></td><td>Blends hue along the shorter arc, keeping saturation up where sRGB would pass through grey.</td></tr>
+<tr><td><code>lab</code></td><td>Blends in CIELAB, which is roughly perceptually uniform, so the ramp’s steps read as evenly spaced.</td></tr>
+</tbody>
+</table>
+</div>
+<p>Vega-Lite’s <code>hcl</code> is <strong>not</strong> supported — the schema rejects it.</p>
+<pre><code class="language-json">"color": {
+  "field": "density", "type": "quantitative",
+  "scale": {"scheme": "viridis", "interpolate": "lab"}
+}
+</code></pre>
+<p>The interpolation happens once, at encode time: Prism resamples the
+ramp into evenly spaced sRGB stops that already trace the requested
+space’s curve. Everything downstream — the SVG renderer, the Scene
+IR’s gradient stops, the browser web component — only ever blends
+neighbouring stops linearly, so no renderer carries colorspace math of
+its own and every backend agrees. <code>interpolate</code> has no effect on a
+discrete palette, which is indexed rather than traversed.</p>
+<h3 id="mapping-the-domain-onto-pixels--clamp-reverse-round"><a class="header" href="#mapping-the-domain-onto-pixels--clamp-reverse-round">Mapping the domain onto pixels — <code>clamp</code>, <code>reverse</code>, <code>round</code></a></h3>
+<p><code>domain</code> / <code>zero</code> / <code>nice</code> decide <em>what</em> the scale covers. Five further
+keys decide <em>how</em> that domain lands on pixels.</p>
+<div class="table-wrapper">
+<table>
+<thead>
+<tr><th>Key</th><th>Type</th><th>Default</th><th>Applies to</th><th>Effect</th></tr>
+</thead>
+<tbody>
+<tr><td><code>clamp</code></td><td>boolean</td><td><code>false</code></td><td>continuous</td><td>Pins an out-of-domain value to the nearest domain edge instead of letting it map past the range.</td></tr>
+<tr><td><code>reverse</code></td><td>boolean</td><td><code>false</code></td><td>all</td><td>Runs the scale the other way round, relative to the channel’s default direction.</td></tr>
+<tr><td><code>round</code></td><td>boolean</td><td><code>false</code></td><td>all</td><td>Quantises layout to whole pixels.</td></tr>
+<tr><td><code>padding_inner</code></td><td>number <code>[0,1)</code></td><td><code>0.1</code></td><td>band</td><td>Gap between adjacent bands, as a fraction of the step.</td></tr>
+<tr><td><code>padding_outer</code></td><td>number <code>[0,1)</code></td><td><code>0.05</code> band, <code>0.5</code> point</td><td>band / point</td><td>Gap before the first and after the last band.</td></tr>
+<tr><td><code>align</code></td><td>number <code>[0,1]</code></td><td><code>0.5</code></td><td>band / point</td><td>Where the slack left over after layout sits.</td></tr>
+</tbody>
+</table>
+</div>
+<p>An out-of-range padding or <code>align</code> is rejected at validate time with
+<code>PRISM_SPEC_049</code>; a caller that skips validate gets the value pinned
+into its legal range rather than an inside-out band.</p>
+<p><strong><code>clamp</code>.</strong> By default a value outside the resolved domain keeps
+mapping past the range and is clipped by the plot rect — the useful
+behaviour when a pinned <code>domain</code> crops outliers on purpose. Turn
+<code>clamp</code> on to pile them against the edge instead:</p>
+<pre><code class="language-json">"y": {
+  "field": "score", "type": "quantitative",
+  "scale": {"domain": [0, 100], "clamp": true}
+}
+</code></pre>
+<p><code>clamp</code> is a continuous-family knob. A band / point / ordinal scale has
+no out-of-domain image to pin — an unknown category is an error, not an
+overflow. On a <code>log</code> scale <code>clamp</code> pins positive out-of-domain values,
+but a zero or negative value still has no image at all and raises
+<code>PRISM_SPEC_010</code>.</p>
+<p><strong><code>reverse</code> is axis-relative, not screen-relative.</strong> Prism’s y scales
+already run bottom-to-top: the domain minimum is handed the <em>bottom</em>
+pixel, because SVG’s origin is the top-left corner. <code>reverse</code> composes
+with that existing inversion rather than replacing it. Concretely:</p>
+<ul>
+<li>on <code>x</code>, <code>reverse: true</code> puts the domain minimum on the <strong>right</strong>;</li>
+<li>on <code>y</code>, <code>reverse: true</code> puts the domain minimum at the <strong>top</strong>, so
+the axis reads downward.</li>
+</ul>
+<p>Axes, ticks and gridlines all place through the same scale, so they
+follow automatically — a reversed axis relabels itself rather than
+needing a separate <code>axis</code> override.</p>
+<p>Continuous families implement <code>reverse</code> by flipping the pixel range.
+Discrete families instead hand the computed slots to the categories
+back to front — d3-scale’s own band behaviour — which keeps band widths
+and the signed step untouched, so a reversed band scale on <code>y</code> still
+draws horizontal bars correctly. The resolved domain order is not
+changed either way: <code>scale.domain</code> still lists categories in the order
+the axis reads them before reversal.</p>
+<p><strong><code>round</code> is layout, not serialisation.</strong> On a band or point scale it
+floors the step and rounds the leading offset and the band width, which
+is what makes band edges land on device pixels and stops adjacent bars
+sharing a half-pixel seam. On a continuous scale it rounds the resolved
+pixel. It is independent of the renderer’s pinned 3-decimal coordinate
+quantisation (see <a href="./spec.html">Scene IR</a>) — both can apply, and rounding
+the layout first is what actually produces whole numbers in the output.</p>
+<p><strong>Band geometry.</strong> A band scale divides its range into one step per
+category and draws the band inside that step:</p>
+<pre><code class="language-text">step   = span / (n - padding_inner + 2 * padding_outer)
+offset = (span - step * (n - padding_inner)) * align
+width  = step * (1 - padding_inner)
+left_i = range_start + offset + step * i
+</code></pre>
+<p><code>padding</code> is the shorthand: on a band scale it sets <code>padding_inner</code> and
+<code>padding_outer</code> together, on a point scale it sets the (only) outer
+padding. An explicit <code>padding_inner</code> / <code>padding_outer</code> outranks it.</p>
+<pre><code class="language-json">"x": {
+  "field": "origin", "type": "nominal",
+  "scale": {"padding_inner": 0.4, "padding_outer": 0.2}
+}
+</code></pre>
+<p>The defaults — <code>0.1</code> inner, <code>0.05</code> outer, <code>0.5</code> align — are Vega-Lite’s,
+and they reproduce Prism’s pre-split band layout exactly (which spent
+half an inner gap at each end of the range), so adopting the split moved
+no existing chart. A point scale has no inner padding — every band
+collapses to a point — so <code>padding_inner</code> never reaches it; its outer
+padding defaults to <code>0.5</code>, which is what centres the first and last
+point half a step inside the range.</p>
+<p><code>align</code> only moves where the leftover slack sits; it never changes the
+band width. <code>0</code> packs the bands against the range start, <code>1</code> against the
+end, <code>0.5</code> centres them.</p>
+<h2 id="axes--legends"><a class="header" href="#axes--legends">Axes &amp; legends</a></h2>
+<p>Both are auto-generated based on the encoded channels but can be
+overridden per channel. Bundled support: 4 orientations
+(bottom/left/top/right — see <a href="#axis-placement">Axis placement</a>),
+major + minor ticks, grid toggle, label rotation, overlap handling,
+gradient + symbol legends.</p>
+<h3 id="axis-placement"><a class="header" href="#axis-placement">Axis placement</a></h3>
+<p><code>axis.orient</code> on a position channel picks the side of the plot the
+axis occupies:</p>
+<pre><code class="language-json">"encoding": {
+  "x": {"field": "month", "type": "nominal", "axis": {"orient": "top"}},
+  "y": {"field": "sales", "type": "quantitative", "axis": {"orient": "right"}}
+}
+</code></pre>
+<div class="table-wrapper">
+<table>
+<thead>
+<tr><th>Channel</th><th><code>orient</code></th><th>Result</th></tr>
+</thead>
+<tbody>
+<tr><td><code>x</code></td><td><code>bottom</code></td><td>Default. Axis below the plot.</td></tr>
+<tr><td><code>x</code></td><td><code>top</code></td><td>Axis above the plot.</td></tr>
+<tr><td><code>y</code></td><td><code>left</code></td><td>Default. Axis to the left of the plot.</td></tr>
+<tr><td><code>y</code></td><td><code>right</code></td><td>Axis to the right of the plot.</td></tr>
+</tbody>
+</table>
+</div>
+<p>An x axis runs horizontally and a y axis vertically, so only two of
+the four sides are meaningful per channel. The other two —
+<code>{"x": {"axis": {"orient": "left"}}}</code> — are rejected at validation
+with <code>PRISM_SPEC_044</code> rather than silently ignored.</p>
+<p><strong>The padding follows the axis.</strong> The side an axis moves to reserves
+the room for its tick marks, labels and title; the side it left
+releases it and the plot rect expands into the freed space. A chart
+with <code>x</code> on top and <code>y</code> on the right therefore has the same plot size
+as the default one, mirrored. Grid lines, tick marks and the domain
+line all move with the axis.</p>
+<p>Orient composes with the rest of the axis vocabulary. <code>"axis": null</code>
+wins over it: a hidden axis reserves nothing on any side, so the
+orient is moot (see <a href="#hiding-an-axis-or-legend">Hiding an axis or legend</a>).</p>
+<p>Under <code>layer</code>, the layers share one pair of axes, so <code>orient</code> folds
+across them first-specified-wins like every other axis property — the
+first layer that sets it decides the side, and a later layer asking
+for a different one raises <code>PRISM_WARN_AXIS_CONFIG_CONFLICT</code> and is
+ignored (see <a href="#where-warnings-surface">Where warnings surface</a> for
+where that reaches you). Under <code>facet</code> and <code>repeat</code>, every cell renders the same child
+spec, so the child’s <code>orient</code> places the shared axis for the whole
+grid: a top-oriented x axis anchors to the top row instead of the
+bottom, and a right-oriented y axis to the last column instead of the
+first.</p>
+<h3 id="axis-components-and-geometry"><a class="header" href="#axis-components-and-geometry">Axis components and geometry</a></h3>
+<p>An axis is three drawable components plus a title, and the <code>axis</code>
+block on a position channel controls each one separately:</p>
+<pre><code class="language-json">"x": {
+  "field": "day", "type": "nominal",
+  "axis": {
+    "labels": true, "ticks": true, "domain": true,
+    "tick_size": 5, "label_padding": 4, "title_padding": 8,
+    "label_limit": 0, "zindex": 0
+  }
+}
+</code></pre>
+<div class="table-wrapper">
+<table>
+<thead>
+<tr><th>Key</th><th>Default</th><th>Effect</th></tr>
+</thead>
+<tbody>
+<tr><td><code>labels</code></td><td><code>true</code></td><td>Draws the tick labels. <code>false</code> suppresses <strong>only</strong> the labels — the tick marks, the domain line, the grid and the title all stay.</td></tr>
+<tr><td><code>ticks</code></td><td><code>true</code></td><td>Draws the tick marks. <code>false</code> suppresses <strong>only</strong> the marks; the labels sit at the same tick positions and are unaffected, as are the grid lines.</td></tr>
+<tr><td><code>domain</code></td><td><code>true</code></td><td>Draws the axis line along the plot edge. <code>false</code> suppresses <strong>only</strong> that line.</td></tr>
+<tr><td><code>tick_size</code></td><td><code>5</code></td><td>Major tick length in pixels. Minor ticks stay proportionally shorter (0.6×).</td></tr>
+<tr><td><code>label_padding</code></td><td><code>4</code></td><td>The gap between the axis line and its tick labels. Added to a fixed per-side text allowance, so <code>0</code> puts the labels as close as the baseline permits.</td></tr>
+<tr><td><code>title_padding</code></td><td><code>8</code></td><td>The gap between the tick labels and the axis title. Added to a fixed per-side text allowance, so <code>0</code> puts the title as close as the labels permit.</td></tr>
+<tr><td><code>label_limit</code></td><td><code>0</code> (no limit)</td><td>Maximum label width in pixels. A wider label is truncated with an ellipsis (<code>Engineering</code> → <code>Engi…</code>). A limit too small to hold even the ellipsis drops the label.</td></tr>
+<tr><td><code>zindex</code></td><td><code>0</code></td><td><code>0</code> draws the axis and its grid lines <strong>behind</strong> the marks; any positive value draws them <strong>in front</strong>.</td></tr>
+</tbody>
+</table>
+</div>
+<p>The three visibility switches compose independently — set any
+combination and each component obeys only its own key. They are also
+finer-grained than <a href="#hiding-an-axis-or-legend"><code>"axis": null</code></a>, which
+suppresses the whole block: with <code>labels</code>, <code>ticks</code> and <code>domain</code> all
+<code>false</code> the axis is still emitted and still draws its grid lines and
+its title.</p>
+<p><strong>Suppression releases padding.</strong> The margin an axis reserves on its
+side of the plot is the sum of a tick-mark share and a label share, so
+<code>"ticks": false</code> or <code>"labels": false</code> hands that share back and the
+plot rect expands into it. The domain line rides on the plot edge and
+reserves nothing, so hiding it moves nothing. Reservations are fixed
+pixel metrics rather than measured text: a <code>tick_size</code>,
+<code>label_padding</code> or <code>title_padding</code> far larger than the default draws
+into the outer margin instead of growing the reservation.</p>
+<p><strong><code>zindex</code> and clipping.</strong> An above-marks axis is emitted as a sibling
+of the mark container, not a child, so it is never subject to the
+<a href="#rows-outside-the-domain--overflow-and-clip">plot-region clip</a> that
+keeps out-of-domain marks inside the plot rect — its labels and title
+still draw in the margin. Under <code>layer</code> and <code>facet</code> a <em>shared</em> axis is
+emitted after every cell and therefore always draws above the marks,
+whatever its <code>zindex</code>. That shared-axis ordering is a known fidelity
+gap, not a clipping one: a shared axis lives outside every cell’s mark
+container, so the clip never reaches it either way. Honouring <code>zindex</code>
+there would move the shared axes ahead of the cells and restack every
+layered and faceted chart, so it is held for a change of its own, made
+on purpose.</p>
+<p><strong>Truncation is measured with a fixed heuristic.</strong> Prism runs no text
+measurement pass; <code>label_limit</code> (like overlap detection) estimates 6 px
+per character. Truncation happens once, at encode time, so the label
+text in the Scene IR is already shortened and every renderer agrees.</p>
+<p><strong>Spec beats theme.</strong> <code>tick_size</code>, <code>label_padding</code> and <code>title_padding</code>
+also exist as the theme tokens <code>--prism-axis-tick-size</code>,
+<code>--prism-axis-label-padding</code> and <code>--prism-axis-title-padding</code> — and, as
+<a href="./themes.html#per-axis-blocks"><code>axis_x</code> / <code>axis_y</code></a>, per axis. The
+<code>axis</code> block wins outright wherever it states a value; the per-axis
+theme block comes next, then the shared theme block, and Prism’s
+built-in metric is the floor. See
+<a href="./themes.html#axis-geometry-precedence">Themes</a>.</p>
+<p>All eight keys survive composition. Under <code>layer</code> and <code>facet</code> with the
+default (shared) resolve mode they are folded from the children with
+the same first-specified-wins rule as every other <code>axis</code> property —
+see <a href="./composition.html">Composition</a>.</p>
+<h3 id="ticks-and-gridlines"><a class="header" href="#ticks-and-gridlines">Ticks and gridlines</a></h3>
+<p><strong>Gridline positions are tick positions.</strong> Prism emits one gridline per
+<em>major</em> tick, so whatever picks the ticks picks the gridlines with it.
+That coupling is intentional and matches Vega-Lite — there is no
+separate “grid values” knob, and there is not going to be one. Minor
+ticks get a tick mark but never a gridline.</p>
+<p>Three keys on the <code>axis</code> block choose the tick set:</p>
+<div class="table-wrapper">
+<table>
+<thead>
+<tr><th>Key</th><th>Effect</th></tr>
+</thead>
+<tbody>
+<tr><td><code>tick_count</code></td><td>How many major ticks to aim for on a continuous axis. A <em>hint</em>: the generator rounds to a readable step (1/2/5 × 10ⁿ) and may land either side of the request. Default <code>5</code>. <code>0</code> removes every tick — and therefore every gridline — while keeping the domain line and title.</td></tr>
+<tr><td><code>values</code></td><td>An explicit tick set that replaces the generated one. Pins exactly what it names, and overrides both <code>tick_count</code> and <code>tick_min_step</code>.</td></tr>
+<tr><td><code>tick_min_step</code></td><td>The smallest gap, in domain units, allowed between adjacent <em>generated</em> ticks.</td></tr>
+</tbody>
+</table>
+</div>
+<pre><code class="language-json">"y": {
+  "field": "revenue", "type": "quantitative",
+  "scale": {"domain": [0, 80]},
+  "axis": {"values": [0, 25, 50, 75]}
+}
+</code></pre>
+<p>That spec draws four gridlines, at 0, 25, 50 and 75, and nothing else.</p>
+<p><code>tick_count</code> applies to the continuous families — <code>linear</code>, <code>log</code>,
+<code>pow</code>, <code>sqrt</code> and <code>time</code>. On a <code>log</code> axis the decades drive the tick
+set, so the count acts as a ceiling: when there are more decades than
+the count allows, every <em>k</em>-th decade survives and the mantissa minor
+ticks are dropped. Discrete (<code>band</code>, <code>point</code>, <code>ordinal</code>) axes tick once
+per category and ignore <code>tick_count</code>.</p>
+<p><code>values</code> works on every family. Pin numbers on a quantitative axis,
+ISO-8601 date strings (or epoch milliseconds) on a temporal one, and
+exact category names on a discrete one:</p>
+<pre><code class="language-json">"x": {"field": "month", "type": "temporal", "axis": {"values": ["2021-01-01", "2021-07-01"]}}
+"x": {"field": "region", "type": "nominal",  "axis": {"values": ["north", "south"]}}
+</code></pre>
+<p>An entry the axis cannot place — outside the resolved scale domain,
+unreadable for the scale family, or a category the domain does not
+contain — is <strong>dropped</strong>, not drawn off-plot, and reported as
+<code>PRISM_WARN_AXIS_VALUES_DROPPED</code> listing every casualty. A dropped
+value takes its gridline with it. If the values are the ones you want,
+widen the domain with <a href="#scales"><code>scale.domain</code></a>. The warning reaches
+you through <code>SceneDoc.Warnings</code> — see
+<a href="#where-warnings-surface">Where warnings surface</a>.</p>
+<p><strong>Pinning suppresses minor ticks.</strong> Minor ticks are midpoints of a
+generated nice sequence; an author-chosen set has no such sequence to
+halve, and inventing midpoints between arbitrary pinned values would
+add tick marks nobody asked for. So <code>values</code> yields exactly the ticks
+it names — all major, all with gridlines. <code>tick_count</code> and
+<code>tick_min_step</code> leave the generator in charge, so minor ticks are
+recomputed from whatever majors come out.</p>
+<p><code>tick_min_step</code> is enforced by asking the generator for <em>fewer</em> ticks
+until the gap opens, rather than by thinning the result, so the
+survivors stay round numbers (0/50/100, not 0/40/80). It shapes
+generated ticks only: <code>values</code> pins exactly what it names, spacing
+included.</p>
+<p>All three keys survive composition. Under the default (shared) resolve
+mode a <code>layer</code> or <code>facet</code> folds its children’s <code>axis</code> blocks together
+property by property, first-specified-wins, so <code>tick_count</code> set on one
+layer reaches the shared axis — see
+<a href="composition.html">Composition</a>.</p>
+<h3 id="crowded-labels--label_overlap"><a class="header" href="#crowded-labels--label_overlap">Crowded labels — <code>label_overlap</code></a></h3>
+<p>When two tick labels’ estimated boxes collide, <code>axis.label_overlap</code>
+decides what gives. Prism has no text-measurement pass, so the estimate
+is <code>6px</code> per character along a horizontal axis and a flat <code>12px</code> line
+height along a vertical one — the same heuristic <code>label_limit</code> uses.</p>
+<div class="table-wrapper">
+<table>
+<thead>
+<tr><th>Value</th><th>Effect</th></tr>
+</thead>
+<tbody>
+<tr><td><code>true</code>, <code>"parity"</code>, <code>"auto"</code></td><td>Hide every <em>other</em> colliding label, so a crowded axis thins by half rather than collapsing to its first label. The default.</td></tr>
+<tr><td><code>"greedy"</code></td><td>Keep the last label shown and hide everything that collides with it, then carry on from it. Drops at least as much as <code>parity</code>, and leaves the survivors evenly legible.</td></tr>
+<tr><td><code>false</code>, <code>"none"</code></td><td>Draw every label. Overlap becomes the author’s problem.</td></tr>
+</tbody>
+</table>
+</div>
+<p><strong>Adjacency is direction-independent.</strong> Ticks reach this pass in <em>domain</em>
+order, not pixel order, and a band scale on a vertical axis runs
+bottom-to-top — the first category carries the <em>largest</em> <code>y</code>. The pass
+compares the absolute distance between two labels against their combined
+half-widths, so it behaves identically whichever way the pixels run. An
+earlier implementation compared signed leading and trailing edges, which
+read every adjacent pair on a <code>left</code>/<code>right</code> axis as overlapping no
+matter how much room there was; the visible result was a horizontal bar
+chart naming only every other bar, and y axes labelled <code>0 / 0.4 / 0.8</code>
+where all five ticks had room. Fixed in v0.15.1.</p>
+<p><strong>Overlap is measured in layout space, at encode time.</strong> The pass compares
+labels against the plot size the scene was <em>encoded</em> at, which is not
+necessarily the size it is <em>displayed</em> at. <code>RenderOpts.Width</code> / <code>Height</code>
+set the SVG’s <code>width</code> / <code>height</code> attributes and leave the viewBox alone,
+so they scale the finished drawing rather than re-running layout — render
+an 800x600 scene into a 200x150 box and labels the pass measured as clear
+at 13.5px are ~3px apart on screen, with nothing thinned. If the display
+size is known, lay out at it (<code>encode.EncodeOpts{Width, Height}</code> via
+<code>CompileOptions.Encode</code>) instead of scaling afterwards.</p>
+<p>A label hidden this way is gone from the drawing with nothing marking its
+absence. On a <em>continuous</em> axis that costs precision a reader can
+interpolate back; on a <strong>band</strong> axis it costs identity they cannot
+recover. If your categorical axis is crowded, prefer giving it room, a
+shorter <code>label_limit</code>, or <code>"none"</code> plus a layout you control over letting
+either mode guess.</p>
+<h3 id="legend-placement"><a class="header" href="#legend-placement">Legend placement</a></h3>
+<p>A legend is built from the <code>color</code> channel, and the <code>legend</code> block on
+that channel places it:</p>
+<pre><code class="language-json">"color": {"field": "region", "type": "nominal", "legend": {"orient": "left"}}
+</code></pre>
+<p><code>orient</code> accepts nine values, and they fall into two groups that
+behave differently:</p>
+<div class="table-wrapper">
+<table>
+<thead>
+<tr><th><code>orient</code></th><th>Group</th><th>Behaviour</th></tr>
+</thead>
+<tbody>
+<tr><td><code>left</code>, <code>right</code>, <code>top</code>, <code>bottom</code></td><td><strong>Side</strong></td><td><strong>Reserves margin.</strong> The plot rect shrinks by the legend’s width (left/right) or height (top/bottom) plus the offset gap, and the legend parks in that reserved band — outside the axis chrome, so a left legend never lands on the y axis.</td></tr>
+<tr><td><code>top-left</code>, <code>top-right</code>, <code>bottom-left</code>, <code>bottom-right</code></td><td><strong>Corner</strong></td><td><strong>Overlays the plot.</strong> The plot rect is untouched and the legend is drawn over its corner. This is the default (<code>top-right</code>) and the historical behaviour.</td></tr>
+<tr><td><code>none</code></td><td>—</td><td>Suppresses the legend entirely. No legend is built and no margin is reserved.</td></tr>
+</tbody>
+</table>
+</div>
+<p>Two knobs adjust the placement:</p>
+<div class="table-wrapper">
+<table>
+<thead>
+<tr><th>Key</th><th>Effect</th></tr>
+</thead>
+<tbody>
+<tr><td><code>padding</code></td><td>Interior padding. Grows the legend frame by that many pixels on every side and insets the swatches, labels and title by the same amount. A side placement widens its reserved band to match, so padding never eats into the plot. Default <code>0</code>.</td></tr>
+<tr><td><code>offset</code></td><td>The gap the legend keeps from the plot. On a side placement it is the space between the legend and the plot’s chrome, and it widens the reserved band (defaults: <code>10</code> for left/right, <code>4</code> for top/bottom). On a corner placement it is the inward inset from the plot corner (default <code>0</code>).</td></tr>
+</tbody>
+</table>
+</div>
+<p>Reservations are measured, not guessed: a symbol legend is 104 px
+wide, and a top/bottom band is sized from the entry count. A channel
+with fewer than two categories builds no legend, so it reserves
+nothing either.</p>
+<p>In a <code>layer</code> composite each layer resolves its own legend. Legends
+sharing an anchor stack rather than overlap, and a shared side’s
+reservation is the sum (top/bottom) or the widest (left/right) of what
+the stacked legends claim.</p>
+<h3 id="legend-content"><a class="header" href="#legend-content">Legend content</a></h3>
+<p>The same <code>legend</code> block controls what the legend <em>says</em>:</p>
+<div class="table-wrapper">
+<table>
+<thead>
+<tr><th>Key</th><th>Effect</th></tr>
+</thead>
+<tbody>
+<tr><td><code>title</code></td><td>Replaces the title derived from the bound field. <code>false</code> suppresses the title entirely — the same string-or-false convention <code>axis.title</code> uses. Absent keeps the field name.</td></tr>
+<tr><td><code>values</code></td><td>Selects which entries the legend shows, <strong>in the order listed</strong>. Entries matching no category are dropped.</td></tr>
+<tr><td><code>format</code></td><td>A d3-format specifier applied to the entry labels (the subset in <code>encode/format</code>, the same one <code>axis.format</code> and <code>text.format</code> use).</td></tr>
+<tr><td><code>tick_count</code></td><td>How many labelled stops a gradient legend draws.</td></tr>
+<tr><td><code>label_limit</code></td><td>Maximum label width in pixels; longer labels are truncated with an ellipsis.</td></tr>
+</tbody>
+</table>
+</div>
+<pre><code class="language-json">"color": {
+  "field": "region", "type": "nominal",
+  "legend": {
+    "title": "Sales region",
+    "values": ["EMEA", "APAC"],
+    "label_limit": 60
+  }
+}
+</code></pre>
+<p><strong><code>values</code> never re-colours the legend.</strong> Each surviving entry keeps
+the palette slot of its <em>original</em> category position, so a legend
+narrowed to two of six regions still shows those two regions’ actual
+mark colours rather than the first two palette entries. The order is
+the author’s: listing <code>["APAC", "EMEA"]</code> swaps the rows without
+swapping the swatches.</p>
+<p><strong><code>format</code> goes through the real formatter.</strong> <code>legend.format</code> is
+parsed by the same <code>encode/format</code> d3 subset that
+<code>PRISM_SPEC_011</code> validates it against, so <code>".1%"</code> renders <code>12.3%</code>.
+Since E7-S1 <code>axis.format</code> takes the identical path — it ran through
+<code>fmt.Sprintf</code> before, which rendered a documented specifier like
+<code>".0%"</code> as <code>%!(NOVERB)</code> on an axis while the same string worked on a
+legend. A specifier the subset cannot parse falls back to the default
+<code>%g</code> label rather than emitting a broken one.
+It applies to gradient stop labels always, and to a symbol label
+whose category reads as a number; a non-numeric category is passed
+through untouched.</p>
+<p><strong>The frame follows the content.</strong> Filtering with <code>values</code> shortens
+the box, suppressing the title with <code>"title": false</code> drops the title
+band, and <code>label_limit</code> sets the width budget (the default is 14
+characters, or 84 px). A side <code>orient</code> reserves its margin from those
+same numbers, so the plot never overlaps a resized legend.</p>
+<p><code>tick_count</code> applies to gradient legends — the continuous form used by
+a quantitative <code>color</code> channel. It defaults to 5 evenly spaced stops
+across the colour domain; <code>1</code> labels the minimum alone and <code>0</code> leaves
+a bare bar. Setting <code>values</code> instead pins the stops outright, dropping
+any value outside the domain.</p>
+<h3 id="symbol-or-gradient--type"><a class="header" href="#symbol-or-gradient--type">Symbol or gradient — <code>type</code></a></h3>
+<p>A legend takes one of two forms, and the channel’s own <code>type</code> chooses
+it:</p>
+<div class="table-wrapper">
+<table>
+<thead>
+<tr><th>Channel <code>type</code></th><th>Legend form</th><th>What it draws</th></tr>
+</thead>
+<tbody>
+<tr><td><code>quantitative</code></td><td><strong>Gradient</strong></td><td>One continuous colour bar with <code>tick_count</code> labelled stops running down it, spanning the bound field’s numeric range.</td></tr>
+<tr><td><code>nominal</code>, <code>ordinal</code>, <code>temporal</code></td><td><strong>Symbol</strong></td><td>One swatch + label per category.</td></tr>
+</tbody>
+</table>
+</div>
+<p>The inference is enough for almost every chart — a <code>heatmap</code> coloured
+by <code>count</code> gets a gradient bar, a bar chart coloured by <code>region</code> gets
+swatches — and neither form needs <code>legend.type</code> written at all.</p>
+<p><code>legend.type</code> overrides it explicitly:</p>
+<pre><code class="language-json">"color": {"field": "count", "type": "quantitative", "legend": {"type": "gradient"}}
+</code></pre>
+<p>An override the channel cannot fill is <strong>rejected</strong>, not ignored: a
+<code>gradient</code> needs a numeric domain to run between and a <code>symbol</code> legend
+needs categories to name, so <code>gradient</code> on a discrete channel (or
+<code>symbol</code> on a quantitative one) raises <code>PRISM_SPEC_051</code>. To show a
+continuous field as discrete swatches, make it discrete first with a
+<code>bin</code> transform and declare the channel <code>"type": "ordinal"</code>.</p>
+<p><strong>A gradient legend defaults to the <code>right</code> side, not a corner.</strong> The
+bar is 130 px tall with labels running alongside it, so a corner
+anchor would lie over the cells it describes. It anchors to the right
+<em>side</em> instead, which reserves a margin band and shrinks the plot
+clear of it. A symbol legend keeps its <code>top-right</code> corner default. An
+explicit <code>orient</code> wins over either.</p>
+<h3 id="legend-layout--direction-symbol_type-symbol_size"><a class="header" href="#legend-layout--direction-symbol_type-symbol_size">Legend layout — <code>direction</code>, <code>symbol_type</code>, <code>symbol_size</code></a></h3>
+<div class="table-wrapper">
+<table>
+<thead>
+<tr><th>Key</th><th>Effect</th></tr>
+</thead>
+<tbody>
+<tr><td><code>direction</code></td><td><code>vertical</code> (the default) stacks entries down a column; <code>horizontal</code> lays them out across a single row. The frame follows, and so does the reserved band — a horizontal legend on a <code>top</code> / <code>bottom</code> orient is one row deep however many entries it carries, so it costs far less plot height. A gradient legend draws one bar and ignores it.</td></tr>
+<tr><td><code>symbol_type</code></td><td>The swatch shape: <code>circle</code>, <code>square</code>, <code>triangle</code>, <code>cross</code> or <code>diamond</code>. Absent, the swatch is the default filled square. An unrecognised name raises <code>PRISM_SPEC_052</code>.</td></tr>
+<tr><td><code>symbol_size</code></td><td>Swatch size in pixels — the side of a solid square, or the bounding-box diameter of a shaped symbol. Defaults are 12 px solid, 10 px symbol. A symbol wider than the 12-px swatch column widens the legend box so the label still clears it.</td></tr>
+</tbody>
+</table>
+</div>
+<pre><code class="language-json">"color": {
+  "field": "region", "type": "nominal",
+  "legend": {"orient": "bottom", "direction": "horizontal", "symbol_type": "diamond", "symbol_size": 14}
+}
+</code></pre>
+<p><strong><code>symbol_type</code> is the point mark’s own shape vocabulary</strong>, and a
+legend swatch and a <code>point</code> mark of the same shape are drawn by the
+same emitter — a diamond in the legend is geometrically the diamond in
+the plot, not a second approximation of one.</p>
+<h3 id="hiding-an-axis-or-legend"><a class="header" href="#hiding-an-axis-or-legend">Hiding an axis or legend</a></h3>
+<blockquote>
+<p><strong>Two legend-suppression syntaxes exist.</strong> <code>"legend": null</code> is the
+<strong>canonical</strong> form — it mirrors Vega-Lite and is symmetric with
+<code>"axis": null</code>. <code>{"legend": {"orient": "none"}}</code> is an accepted <strong>alias</strong>
+with identical behaviour. Prefer <code>null</code>; the alias exists because both
+landed in the same release, and it is kept for compatibility rather than
+because two spellings are desirable.</p>
+</blockquote>
+<h3 id="details"><a class="header" href="#details">Details</a></h3>
+<p><code>"axis": null</code> on a position channel suppresses that axis entirely —
+domain line, ticks, tick labels, title and grid lines all go. The
+padding the axis reserved on its side of the plot is released, so the
+plot rect expands into the freed space.</p>
+<p><code>"legend": null</code> on a mark channel suppresses that channel’s legend.
+Legends overlay the plot rather than reserving a side, so nothing
+moves; the legend simply is not emitted.</p>
+<pre><code class="language-json">"encoding": {
+  "x": {"field": "cat", "type": "nominal", "axis": null},
+  "y": {"field": "val", "type": "quantitative"},
+  "color": {"field": "cat", "type": "nominal", "legend": null}
+}
+</code></pre>
+<p><strong>Omitting the key is not the same as <code>null</code>.</strong> The two are distinct
+states and Prism decodes them apart:</p>
+<div class="table-wrapper">
+<table>
+<thead>
+<tr><th>Wire form</th><th>Meaning</th></tr>
+</thead>
+<tbody>
+<tr><td>key absent</td><td>Default axis / legend, rendered with Prism’s defaults.</td></tr>
+<tr><td><code>"axis": {...}</code> / <code>"legend": {...}</code></td><td>Configured axis / legend — including an empty <code>{}</code>, which still renders.</td></tr>
+<tr><td><code>"axis": null</code> / <code>"legend": null</code></td><td>Suppressed. Nothing is drawn, and an axis releases its padding.</td></tr>
+</tbody>
+</table>
+</div>
+<p>The distinction survives a round-trip: re-serialising a spec re-emits
+the explicit <code>null</code> and never invents one for an absent key.</p>
+<p>This is block-level suppression and is unrelated to <code>axis.title: false</code>, which drops only the axis <em>title</em> and leaves the ticks,
+labels, line and grid in place — or to <code>axis.labels</code> / <code>axis.ticks</code> /
+<code>axis.domain</code>, which each drop one component and leave the rest
+standing. See <a href="#axis-components-and-geometry">Axis components and geometry</a>.</p>
+<p>In a <code>layer</code>, the layers share one pair of axes, so the suppression
+has to be unanimous: an axis is hidden only when <strong>every</strong> layer that
+binds the channel sets <code>"axis": null</code>. In a <code>facet</code> or <code>repeat</code>, every
+cell renders the same child spec, so its suppression applies to the
+whole grid — the shared axis is dropped and each cell expands.</p>
+<h2 id="text-channel"><a class="header" href="#text-channel">Text channel</a></h2>
+<p>The <code>text</code> channel supplies the label content for a <code>text</code> mark, for
+the node labels of the <code>tree</code> / <code>dendrogram</code> / <code>network</code> marks, and
+the line text for <a href="#tooltip-channel">tooltips</a>, which share the same
+slimmer channel shape: <code>field</code>, <code>type</code>, <code>aggregate</code>, <code>format</code>,
+<code>title</code>, <code>value</code>.</p>
+<pre><code class="language-json">"text": {"field": "score", "type": "quantitative", "format": ".1f"}
+</code></pre>
+<div class="table-wrapper">
+<table>
+<thead>
+<tr><th>Key</th><th>Effect on a <code>text</code> mark</th></tr>
+</thead>
+<tbody>
+<tr><td><code>field</code></td><td>The column whose value becomes the label.</td></tr>
+<tr><td><code>value</code></td><td>A literal label, repeated on every row. Used when no <code>field</code> is set.</td></tr>
+<tr><td><code>format</code></td><td>d3-format specifier applied to the label — <code>.1f</code> renders <code>80.04</code> as <code>80.0</code>, <code>.0%</code> renders <code>0.42</code> as <code>42%</code>. Invalid specifiers are rejected at validate time with <code>PRISM_SPEC_011</code>.</td></tr>
+<tr><td><code>aggregate</code></td><td>Honoured exactly like a position channel’s: it injects the same synthetic group-aggregate node, and a non-aggregated <code>text</code> field joins the group-by.</td></tr>
+</tbody>
+</table>
+</div>
+<p>With <strong>no</strong> <code>text</code> channel bound, a <code>text</code> mark falls back to
+rendering the <code>y</code> field’s value verbatim (or <code>x</code>’s when <code>y</code> is
+unbound). See <a href="marks.html#text">Marks › Text</a> for the mark-side
+positioning rules.</p>
+<h3 id="on-a-graph-mark"><a class="header" href="#on-a-graph-mark">On a graph mark</a></h3>
+<p>The <code>tree</code>, <code>dendrogram</code> and <code>network</code> marks read the same channel to
+label their nodes, and resolve <code>field</code> / <code>value</code> / <code>format</code> through
+exactly the same path. Two differences follow from those marks being
+node-oriented while the channel is row-oriented:</p>
+<ul>
+<li><strong>Labelling is opt-in.</strong> With no <code>text</code> channel a graph mark emits
+no label geometry at all, unlike a <code>text</code> mark, which always has a
+fallback. Binding the channel is the only way to turn node labels
+on.</li>
+<li><strong>A row’s label binds to that row’s <code>target</code> node</strong>, the channel
+those marks treat as the node identity. The first row wins when a
+target repeats. A node that never appears as a <code>target</code> — the root
+of an edge-list hierarchy, an uncited paper in a citation network —
+has no row of its own and falls back to its id.</li>
+</ul>
+<p>See <a href="marks.html#tree--dendrogram--network">Marks › Tree / dendrogram / network</a>
+for where the labels land relative to each node.</p>
+<h2 id="table-columns"><a class="header" href="#table-columns">Table columns</a></h2>
+<p>The <code>table</code> mark replaces the position channels with
+<code>encoding.columns[]</code> — one object per column, each carrying the same
+channel shape as any other encoding plus an optional <code>mark</code> naming a
+sub-mark to draw in the cells.</p>
+<pre><code class="language-json">"columns": [
+  {"field": "name",    "type": "nominal",      "title": "Account"},
+  {"field": "revenue", "type": "quantitative", "format": ",.0f"},
+  {"field": "trend",   "type": "quantitative", "mark": "sparkline"}
+]
+</code></pre>
+<div class="table-wrapper">
+<table>
+<thead>
+<tr><th>Key</th><th>Effect on a table column</th></tr>
+</thead>
+<tbody>
+<tr><td><code>title</code></td><td>The column header. Falls back to the field name.</td></tr>
+<tr><td><code>format</code></td><td>d3-format specifier applied to the cell text — <code>,.0f</code> renders <code>120000</code> as <code>120,000</code>, <code>.1%</code> renders <code>0.4213</code> as <code>42.1%</code>. Same subset every other format string uses; invalid specifiers are rejected at validate time with <code>PRISM_SPEC_011</code>.</td></tr>
+<tr><td><code>mark</code></td><td>Sub-mark drawn in each cell (e.g. <code>"sparkline"</code>) instead of text.</td></tr>
+</tbody>
+</table>
+</div>
+<p>Formatting happens at encode time, but the <strong>raw</strong> value is carried
+alongside the formatted text in the Scene IR, so a client-side header
+sort compares numbers rather than the formatted strings — <code>120,000</code>
+and <code>80,500</code> still order correctly. A <code>format</code> on a column that also
+binds a <code>mark</code> shapes nothing (that column draws geometry, not text)
+and is reported as <code>PRISM_WARN_CHANNEL_INERT</code>.</p>
+<p>Note the subset has <strong>no currency prefix</strong>: write <code>,.0f</code>, not
+<code>$,.0f</code>. The latter is rejected by <code>PRISM_SPEC_011</code>. Prefix a literal
+symbol in the <code>title</code>, or precompute the string upstream.</p>
+<p>See <a href="marks.html#table">Marks › Table</a> for the mark-side rules.</p>
+<h2 id="tooltip-channel"><a class="header" href="#tooltip-channel">Tooltip channel</a></h2>
+<pre><code class="language-json">"tooltip": [
+  {"field": "brand_id"},
+  {"field": "score", "format": ".2f"}
+]
+</code></pre>
+<p>Materialized in the Scene IR as pre-formatted <code>TooltipLine</code> lists.
+SVG emits <code>&lt;title&gt;</code> per mark; the JS port renders rich HTML tooltips
+in P12+.</p>
+<h2 id="detail-channel"><a class="header" href="#detail-channel">Detail channel</a></h2>
+<p><code>detail</code> is a <strong>pure grouping channel</strong>. It splits a mark into one
+series per distinct value of the bound field — exactly as <code>color</code>
+does — but it consumes no palette slot, builds no legend, and leaves
+mark styling untouched. Use it when the data has more series than the
+chart should distinguish visually: ten sensors that all belong to one
+cohort should draw as ten separate lines in one colour, not ten
+colours plus a ten-entry legend.</p>
+<pre><code class="language-json">"detail": {"field": "sensor", "type": "nominal"}
+</code></pre>
+<p>An array binds several fields; the grouping key is the tuple, so a
+new series starts at each distinct combination:</p>
+<pre><code class="language-json">"detail": [
+  {"field": "site", "type": "nominal"},
+  {"field": "unit", "type": "nominal"}
+]
+</code></pre>
+<p>Semantics:</p>
+<div class="table-wrapper">
+<table>
+<thead>
+<tr><th>Aspect</th><th>Behaviour</th></tr>
+</thead>
+<tbody>
+<tr><td>Marks affected</td><td><code>line</code> and <code>area</code> — the path-forming marks, whose geometry spans multiple rows. Every other mark already emits one mark per row, so a partition changes nothing; <code>detail</code> is accepted there and is simply inert.</td></tr>
+<tr><td>Composition with <code>color</code></td><td>Both bound produces one series per distinct (colour, detail…) pair. Every series sharing a colour keeps that colour — <code>detail</code> never advances the palette.</td></tr>
+<tr><td>Legend</td><td>Never. The legend is built from <code>color</code> alone, so a <code>color</code> + <code>detail</code> chart still shows one entry per colour.</td></tr>
+<tr><td>Emission order</td><td>Colour first-appearance order outer (so it continues to match legend order), full-tuple first-appearance order inner. Series sharing a colour are emitted contiguously.</td></tr>
+<tr><td>Point ordering</td><td>As with <code>color</code>, points within a series are sorted by resolved x pixel ascending, so each path traces left-to-right regardless of upstream row order — unless <a href="#order-channel"><code>order</code></a> is bound, which hands the sequence to the author.</td></tr>
+<tr><td>Aggregates</td><td>A <code>detail</code> field joins the implicit group-by of the synthetic aggregate an aggregated channel injects, so <code>detail</code> + <code>y: {"aggregate": …}</code> aggregates per series.</td></tr>
+</tbody>
+</table>
+</div>
+<p>Key coercion differs slightly between the two grouping channels:
+<code>color</code> categories are string-valued (a non-string cell has no
+palette entry), whereas a <code>detail</code> key is the value’s string form —
+a numeric series id groups per distinct number rather than collapsing
+into one bucket.</p>
+<h2 id="offset-channels-x_offset--y_offset"><a class="header" href="#offset-channels-x_offset--y_offset">Offset channels (<code>x_offset</code> / <code>y_offset</code>)</a></h2>
+<p><code>x_offset</code> and <code>y_offset</code> cut the band slot a category owns into
+sub-bands, so the rows sharing that category draw <strong>side by side</strong>
+instead of on top of one another. That is the grouped — or dodged —
+bar. Vega-Lite spells the channels <code>xOffset</code> / <code>yOffset</code>; Prism is
+snake_case throughout, so they are <code>x_offset</code> / <code>y_offset</code>.</p>
+<p><code>x_offset</code> subdivides <code>x</code>’s slot, <code>y_offset</code> subdivides <code>y</code>’s. Bind
+one or the other, never both: a mark dodges along a single axis, while
+the measure runs along the other.</p>
+<pre><code class="language-json">{
+  "$schema": "urn:prism:schema:v1:spec",
+  "data": {"values": [
+    {"metric": "Awareness",     "series": "Acme",             "score": 62},
+    {"metric": "Awareness",     "series": "category average", "score": 48},
+    {"metric": "Consideration", "series": "Acme",             "score": 41},
+    {"metric": "Consideration", "series": "category average", "score": 44},
+    {"metric": "Preference",    "series": "Acme",             "score": 28},
+    {"metric": "Preference",    "series": "category average", "score": 31}
+  ]},
+  "mark": {"type": "bar"},
+  "encoding": {
+    "x":        {"field": "metric", "type": "nominal"},
+    "y":        {"field": "score",  "type": "quantitative"},
+    "x_offset": {"field": "series", "type": "nominal"},
+    "color":    {"field": "series", "type": "nominal"}
+  }
+}
+</code></pre>
+<p>Three metric slots, each split in two: one bar for the brand and one
+for its category average, adjacent and equally wide. Only <code>bar</code> draws
+this geometry — see <a href="marks.html#grouped-bars-dodging">Marks › Grouped bars</a>
+for the mark-side rules and the horizontal form.</p>
+<h3 id="the-four-keys"><a class="header" href="#the-four-keys">The four keys</a></h3>
+<p>An offset channel takes <code>field</code>, <code>type</code>, <code>sort</code> and <code>scale</code>, and
+nothing else.</p>
+<div class="table-wrapper">
+<table>
+<thead>
+<tr><th>Key</th><th>Purpose</th></tr>
+</thead>
+<tbody>
+<tr><td><code>field</code></td><td>The column whose distinct values become the sub-bands. It is what makes the channel do anything: an offset object carrying no field binds nothing and behaves exactly as an absent channel.</td></tr>
+<tr><td><code>type</code></td><td><code>nominal</code> or <code>ordinal</code>. A slot is subdivided by a discrete field; <code>quantitative</code> / <code>temporal</code> describes no subdivision and is refused. Omitting the key is read as discrete.</td></tr>
+<tr><td><code>sort</code></td><td>The sub-band order: a direction (<code>"ascending"</code> / <code>"descending"</code>, with <code>"asc"</code> / <code>"desc"</code> as aliases) or an array naming the categories outright.</td></tr>
+<tr><td><code>scale</code></td><td>The sub-band scale’s own band geometry: <code>domain</code>, <code>padding</code>, <code>padding_inner</code>, <code>padding_outer</code>, <code>align</code>, <code>reverse</code>, <code>round</code>. Independent of the parent band’s own settings.</td></tr>
+</tbody>
+</table>
+</div>
+<p><strong>The omissions are the point.</strong> Reusing the <code>x</code> / <code>y</code> channel shape
+would have admitted <code>axis</code>, <code>stack</code>, <code>aggregate</code>, <code>condition</code>,
+<code>format</code>, <code>bin</code>, <code>value</code>, <code>title</code> and <code>key</code> — nine keys nothing on the
+offset path reads, which would decode, validate and then quietly do
+nothing. An unknown key inside an <code>x_offset</code> / <code>y_offset</code> object is
+rejected at decode instead. Keys on the <code>scale</code> block that describe
+something other than a band subdivision (<code>type</code>, <code>zero</code>, <code>nice</code>,
+<code>scheme</code>, <code>range</code>, …) are likewise unread there: write only the
+band-geometry keys listed above.</p>
+<h3 id="the-sub-band-domain-is-global-not-per-category"><a class="header" href="#the-sub-band-domain-is-global-not-per-category">The sub-band domain is global, not per category</a></h3>
+<p>The sub-bands come from the distinct values of the offset field across
+the <strong>whole table</strong>, not from the values present in each category.</p>
+<p>That is what makes bar widths comparable. A per-category domain would
+give a lone member of one group the full slot while a two-member group
+got half-slots each, and the eye would read the wider bar as the
+bigger number. With a global domain every group is cut the same way,
+so a series sits in the same place in every group and every bar is the
+same width — which is the one thing a grouped bar exists to make
+possible.</p>
+<p>The consequence for ragged data: a category missing a series leaves
+that series’ sub-band <strong>empty</strong>. The gap is the honest reading — the
+series has no value here — and the neighbouring bars do not widen to
+absorb it.</p>
+<h3 id="padding--sub-bands-touch-by-default"><a class="header" href="#padding--sub-bands-touch-by-default">Padding — sub-bands touch by default</a></h3>
+<p>The offset scale is a band scale in its own right, with its <strong>own</strong>
+padding, defaulting to <code>padding_inner: 0</code> and <code>padding_outer: 0</code>. The
+sub-bands therefore touch each other and together fill the parent slot
+exactly, which is the classic grouped-bar look and matches Vega-Lite’s
+offset-scale defaults.</p>
+<p>The parent band’s defaults (inner <code>0.1</code>, outer <code>0.05</code>) are untouched,
+so the spacing <em>between</em> groups and the spacing <em>within</em> a group are
+configured separately:</p>
+<pre><code class="language-json">"x":        {"field": "metric", "type": "nominal", "scale": {"padding_inner": 0.3}},
+"x_offset": {"field": "series", "type": "nominal", "scale": {"padding_inner": 0.1}}
+</code></pre>
+<p>Zero inner padding also buys a guarantee worth relying on: a field
+with a <strong>single</strong> distinct value reduces to one sub-band spanning the
+whole slot at zero displacement, so the chart is geometrically
+identical to the same spec with the offset channel removed. Any
+non-zero padding would break that.</p>
+<h3 id="it-builds-no-legend"><a class="header" href="#it-builds-no-legend">It builds no legend</a></h3>
+<p>Like <a href="#detail-channel"><code>detail</code></a>, an offset channel is a pure
+positional grouping. It consumes no palette slot, changes no colour
+and emits no legend entry — a dodged chart with nothing else bound
+draws every bar in the same fill.</p>
+<p>To name the series, bind <code>color</code> to <strong>the same field</strong>:</p>
+<pre><code class="language-json">"x_offset": {"field": "series", "type": "nominal"},
+"color":    {"field": "series", "type": "nominal"}
+</code></pre>
+<p>The legend is then built from <code>color</code> in the ordinary way. The two
+channels are resolved independently, so nothing forces them to agree:
+binding <code>color</code> to a <em>different</em> field is legal and produces bars that
+dodge by one dimension and are coloured by another.</p>
+<h3 id="ordering-the-sub-bands"><a class="header" href="#ordering-the-sub-bands">Ordering the sub-bands</a></h3>
+<p>Which series sits left and which sits right is decided by one
+precedence chain, highest first:</p>
+<div class="table-wrapper">
+<table>
+<thead>
+<tr><th>Tier</th><th>Form</th><th>Effect</th></tr>
+</thead>
+<tbody>
+<tr><td>1</td><td><code>"scale": {"domain": [...]}</code></td><td>Pins the order outright. A partial domain leads, and any value it does not name is <strong>appended</strong> after it rather than dropped.</td></tr>
+<tr><td>2</td><td><code>"sort": ["b", "a"]</code></td><td>Names the categories in order. Same append rule.</td></tr>
+<tr><td>3</td><td><code>"sort": "descending"</code></td><td>A direction over the distinct values. All four spellings are honoured.</td></tr>
+<tr><td>4</td><td>nothing</td><td>The distinct values <strong>ascending</strong>.</td></tr>
+</tbody>
+</table>
+</div>
+<p>An unrecognised <code>sort</code> spelling is an error, not a silent fall back to
+ascending.</p>
+<p>Note the default in tier 4: <strong>ascending, not first-seen table order.</strong>
+This diverges from Prism’s <code>x</code> / <code>y</code> band scales on purpose. An
+offset’s order decides which sub-band a series occupies, and deriving
+it from row order would make the same data draw differently after an
+upstream sort — an unreadable chart change with no spec change behind
+it. Ascending is also Vega-Lite’s documented default for a discrete
+channel.</p>
+<p>It does mean <strong>a chart’s category axis is in first-seen order while
+its sub-bands are alphabetical.</strong> That inconsistency is real and you
+will notice it: the metrics run along the x axis in the order the rows
+arrived, while the two series inside each slot are sorted by name. Pin
+whichever you care about.</p>
+<h4 id="stable-for-a-set-of-values-not-across-datasets"><a class="header" href="#stable-for-a-set-of-values-not-across-datasets">Stable for a set of values, not across datasets</a></h4>
+<p>This is the caveat that matters for anything rendered more than once.</p>
+<p>The ascending default is deterministic <strong>for a given set of values</strong> —
+permute the rows, add a transform, re-run the query, and the sub-bands
+stay put. It is <em>not</em> stable <strong>across datasets</strong>, and a spec written
+once as a template is run against many.</p>
+<p>Consider two sub-bands, a brand name and the literal
+<code>"category average"</code>. Ascending is byte order, and every ASCII capital
+sorts before every lowercase letter, so <code>"Zenith"</code> takes the left
+sub-band — but the same brand styled <code>"zenith"</code> takes the right one,
+and the same template, on the same chart kind, has swapped the pair.
+The order hinges on a label’s first byte.</p>
+<p>So: <strong>any chart whose category set varies between renders should pin
+<code>scale.domain</code> on the offset channel.</strong></p>
+<pre><code class="language-json">"x_offset": {
+  "field": "series",
+  "type": "nominal",
+  "scale": {"domain": ["category average", "Acme"]}
+}
+</code></pre>
+<p>Prefer <code>scale.domain</code> over <code>sort</code> for this. It is the higher-precedence
+tier, it reads as a statement of intent rather than a rule, and a
+partial domain appends unlisted categories rather than dropping their
+rows — so a series that appears for the first time next month lands on
+the end of the group instead of breaking the chart.</p>
+<h3 id="stacking-steps-aside"><a class="header" href="#stacking-steps-aside">Stacking steps aside</a></h3>
+<p>A <code>bar</code> that would <a href="#stacking">stack</a> implicitly stops doing so the
+moment an offset is bound. Stacking and dodging spend the same
+geometry on the same grouping, and the offset is the thing the author
+asked for explicitly, so the inferred stack yields to it. No <code>stack</code>
+key is needed to get grouped columns.</p>
+<p>An <strong>explicit</strong> <code>stack</code> written beside an offset is a contradiction
+and is rejected with <code>PRISM_SPEC_065</code> rather than half-honoured. Both
+opt-outs (<code>"stack": null</code> and <code>"stack": false</code>) agree with the offset
+and stay silent.</p>
+<h3 id="what-it-rejects"><a class="header" href="#what-it-rejects">What it rejects</a></h3>
+<p>Every one of these is refused with a code rather than ignored.</p>
+<div class="table-wrapper">
+<table>
+<thead>
+<tr><th>Code</th><th>Condition</th></tr>
+</thead>
+<tbody>
+<tr><td><code>PRISM_SPEC_063</code></td><td>The mark cannot dodge. Only <code>bar</code> implements the geometry; every other band-seated mark (<code>rect</code>, <code>tick</code>, <code>heatmap</code>, <code>boxplot</code>, <code>violin</code>, <code>winloss</code>, <code>progress</code>, the spark adornments) fills its slot with a single shape, so there is nothing to divide.</td></tr>
+<tr><td><code>PRISM_SPEC_064</code></td><td>The binding is incoherent: <strong>both</strong> offset channels bound, or the position channel the offset subdivides is unbound, quantitative / temporal, or declares a <code>scale.type</code> that resolves to no band. An offset needs a band slot to cut.</td></tr>
+<tr><td><code>PRISM_SPEC_065</code></td><td>An explicit <code>stack</code> on a position channel sits beside a bound offset — see above.</td></tr>
+<tr><td><code>PRISM_SPEC_066</code></td><td>A span channel claims the offset’s own axis.</td></tr>
+</tbody>
+</table>
+</div>
+<p><code>PRISM_SPEC_066</code> is <strong>per axis, and only per axis.</strong> <code>x2</code> states both
+ends of the mark along <code>x</code>, which leaves <code>x</code>’s slot with nothing to
+subdivide — so <code>x2</code> + <code>x_offset</code> is refused. The other axis is
+untouched: <strong><code>y2</code> together with <code>x_offset</code> is a legal ranged, dodged
+bar</strong>, and so is <code>x2</code> together with <code>y_offset</code>.</p>
+<p>Two shapes are decided later than the rest, because the spec alone
+cannot answer them: an offset channel declaring <code>"type": "quantitative"</code>, and a <code>sort</code> spelling nothing acts on, both surface at
+encode time as <code>PRISM_ENCODE_001</code> naming the channel. Named, but later
+than <code>PRISM_SPEC_06*</code>.</p>
+<h3 id="duplicate-sub-bands-warn"><a class="header" href="#duplicate-sub-bands-warn">Duplicate sub-bands warn</a></h3>
+<p>A sub-band is identified by the pair <em>(category value, offset value)</em>.
+Two rows carrying the same pair land on exactly the same rect, and
+only the last one drawn stays visible — the marks overlap, which is
+the one thing binding an offset was supposed to stop.</p>
+<p>Nothing geometric changes, but it is reported:
+<code>PRISM_WARN_OFFSET_COLLISION</code>, naming how many rows repeated and one
+key that did.</p>
+<p>It is unreachable once the measure channel aggregates. The synthetic
+group-by keeps both the category field and the offset field — an
+offset is a pure grouping binding, exactly like <code>detail</code> — so each
+pair yields exactly one row:</p>
+<pre><code class="language-json">"y":        {"aggregate": "mean", "field": "score", "type": "quantitative"},
+"x_offset": {"field": "series", "type": "nominal"}
+</code></pre>
+<p>Raw, un-aggregated tables are the only place duplicates survive to
+encode.</p>
+<h3 id="where-warnings-surface"><a class="header" href="#where-warnings-surface">Where warnings surface</a></h3>
+<p><code>PRISM_WARN_OFFSET_COLLISION</code> and
+<code>PRISM_WARN_OFFSET_CONFIG_CONFLICT</code> — and every other <code>PRISM_WARN_*</code>
+this page mentions — land on <strong><code>SceneDoc.Warnings</code></strong>, surfaced as
+<code>CompiledPlan.Diagnostics</code> from the Go API.</p>
+<ul>
+<li><code>prism plot</code> and <code>prism scene</code> print them to <strong>stderr</strong>, so a CLI
+user sees them without asking.</li>
+<li><code>prism scene</code> also writes them into the Scene IR document itself,
+as its <code>warnings</code> array, so a consumer of that JSON gets them for
+free. (<code>prism validate</code> does not: it runs no rows, so an
+encode-time warning has not happened yet.)</li>
+<li><strong>A library embedder sees nothing unless it reads the field.</strong> A
+host that holds a <code>CompiledPlan</code>, hands <code>plan.Scene</code> to a renderer
+and never touches <code>plan.Diagnostics</code> drops every warning on the
+floor — including <code>PRISM_WARN_NULL_DROPPED</code>, which means rows have
+silently left the chart.</li>
+</ul>
+<p>If you embed Prism, read the diagnostics and log them. A warning is
+only as good as the consumer reading it.</p>
+<h3 id="under-composition"><a class="header" href="#under-composition">Under composition</a></h3>
+<p>An offset scale is <strong>shared by default</strong> across the children of a
+<code>layer</code> and the cells of a <code>facet</code>, exactly as <code>x</code> and <code>y</code> are, so a
+series sits in the same sub-band in every layer and every cell even
+when a child binds only some of the values. Opt out per channel:</p>
+<pre><code class="language-json">"resolve": {"scale": {"x_offset": "independent"}}
+</code></pre>
+<p><code>concat</code> / <code>hconcat</code> / <code>vconcat</code> / <code>repeat</code> cells are separate charts
+with their own position scales, so their offsets are independent too —
+there is nothing to opt out of. Children that describe a shared offset
+differently fold first-specified-wins per property and raise
+<code>PRISM_WARN_OFFSET_CONFIG_CONFLICT</code>; it is never settled in silence.
+See <a href="composition.html#offset-dodge-scales">Composition › Offset (dodge) scales</a>
+for the full rule.</p>
+<h2 id="stacking"><a class="header" href="#stacking">Stacking</a></h2>
+<p>A <code>bar</code> or <code>area</code> whose measure channel is <strong>aggregated</strong> and whose
+marks are split by a grouping channel (<code>color</code> or <code>detail</code>) stacks by
+default, matching Vega-Lite. Without stacking, each segment would be
+drawn from the axis baseline and the taller ones would simply cover
+the shorter ones.</p>
+<pre><code class="language-json">"encoding": {
+  "x": {"field": "quarter", "type": "nominal"},
+  "y": {"aggregate": "sum", "field": "revenue", "type": "quantitative"},
+  "color": {"field": "segment", "type": "nominal"}
+}
+</code></pre>
+<p>The <code>stack</code> key on the measure channel controls it explicitly:</p>
+<div class="table-wrapper">
+<table>
+<thead>
+<tr><th>Value</th><th>Meaning</th></tr>
+</thead>
+<tbody>
+<tr><td>absent</td><td>The default above: stack when the shape qualifies, otherwise don’t.</td></tr>
+<tr><td><code>"zero"</code> / <code>true</code></td><td>Stack from the baseline.</td></tr>
+<tr><td><code>"normalize"</code></td><td>Rescale each stack onto <code>0…1</code> — the 100% stacked chart.</td></tr>
+<tr><td><code>"center"</code></td><td>Float each stack’s baseline so the band is symmetric about zero — the streamgraph. See <a href="#centred-stacks-the-streamgraph">Centred stacks</a>.</td></tr>
+<tr><td><code>null</code> / <code>false</code></td><td>Opt out; every segment returns to the baseline.</td></tr>
+</tbody>
+</table>
+</div>
+<p>Stacking and dodging are alternatives, not layers: binding an
+<a href="#offset-channels-x_offset--y_offset">offset channel</a> suppresses the
+implicit stack above, and an <strong>explicit</strong> <code>stack</code> written beside an
+offset is rejected with <code>PRISM_SPEC_065</code> rather than half-applied.
+<code>"stack": null</code> / <code>false</code> agree with the offset and stay silent.</p>
+<p>Semantics:</p>
+<div class="table-wrapper">
+<table>
+<thead>
+<tr><th>Aspect</th><th>Behaviour</th></tr>
+</thead>
+<tbody>
+<tr><td>Marks affected</td><td><code>bar</code> and <code>area</code> only. Every other mark ignores <code>stack</code>.</td></tr>
+<tr><td>Stack key</td><td>The <strong>other</strong> position channel — the dimension axis. One stack per distinct value.</td></tr>
+<tr><td>Segment order</td><td>First-appearance order of the (colour, detail…) tuple across the whole table — the same order the mark partitioner and the legend use, so a segment sits in the same slot in every stack. A centred stack reorders inside-out instead; see below.</td></tr>
+<tr><td>Axis domain</td><td>The stacked totals reach scale resolution, so the measure axis spans <code>0…sum</code>, not <code>0…max</code>.</td></tr>
+<tr><td>Negatives</td><td>Positive and negative values accumulate independently from zero, so a mixed-sign stack grows in both directions.</td></tr>
+<tr><td>Opt-outs</td><td>An explicit <code>x2</code> / <code>y2</code> span wins (the mark already knows both edges), as does a non-linear measure scale, as does a bound <a href="#offset-channels-x_offset--y_offset">offset channel</a> — a dodged mark already spends the band slot on its grouping.</td></tr>
+</tbody>
+</table>
+</div>
+<p>Stacking is not a rendering trick: it compiles to a real
+<a href="spec.html#stack-transform"><code>stack</code> transform</a> node in the plan, whose
+<code>&lt;field&gt;_start</code> / <code>&lt;field&gt;_end</code> output columns are bound to the
+measure channel and its span companion before any scale resolves.
+<code>prism execute</code> shows them, and any consumer pinning the plan’s JSON
+shape sees them too.</p>
+<p>Composition note: stacking resolves per leaf spec, so each <code>layer</code> /
+<code>concat</code> child stacks independently. A <code>facet</code> parent builds its
+upstream pipeline once with the child encoding stripped, so a faceted
+child does not stack — the same limitation that already applies to the
+synthetic encoding aggregate.</p>
+<h3 id="centred-stacks-the-streamgraph"><a class="header" href="#centred-stacks-the-streamgraph">Centred stacks (the streamgraph)</a></h3>
+<p><code>"stack": "center"</code> keeps every stack exactly as thick as <code>"zero"</code>
+makes it, then slides it so its own midpoint lands on zero. Each band
+is therefore symmetric about a single shared baseline no matter how
+much total it carries, which is the streamgraph shape:</p>
+<pre><code class="language-json">"mark": {"type": "area", "interpolate": "monotone"},
+"encoding": {
+  "x": {"field": "week", "type": "quantitative"},
+  "y": {"aggregate": "sum", "field": "contacts", "type": "quantitative", "stack": "center"},
+  "color": {"field": "channel", "type": "nominal"}
+}
+</code></pre>
+<p>Three things follow from that definition.
+<strong>The measure axis carries a signed domain.</strong> Because every stack
+spans <code>[-h/2, +h/2]</code> for its own total <code>h</code>, the union of all of them is
+<code>[-H/2, +H/2]</code> for the widest stack <code>H</code> — exactly symmetric, and it
+reaches scale resolution through the ordinary span path, so the axis
+draws it without any stack-specific code. A tick therefore reads as
+<em>distance from the midline</em>, not as a value: <code>200</code> means “200 units
+above the centre of this stack”, and the full thickness at any point
+is the distance between the band’s two edges. That is the honest
+reading of a floating baseline, and it is why Prism keeps the axis
+signed rather than hiding the shift inside a positive range. If the
+numbers are noise for your chart, suppress the axis outright with
+<code>"axis": null</code> — a streamgraph is usually read for shape, not for
+level.</p>
+<blockquote>
+<p>This is a chosen divergence from Vega-Lite, which offsets every
+stack into a positive <code>0…max</code> range instead. That keeps the axis
+non-negative but makes each tick an arbitrary distance from an
+invisible origin; centring on zero at least names the line the eye
+is already following.
+<strong>Segments reorder inside-out.</strong> Declaration order is wrong for a
+streamgraph: a series that only matters late should not sit against
+the centre line for the whole chart. So a centred stack ranks its
+series by <em>where each one peaks</em>, then deals them alternately onto
+whichever side of the stack is currently carrying less magnitude. The
+earliest-peaking series end up either side of the centre and the later
+ones fray outward. This is d3’s <code>stackOrderInsideOut</code>, the ordering
+Vega reaches for on the same chart.
+Peak position is measured against stack order, which is first-appearance
+order of the dimension values — shape it with a preceding
+<a href="spec.html#transforms"><code>sort</code> transform</a> if the rows do not already
+arrive in dimension order.
+An explicit <code>order</code> channel turns inside-out off: an author who states
+an order gets that order. So does a stack with no grouping channel
+bound, where there is one segment per row and nothing to arrange.
+<strong><code>center</code> is an area-mark offset.</strong> A bar is baseline-anchored
+geometry — the whole point of the column is that it is measured from
+the axis — so centring it detaches every column from the axis and
+leaves the tick labels naming offsets from a synthetic midline. Prism
+rejects that combination at validate with <code>PRISM_SPEC_053</code> rather than
+drawing something unreadable. <code>zero</code> and <code>normalize</code> are unaffected on
+bars.</p>
+</blockquote>
+<h2 id="order-channel"><a class="header" href="#order-channel">Order channel</a></h2>
+<p><code>order</code> is Vega-Lite’s overloaded ordering channel, and Prism honours
+all three of its senses. It binds one entry or an array of them:
+“order”: {“field”: “rank”, “type”: “quantitative”}
+“order”: [
+{“field”: “tier”, “type”: “nominal”},
+{“field”: “revenue”, “type”: “quantitative”, “sort”: “descending”}
+]
+Array entries apply left to right, so the second key breaks ties in
+the first. Each entry takes <code>field</code>, <code>type</code> and an optional <code>sort</code>
+direction — <code>"ascending"</code> (the default) or <code>"descending"</code>, with
+<code>"asc"</code> / <code>"desc"</code> accepted as aliases. Any other spelling is rejected
+(<code>PRISM_SPEC_055</code>) rather than read as ascending.</p>
+<h3 id="one-mechanism-three-senses"><a class="header" href="#one-mechanism-three-senses">One mechanism, three senses</a></h3>
+<p>Binding <code>order</code> sorts the <strong>rows</strong>, upstream of everything that reads
+them. That single reordering produces all three behaviours the channel
+is named for:</p>
+<div class="table-wrapper">
+<table>
+<thead>
+<tr><th>Sense</th><th>Marks</th><th>What you see</th></tr>
+</thead>
+<tbody>
+<tr><td>Stack order</td><td><code>bar</code>, <code>area</code></td><td>Which segment sits at the bottom of each stack. The stack ranks segments by first appearance, so the first-ordered series is the baseline one. Overrides the default (colour first-appearance) order.</td></tr>
+<tr><td>Draw order</td><td>every per-row mark — <code>point</code>, <code>bar</code>, <code>rule</code>, <code>text</code>, <code>tick</code>, <code>rect</code>, …</td><td>Marks are emitted in row order, so a later-ordered mark paints on top of an earlier one. Bind <code>order</code> to put the series you care about above the overlap.</td></tr>
+<tr><td>Point sequence</td><td><code>line</code>, <code>area</code></td><td>The order points connect along the path. Without <code>order</code>, a grouped path is sorted left-to-right by resolved x pixel; with it, the path traces in row order — which is how you draw a connected scatterplot or a path that doubles back.</td></tr>
+<tr><td>A mark whose geometry does not depend on row order (a single-mark type</td><td></td><td></td></tr>
+<tr><td>such as <code>arc</code>, or a layout-computing mark such as <code>sankey</code>) simply</td><td></td><td></td></tr>
+<tr><td>observes none of them. <code>order</code> is accepted on every mark so a spec</td><td></td><td></td></tr>
+<tr><td>stays portable across a mark-type switch.</td><td></td><td></td></tr>
+</tbody>
+</table>
+</div>
+<h3 id="unbound-preserves-table-order-exactly"><a class="header" href="#unbound-preserves-table-order-exactly">Unbound preserves table order exactly</a></h3>
+<p>This is the rule that makes the channel safe: <strong>Prism reorders only
+when <code>order</code> is explicitly bound.</strong> With it absent, no sort node is
+injected, nothing downstream changes, and the chart renders
+byte-identically to how it did before the channel existed. Vega-Lite
+behaves the same way.</p>
+<h3 id="where-the-sort-happens"><a class="header" href="#where-the-sort-happens">Where the sort happens</a></h3>
+<p><code>order</code> compiles to a real <code>sort</code> node in the plan, placed after the
+synthetic encoding aggregate and before the
+<a href="#stacking">stack</a> node — so an order key may name an aggregated
+output column, and the stack accumulates rows that are already in the
+author’s sequence. <code>prism plan</code> shows the node; <code>prism execute</code> shows
+the reordered rows.
+A non-aggregated order field joins the implicit group-by of the
+synthetic aggregate (the same treatment <code>detail</code> gets), so it survives
+to the sort below it. Naming a field that another channel already
+aggregates does <strong>not</strong> widen the group-by — the order key reads that
+aggregate’s output column instead.</p>
+<h3 id="aggregate-is-rejected"><a class="header" href="#aggregate-is-rejected"><code>aggregate</code> is rejected</a></h3>
+<p>An <code>aggregate</code> on an order entry raises <code>PRISM_SPEC_056</code>. Ordering by
+a per-series total needs a second aggregation at a different
+granularity than the chart’s own, joined back onto the rows; Prism
+rejects the key rather than accepting and quietly ignoring it. Three
+supported ways to express the same intent:</p>
+<ul>
+<li>precompute the total upstream with a <code>window</code> or <code>join</code> transform
+and order by that column;</li>
+<li>drop the <code>aggregate</code> key and name the field another channel already
+aggregates, so the order key reads its output column;</li>
+<li>shape row order with a <a href="spec.html#transforms"><code>sort</code> transform</a> and
+leave <code>order</code> unbound.
+Composition note: <code>order</code> resolves per leaf spec, so each <code>layer</code> /
+<code>concat</code> child orders independently. A <code>facet</code> parent builds its
+upstream pipeline once with the child encoding stripped, so a faceted
+child does not reorder — the same limitation that already applies to
+the synthetic encoding aggregate and to stacking.</li>
+</ul>
+<h2 id="further-reading"><a class="header" href="#further-reading">Further reading</a></h2>
+<ul>
+<li><a href="../reference/spec.html">Spec field reference</a> — every channel
+property exhaustively.</li>
+<li><a href="themes.html">Themes</a> — how scale color schemes resolve.</li>
+</ul>
+
+                    </main>
+
+                    <nav class="nav-wrapper" aria-label="Page navigation">
+                        <!-- Mobile navigation buttons -->
+                            <a rel="prev" href="../concepts/marks.html" class="mobile-nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
+                                <span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M41.4 233.4c-12.5 12.5-12.5 32.8 0 45.3l160 160c12.5 12.5 32.8 12.5 45.3 0s12.5-32.8 0-45.3L109.3 256 246.6 118.6c12.5-12.5 12.5-32.8 0-45.3s-32.8-12.5-45.3 0l-160 160z"/></svg></span>
+                            </a>
+
+                            <a rel="next prefetch" href="../concepts/composition.html" class="mobile-nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                                <span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M278.6 233.4c12.5 12.5 12.5 32.8 0 45.3l-160 160c-12.5 12.5-32.8 12.5-45.3 0s-12.5-32.8 0-45.3L210.7 256 73.4 118.6c-12.5-12.5-12.5-32.8 0-45.3s32.8-12.5 45.3 0l160 160z"/></svg></span>
+                            </a>
+
+                        <div style="clear: both"></div>
+                    </nav>
+                </div>
+            </div>
+
+            <nav class="nav-wide-wrapper" aria-label="Page navigation">
+                    <a rel="prev" href="../concepts/marks.html" class="nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
+                        <span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M41.4 233.4c-12.5 12.5-12.5 32.8 0 45.3l160 160c12.5 12.5 32.8 12.5 45.3 0s12.5-32.8 0-45.3L109.3 256 246.6 118.6c12.5-12.5 12.5-32.8 0-45.3s-32.8-12.5-45.3 0l-160 160z"/></svg></span>
+                    </a>
+
+                    <a rel="next prefetch" href="../concepts/composition.html" class="nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                        <span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M278.6 233.4c12.5 12.5 12.5 32.8 0 45.3l-160 160c-12.5 12.5-32.8 12.5-45.3 0s-12.5-32.8 0-45.3L210.7 256 73.4 118.6c-12.5-12.5-12.5-32.8 0-45.3s32.8-12.5 45.3 0l160 160z"/></svg></span>
+                    </a>
+            </nav>
+
+        </div>
+
+        <template id=fa-eye><span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 576 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M288 32c-80.8 0-145.5 36.8-192.6 80.6C48.6 156 17.3 208 2.5 243.7c-3.3 7.9-3.3 16.7 0 24.6C17.3 304 48.6 356 95.4 399.4C142.5 443.2 207.2 480 288 480s145.5-36.8 192.6-80.6c46.8-43.5 78.1-95.4 93-131.1c3.3-7.9 3.3-16.7 0-24.6c-14.9-35.7-46.2-87.7-93-131.1C433.5 68.8 368.8 32 288 32zM432 256c0 79.5-64.5 144-144 144s-144-64.5-144-144s64.5-144 144-144s144 64.5 144 144zM288 192c0 35.3-28.7 64-64 64c-11.5 0-22.3-3-31.6-8.4c-.2 2.8-.4 5.5-.4 8.4c0 53 43 96 96 96s96-43 96-96s-43-96-96-96c-2.8 0-5.6 .1-8.4 .4c5.3 9.3 8.4 20.1 8.4 31.6z"/></svg></span></template>
+        <template id=fa-eye-slash><span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M38.8 5.1C28.4-3.1 13.3-1.2 5.1 9.2S-1.2 34.7 9.2 42.9l592 464c10.4 8.2 25.5 6.3 33.7-4.1s6.3-25.5-4.1-33.7L525.6 386.7c39.6-40.6 66.4-86.1 79.9-118.4c3.3-7.9 3.3-16.7 0-24.6c-14.9-35.7-46.2-87.7-93-131.1C465.5 68.8 400.8 32 320 32c-68.2 0-125 26.3-169.3 60.8L38.8 5.1zM223.1 149.5C248.6 126.2 282.7 112 320 112c79.5 0 144 64.5 144 144c0 24.9-6.3 48.3-17.4 68.7L408 294.5c5.2-11.8 8-24.8 8-38.5c0-53-43-96-96-96c-2.8 0-5.6 .1-8.4 .4c5.3 9.3 8.4 20.1 8.4 31.6c0 10.2-2.4 19.8-6.6 28.3l-90.3-70.8zm223.1 298L373 389.9c-16.4 6.5-34.3 10.1-53 10.1c-79.5 0-144-64.5-144-144c0-6.9 .5-13.6 1.4-20.2L83.1 161.5C60.3 191.2 44 220.8 34.5 243.7c-3.3 7.9-3.3 16.7 0 24.6c14.9 35.7 46.2 87.7 93 131.1C174.5 443.2 239.2 480 320 480c47.8 0 89.9-12.9 126.2-32.5z"/></svg></span></template>
+        <template id=fa-copy><span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M502.6 70.63l-61.25-61.25C435.4 3.371 427.2 0 418.7 0H255.1c-35.35 0-64 28.66-64 64l.0195 256C192 355.4 220.7 384 256 384h192c35.2 0 64-28.8 64-64V93.25C512 84.77 508.6 76.63 502.6 70.63zM464 320c0 8.836-7.164 16-16 16H255.1c-8.838 0-16-7.164-16-16L239.1 64.13c0-8.836 7.164-16 16-16h128L384 96c0 17.67 14.33 32 32 32h47.1V320zM272 448c0 8.836-7.164 16-16 16H63.1c-8.838 0-16-7.164-16-16L47.98 192.1c0-8.836 7.164-16 16-16H160V128H63.99c-35.35 0-64 28.65-64 64l.0098 256C.002 483.3 28.66 512 64 512h192c35.2 0 64-28.8 64-64v-32h-47.1L272 448z"/></svg></span></template>
+        <template id=fa-play><span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 384 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M73 39c-14.8-9.1-33.4-9.4-48.5-.9S0 62.6 0 80V432c0 17.4 9.4 33.4 24.5 41.9s33.7 8.1 48.5-.9L361 297c14.3-8.7 23-24.2 23-41s-8.7-32.2-23-41L73 39z"/></svg></span></template>
+        <template id=fa-clock-rotate-left><span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M75 75L41 41C25.9 25.9 0 36.6 0 57.9V168c0 13.3 10.7 24 24 24H134.1c21.4 0 32.1-25.9 17-41l-30.8-30.8C155 85.5 203 64 256 64c106 0 192 86 192 192s-86 192-192 192c-40.8 0-78.6-12.7-109.7-34.4c-14.5-10.1-34.4-6.6-44.6 7.9s-6.6 34.4 7.9 44.6C151.2 495 201.7 512 256 512c141.4 0 256-114.6 256-256S397.4 0 256 0C185.3 0 121.3 28.7 75 75zm181 53c-13.3 0-24 10.7-24 24V256c0 6.4 2.5 12.5 7 17l72 72c9.4 9.4 24.6 9.4 33.9 0s9.4-24.6 0-33.9l-65-65V152c0-13.3-10.7-24-24-24z"/></svg></span></template>
+
+
+
+        <script>
+            window.playground_copyable = true;
+        </script>
+
+
+        <script src="../elasticlunr-ef4e11c1.min.js"></script>
+        <script src="../mark-09e88c2c.min.js"></script>
+        <script src="../searcher-09f2665d.js"></script>
+
+        <script src="../clipboard-1626706a.min.js"></script>
+        <script src="../highlight-abc7f01d.js"></script>
+        <script src="../book-609e4cb8.js"></script>
+
+        <!-- Custom JS scripts -->
+        <script src="../theme/version-dropdown-686abb3a.js"></script>
+
+
+
+    </div>
+    </body>
+</html>

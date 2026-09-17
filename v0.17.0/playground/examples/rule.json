@@ -1,0 +1,37 @@
+{
+  "$schema": "urn:prism:schema:v1:spec",
+  "title": "Score with benchmark rule",
+  "datasets": {
+    "scores": {
+      "values": [
+        {"day": "2026-01-01", "score": 0.41},
+        {"day": "2026-01-02", "score": 0.47},
+        {"day": "2026-01-03", "score": 0.55},
+        {"day": "2026-01-04", "score": 0.62},
+        {"day": "2026-01-05", "score": 0.58}
+      ]
+    },
+    "benchmark": {
+      "values": [{"y": 0.50}]
+    }
+  },
+  "layer": [
+    {
+      "$schema": "urn:prism:schema:v1:spec",
+      "data": {"name": "scores"},
+      "mark": {"type": "line", "stroke_width": 2},
+      "encoding": {
+        "x": {"field": "day",   "type": "temporal"},
+        "y": {"field": "score", "type": "quantitative"}
+      }
+    },
+    {
+      "$schema": "urn:prism:schema:v1:spec",
+      "data": {"name": "benchmark"},
+      "mark": {"type": "rule", "stroke": "#888", "stroke_dash": [4, 2]},
+      "encoding": {
+        "y": {"field": "y", "type": "quantitative"}
+      }
+    }
+  ]
+}

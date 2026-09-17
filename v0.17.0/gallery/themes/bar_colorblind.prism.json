@@ -1,0 +1,23 @@
+{
+  "$schema": "urn:prism:schema:v1:spec",
+  "title": "Quarterly revenue — colorblind-safe theme",
+  "data": {
+    "values": [
+      {"quarter": "Q1", "revenue": 120, "segment": "north"},
+      {"quarter": "Q2", "revenue": 145, "segment": "north"},
+      {"quarter": "Q3", "revenue": 138, "segment": "north"},
+      {"quarter": "Q4", "revenue": 172, "segment": "north"},
+      {"quarter": "Q1", "revenue": 100, "segment": "south"},
+      {"quarter": "Q2", "revenue": 120, "segment": "south"},
+      {"quarter": "Q3", "revenue": 165, "segment": "south"},
+      {"quarter": "Q4", "revenue": 190, "segment": "south"}
+    ]
+  },
+  "mark": "bar",
+  "encoding": {
+    "x": {"field": "quarter", "type": "nominal"},
+    "y": {"field": "revenue", "type": "quantitative", "aggregate": "sum"},
+    "color": {"field": "segment", "type": "nominal"}
+  },
+  "theme": {"name": "colorblind"}
+}

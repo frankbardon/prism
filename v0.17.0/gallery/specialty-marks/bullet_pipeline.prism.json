@@ -1,0 +1,20 @@
+{
+  "$schema": "urn:prism:schema:v1:spec",
+  "title": "Pipeline coverage",
+  "data": {
+    "name": "kpi",
+    "values": [
+      {"metric": "Pipeline ($M)", "actual": 4.2, "prior": 3.6, "quota": 5.0}
+    ]
+  },
+  "mark": {
+    "type": "bullet",
+    "bands": [2.5, 4, 6],
+    "comparative": "prior",
+    "target": "quota"
+  },
+  "encoding": {
+    "x": {"field": "actual", "type": "quantitative"},
+    "y": {"field": "metric", "type": "nominal"}
+  }
+}

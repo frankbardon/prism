@@ -1,0 +1,18 @@
+{
+  "$schema": "urn:prism:schema:v1:spec",
+  "title": "Arc primitive",
+  "data": {
+    "name": "arc_data",
+    "values": [
+      {"slice": "a", "weight": 1},
+      {"slice": "b", "weight": 2},
+      {"slice": "c", "weight": 3}
+    ]
+  },
+  "mark": {"type": "arc"},
+  "encoding": {
+    "theta":  {"field": "weight", "type": "quantitative"},
+    "color":  {"field": "slice",  "type": "nominal"},
+    "radius": {"value": 80}
+  }
+}
