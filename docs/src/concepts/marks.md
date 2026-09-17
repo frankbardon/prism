@@ -145,7 +145,7 @@ Channel bindings:
 - `source` — parent / from-node id field (required for tree/dendrogram/network).
 - `target` — child / to-node id field (required).
 - `value` — optional edge weight (network) / node size (tree).
-- `text` — optional per-node label.
+- `text` — optional per-node label. See [Node labels](#node-labels).
 - `color`, `fill`, `stroke`, `opacity`, `size` — standard mark props.
 
 Mark-def options:
@@ -163,6 +163,53 @@ Validate rules: `PRISM_SPEC_028` (missing source/target),
 `PRISM_SPEC_029` (multi-root tree). Encode-time:
 `PRISM_ENCODE_TREE_CYCLE`, `PRISM_ENCODE_NETWORK_NONFINITE`,
 `PRISM_WARN_NETWORK_CYCLE`.
+
+#### Node labels
+
+Bind the `text` channel to label the nodes. Content resolves through
+the same path the `text` mark uses — `field` reads a column, `value`
+supplies a literal, `format` runs the result through the d3-format
+subset — so a label formats exactly as the equivalent text mark would.
+See [Encoding › Text channel](encoding.md#on-a-graph-mark).
+
+Labelling is **opt-in**. With no `text` channel these marks emit no
+label geometry at all, which is what keeps an unlabelled tree or
+network byte-identical to one drawn before labels existed.
+
+These marks are node-oriented while the channel is row-oriented, so a
+row's label binds to the node named by that row's `target` value (the
+node identity); the first row wins when a target repeats. A node that
+never appears as a `target` — the root of an edge-list hierarchy, a
+pure source in a network — has no row of its own and falls back to
+its id.
+
+**Where the label lands** follows the classic tidy-tree convention: a
+label sits on the far side of its node from that node's subtree, so it
+never collides with the links or the children below it.
+
+| Mark | `orient` | Internal node | Leaf |
+|---|---|---|---|
+| `tree`, `dendrogram` | `vertical` (default) | Above the node, centred | Below the node, centred |
+| `tree`, `dendrogram` | `horizontal` | Left of the node, right-aligned | Right of the node, left-aligned |
+| `network` | n/a | Below the node, centred | Below the node, centred |
+
+A force layout has no growth direction and no leaf / internal
+distinction, so every `network` label simply hangs under its node.
+
+The plot rect is inset by the estimated label band when labels are on,
+so the outermost labels (a vertical tree's root and leaf row, a
+horizontal tree's root and leaf column) stay inside the chart rather
+than running off the canvas. That inset is why turning labels on also
+moves the nodes.
+
+**Limitation:** Prism runs no text-measurement pass. Label widths are
+estimated at 6px per character — the same standing approximation the
+axis `label_limit` and `label_overlap` heuristics use — so the inset is
+approximate for very wide glyphs, and sibling labels within one depth
+row are not collision-tested against each other. Hiding a label (the
+axis heuristic's answer to an overlap) would lose a node's identity, so
+graph labels are never dropped; give a crowded tree more room, shorter
+labels, or `orient: horizontal`.
 
 ### Bullet
 
@@ -601,7 +648,7 @@ not the top. Pin an explicit order with
 | `sparkbar` | As `bar` — `sparkbar` is a thin wrapper over the bar encoder. | inferred, else `vertical` | yes |
 | `area`, `sparkarea` | Moves the series axis and the fill baseline. A horizontal area runs bottom-to-top and fills to `x = 0`. | `vertical` | no |
 | `tick` | Moves the short segment to the other axis, centred in its category slot. | inferred, else `horizontal` | no |
-| `tree`, `dendrogram`, `network` | The direction the layout grows — not a category/measure swap. | `vertical` | n/a |
+| `tree`, `dendrogram`, `network` | The direction the layout grows — not a category/measure swap. It also picks the side [node labels](#node-labels) sit on. | `vertical` | n/a |
 | `bullet` | Uses its own `orientation` field instead (see [Bullet](#bullet)). | `horizontal` | n/a |
 | `heatmap` | Not implemented — a heatmap is banded on **both** axes, so there is no category/measure split to swap. | — | — |
 | everything else | Not implemented — `orient` is **rejected**, never ignored. | — | — |

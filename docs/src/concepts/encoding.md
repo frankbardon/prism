@@ -762,10 +762,11 @@ whole grid — the shared axis is dropped and each cell expands.
 
 ## Text channel
 
-The `text` channel supplies the label content for a `text` mark (and
+The `text` channel supplies the label content for a `text` mark, for
+the node labels of the `tree` / `dendrogram` / `network` marks, and
 the line text for [tooltips](#tooltip-channel), which share the same
 slimmer channel shape: `field`, `type`, `aggregate`, `format`,
-`title`, `value`).
+`title`, `value`.
 
 ```json
 "text": {"field": "score", "type": "quantitative", "format": ".1f"}
@@ -782,6 +783,26 @@ With **no** `text` channel bound, a `text` mark falls back to
 rendering the `y` field's value verbatim (or `x`'s when `y` is
 unbound). See [Marks › Text](marks.md#text) for the mark-side
 positioning rules.
+
+### On a graph mark
+
+The `tree`, `dendrogram` and `network` marks read the same channel to
+label their nodes, and resolve `field` / `value` / `format` through
+exactly the same path. Two differences follow from those marks being
+node-oriented while the channel is row-oriented:
+
+- **Labelling is opt-in.** With no `text` channel a graph mark emits
+  no label geometry at all, unlike a `text` mark, which always has a
+  fallback. Binding the channel is the only way to turn node labels
+  on.
+- **A row's label binds to that row's `target` node**, the channel
+  those marks treat as the node identity. The first row wins when a
+  target repeats. A node that never appears as a `target` — the root
+  of an edge-list hierarchy, an uncited paper in a citation network —
+  has no row of its own and falls back to its id.
+
+See [Marks › Tree / dendrogram / network](marks.md#tree--dendrogram--network)
+for where the labels land relative to each node.
 
 ## Tooltip channel
 

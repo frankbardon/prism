@@ -374,6 +374,12 @@ func encodeLayerComposite(s *spec.Spec, composite *plan.CompositeDAG, childTable
 			Tooltip:  childEnc.Tooltip,
 			Text:     childEnc.Text,
 			KeyField: keyFieldFromEncoding(childEnc),
+			// Sub-marks that draw their own labels (funnel's stage
+			// values, the graph family's node labels) take the theme's
+			// "text" style rather than the layer's own mark style —
+			// see marks.Inputs.LabelStyle. Without this a labelled
+			// tree inside a layer emits text with no fill at all.
+			LabelStyle: defaultMarkStyle(fullTheme, "text"),
 			// A progress mark inside a layer still needs its track to
 			// paint; the track's Style is theme-resolved, not derived
 			// from the layer's own mark style (E10-S1).

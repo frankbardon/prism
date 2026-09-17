@@ -215,7 +215,8 @@ selection or a structured predicate `test`. See
 ## Tree
 
 Rooted hierarchies laid out with tidy-tree, plus the `dendrogram`
-variant (step links, hidden nodes). See
+variant (step links, hidden nodes). All three bind the `text` channel
+to label their nodes. See
 [Marks › Tree / dendrogram / network](../concepts/marks.md#tree--dendrogram--network).
 
 | Spec | Preview |
@@ -227,12 +228,14 @@ variant (step links, hidden nodes). See
 ## Network
 
 Force-directed node-link diagrams with deterministic seeded layouts.
+Bind the `text` channel to label the nodes.
 See [Marks › Tree / dendrogram / network](../concepts/marks.md#tree--dendrogram--network).
 
 | Spec | Preview |
 |---|---|
 | [citation_network](network/citation_network.prism.json) | <img src="network/citation_network.svg" width="240"> |
 | [dependency_graph](network/dependency_graph.prism.json) | <img src="network/dependency_graph.svg" width="240"> |
+| [labelled_network](network/labelled_network.prism.json) | <img src="network/labelled_network.svg" width="240"> |
 
 ## Themes
 

@@ -1,0 +1,21 @@
+{
+  "$schema": "urn:prism:schema:v1:spec",
+  "title": "Service graph with node labels",
+  "data": {
+    "name": "services",
+    "values": [
+      {"from": "gateway", "to": "auth",    "name": "Auth"},
+      {"from": "gateway", "to": "catalog", "name": "Catalog"},
+      {"from": "gateway", "to": "cart",    "name": "Cart"},
+      {"from": "cart",    "to": "billing", "name": "Billing"},
+      {"from": "catalog", "to": "search",  "name": "Search"},
+      {"from": "auth",    "to": "sessions","name": "Sessions"}
+    ]
+  },
+  "mark": {"type": "network", "node_shape": "circle", "node_size": 6, "iterations": 300, "link_distance": 45, "seed": 11},
+  "encoding": {
+    "source": {"field": "from"},
+    "target": {"field": "to"},
+    "text":   {"field": "name", "type": "nominal"}
+  }
+}

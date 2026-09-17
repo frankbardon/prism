@@ -107,6 +107,21 @@ type ArcGeom struct {
 	PadAngle   float64 `json:"pad_angle,omitempty"`
 }
 
+// LabelCharWidth is Prism's single standing approximation of one
+// label character's advance width in pixels, and LabelLineHeight the
+// matching line box height. Prism runs no text-measurement pass, so
+// every consumer that has to reason about how much room a string will
+// occupy — the axis label overlap / label_limit heuristics in
+// encode/axis_build.go and the node-label placement in
+// encode/marks — estimates from these constants rather than from font
+// metrics. They live here because encode and encode/marks both import
+// this package and neither can import the other. They are a layout
+// estimate only: nothing in the serialised Scene IR carries them.
+const (
+	LabelCharWidth  = 6.0
+	LabelLineHeight = 12.0
+)
+
 // TextGeom is the geometry for a text mark.
 type TextGeom struct {
 	X        float64      `json:"x"`

@@ -15,13 +15,24 @@ import (
 //   - source: from-node id field
 //   - target: to-node id field
 //   - value:  optional edge weight (drives link stroke width)
+//   - text:   optional per-node label (E4-S5)
 //
 // Mark-def options: node_shape, node_size, iterations, link_distance,
 // charge, seed.
 //
 // Output decomposes into LineGeom (one per edge) + Point/Rect geoms
-// (one per unique node). The SVG renderer handles both
-// primitives without changes.
+// (one per unique node) + one TextGeom per node when the text channel
+// is bound. The SVG renderer handles all three primitives without
+// changes.
+//
+// Labels are opt-in on the text channel: with none bound the output
+// is byte-identical to the pre-E4-S5 scene. A network row is an
+// *edge*, not a node, so the row label binds to that row's `target`
+// node (first row wins); a node that only ever appears as a source
+// has no row of its own and falls back to its id. There is no
+// leaf / internal distinction in a force layout and no growth
+// direction to follow, so every label sits directly under its node,
+// centred.
 func encodeNetwork(in Inputs) ([]scene.Mark, error) {
 	if in.Source.Field == "" || in.Target.Field == "" {
 		return nil, prismerrors.New(
@@ -49,7 +60,44 @@ func encodeNetwork(in Inputs) ([]scene.Mark, error) {
 		g.AddEdge(layout.Edge{From: from, To: to})
 	}
 
-	opts := layout.ForceOpts{Width: in.Layout.W, Height: in.Layout.H}
+	labelsOn := nodeLabelsBound(in)
+	var labelByID map[string]string
+	if labelsOn {
+		if labelByID, err = nodeLabelsByID(in, toVals); err != nil {
+			return nil, err
+		}
+	}
+
+	nodeSize := 6.0
+	if in.Mark != nil && in.Mark.NodeSize != nil && *in.Mark.NodeSize > 0 {
+		nodeSize = *in.Mark.NodeSize
+	}
+	nodeShape := "circle"
+	if in.Mark != nil && in.Mark.NodeShape != "" {
+		nodeShape = in.Mark.NodeShape
+	}
+	labelOffset := nodeSize + nodeLabelPadding
+	if nodeShape == "none" {
+		labelOffset = nodeLabelPadding
+	}
+
+	// The force layout fills the rect it is handed, so a node can land
+	// flush against any edge. Shrink that rect by the label band when
+	// labels are on, otherwise the outermost labels fall off the
+	// canvas. Width is estimated from scene.LabelCharWidth — Prism
+	// has no text measurement pass, and sibling labels on nodes that
+	// the layout happens to place close together are not collision
+	// tested against each other.
+	plot := in.Layout
+	if labelsOn {
+		w := maxNodeLabelWidth(g, labelByID)
+		// Every label hangs below its node, so only the bottom needs a
+		// full line box; the top needs nothing.
+		plot = insetForLabels(plot, w/2, w/2, 0,
+			labelOffset+nodeLabelAscent+nodeLabelDescent)
+	}
+
+	opts := layout.ForceOpts{Width: plot.W, Height: plot.H}
 	if in.Mark != nil {
 		if in.Mark.Iterations != nil && *in.Mark.Iterations > 0 {
 			opts.Iterations = *in.Mark.Iterations
@@ -74,22 +122,13 @@ func encodeNetwork(in Inputs) ([]scene.Mark, error) {
 		)
 	}
 
-	plotX, plotY := in.Layout.X, in.Layout.Y
+	plotX, plotY := plot.X, plot.Y
 	pixelByID := map[string][2]float64{}
 	for _, p := range pos {
 		pixelByID[p.ID] = [2]float64{plotX + p.X, plotY + p.Y}
 	}
 
-	nodeSize := 6.0
-	if in.Mark != nil && in.Mark.NodeSize != nil && *in.Mark.NodeSize > 0 {
-		nodeSize = *in.Mark.NodeSize
-	}
-	nodeShape := "circle"
-	if in.Mark != nil && in.Mark.NodeShape != "" {
-		nodeShape = in.Mark.NodeShape
-	}
-
-	out := make([]scene.Mark, 0, len(pos)+g.EdgeCount())
+	out := make([]scene.Mark, 0, 2*len(pos)+g.EdgeCount())
 
 	// Edges carry Style.Stroke but must NOT inherit in.Style's Fill:
 	// in.Style is shared with the node marks below (Point/Rect, which
@@ -132,6 +171,26 @@ func encodeNetwork(in Inputs) ([]scene.Mark, error) {
 			nodeMark.Point = &scene.PointGeom{Cx: x, Cy: y, R: nodeSize}
 		}
 		out = append(out, nodeMark)
+	}
+
+	// Node labels last so they paint over both edges and glyphs. The
+	// vertical offset is baked into Y because neither renderer honours
+	// scene.TextGeom.Baseline — see nodeLabelAscent.
+	if labelsOn {
+		for _, p := range pos {
+			out = append(out, scene.Mark{
+				Type:  scene.MarkText,
+				ID:    "network-label-" + p.ID,
+				Style: in.LabelStyle,
+				Text: &scene.TextGeom{
+					X:        plotX + p.X,
+					Y:        plotY + p.Y + labelOffset + nodeLabelAscent,
+					Content:  nodeLabelFor(labelByID, p.ID),
+					Anchor:   scene.AnchorMiddle,
+					FontSize: nodeLabelFontSize,
+				},
+			})
+		}
 	}
 	return out, nil
 }

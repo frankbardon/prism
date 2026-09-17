@@ -332,8 +332,9 @@ func horizontalGrid(ticks []scene.Tick, plot scene.Rect, vertical bool) []scene.
 // label character's advance width in pixels. Prism runs no text
 // measurement pass, so both the overlap heuristic and the label_limit
 // truncation below estimate from this constant rather than from font
-// metrics.
-const axisLabelCharWidth = 6.0
+// metrics. It aliases scene.LabelCharWidth so the axis heuristic and
+// the node-label placement in encode/marks share one number.
+const axisLabelCharWidth = scene.LabelCharWidth
 
 // axisLabelEllipsis is appended to a label shortened by label_limit.
 const axisLabelEllipsis = "…"
@@ -419,7 +420,7 @@ func applyLabelOverlap(ticks []scene.Tick, mode string, position scene.AxisPosit
 	copy(out, ticks)
 	// Approximate label dimensions: axisLabelCharWidth per character
 	// horizontally, 12px tall vertically.
-	const lineH = 12.0
+	const lineH = scene.LabelLineHeight
 	const charW = axisLabelCharWidth
 	var horizontal bool
 	switch position {
