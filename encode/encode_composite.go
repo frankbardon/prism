@@ -232,6 +232,10 @@ func encodeLayerComposite(s *spec.Spec, composite *plan.CompositeDAG, childTable
 	// sweep finding: layer_independent_color.svg rendered two
 	// "prism-legend-color" groups at identical x/y).
 	legendStackOffset := map[scene.LegendPosition]float64{}
+	// One <linearGradient> per layer that built a gradient legend,
+	// keyed by the id its swatch references and filed onto the scene's
+	// Defs once the scene exists.
+	legendGradients := map[string]scene.Gradient{}
 	seenIndependentX := false
 	seenIndependentY := false
 	for _, lc := range live {
@@ -336,17 +340,39 @@ func encodeLayerComposite(s *spec.Spec, composite *plan.CompositeDAG, childTable
 				Field:      childEnc.Color.Field,
 				Categories: cats,
 				Palette:    ResolveCategoricalPaletteWithOpts(fullTheme, colorScaleOpts(childEnc.Color)),
+				// The sequential ramp is resolved here for the same
+				// reason the flat encoder resolves it: a layer whose
+				// colour is continuous interpolates within it, and its
+				// gradient legend draws its stops from the same slice,
+				// so bar and cells cannot describe different ramps.
+				SequentialPalette: ResolveSequentialPaletteWithOpts(fullTheme, colorScaleOpts(childEnc.Color)),
 			}
-			if len(cats) > 1 && legendPls[lc.idx].enabled && !legendHidden(childEnc.Color) {
-				legend := BuildSymbolLegend(LegendInputs{
+			ll := legendPls[lc.idx]
+			if (len(cats) > 1 || ll.kind == LegendKindGradient) && ll.enabled && !legendHidden(childEnc.Color) {
+				legend, grad := buildColorLegend(colorLegendInputs{
+					Kind:       ll.kind,
+					SceneID:    flatSceneID,
 					Channel:    scene.ChannelColor,
 					Title:      fmt.Sprintf("layer-%d: %s", lc.idx, childEnc.Color.Field),
+					Field:      childEnc.Color.Field,
+					Format:     childEnc.Color.Format,
 					Categories: cats,
 					Palette:    colorChannel.Palette,
-					Placement:  legendPls[lc.idx].placement,
-					Content:    legendPls[lc.idx].content,
-				}, layout.Plot)
+					Sequential: colorChannel.SequentialPalette,
+					Table:      lc.tbl,
+					Placement:  ll.placement,
+					Content:    ll.content,
+					Plot:       layout.Plot,
+				})
 				if legend != nil {
+					// Every layer's bar would otherwise file under the
+					// same scene-qualified key; the layer index keeps
+					// them apart.
+					if grad != nil {
+						id := fmt.Sprintf("%s-layer-%d", LegendGradientID(flatSceneID, scene.ChannelColor), lc.idx)
+						legend.Entries[0].Swatch.GradientID = id
+						legendGradients[id] = *grad
+					}
 					if off := legendStackOffset[legend.Position]; off != 0 {
 						switch legend.Position {
 						case scene.LegendBottomLeft, scene.LegendBottomRight:
@@ -419,7 +445,7 @@ func encodeLayerComposite(s *spec.Spec, composite *plan.CompositeDAG, childTable
 	}
 
 	sceneObj := scene.Scene{
-		ID:         "scene-0",
+		ID:         flatSceneID,
 		Frame:      layout.Frame,
 		Plot:       layout.Plot,
 		Axes:       perCellAxes,
@@ -434,6 +460,9 @@ func encodeLayerComposite(s *spec.Spec, composite *plan.CompositeDAG, childTable
 			X:       layout.Plot.CenterX(),
 			Y:       20,
 		}
+	}
+	for id, g := range legendGradients {
+		registerSceneGradient(&sceneObj, id, &g)
 	}
 	// One plot-region clip for the whole layer stack (E2-S2): every
 	// layer shares this scene's plot rect, so the clip is resolved once
@@ -494,6 +523,10 @@ type layerLegend struct {
 	// override, entry filter, label format and label limit.
 	content LegendContent
 	enabled bool
+	// kind is the layer's resolved legend form (E3-S4): a column of
+	// category swatches, or a continuous gradient bar. Decided here so
+	// the pre-layout reservation and the built legend agree.
+	kind LegendKind
 	// reserved records that this layer's legend claimed margin on a
 	// side, so the Reserve depth is filled in once the layout is
 	// computed.
@@ -512,9 +545,14 @@ func layerLegendPlacements(composite *plan.CompositeDAG, childTables []map[plan.
 	out := make([]layerLegend, len(composite.Children))
 	for i, child := range composite.Children {
 		enc := child.Spec.Encoding
-		pl, enabled := ResolveLegendPlacement(legendSpecOf(enc), scene.LegendTopRight)
 		content := ResolveLegendContent(legendSpecOf(enc))
-		out[i] = layerLegend{placement: pl, content: content, enabled: enabled}
+		var colorCh *spec.MarkChannel
+		if enc != nil {
+			colorCh = enc.Color
+		}
+		kind := ResolveLegendKind(colorCh, content)
+		pl, enabled := ResolveLegendPlacement(legendSpecOf(enc), DefaultLegendPosition(kind))
+		out[i] = layerLegend{placement: pl, content: content, enabled: enabled, kind: kind}
 		if !enabled || !IsSideLegend(pl.Position) {
 			continue
 		}
@@ -522,20 +560,14 @@ func layerLegendPlacements(composite *plan.CompositeDAG, childTables []map[plan.
 		if !ok || tbl == nil {
 			continue
 		}
-		n := legendEntryCount(enc, tbl)
-		if n <= 0 {
+		// A layer legend always carries a title (the "layer-N: field"
+		// form below) unless legend.title suppresses it, so a
+		// non-empty derived title stands in for it here.
+		box, ok := legendReserveBox(kind, enc, tbl, pl, content, "layer")
+		if !ok {
 			continue
 		}
-		// A layer legend always carries a title (the "layer-N: field"
-		// form below) unless legend.title suppresses it.
-		extent := LegendBox{
-			Entries:  n,
-			RowH:     legendSymbolRowH,
-			Padding:  pl.Padding,
-			MaxChars: content.MaxChars(),
-			HasTitle: !content.TitleSet || content.Title != "",
-		}.SideExtent(pl.Position, pl.Offset)
-		addLegendExtent(sides, pl.Position, extent+legendStackGap)
+		addLegendExtent(sides, pl.Position, box.SideExtent(pl.Position, pl.Offset)+legendStackGap)
 		out[i].reserved = true
 	}
 	return out

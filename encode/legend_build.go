@@ -148,6 +148,16 @@ type LegendBox struct {
 	// default 14-character budget.
 	MaxChars float64
 	HasTitle bool
+	// Direction is legend.direction (E3-S4): vertical — the zero
+	// value — stacks the entries down a column, horizontal lays them
+	// out across a single row. It is the only field that changes
+	// which way Size grows, and the frame, both builders and the side
+	// reservation all read the answer from here.
+	Direction scene.LegendDirection
+	// SymbolSize is legend.symbol_size in pixels. A symbol wider than
+	// the default 12-px swatch widens the per-entry column so the
+	// label still clears it. Zero leaves the default.
+	SymbolSize float64
 }
 
 // maxChars resolves the character budget, defaulting when unset.
@@ -158,9 +168,41 @@ func (b LegendBox) maxChars() float64 {
 	return legendLabelMaxChars
 }
 
+// swatchW is the width of the swatch column one entry reserves — the
+// 12-px default, or a larger legend.symbol_size.
+func (b LegendBox) swatchW() float64 {
+	if b.SymbolSize > legendSwatchSize {
+		return b.SymbolSize
+	}
+	return legendSwatchSize
+}
+
+// entryW is the width one entry claims: its swatch column, the gap to
+// the label, the label budget, and the trailing inset.
+func (b LegendBox) entryW() float64 {
+	return b.swatchW() + legendInset + b.maxChars()*legendLabelCharW + legendInset
+}
+
+// horizontal reports whether entries flow across rather than down.
+func (b LegendBox) horizontal() bool { return b.Direction == scene.LegendHorizontal }
+
 // Size returns the frame size of the box.
+//
+// A vertical legend is one entry wide and Entries rows tall; a
+// horizontal one is Entries entries wide and a single row tall, with
+// the title band folded in because the renderer draws the title above
+// that row. (The vertical form leaves the title band out — its frame
+// is a historical approximation the goldens pin.)
 func (b LegendBox) Size() (w, h float64) {
-	w = legendSwatchSize + legendInset + b.maxChars()*legendLabelCharW + legendInset + 2*b.Padding
+	if b.horizontal() {
+		w = float64(b.Entries)*b.entryW() + 2*b.Padding
+		h = b.RowH + legendInset*2 + 2*b.Padding
+		if b.HasTitle {
+			h += legendTitleBand
+		}
+		return w, h
+	}
+	w = b.entryW() + 2*b.Padding
 	h = float64(b.Entries)*b.RowH + legendInset*2 + 2*b.Padding
 	return w, h
 }
@@ -171,16 +213,22 @@ func (b LegendBox) Size() (w, h float64) {
 // return 0.
 //
 // Left / right measure the box width; top / bottom measure what the
-// renderer actually draws (legendRowPitch per entry plus the title
-// band), which is taller than the frame the goldens pin — the
-// reservation has to hold the drawing, not the approximation.
+// renderer actually draws (legendRowPitch per drawn row plus the
+// title band), which is taller than the frame the goldens pin — the
+// reservation has to hold the drawing, not the approximation. A
+// horizontal legend draws a single row however many entries it
+// carries, which is what lets a wide legend sit in a shallow band.
 func (b LegendBox) SideExtent(pos scene.LegendPosition, offset float64) float64 {
 	switch pos {
 	case scene.LegendLeft, scene.LegendRight:
 		w, _ := b.Size()
 		return w + offset
 	case scene.LegendTop, scene.LegendBottom:
-		h := float64(b.Entries)*legendRowPitch + legendInset*2 + 2*b.Padding
+		rows := b.Entries
+		if b.horizontal() {
+			rows = 1
+		}
+		h := float64(rows)*legendRowPitch + legendInset*2 + 2*b.Padding
 		if b.HasTitle {
 			h += legendTitleBand
 		}
@@ -278,6 +326,223 @@ type GradientLegend struct {
 	LabelFormat string
 }
 
+// LegendGradientID is the scene.Defs.Gradients key a gradient legend's
+// swatch references. It is qualified by the scene id so a multi-cell
+// grid (facet / repeat / concat) never emits two <linearGradient>
+// elements sharing an id — renameScene re-keys it alongside the plot
+// clip when a child scene is renumbered.
+func LegendGradientID(sceneID string, ch scene.Channel) string {
+	return "gradient-" + sceneID + "-" + string(ch)
+}
+
+// DefaultLegendPosition is where a legend of the given kind anchors
+// when the spec sets no legend.orient.
+//
+// A symbol legend keeps the top-right corner it has always used: it
+// overlays the plot, reserves nothing, and is short enough to sit in
+// the corner without hiding much. A gradient bar cannot do that — it
+// is legendGradientH (130 px) tall with labels running down its side,
+// so cornered it would lie squarely over the heatmap cells it
+// describes. It anchors to the right SIDE instead, which reserves a
+// margin band and shrinks the plot clear of it.
+func DefaultLegendPosition(kind LegendKind) scene.LegendPosition {
+	if kind == LegendKindGradient {
+		return scene.LegendRight
+	}
+	return scene.LegendTopRight
+}
+
+// legendGradientFor builds the continuous legend for a color channel
+// bound to field over tbl, with stops taken from the resolved
+// sequential ramp the marks themselves interpolate within. Returns
+// nil when there is nothing to draw: no field, no column, no numeric
+// cell in it, or an empty palette.
+func legendGradientFor(id, field string, tbl *table.Table, palette []*scene.Color, labelFormat string) *GradientLegend {
+	if field == "" || tbl == nil || len(palette) == 0 {
+		return nil
+	}
+	col, ok := tbl.Column(field)
+	if !ok {
+		return nil
+	}
+	mn, mx, ok := columnNumericExtent(col)
+	if !ok {
+		return nil
+	}
+	return &GradientLegend{
+		ID:          id,
+		DomainMin:   mn,
+		DomainMax:   mx,
+		Stops:       GradientStopsFromPalette(palette),
+		LabelFormat: labelFormat,
+	}
+}
+
+// columnNumericExtent returns the min and max numeric cell of a
+// column, skipping nulls and non-numeric cells. ok is false when the
+// column holds no numeric cell at all — which is how a channel
+// declared quantitative over a string column falls back to a symbol
+// legend rather than drawing a bar with no domain.
+func columnNumericExtent(col table.Column) (float64, float64, bool) {
+	var mn, mx float64
+	seen := false
+	for i := 0; i < col.Len(); i++ {
+		f, ok := legendValueFloat(col.ValueAt(i))
+		if !ok {
+			continue
+		}
+		if !seen {
+			mn, mx, seen = f, f, true
+			continue
+		}
+		if f < mn {
+			mn = f
+		}
+		if f > mx {
+			mx = f
+		}
+	}
+	return mn, mx, seen
+}
+
+// legendReserveBox returns the box a channel's legend is measured
+// with BEFORE the layout runs, and false when the channel builds no
+// legend at all. It is the single pre-layout measurement: both the
+// flat encoder and the composite one reserve through it, so a
+// gradient bar claims its margin band exactly the way a symbol legend
+// does.
+func legendReserveBox(kind LegendKind, enc *spec.Encoding, tbl *table.Table, pl LegendPlacement, c LegendContent, title string) (LegendBox, bool) {
+	if enc == nil || enc.Color == nil {
+		return LegendBox{}, false
+	}
+	if kind == LegendKindGradient {
+		// Measured, not assumed: a quantitative channel over a column
+		// with no numeric cell builds no bar, so it must reserve
+		// nothing either.
+		if !legendGradientViable(enc.Color.Field, tbl) {
+			return LegendBox{}, false
+		}
+		return gradientLegendBox(pl, c, legendTitle(title, c) != ""), true
+	}
+	n := legendEntryCount(enc, tbl)
+	if n <= 0 {
+		return LegendBox{}, false
+	}
+	return symbolLegendBox(n, pl, c, legendTitle(title, c) != ""), true
+}
+
+// colorLegendInputs is everything the color channel's legend needs,
+// in either of the two forms.
+type colorLegendInputs struct {
+	Kind    LegendKind
+	SceneID string
+	Channel scene.Channel
+	// Title is the title derived from the bound field, before any
+	// legend.title override folds onto it.
+	Title string
+	Field string
+	// Format is the channel's own `format` specifier, used to label a
+	// gradient bar when legend.format itself is unset.
+	Format     string
+	Categories []string
+	Palette    []*scene.Color
+	Sequential []*scene.Color
+	Table      *table.Table
+	Placement  LegendPlacement
+	Content    LegendContent
+	Plot       scene.Rect
+}
+
+// buildColorLegend builds the color channel's legend in whichever
+// form ResolveLegendKind picked. The second return is the scene-level
+// linear gradient the bar's swatch references — nil for a symbol
+// legend — which the caller registers into Scene.Defs.
+//
+// A gradient with no numeric domain to label falls back to the symbol
+// legend, which is what the channel would have built anyway; that is
+// the same viability test legendReserveBox ran before the layout, so
+// the reservation and the built legend cannot disagree.
+func buildColorLegend(in colorLegendInputs) (*scene.Legend, *scene.Gradient) {
+	if in.Kind == LegendKindGradient {
+		id := LegendGradientID(in.SceneID, in.Channel)
+		if g := legendGradientFor(id, in.Field, in.Table, in.Sequential, in.Format); g != nil {
+			lg := BuildGradientLegend(LegendInputs{
+				Channel:   in.Channel,
+				Title:     in.Title,
+				Placement: in.Placement,
+				Content:   in.Content,
+				Gradient:  g,
+			}, in.Plot)
+			if lg == nil {
+				return nil, nil
+			}
+			// A vertical bar: offset 0 sits at the top and carries the
+			// domain minimum, which is the order gradientLegendTicks
+			// labels the stops in.
+			return lg, &scene.Gradient{Type: "linear", Stops: g.Stops, Y2: 1}
+		}
+	}
+	return BuildSymbolLegend(LegendInputs{
+		Channel:    in.Channel,
+		Title:      in.Title,
+		Categories: in.Categories,
+		Palette:    in.Palette,
+		Placement:  in.Placement,
+		Content:    in.Content,
+	}, in.Plot), nil
+}
+
+// registerSceneGradient files a legend's gradient under the scene's
+// Defs so render/svg emits one <linearGradient> the swatch's
+// fill="url(#…)" resolves against. A nil gradient is a no-op, which
+// is what keeps every scene that builds a symbol legend free of a
+// <defs> block it does not need.
+func registerSceneGradient(s *scene.Scene, id string, g *scene.Gradient) {
+	if s == nil || g == nil {
+		return
+	}
+	if s.Defs == nil {
+		s.Defs = &scene.Defs{}
+	}
+	if s.Defs.Gradients == nil {
+		s.Defs.Gradients = map[string]scene.Gradient{}
+	}
+	s.Defs.Gradients[id] = *g
+}
+
+// colorLegendTitle is the title the color channel's legend derives
+// from its bound field, before any legend.title override.
+func colorLegendTitle(enc *spec.Encoding) string {
+	if enc == nil || enc.Color == nil {
+		return ""
+	}
+	return enc.Color.Field
+}
+
+// colorChannelFormat is the color channel's own `format` specifier,
+// the fallback a gradient bar labels its stops with when legend.format
+// is unset.
+func colorChannelFormat(enc *spec.Encoding) string {
+	if enc == nil || enc.Color == nil {
+		return ""
+	}
+	return enc.Color.Format
+}
+
+// legendGradientViable reports whether field carries a numeric extent
+// a gradient bar could label.
+func legendGradientViable(field string, tbl *table.Table) bool {
+	if field == "" || tbl == nil {
+		return false
+	}
+	col, ok := tbl.Column(field)
+	if !ok {
+		return false
+	}
+	_, _, ok = columnNumericExtent(col)
+	return ok
+}
+
 // BuildSymbolLegend returns one Legend with a solid swatch per shown
 // category. Returns nil when the channel is trivial (<=1 category),
 // or when legend.values filters every entry away.
@@ -305,29 +570,52 @@ func BuildSymbolLegend(in LegendInputs, plot scene.Rect) *scene.Legend {
 			color = in.Palette[idx%len(in.Palette)]
 		}
 		entries[i] = scene.LegendEntry{
-			Label: in.Content.Truncate(in.Content.Label(in.Categories[idx])),
-			Swatch: scene.SwatchSpec{
-				Type:  scene.SwatchSolid,
-				Color: color,
-			},
+			Label:  in.Content.Truncate(in.Content.Label(in.Categories[idx])),
+			Swatch: in.Content.swatchFor(color),
 		}
 	}
 	title := legendTitle(in.Title, in.Content)
-	box := LegendBox{
-		Entries:  len(entries),
-		RowH:     legendSymbolRowH,
-		Padding:  pl.Padding,
-		MaxChars: in.Content.MaxChars(),
-		HasTitle: title != "",
-	}
+	box := symbolLegendBox(len(entries), pl, in.Content, title != "")
 	return &scene.Legend{
-		ID:       fmt.Sprintf("legend-%s", in.Channel),
-		Channel:  in.Channel,
-		Position: pl.Position,
-		Title:    title,
-		Entries:  entries,
+		ID:        fmt.Sprintf("legend-%s", in.Channel),
+		Channel:   in.Channel,
+		Position:  pl.Position,
+		Title:     title,
+		Entries:   entries,
+		Padding:   pl.Padding,
+		Direction: in.Content.Direction,
+		Frame:     placeLegendFrame(pl, box, plot),
+	}
+}
+
+// symbolLegendBox is the one measurement of a symbol legend with n
+// shown entries. The pre-layout reservation and the emitted frame
+// both call it, so a legend can never reserve a band it does not fill.
+func symbolLegendBox(n int, pl LegendPlacement, c LegendContent, hasTitle bool) LegendBox {
+	box := LegendBox{
+		Entries:   n,
+		RowH:      legendSymbolRowH,
+		Padding:   pl.Padding,
+		MaxChars:  c.MaxChars(),
+		HasTitle:  hasTitle,
+		Direction: c.Direction,
+	}
+	if c.SymbolSize != nil {
+		box.SymbolSize = *c.SymbolSize
+	}
+	return box
+}
+
+// gradientLegendBox is the same single measurement for a gradient
+// legend. Its bar is one tall entry, so legend.direction has no entry
+// flow to change and is left off the box on purpose.
+func gradientLegendBox(pl LegendPlacement, c LegendContent, hasTitle bool) LegendBox {
+	return LegendBox{
+		Entries:  1,
+		RowH:     legendGradientH,
 		Padding:  pl.Padding,
-		Frame:    placeLegendFrame(pl, box, plot),
+		MaxChars: c.MaxChars(),
+		HasTitle: hasTitle,
 	}
 }
 
@@ -365,13 +653,7 @@ func BuildGradientLegend(in LegendInputs, plot scene.Rect) *scene.Legend {
 		},
 	}
 	title := legendTitle(in.Title, in.Content)
-	box := LegendBox{
-		Entries:  1,
-		RowH:     legendGradientH,
-		Padding:  pl.Padding,
-		MaxChars: in.Content.MaxChars(),
-		HasTitle: title != "",
-	}
+	box := gradientLegendBox(pl, in.Content, title != "")
 	return &scene.Legend{
 		ID:       fmt.Sprintf("legend-%s", in.Channel),
 		Channel:  in.Channel,

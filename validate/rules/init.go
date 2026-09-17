@@ -53,4 +53,6 @@ func init() {
 	validate.RegisterDefault(func() validate.SemanticRule { return OrderChannelShape{} })
 	validate.RegisterDefault(func() validate.SemanticRule { return OrderChannelAggregate{} })
 	validate.RegisterDefault(func() validate.SemanticRule { return CompositeParentEncoding{} })
+	validate.RegisterDefault(func() validate.SemanticRule { return LegendTypeCoherent{} })
+	validate.RegisterDefault(func() validate.SemanticRule { return LegendSymbolType{} })
 }

@@ -1089,6 +1089,27 @@ var Codes = map[string]CodeMetadata{
 		},
 		SeeAlso: []string{"PRISM_SPEC_003", "PRISM_SPEC_046", "PRISM_SPEC_036"},
 	},
+	"PRISM_SPEC_051": {
+		Code:    "PRISM_SPEC_051",
+		Message: `Channel "{{.Channel}}" declares legend.type "{{.Type}}", which its channel type "{{.ChannelType}}" cannot produce.`,
+		Fixups: []string{
+			"`legend.type`" + ` overrides the legend form Prism would otherwise infer, so it has to name a form the channel can fill. A ` + "`gradient`" + ` is a continuous bar and needs a numeric domain to run between, so it belongs on a ` + "`quantitative`" + ` channel; a ` + "`symbol`" + ` legend is a list of category swatches and needs categories to name, so it belongs on a discrete one.`,
+			`Drop the key. The inference already picks the right form: ` + "`{\"color\": {\"field\": \"count\", \"type\": \"quantitative\"}}`" + ` builds a gradient bar and ` + "`{\"color\": {\"field\": \"origin\", \"type\": \"nominal\"}}`" + ` builds category swatches, with no ` + "`legend.type`" + ` written at all.`,
+			`To show a continuous field as discrete swatches, make it discrete first: a ` + "`bin`" + ` transform (or an upstream ` + "`calculate`" + `) turns the measure into named buckets, and the channel then declares ` + "`\"type\": \"ordinal\"`" + `.`,
+			`To hide the legend entirely rather than change its form, write ` + "`\"legend\": null`" + ` on the channel.`,
+		},
+		SeeAlso: []string{"PRISM_SPEC_052", "PRISM_SPEC_003"},
+	},
+	"PRISM_SPEC_052": {
+		Code:    "PRISM_SPEC_052",
+		Message: `Legend symbol_type "{{.SymbolType}}" on channel "{{.Channel}}" is not a shape Prism draws.`,
+		Fixups: []string{
+			"`legend.symbol_type`" + ` takes the point mark's own shape vocabulary, because a legend swatch and a point are drawn by the same emitter: {{.Allowed}}.`,
+			`Shape and size travel together — ` + "`{\"color\": {\"field\": \"origin\", \"type\": \"nominal\", \"legend\": {\"symbol_type\": \"diamond\", \"symbol_size\": 14}}}`" + ` draws 14-px diamond swatches.`,
+			`Leave ` + "`symbol_type`" + ` off for the default square swatch, which is what every legend draws when the key is absent.`,
+		},
+		SeeAlso: []string{"PRISM_SPEC_051"},
+	},
 	"PRISM_SPEC_053": {
 		Code:    "PRISM_SPEC_053",
 		Message: `Channel "{{.Channel}}" declares stack "center", which mark type {{.Mark}} cannot draw.`,

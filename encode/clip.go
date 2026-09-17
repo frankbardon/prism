@@ -1,6 +1,8 @@
 package encode
 
 import (
+	"strings"
+
 	"github.com/frankbardon/prism/encode/scene"
 	"github.com/frankbardon/prism/spec"
 )
@@ -112,23 +114,53 @@ func armPlotClip(s *scene.Scene, on bool) {
 	s.ClipRef = id
 }
 
-// renameScene assigns a scene id and re-keys any plot clip registered
-// under the previous one, so a multi-cell grid never emits two clipPath
+// renameScene assigns a scene id and re-keys anything registered in
+// Defs under the previous one — the plot clip, and a gradient
+// legend's <linearGradient> — so a multi-cell grid never emits two
 // elements sharing an id.
 func renameScene(s *scene.Scene, id string) {
-	old := s.ClipRef
+	old := s.ID
 	s.ID = id
-	if old == "" {
+	renameSceneGradients(s, old, id)
+	oldClip := s.ClipRef
+	if oldClip == "" {
 		return
 	}
 	next := plotClipID(id)
 	if s.Defs != nil && s.Defs.Clips != nil {
-		if r, ok := s.Defs.Clips[old]; ok {
-			delete(s.Defs.Clips, old)
+		if r, ok := s.Defs.Clips[oldClip]; ok {
+			delete(s.Defs.Clips, oldClip)
 			s.Defs.Clips[next] = r
 		}
 	}
 	s.ClipRef = next
+}
+
+// renameSceneGradients moves every legend gradient filed under the
+// old scene id onto the new one, rewriting the swatch references that
+// point at it. The match is on the scene-qualified prefix, so a
+// layered scene's per-layer suffix ("…-layer-2") travels with it. A
+// scene with no gradient legend is untouched.
+func renameSceneGradients(s *scene.Scene, oldID, newID string) {
+	if oldID == newID || s.Defs == nil || len(s.Defs.Gradients) == 0 {
+		return
+	}
+	for i := range s.Legends {
+		ch := s.Legends[i].Channel
+		oldPrefix, newPrefix := LegendGradientID(oldID, ch), LegendGradientID(newID, ch)
+		for j := range s.Legends[i].Entries {
+			ref := s.Legends[i].Entries[j].Swatch.GradientID
+			if !strings.HasPrefix(ref, oldPrefix) {
+				continue
+			}
+			next := newPrefix + strings.TrimPrefix(ref, oldPrefix)
+			if g, ok := s.Defs.Gradients[ref]; ok {
+				delete(s.Defs.Gradients, ref)
+				s.Defs.Gradients[next] = g
+			}
+			s.Legends[i].Entries[j].Swatch.GradientID = next
+		}
+	}
 }
 
 // offsetClips shifts every registered clip rect by (dx, dy) alongside

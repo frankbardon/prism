@@ -23,6 +23,19 @@ const (
 	ShapeDiamond  PointShape = "diamond"
 )
 
+// PointShapes is the whole drawable shape vocabulary, in the order
+// the JSON Schema publishes it. It is the single list both the
+// encoder (legend.symbol_type resolution) and the validator
+// (PRISM_SPEC_052) read, so neither can drift from what
+// render/svg/symbols.go can actually emit.
+var PointShapes = []PointShape{
+	ShapeCircle,
+	ShapeSquare,
+	ShapeTriangle,
+	ShapeCross,
+	ShapeDiamond,
+}
+
 // TextAnchor controls horizontal text anchoring.
 type TextAnchor string
 
