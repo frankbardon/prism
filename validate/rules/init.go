@@ -56,4 +56,8 @@ func init() {
 	validate.RegisterDefault(func() validate.SemanticRule { return CompositeParentEncoding{} })
 	validate.RegisterDefault(func() validate.SemanticRule { return LegendTypeCoherent{} })
 	validate.RegisterDefault(func() validate.SemanticRule { return LegendSymbolType{} })
+	validate.RegisterDefault(func() validate.SemanticRule { return OffsetMarkSupported{} })
+	validate.RegisterDefault(func() validate.SemanticRule { return OffsetAxisCoherent{} })
+	validate.RegisterDefault(func() validate.SemanticRule { return OffsetStackExclusive{} })
+	validate.RegisterDefault(func() validate.SemanticRule { return OffsetSpanExclusive{} })
 }
