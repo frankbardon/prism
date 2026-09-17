@@ -19,7 +19,7 @@
         "grid":           {"type": "boolean", "description": "Whether to draw grid lines."},
         "labels":         {"type": "boolean", "description": "Whether to draw tick labels. False suppresses only the labels — the tick marks, domain line, grid and title stay — and releases the padding they reserved."},
         "label_angle":    {"type": "number", "description": "Rotation angle in degrees for tick labels."},
-        "label_overlap":  {"type": ["boolean", "string"], "enum": [true, false, "parity", "greedy"], "description": "How to handle overlapping labels."},
+        "label_overlap":  {"type": ["boolean", "string"], "enum": [true, false, "parity", "greedy", "none", "auto"], "description": "How to handle labels whose estimated boxes collide. \"parity\" (the default, also true and \"auto\") hides every other colliding label; \"greedy\" keeps the last label shown and hides everything colliding with it; \"none\" (also false) disables the pass. Adjacency is direction-independent, so a band scale on a vertical axis thins exactly as one on a horizontal axis does."},
         "label_padding":  {"type": "number", "description": "Gap between the axis line and its tick labels in pixels. Overrides the theme's --prism-axis-label-padding token."},
         "label_limit":    {"type": "number", "minimum": 0, "description": "Maximum allowed label width in pixels before the label is truncated with an ellipsis. 0 means no limit."},
         "title_padding":  {"type": "number", "minimum": 0, "description": "Gap in pixels between the axis's tick labels and its title. Overrides the theme's --prism-axis-title-padding token (and the per-axis axis_x / axis_y block that layers over it); with all of them unset the built-in 8 px applies."},

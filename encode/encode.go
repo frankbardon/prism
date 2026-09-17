@@ -1613,16 +1613,33 @@ func axisTitleString(v any) (string, bool) {
 	return "", false
 }
 
-// overlapMode normalises axis.label_overlap (bool or string).
+// overlapMode normalises axis.label_overlap (bool or string) onto the
+// modes applyLabelOverlap acts on.
+//
+// Every spelling schema/v1/axis.schema.json accepts must land on one of
+// them. A string that reaches applyLabelOverlap unrecognised matches no
+// branch and hides nothing, so the author's setting silently does
+// nothing — "greedy" shipped in the schema enum in exactly that state.
+// An unknown string falls back to the default rather than disabling the
+// pass, so a typo degrades to normal behaviour instead of quietly
+// turning overlap handling off.
 func overlapMode(v any) (string, bool) {
 	switch t := v.(type) {
 	case bool:
 		if t {
-			return "parity", true
+			return overlapParity, true
 		}
-		return "none", true
+		return overlapNone, true
 	case string:
-		return t, true
+		switch t {
+		case overlapNone, "false":
+			return overlapNone, true
+		case overlapGreedy:
+			return overlapGreedy, true
+		default:
+			// "parity", "auto", and anything unrecognised.
+			return overlapParity, true
+		}
 	}
 	return "", false
 }

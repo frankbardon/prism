@@ -629,6 +629,37 @@ property by property, first-specified-wins, so `tick_count` set on one
 layer reaches the shared axis — see
 [Composition](composition.md).
 
+### Crowded labels — `label_overlap`
+
+When two tick labels' estimated boxes collide, `axis.label_overlap`
+decides what gives. Prism has no text-measurement pass, so the estimate
+is `6px` per character along a horizontal axis and a flat `12px` line
+height along a vertical one — the same heuristic `label_limit` uses.
+
+| Value | Effect |
+|---|---|
+| `true`, `"parity"`, `"auto"` | Hide every *other* colliding label, so a crowded axis thins by half rather than collapsing to its first label. The default. |
+| `"greedy"` | Keep the last label shown and hide everything that collides with it, then carry on from it. Drops at least as much as `parity`, and leaves the survivors evenly legible. |
+| `false`, `"none"` | Draw every label. Overlap becomes the author's problem. |
+
+**Adjacency is direction-independent.** Ticks reach this pass in *domain*
+order, not pixel order, and a band scale on a vertical axis runs
+bottom-to-top — the first category carries the *largest* `y`. The pass
+compares the absolute distance between two labels against their combined
+half-widths, so it behaves identically whichever way the pixels run. An
+earlier implementation compared signed leading and trailing edges, which
+read every adjacent pair on a `left`/`right` axis as overlapping no
+matter how much room there was; the visible result was a horizontal bar
+chart naming only every other bar, and y axes labelled `0 / 0.4 / 0.8`
+where all five ticks had room. Fixed in v0.15.1.
+
+A label hidden this way is gone from the drawing with nothing marking its
+absence. On a *continuous* axis that costs precision a reader can
+interpolate back; on a **band** axis it costs identity they cannot
+recover. If your categorical axis is crowded, prefer giving it room, a
+shorter `label_limit`, or `"none"` plus a layout you control over letting
+either mode guess.
+
 ### Legend placement
 
 A legend is built from the `color` channel, and the `legend` block on
