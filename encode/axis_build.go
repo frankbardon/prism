@@ -1,7 +1,24 @@
 package encode
 
 import (
+	"math"
+
 	"github.com/frankbardon/prism/encode/scene"
+)
+
+// Label-overlap modes. These are the ONLY spellings applyLabelOverlap
+// acts on; every value schema/v1/axis.schema.json accepts must
+// normalise to one of them in overlapMode (encode/encode.go), or the
+// author's setting is a silent no-op. "greedy" reached the schema
+// without ever reaching the code, which is exactly that failure.
+const (
+	// overlapParity hides every other colliding label. The default.
+	overlapParity = "parity"
+	// overlapGreedy keeps the last label shown and hides everything
+	// colliding with it.
+	overlapGreedy = "greedy"
+	// overlapNone disables the pass; applyLabelOverlap is not called.
+	overlapNone = "none"
 )
 
 // AxisOpts carries per-axis overrides resolved from the spec's
@@ -11,7 +28,7 @@ type AxisOpts struct {
 	Title        string
 	Grid         bool
 	LabelAngle   float64
-	LabelOverlap string // "parity" (default) | "auto" | "none"
+	LabelOverlap string // "parity" (default) | "greedy" | "none"
 	MinorTicks   bool   // default true for linear
 	Format       string // d3-format spec for tick labels
 	// Orient is the spec's `axis.orient` — the side the axis sits on
@@ -114,7 +131,7 @@ func DefaultAxisOpts(title string) AxisOpts {
 		Title:        title,
 		Grid:         true,
 		LabelAngle:   0,
-		LabelOverlap: "parity",
+		LabelOverlap: overlapParity,
 		MinorTicks:   true,
 		Labels:       true,
 		Ticks:        true,
@@ -279,7 +296,7 @@ func BuildAxisWithOpts(scale Scale, channel scene.Channel, position scene.AxisPo
 	axis.Ticks = applyLabelLimit(axis.Ticks, opts.LabelLimit)
 
 	// Overlap handling: parity-skip when adjacent labels collide.
-	if opts.LabelOverlap != "none" {
+	if opts.LabelOverlap != overlapNone {
 		axis.Ticks = applyLabelOverlap(axis.Ticks, opts.LabelOverlap, position)
 	}
 
@@ -410,10 +427,22 @@ func injectLinearMinorTicks(majors []scene.Tick, s *LinearScale) []scene.Tick {
 	return out
 }
 
-// applyLabelOverlap inspects ticks in pixel order and marks
-// LabelHidden=true on every other major tick whose estimated label
-// bbox overlaps its successor. Minor ticks are ignored (already
-// label-less).
+// applyLabelOverlap marks LabelHidden=true on tick labels whose
+// estimated bounding boxes collide with the last label still shown.
+// Minor ticks are ignored (already label-less).
+//
+// Adjacency is measured as the ABSOLUTE distance between two labels'
+// anchor pixels against their combined half-extents. That is what makes
+// the scan independent of which direction the axis runs. Ticks arrive
+// in domain order, not pixel order, and a band scale on a vertical
+// axis runs bottom-to-top — category 0 carries the LARGEST y. An
+// earlier signed test (`start < lastEnd`) silently read every adjacent
+// pair on a left/right axis as overlapping, so parity mode hid every
+// other category name no matter how much room there was. Horizontal
+// axes were unaffected, which is why it survived until v0.15.0 made a
+// band scale on y reachable. The absolute form is an exact
+// reformulation for an ascending axis, so horizontal output does not
+// move; do not "simplify" it back to comparing signed edges.
 func applyLabelOverlap(ticks []scene.Tick, mode string, position scene.AxisPosition) []scene.Tick {
 	if len(ticks) < 2 {
 		return ticks
@@ -421,7 +450,8 @@ func applyLabelOverlap(ticks []scene.Tick, mode string, position scene.AxisPosit
 	out := make([]scene.Tick, len(ticks))
 	copy(out, ticks)
 	// Approximate label dimensions: axisLabelCharWidth per character
-	// horizontally, 12px tall vertically.
+	// horizontally, LabelLineHeight tall vertically. Prism has no
+	// text-measurement pass.
 	const lineH = scene.LabelLineHeight
 	const charW = axisLabelCharWidth
 	var horizontal bool
@@ -429,41 +459,49 @@ func applyLabelOverlap(ticks []scene.Tick, mode string, position scene.AxisPosit
 	case scene.AxisPositionBottom, scene.AxisPositionTop:
 		horizontal = true
 	}
-	var lastEnd float64
+	// halfExtent is half a label's span ALONG the axis.
+	halfExtent := func(t scene.Tick) float64 {
+		if horizontal {
+			return float64(len(t.Label)) * charW / 2
+		}
+		return lineH / 2
+	}
+	var lastPixel, lastHalf float64
 	first := true
 	skip := false
 	for i := range out {
 		if out[i].Minor || out[i].Label == "" {
 			continue
 		}
-		var start, end float64
-		if horizontal {
-			w := float64(len(out[i].Label)) * charW
-			start = out[i].Pixel - w/2
-			end = out[i].Pixel + w/2
-		} else {
-			start = out[i].Pixel - lineH/2
-			end = out[i].Pixel + lineH/2
-		}
+		half := halfExtent(out[i])
 		if first {
-			lastEnd = end
+			lastPixel, lastHalf = out[i].Pixel, half
 			first = false
 			continue
 		}
-		if start < lastEnd {
-			if mode == "parity" {
+		if math.Abs(out[i].Pixel-lastPixel) < half+lastHalf {
+			switch mode {
+			case overlapParity:
+				// Alternate: hide one, keep the next, so a dense
+				// axis thins to every other label rather than
+				// collapsing to its first.
 				if !skip {
 					skip = true
 					out[i].LabelHidden = true
-				} else {
-					skip = false
-					lastEnd = end
+					continue
 				}
+				skip = false
+				lastPixel, lastHalf = out[i].Pixel, half
+				continue
+			case overlapGreedy:
+				// Keep the last label shown and drop everything
+				// that collides with it, then carry on from it.
+				out[i].LabelHidden = true
 				continue
 			}
 		}
 		skip = false
-		lastEnd = end
+		lastPixel, lastHalf = out[i].Pixel, half
 	}
 	return out
 }
