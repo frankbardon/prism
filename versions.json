@@ -1,0 +1,6 @@
+{
+  "default": "latest",
+  "versions": [
+    {"id": "latest", "label": "latest (dev)", "path": "/prism/latest/"}
+  ]
+}

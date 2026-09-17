@@ -1,0 +1,19 @@
+{
+  "$schema": "urn:prism:schema:v1:spec",
+  "title": "Browser share",
+  "data": {
+    "name": "browsers",
+    "values": [
+      {"name": "Chrome",  "share": 64},
+      {"name": "Safari",  "share": 19},
+      {"name": "Firefox", "share":  8},
+      {"name": "Edge",    "share":  6},
+      {"name": "Other",   "share":  3}
+    ]
+  },
+  "mark": {"type": "donut", "inner_radius": 60, "outer_radius": 100},
+  "encoding": {
+    "theta": {"field": "share", "type": "quantitative"},
+    "color": {"field": "name",  "type": "nominal"}
+  }
+}

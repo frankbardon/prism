@@ -1,0 +1,26 @@
+{
+  "$schema": "urn:prism:schema:v1:spec",
+  "title": "Revenue by quarter, stacked by segment",
+  "data": {
+    "values": [
+      {"quarter": "Q1", "segment": "enterprise", "revenue": 120},
+      {"quarter": "Q2", "segment": "enterprise", "revenue": 145},
+      {"quarter": "Q3", "segment": "enterprise", "revenue": 138},
+      {"quarter": "Q4", "segment": "enterprise", "revenue": 172},
+      {"quarter": "Q1", "segment": "mid-market", "revenue": 100},
+      {"quarter": "Q2", "segment": "mid-market", "revenue": 120},
+      {"quarter": "Q3", "segment": "mid-market", "revenue": 165},
+      {"quarter": "Q4", "segment": "mid-market", "revenue": 190},
+      {"quarter": "Q1", "segment": "self-serve", "revenue": 64},
+      {"quarter": "Q2", "segment": "self-serve", "revenue": 71},
+      {"quarter": "Q3", "segment": "self-serve", "revenue": 88},
+      {"quarter": "Q4", "segment": "self-serve", "revenue": 95}
+    ]
+  },
+  "mark": "bar",
+  "encoding": {
+    "x": {"field": "quarter", "type": "nominal"},
+    "y": {"aggregate": "sum", "field": "revenue", "type": "quantitative", "stack": "zero"},
+    "color": {"field": "segment", "type": "nominal"}
+  }
+}

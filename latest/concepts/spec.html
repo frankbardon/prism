@@ -1,0 +1,858 @@
+<!DOCTYPE HTML>
+<html lang="en" class="navy sidebar-visible" dir="ltr">
+    <head>
+        <!-- Book generated using mdBook -->
+        <meta charset="UTF-8">
+        <title>Spec - Prism Documentation</title>
+
+
+        <!-- Custom HTML head -->
+
+        <meta name="description" content="Visualization library for .pulse files">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <meta name="theme-color" content="#ffffff">
+
+        <link rel="icon" href="../favicon-de23e50b.svg">
+        <link rel="shortcut icon" href="../favicon-8114d1fc.png">
+        <link rel="stylesheet" href="../css/variables-8adf115d.css">
+        <link rel="stylesheet" href="../css/general-e96d0476.css">
+        <link rel="stylesheet" href="../css/chrome-d279d366.css">
+        <link rel="stylesheet" href="../css/print-9e4910d8.css" media="print">
+
+        <!-- Fonts -->
+        <link rel="stylesheet" href="../fonts/fonts-9644e21d.css">
+
+        <!-- Highlight.js Stylesheets -->
+        <link rel="stylesheet" id="mdbook-highlight-css" href="../highlight-493f70e1.css">
+        <link rel="stylesheet" id="mdbook-tomorrow-night-css" href="../tomorrow-night-4c0ae647.css">
+        <link rel="stylesheet" id="mdbook-ayu-highlight-css" href="../ayu-highlight-3fdfc3ac.css">
+
+        <!-- Custom theme stylesheets -->
+        <link rel="stylesheet" href="../theme/version-dropdown-7824718d.css">
+
+
+        <!-- Provide site root and default themes to javascript -->
+        <script>
+            const path_to_root = "../";
+            const default_light_theme = "navy";
+            const default_dark_theme = "navy";
+            window.path_to_searchindex_js = "../searchindex-19c653e4.js";
+        </script>
+        <!-- Start loading toc.js asap -->
+        <script src="../toc-a4924ec0.js"></script>
+    </head>
+    <body>
+    <div id="mdbook-help-container">
+        <div id="mdbook-help-popup">
+            <h2 class="mdbook-help-title">Keyboard shortcuts</h2>
+            <div>
+                <p>Press <kbd>←</kbd> or <kbd>→</kbd> to navigate between chapters</p>
+                <p>Press <kbd>S</kbd> or <kbd>/</kbd> to search in the book</p>
+                <p>Press <kbd>?</kbd> to show this help</p>
+                <p>Press <kbd>Esc</kbd> to hide this help</p>
+            </div>
+        </div>
+    </div>
+    <div id="mdbook-body-container">
+        <!-- Work around some values being stored in localStorage wrapped in quotes -->
+        <script>
+            try {
+                let theme = localStorage.getItem('mdbook-theme');
+                let sidebar = localStorage.getItem('mdbook-sidebar');
+
+                if (theme.startsWith('"') && theme.endsWith('"')) {
+                    localStorage.setItem('mdbook-theme', theme.slice(1, theme.length - 1));
+                }
+
+                if (sidebar.startsWith('"') && sidebar.endsWith('"')) {
+                    localStorage.setItem('mdbook-sidebar', sidebar.slice(1, sidebar.length - 1));
+                }
+            } catch (e) { }
+        </script>
+
+        <!-- Set the theme before any content is loaded, prevents flash -->
+        <script>
+            const default_theme = window.matchMedia("(prefers-color-scheme: dark)").matches ? default_dark_theme : default_light_theme;
+            let theme;
+            try { theme = localStorage.getItem('mdbook-theme'); } catch(e) { }
+            if (theme === null || theme === undefined) { theme = default_theme; }
+            const html = document.documentElement;
+            html.classList.remove('navy')
+            html.classList.add(theme);
+            html.classList.add("js");
+        </script>
+
+        <input type="checkbox" id="mdbook-sidebar-toggle-anchor" class="hidden">
+
+        <!-- Hide / unhide sidebar before it is displayed -->
+        <script>
+            let sidebar = null;
+            const sidebar_toggle = document.getElementById("mdbook-sidebar-toggle-anchor");
+            if (document.body.clientWidth >= 1080) {
+                try { sidebar = localStorage.getItem('mdbook-sidebar'); } catch(e) { }
+                sidebar = sidebar || 'visible';
+            } else {
+                sidebar = 'hidden';
+                sidebar_toggle.checked = false;
+            }
+            if (sidebar === 'visible') {
+                sidebar_toggle.checked = true;
+            } else {
+                html.classList.remove('sidebar-visible');
+            }
+        </script>
+
+        <nav id="mdbook-sidebar" class="sidebar" aria-label="Table of contents">
+            <!-- populated by js -->
+            <mdbook-sidebar-scrollbox class="sidebar-scrollbox"></mdbook-sidebar-scrollbox>
+            <noscript>
+                <iframe class="sidebar-iframe-outer" src="../toc.html"></iframe>
+            </noscript>
+            <div id="mdbook-sidebar-resize-handle" class="sidebar-resize-handle">
+                <div class="sidebar-resize-indicator"></div>
+            </div>
+        </nav>
+
+        <div id="mdbook-page-wrapper" class="page-wrapper">
+
+            <div class="page">
+                <div id="mdbook-menu-bar-hover-placeholder"></div>
+                <div id="mdbook-menu-bar" class="menu-bar sticky">
+                    <div class="left-buttons">
+                        <label id="mdbook-sidebar-toggle" class="icon-button" for="mdbook-sidebar-toggle-anchor" title="Toggle Table of Contents" aria-label="Toggle Table of Contents" aria-controls="mdbook-sidebar">
+                            <span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M0 96C0 78.3 14.3 64 32 64H416c17.7 0 32 14.3 32 32s-14.3 32-32 32H32C14.3 128 0 113.7 0 96zM0 256c0-17.7 14.3-32 32-32H416c17.7 0 32 14.3 32 32s-14.3 32-32 32H32c-17.7 0-32-14.3-32-32zM448 416c0 17.7-14.3 32-32 32H32c-17.7 0-32-14.3-32-32s14.3-32 32-32H416c17.7 0 32 14.3 32 32z"/></svg></span>
+                        </label>
+                        <button id="mdbook-theme-toggle" class="icon-button" type="button" title="Change theme" aria-label="Change theme" aria-haspopup="true" aria-expanded="false" aria-controls="mdbook-theme-list">
+                            <span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 576 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M371.3 367.1c27.3-3.9 51.9-19.4 67.2-42.9L600.2 74.1c12.6-19.5 9.4-45.3-7.6-61.2S549.7-4.4 531.1 9.6L294.4 187.2c-24 18-38.2 46.1-38.4 76.1L371.3 367.1zm-19.6 25.4l-116-104.4C175.9 290.3 128 339.6 128 400c0 3.9 .2 7.8 .6 11.6c1.8 17.5-10.2 36.4-27.8 36.4H96c-17.7 0-32 14.3-32 32s14.3 32 32 32H240c61.9 0 112-50.1 112-112c0-2.5-.1-5-.2-7.5z"/></svg></span>
+                        </button>
+                        <ul id="mdbook-theme-list" class="theme-popup" aria-label="Themes" role="menu">
+                            <li role="none"><button role="menuitem" class="theme" id="mdbook-theme-default_theme">Auto</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="mdbook-theme-light">Light</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="mdbook-theme-rust">Rust</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="mdbook-theme-coal">Coal</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="mdbook-theme-navy">Navy</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="mdbook-theme-ayu">Ayu</button></li>
+                        </ul>
+                        <button id="mdbook-search-toggle" class="icon-button" type="button" title="Search (`/`)" aria-label="Toggle Searchbar" aria-expanded="false" aria-keyshortcuts="/ s" aria-controls="mdbook-searchbar">
+                            <span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M416 208c0 45.9-14.9 88.3-40 122.7L502.6 457.4c12.5 12.5 12.5 32.8 0 45.3s-32.8 12.5-45.3 0L330.7 376c-34.4 25.2-76.8 40-122.7 40C93.1 416 0 322.9 0 208S93.1 0 208 0S416 93.1 416 208zM208 352c79.5 0 144-64.5 144-144s-64.5-144-144-144S64 128.5 64 208s64.5 144 144 144z"/></svg></span>
+                        </button>
+                    </div>
+
+                    <h1 class="menu-title">Prism Documentation</h1>
+
+                    <div class="right-buttons">
+                        <a href="../print.html" title="Print this book" aria-label="Print this book">
+                            <span class=fa-svg id="print-button"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M128 0C92.7 0 64 28.7 64 64v96h64V64H354.7L384 93.3V160h64V93.3c0-17-6.7-33.3-18.7-45.3L400 18.7C388 6.7 371.7 0 354.7 0H128zM384 352v32 64H128V384 368 352H384zm64 32h32c17.7 0 32-14.3 32-32V256c0-35.3-28.7-64-64-64H64c-35.3 0-64 28.7-64 64v96c0 17.7 14.3 32 32 32H64v64c0 35.3 28.7 64 64 64H384c35.3 0 64-28.7 64-64V384zm-16-88c-13.3 0-24-10.7-24-24s10.7-24 24-24s24 10.7 24 24s-10.7 24-24 24z"/></svg></span>
+                        </a>
+                        <a href="https://github.com/frankbardon/prism" title="Git repository" aria-label="Git repository">
+                            <span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 496 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M165.9 397.4c0 2-2.3 3.6-5.2 3.6-3.3.3-5.6-1.3-5.6-3.6 0-2 2.3-3.6 5.2-3.6 3-.3 5.6 1.3 5.6 3.6zm-31.1-4.5c-.7 2 1.3 4.3 4.3 4.9 2.6 1 5.6 0 6.2-2s-1.3-4.3-4.3-5.2c-2.6-.7-5.5.3-6.2 2.3zm44.2-1.7c-2.9.7-4.9 2.6-4.6 4.9.3 2 2.9 3.3 5.9 2.6 2.9-.7 4.9-2.6 4.6-4.6-.3-1.9-3-3.2-5.9-2.9zM244.8 8C106.1 8 0 113.3 0 252c0 110.9 69.8 205.8 169.5 239.2 12.8 2.3 17.3-5.6 17.3-12.1 0-6.2-.3-40.4-.3-61.4 0 0-70 15-84.7-29.8 0 0-11.4-29.1-27.8-36.6 0 0-22.9-15.7 1.6-15.4 0 0 24.9 2 38.6 25.8 21.9 38.6 58.6 27.5 72.9 20.9 2.3-16 8.8-27.1 16-33.7-55.9-6.2-112.3-14.3-112.3-110.5 0-27.5 7.6-41.3 23.6-58.9-2.6-6.5-11.1-33.3 2.6-67.9 20.9-6.5 69 27 69 27 20-5.6 41.5-8.5 62.8-8.5s42.8 2.9 62.8 8.5c0 0 48.1-33.6 69-27 13.7 34.7 5.2 61.4 2.6 67.9 16 17.7 25.8 31.5 25.8 58.9 0 96.5-58.9 104.2-114.8 110.5 9.2 7.9 17 22.9 17 46.4 0 33.7-.3 75.4-.3 83.6 0 6.5 4.6 14.4 17.3 12.1C428.2 457.8 496 362.9 496 252 496 113.3 383.5 8 244.8 8zM97.2 352.9c-1.3 1-1 3.3.7 5.2 1.6 1.6 3.9 2.3 5.2 1 1.3-1 1-3.3-.7-5.2-1.6-1.6-3.9-2.3-5.2-1zm-10.8-8.1c-.7 1.3.3 2.9 2.3 3.9 1.6 1 3.6.7 4.3-.7.7-1.3-.3-2.9-2.3-3.9-2-.6-3.6-.3-4.3.7zm32.4 35.6c-1.6 1.3-1 4.3 1.3 6.2 2.3 2.3 5.2 2.6 6.5 1 1.3-1.3.7-4.3-1.3-6.2-2.2-2.3-5.2-2.6-6.5-1zm-11.4-14.7c-1.6 1-1.6 3.6 0 5.9 1.6 2.3 4.3 3.3 5.6 2.3 1.6-1.3 1.6-3.9 0-6.2-1.4-2.3-4-3.3-5.6-2z"/></svg></span>
+                        </a>
+                        <a href="https://github.com/frankbardon/prism/edit/main/docs/src/src/concepts/spec.md" title="Suggest an edit" aria-label="Suggest an edit" rel="edit">
+                            <span class=fa-svg id="git-edit-button"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M421.7 220.3l-11.3 11.3-22.6 22.6-205 205c-6.6 6.6-14.8 11.5-23.8 14.1L30.8 511c-8.4 2.5-17.5 .2-23.7-6.1S-1.5 489.7 1 481.2L38.7 353.1c2.6-9 7.5-17.2 14.1-23.8l205-205 22.6-22.6 11.3-11.3 33.9 33.9 62.1 62.1 33.9 33.9zM96 353.9l-9.3 9.3c-.9 .9-1.6 2.1-2 3.4l-25.3 86 86-25.3c1.3-.4 2.5-1.1 3.4-2l9.3-9.3H112c-8.8 0-16-7.2-16-16V353.9zM453.3 19.3l39.4 39.4c25 25 25 65.5 0 90.5l-14.5 14.5-22.6 22.6-11.3 11.3-33.9-33.9-62.1-62.1L314.3 67.7l11.3-11.3 22.6-22.6 14.5-14.5c25-25 65.5-25 90.5 0z"/></svg></span>
+                        </a>
+
+                    </div>
+                </div>
+
+                <div id="mdbook-search-wrapper" class="hidden">
+                    <form id="mdbook-searchbar-outer" class="searchbar-outer">
+                        <div class="search-wrapper">
+                            <input type="search" id="mdbook-searchbar" name="searchbar" placeholder="Search this book ..." aria-controls="mdbook-searchresults-outer" aria-describedby="searchresults-header">
+                            <div class="spinner-wrapper">
+                                <span class=fa-svg id="fa-spin"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M304 48c0-26.5-21.5-48-48-48s-48 21.5-48 48s21.5 48 48 48s48-21.5 48-48zm0 416c0-26.5-21.5-48-48-48s-48 21.5-48 48s21.5 48 48 48s48-21.5 48-48zM48 304c26.5 0 48-21.5 48-48s-21.5-48-48-48s-48 21.5-48 48s21.5 48 48 48zm464-48c0-26.5-21.5-48-48-48s-48 21.5-48 48s21.5 48 48 48s48-21.5 48-48zM142.9 437c18.7-18.7 18.7-49.1 0-67.9s-49.1-18.7-67.9 0s-18.7 49.1 0 67.9s49.1 18.7 67.9 0zm0-294.2c18.7-18.7 18.7-49.1 0-67.9S93.7 56.2 75 75s-18.7 49.1 0 67.9s49.1 18.7 67.9 0zM369.1 437c18.7 18.7 49.1 18.7 67.9 0s18.7-49.1 0-67.9s-49.1-18.7-67.9 0s-18.7 49.1 0 67.9z"/></svg></span>
+                            </div>
+                        </div>
+                    </form>
+                    <div id="mdbook-searchresults-outer" class="searchresults-outer hidden">
+                        <div id="mdbook-searchresults-header" class="searchresults-header"></div>
+                        <ul id="mdbook-searchresults">
+                        </ul>
+                    </div>
+                </div>
+
+                <!-- Apply ARIA attributes after the sidebar and the sidebar toggle button are added to the DOM -->
+                <script>
+                    document.getElementById('mdbook-sidebar-toggle').setAttribute('aria-expanded', sidebar === 'visible');
+                    document.getElementById('mdbook-sidebar').setAttribute('aria-hidden', sidebar !== 'visible');
+                    Array.from(document.querySelectorAll('#mdbook-sidebar a')).forEach(function(link) {
+                        link.setAttribute('tabIndex', sidebar === 'visible' ? 0 : -1);
+                    });
+                </script>
+
+                <div id="mdbook-content" class="content">
+                    <main>
+                        <h1 id="spec"><a class="header" href="#spec">Spec</a></h1>
+<p>A Prism Spec is a JSON document describing one chart. It is the
+contract between authors (humans / agents) and the Prism pipeline.</p>
+<h2 id="six-stage-pipeline"><a class="header" href="#six-stage-pipeline">Six-stage pipeline</a></h2>
+<pre><code>Spec (JSON) → Parse → Validate → Plan → Compile → Encode → Render → Bytes
+                                          │
+                                          ├─→ Pulse engine (data ops)
+                                          └─→ Renderer backend (SVG / Canvas)
+</code></pre>
+<h2 id="minimum-viable-spec"><a class="header" href="#minimum-viable-spec">Minimum viable spec</a></h2>
+<pre><code class="language-json">{
+  "$schema": "urn:prism:schema:v1:spec",
+  "data": {"values": [{"brand_id": "a", "score": 0.62}, {"brand_id": "b", "score": 0.55}]},
+  "mark": "bar",
+  "encoding": {
+    "x": {"field": "brand_id", "type": "nominal"},
+    "y": {"field": "score",    "type": "quantitative", "aggregate": "mean"}
+  }
+}
+</code></pre>
+<p>Five top-level keys are typically present:</p>
+<div class="table-wrapper">
+<table>
+<thead>
+<tr><th>Key</th><th>Purpose</th></tr>
+</thead>
+<tbody>
+<tr><td><code>$schema</code></td><td>URN identifier (<code>urn:prism:schema:v1:spec</code>) for editor autocomplete + version pinning.</td></tr>
+<tr><td><code>data</code></td><td>Where the rows come from — an inline <code>values</code> array, a runtime <code>ref</code> (resolved by a <code>DataResolver</code>), a named alias, or a geodata <code>feature_collection</code>. The external <code>.pulse</code> <code>source</code> variant was removed (<code>PRISM_SPEC_039</code>).</td></tr>
+<tr><td><code>transform</code></td><td>Optional array of row-level operations (filter, calculate, aggregate, sort, …).</td></tr>
+<tr><td><code>mark</code></td><td>What to draw — <code>bar</code>, <code>line</code>, <code>point</code>, <code>pie</code>, <code>sankey</code>, …</td></tr>
+<tr><td><code>encoding</code></td><td>How to bind data fields to visual channels (x/y/color/size/…).</td></tr>
+</tbody>
+</table>
+</div>
+<h2 id="full-top-level-field-list"><a class="header" href="#full-top-level-field-list">Full top-level field list</a></h2>
+<pre><code>$schema       data            datasets        transform
+mark          encoding        layer           concat
+hconcat       vconcat         facet           repeat
+spec          selection       resolve         theme
+width         height          padding         background
+title         subtitle        description     projection
+animation
+</code></pre>
+<p>Exactly one of <code>mark | layer | concat | hconcat | vconcat | facet | repeat</code>
+must be present. The validator enforces this with <code>PRISM_SPEC_*</code> codes.</p>
+<h2 id="animation"><a class="header" href="#animation">Animation</a></h2>
+<p>The optional <code>animation</code> block requests a client-side tween whenever the
+spec swaps. Static SVG output is unaffected — the renderer
+ignores the block entirely. Only the browser web component
+(<code>&lt;prism-chart&gt;</code>) and the WASM runtime honour it.</p>
+<pre><code class="language-json">{
+  "$schema": "urn:prism:schema:v1:spec",
+  "data":    {"name": "sales", "values": [...]},
+  "mark":    "bar",
+  "encoding": {
+    "x": {"field": "region", "type": "nominal", "key": true},
+    "y": {"aggregate": "mean", "field": "score", "type": "quantitative"}
+  },
+  "animation": {"duration_ms": 600, "easing": "cubic_in_out"}
+}
+</code></pre>
+<p>Fields:</p>
+<div class="table-wrapper">
+<table>
+<thead>
+<tr><th>Field</th><th>Default</th><th>Notes</th></tr>
+</thead>
+<tbody>
+<tr><td><code>duration_ms</code></td><td><code>400</code></td><td>Total tween length, capped at 5000.</td></tr>
+<tr><td><code>easing</code></td><td><code>cubic_in_out</code></td><td>One of <code>linear</code>, <code>cubic_*</code>, <code>quad_*</code>, <code>sine_*</code>, <code>expo_*</code> (× <code>in</code>/<code>out</code>/<code>in_out</code>).</td></tr>
+<tr><td><code>stagger_ms</code></td><td><code>0</code></td><td>Per-mark delay applied in document order.</td></tr>
+<tr><td><code>enter</code></td><td><code>fade</code></td><td><code>fade</code> or <code>none</code>. Marks that appear at scene-swap time.</td></tr>
+<tr><td><code>exit</code></td><td><code>fade</code></td><td><code>fade</code> or <code>none</code>. Marks that disappear at scene-swap time.</td></tr>
+</tbody>
+</table>
+</div>
+<p>For the tween to match marks across scene swaps (object constancy),
+declare a join key on one encoding channel via <code>"key": true</code>. Without a
+key, validation fires <code>PRISM_SPEC_023</code>.</p>
+<p>Animation respects the user’s
+<a href="https://developer.mozilla.org/en-US/docs/Web/CSS/@media/prefers-reduced-motion"><code>prefers-reduced-motion</code></a>
+setting: the animator snaps directly to the final state when the
+preference is <code>reduce</code>.</p>
+<p>When two scenes are structurally incompatible (different layer count,
+different mark families, etc.) the animator falls back to an instant
+replace and emits <code>PRISM_WARN_ANIM_FALLBACK</code> on the
+<code>prism:warn</code> CustomEvent stream.</p>
+<p>Spec rules that govern <code>animation</code>:</p>
+<ul>
+<li><code>PRISM_SPEC_022</code> — unknown easing name.</li>
+<li><code>PRISM_SPEC_023</code> — block declared but no channel has <code>key: true</code>.</li>
+<li><code>PRISM_SPEC_024</code> — more than one channel carries <code>key: true</code>.</li>
+</ul>
+<h2 id="filter-transform"><a class="header" href="#filter-transform">Filter transform</a></h2>
+<p><code>filter</code> keeps the rows for which a <strong>structured predicate</strong> evaluates
+true. The predicate is a JSON object tree, never an expression string —
+a raw string value is rejected at decode time. Each predicate node is
+exactly one of a leaf test or a boolean combinator.</p>
+<p><strong>Leaf comparisons</strong> — <code>eq</code>, <code>ne</code>, <code>lt</code>, <code>lte</code>, <code>gt</code>, <code>gte</code> — compare a
+field against a literal (<code>value</code>) or against another column
+(<code>to_field</code>, a field-vs-field compare):</p>
+<pre><code class="language-json">"transform": [
+  {"filter": {"op": "gt", "field": "Horsepower", "value": 100}},
+  {"filter": {"op": "eq", "field": "Origin", "value": "USA"}},
+  {"filter": {"op": "lt", "field": "sale_price", "to_field": "list_price"}}
+]
+</code></pre>
+<p><strong>Set membership</strong> — <code>one_of</code> / <code>not_one_of</code> — tests a field against a
+non-empty candidate set:</p>
+<pre><code class="language-json">{"filter": {"op": "one_of", "field": "Origin", "values": ["USA", "Europe"]}}
+</code></pre>
+<p><strong>Inclusive range</strong> — <code>between</code> — keeps rows where <code>lo &lt;= field &lt;= hi</code>:</p>
+<pre><code class="language-json">{"filter": {"op": "between", "field": "year", "lo": 2010, "hi": 2019}}
+</code></pre>
+<p><strong>Null checks</strong> — <code>is_null</code> / <code>not_null</code> — take only a <code>field</code>:</p>
+<pre><code class="language-json">{"filter": {"op": "not_null", "field": "quota_mean"}}
+</code></pre>
+<p><strong>Boolean combinators</strong> — <code>and</code> / <code>or</code> / <code>not</code> — nest predicates to any
+depth. A combinator node carries only its branch, never leaf operands:</p>
+<pre><code class="language-json">{"filter": {"and": [
+  {"op": "gt", "field": "Horsepower", "value": 100},
+  {"or": [
+    {"op": "eq", "field": "Origin", "value": "USA"},
+    {"not": {"op": "is_null", "field": "Cylinders"}}
+  ]}
+]}}
+</code></pre>
+<p>Operator reference:</p>
+<div class="table-wrapper">
+<table>
+<thead>
+<tr><th>Operator</th><th>Operands</th><th>Meaning</th></tr>
+</thead>
+<tbody>
+<tr><td><code>eq</code> <code>ne</code> <code>lt</code> <code>lte</code> <code>gt</code> <code>gte</code></td><td><code>field</code> + exactly one of <code>value</code> / <code>to_field</code></td><td>Equality / ordered comparison against a literal or another column.</td></tr>
+<tr><td><code>one_of</code> <code>not_one_of</code></td><td><code>field</code> + <code>values</code> (non-empty)</td><td>Set membership.</td></tr>
+<tr><td><code>between</code></td><td><code>field</code> + <code>lo</code> + <code>hi</code></td><td>Inclusive range (<code>lo &lt;= x &lt;= hi</code>).</td></tr>
+<tr><td><code>is_null</code> <code>not_null</code></td><td><code>field</code> only</td><td>Null-state test.</td></tr>
+<tr><td><code>and</code> <code>or</code></td><td>non-empty list of predicates</td><td>Boolean conjunction / disjunction.</td></tr>
+<tr><td><code>not</code></td><td>one predicate</td><td>Boolean negation.</td></tr>
+</tbody>
+</table>
+</div>
+<p>The grammar is intentionally minimal — no substring, regex, or date
+arithmetic. Anything richer is precomputed by the caller before the
+data reaches Prism.</p>
+<h2 id="calculate-transform"><a class="header" href="#calculate-transform">Calculate transform</a></h2>
+<p><code>calculate</code> appends one derived column, named by <code>as</code>, from a
+<strong>structured expression tree</strong> (again, never an expression string). A
+node is exactly one of:</p>
+<ul>
+<li>a field reference — <code>{"field": "Horsepower"}</code></li>
+<li>a literal — <code>{"literal": 5}</code> (number, string, or bool; a null literal is rejected)</li>
+<li>an arithmetic op — <code>{"op": "add"|"sub"|"mul"|"div"|"mod", "operands": [...]}</code></li>
+<li>a pure function — <code>{"fn": "abs"|"round"|"floor"|"ceil"|"neg"|"coalesce"|"min"|"max", "args": [...]}</code></li>
+<li>a string concat — <code>{"concat": [...]}</code></li>
+<li>a conditional — <code>{"case": [{"when": &lt;predicate&gt;, "then": &lt;expr&gt;}], "else": &lt;expr&gt;}</code></li>
+</ul>
+<p><code>add</code> and <code>mul</code> take <strong>two or more</strong> operands; <code>sub</code>, <code>div</code>, <code>mod</code> take
+<strong>exactly two</strong>. <code>abs</code>/<code>round</code>/<code>floor</code>/<code>ceil</code>/<code>neg</code> take <strong>one</strong>
+argument; <code>coalesce</code>/<code>min</code>/<code>max</code> take <strong>two or more</strong>. <code>case</code> requires
+at least one <code>when → then</code> branch and a mandatory <code>else</code> fallback (<code>if</code>
+is accepted as a decode-time alias for <code>case</code>).</p>
+<p>Arithmetic — <code>Horsepower / Weight</code>:</p>
+<pre><code class="language-json">{"calculate": {"op": "div", "operands": [{"field": "Horsepower"}, {"field": "Weight"}]}, "as": "power_ratio"}
+</code></pre>
+<p>Default a null with <code>coalesce</code>:</p>
+<pre><code class="language-json">{"calculate": {"fn": "coalesce", "args": [{"field": "quota"}, {"literal": 0}]}, "as": "quota_padded"}
+</code></pre>
+<p>Build a label with <code>concat</code>:</p>
+<pre><code class="language-json">{"calculate": {"concat": [{"field": "Origin"}, {"literal": " — "}, {"field": "Name"}]}, "as": "label"}
+</code></pre>
+<p>Bucket with <code>case</code>; each <code>when</code> arm reuses the <strong>filter predicate
+grammar</strong> verbatim:</p>
+<pre><code class="language-json">{"calculate": {
+  "case": [
+    {"when": {"op": "gte", "field": "score", "value": 0.9}, "then": {"literal": "A"}},
+    {"when": {"op": "gte", "field": "score", "value": 0.8}, "then": {"literal": "B"}}
+  ],
+  "else": {"literal": "C"}
+}, "as": "grade"}
+</code></pre>
+<p>The output column type is inferred: a numeric expression yields a float
+column, a string expression a categorical column.</p>
+<p>The grammar is intentionally minimal — no <code>log</code>/<code>sqrt</code>/<code>pow</code>/trig, no
+substring, no date arithmetic. Precompute anything richer upstream.</p>
+<h3 id="null-and-division-semantics"><a class="header" href="#null-and-division-semantics">Null and division semantics</a></h3>
+<p>Both <code>filter</code> and <code>calculate</code> use <strong>two-valued</strong> logic — there is no
+SQL-style three-valued “unknown”.</p>
+<ul>
+<li><strong>Filter leaves.</strong> A null operand makes a leaf comparison,
+<code>one_of</code> / <code>not_one_of</code>, or <code>between</code> evaluate <strong>false</strong> (the row is
+excluded unless an enclosing <code>or</code> / <code>not</code> rescues it). Test for null
+explicitly with <code>is_null</code> / <code>not_null</code>; <code>and</code> / <code>or</code> / <code>not</code> then
+operate on plain booleans.</li>
+<li><strong>Calculate null propagation.</strong> Arithmetic
+(<code>add</code>/<code>sub</code>/<code>mul</code>/<code>div</code>/<code>mod</code>) and the single-argument numeric
+functions (<code>abs</code>/<code>round</code>/<code>floor</code>/<code>ceil</code>/<code>neg</code>) propagate nulls: any
+null operand yields a null result. <code>min</code> / <code>max</code> skip null arguments
+and return null only when every argument is null. <code>coalesce</code> returns
+its first non-null argument. <code>concat</code> treats a null operand as the
+empty string and always yields a (possibly empty) string. <code>case</code>
+returns the <code>then</code> of the first branch whose <code>when</code> holds, else the
+<code>else</code>.</li>
+<li><strong>Division by zero.</strong> A runtime zero divisor (<code>div</code> / <code>mod</code>) yields
+<strong>null silently</strong> — no error, no warning. A <em>literal</em>-zero divisor
+(e.g. <code>{"op": "div", "operands": [{"field": "x"}, {"literal": 0}]}</code>)
+is a spec mistake and is <strong>rejected at validate time</strong> as
+<code>PRISM_SPEC_038</code>.</li>
+</ul>
+<p>Validation codes:</p>
+<ul>
+<li><code>PRISM_SPEC_037</code> — filter predicate not well-formed (unknown field,
+type-mismatched comparison, <code>between</code> with <code>lo &gt; hi</code>, empty <code>values</code>
+set).</li>
+<li><code>PRISM_SPEC_038</code> — calculate expression not well-formed (unknown
+operand field, literal-zero divisor, <code>as</code> missing or shadowing a
+source column).</li>
+</ul>
+<h2 id="crosstab-transform"><a class="header" href="#crosstab-transform">Crosstab transform</a></h2>
+<p>The <code>crosstab</code> transform builds a contingency table in Prism’s in-memory
+engine: it composes the cell aggregation across the row × column grouper
+grid, recomputes the margin axes, applies the configured normalisation,
+and returns long-form rows ready for a heatmap encoder.</p>
+<pre><code class="language-json">{
+  "$schema": "urn:prism:schema:v1:spec",
+  "data": {"name": "sales"},
+  "transform": [{
+    "crosstab": {
+      "rows":    [{"field": "region"}],
+      "columns": [{"field": "quarter"}],
+      "cell":    {"aggregate": "mean", "field": "revenue", "as": "mean_revenue"},
+      "margins": {"rows": true, "columns": true},
+      "normalize": "none"
+    }
+  }],
+  "mark": "heatmap",
+  "encoding": {
+    "x":     {"field": "quarter", "type": "nominal"},
+    "y":     {"field": "region",  "type": "nominal"},
+    "color": {"field": "mean_revenue", "type": "quantitative"}
+  }
+}
+</code></pre>
+<p>Body:</p>
+<div class="table-wrapper">
+<table>
+<thead>
+<tr><th>Field</th><th>Required</th><th>Notes</th></tr>
+</thead>
+<tbody>
+<tr><td><code>rows</code></td><td>yes</td><td>Row-axis groupers. One or more <code>{field: "..."}</code> (category, default) or <code>{field: "...", type: "date", period: "..."}</code> (date bucketing).</td></tr>
+<tr><td><code>columns</code></td><td>yes</td><td>Column-axis groupers. Same shape.</td></tr>
+<tr><td><code>cell</code></td><td>yes</td><td><code>{aggregate, field, as}</code> — aggregate alias (sum, mean, count, …).</td></tr>
+<tr><td><code>margins</code></td><td></td><td><code>{rows, columns, grand}</code> — emit total rows with <code>_margin</code> sentinel.</td></tr>
+<tr><td><code>normalize</code></td><td></td><td><code>none</code> (default), <code>row</code>, <code>column</code>, <code>total</code>.</td></tr>
+<tr><td><code>shape</code></td><td></td><td><code>long</code> (default) returns one row per cell; <code>matrix</code> is reserved.</td></tr>
+<tr><td><code>overlays</code></td><td></td><td>Post-result overlay layers; each adds one F64 column aligned to the base cell. See below.</td></tr>
+</tbody>
+</table>
+</div>
+<h3 id="crosstab-overlays"><a class="header" href="#crosstab-overlays">Crosstab overlays</a></h3>
+<p><code>overlays</code> attaches post-result overlay layers to the cell grid.
+Each overlay adds one F64 column — index-aligned to the base cell — so
+it can drive a <code>color</code> or <code>opacity</code> channel. v1 supports the
+cell-scoped kinds that align one-to-one with heatmap cells:</p>
+<div class="table-wrapper">
+<table>
+<thead>
+<tr><th><code>kind</code></th><th>Column value</th><th>Notes</th></tr>
+</thead>
+<tbody>
+<tr><td><code>share_of_row</code></td><td>cell / row-margin</td><td>cells along a row sum to 1.0</td></tr>
+<tr><td><code>share_of_col</code></td><td>cell / column-margin</td><td>cells down a column sum to 1.0</td></tr>
+<tr><td><code>index_vs_margin</code></td><td>cell / margin × 100</td><td>requires <code>axis</code> (<code>row</code> or <code>column</code>); 100 = on-margin</td></tr>
+<tr><td><code>zscore_vs_margin</code></td><td>(cell − margin) / sd</td><td>requires <code>axis</code>; a significance proxy (|z| &gt; 1.96 ≈ p &lt; .05) — bind to <code>opacity</code> for significance shading</td></tr>
+</tbody>
+</table>
+</div>
+<pre><code class="language-json">"crosstab": {
+  "rows":    [{"field": "region"}],
+  "columns": [{"field": "quarter"}],
+  "cell":    {"aggregate": "sum", "field": "revenue", "as": "revenue"},
+  "overlays": [{"kind": "share_of_row", "as": "row_share"}]
+}
+</code></pre>
+<p>When any overlay is present the node emits body cells only (overlays
+decorate body cells), so user <code>margins</code> flags are ignored for the visual
+output. Group/series-scoped kinds (<code>index_vs_total</code>, <code>share_of_total</code>)
+land in a follow-up.</p>
+<p>Constraints:</p>
+<ul>
+<li>Crosstab accepts <strong>any upstream table</strong> — a source-bound dataset, an
+inline <code>data.values</code> cohort, or the output of an earlier transform. It
+runs entirely in Prism’s in-memory engine, so you can <code>filter</code> (or
+otherwise reshape) the rows first and then cross-tabulate the result
+(see the derived-input example below). It is no longer restricted to
+the first position on the chain.</li>
+<li>Grouper <code>type</code> is <code>category</code> (default) or <code>date</code>. A date grouper
+buckets a temporal field by <code>period</code> — one of <code>year</code>, <code>quarter</code>,
+<code>month</code> (default), <code>week</code>, <code>day</code>, <code>day_of_week</code> — emitting string
+bucket-key labels (<code>"2024"</code>, <code>"2024-Q1"</code>, <code>"2024-03"</code>, …). Range /
+rounded / quantile groupers land in a follow-up.</li>
+<li>Margin rows carry a <code>_margin</code> column the encoder leaves on the table
+— filter them out at the chart level by upstream <code>filter</code>-after
+composition or by avoiding the <code>margins</code> flag for the visual
+rendering use case.</li>
+</ul>
+<p>Cells are validated through <code>PRISM_SPEC_032</code> (shape rule) and
+<code>PRISM_SPEC_034</code> (normalize enum) — both structural checks only.
+Run <code>prism errors lookup &lt;code&gt;</code> for details + fixups.</p>
+<h3 id="derived-input-example"><a class="header" href="#derived-input-example">Derived-input example</a></h3>
+<p>Because crosstab consumes whatever table its upstream stage produces, you
+can chain it after any other transform. Here a <code>filter</code> narrows the rows
+to one region before the cross-tabulation runs:</p>
+<pre><code class="language-json">{
+  "$schema": "urn:prism:schema:v1:spec",
+  "data": {"values": [
+    {"region": "West", "quarter": "Q1", "channel": "online",  "revenue": 120},
+    {"region": "West", "quarter": "Q2", "channel": "retail",  "revenue": 80},
+    {"region": "East", "quarter": "Q1", "channel": "online",  "revenue": 60}
+  ]},
+  "transform": [
+    {"filter": {"op": "eq", "field": "region", "value": "West"}},
+    {"crosstab": {
+      "rows":    [{"field": "quarter"}],
+      "columns": [{"field": "channel"}],
+      "cell":    {"aggregate": "sum", "field": "revenue", "as": "revenue"}
+    }}
+  ],
+  "mark": "heatmap",
+  "encoding": {
+    "x":     {"field": "channel", "type": "nominal"},
+    "y":     {"field": "quarter", "type": "nominal"},
+    "color": {"field": "revenue", "type": "quantitative"}
+  }
+}
+</code></pre>
+<h2 id="regression-transform"><a class="header" href="#regression-transform">Regression transform</a></h2>
+<p>The <code>regression</code> transform fits an ordinary-least-squares regression over
+the materialised source table (pure-Go, in-memory) and emits the two
+endpoints of the fitted trend line — <code>(min(x), ŷ)</code> and <code>(max(x), ŷ)</code>.
+Because every OLS fitted point is
+collinear, two endpoints draw the full line; layer a <code>line</code> mark over
+<code>(predictor, fitted)</code> on top of a <code>point</code> scatter of <code>(predictor, target)</code> for the classic regression overlay.</p>
+<pre><code class="language-json">{
+  "$schema": "urn:prism:schema:v1:spec",
+  "data": {"name": "sales"},
+  "layer": [
+    {"mark": "point", "encoding": {
+      "x": {"field": "spend", "type": "quantitative"},
+      "y": {"field": "revenue", "type": "quantitative"}
+    }},
+    {
+      "transform": [{"regression": {"target": "revenue", "predictors": ["spend"], "as": "fit"}}],
+      "mark": "line",
+      "encoding": {
+        "x": {"field": "spend", "type": "quantitative"},
+        "y": {"field": "fit", "type": "quantitative"}
+      }
+    }
+  ]
+}
+</code></pre>
+<p>Body:</p>
+<div class="table-wrapper">
+<table>
+<thead>
+<tr><th>Field</th><th>Required</th><th>Notes</th></tr>
+</thead>
+<tbody>
+<tr><td><code>target</code></td><td>yes</td><td>Dependent variable (y).</td></tr>
+<tr><td><code>predictors</code></td><td>yes</td><td>Independent variable (x). Exactly one in v1 — the only shape that maps to a 2-D line.</td></tr>
+<tr><td><code>as</code></td><td></td><td>Fitted-value output column name (default <code>fitted</code>).</td></tr>
+</tbody>
+</table>
+</div>
+<p>Constraints:</p>
+<ul>
+<li>Regression accepts <strong>any upstream table</strong> — like crosstab, the OLS fit
+runs in-memory over whatever rows its input stage yields, so you can
+<code>filter</code> or otherwise derive the cohort first and then fit the trend.
+<code>PRISM_SPEC_035</code> is a structural check only (target present + at least
+one predictor); there is no first-position requirement.</li>
+<li>v1 fits unpenalized OLS with a single predictor. Multiple predictors,
+GLM/Bayesian families, and the per-row residual / leverage attributes
+land in a follow-up.</li>
+</ul>
+<h2 id="timeunit-transform"><a class="header" href="#timeunit-transform">TimeUnit transform</a></h2>
+<p>The <code>timeunit</code> transform truncates a temporal field to a calendar
+period and appends the truncated date as a new column — the Vega-Lite
+<code>timeUnit</code> analogue. The output is a date (the period start), so the
+derived column stays temporal for axis / scale resolution and sorts
+chronologically. It runs client-side (pure epoch arithmetic) and, like
+every Prism transform, composes anywhere in a chain.</p>
+<pre><code class="language-json">{
+  "transform": [{"timeunit": "month", "field": "order_date", "as": "order_month"}],
+  "mark": "line",
+  "encoding": {
+    "x": {"field": "order_month", "type": "temporal"},
+    "y": {"aggregate": "sum", "field": "revenue", "type": "quantitative"}
+  }
+}
+</code></pre>
+<div class="table-wrapper">
+<table>
+<thead>
+<tr><th>Field</th><th>Required</th><th>Notes</th></tr>
+</thead>
+<tbody>
+<tr><td><code>timeunit</code></td><td>yes</td><td>Period: <code>year</code>, <code>quarter</code>, <code>month</code>, <code>week</code> (ISO / Monday start), <code>day</code>. Truncates to the period start.</td></tr>
+<tr><td><code>field</code></td><td>yes</td><td>Temporal field to truncate.</td></tr>
+<tr><td><code>as</code></td><td>yes</td><td>Output date column name.</td></tr>
+</tbody>
+</table>
+</div>
+<p><code>day_of_week</code> and other component-extraction units (which return an
+ordinal, not a date) land in a follow-up.</p>
+<h2 id="stack-transform"><a class="header" href="#stack-transform">Stack transform</a></h2>
+<p>The <code>stack</code> transform accumulates one quantitative field into per-row
+<code>[start, end]</code> bounds inside each stack, so a bar or area mark can draw
+each segment as a span instead of anchoring every segment on the axis
+baseline. It is the Vega-Lite <code>stack</code> transform, and it is what the
+implicit stacking described in
+<a href="encoding.html#stacking">Encoding → Stacking</a> compiles down to.</p>
+<pre><code class="language-json">{
+  "transform": [
+    {"stack": "users", "groupby": ["stage"], "offset": "zero", "as": ["users_lo", "users_hi"]}
+  ],
+  "mark": "bar",
+  "encoding": {
+    "x":  {"field": "stage", "type": "nominal"},
+    "y":  {"field": "users_lo", "type": "quantitative"},
+    "y2": {"field": "users_hi", "type": "quantitative"},
+    "color": {"field": "plan", "type": "nominal"}
+  }
+}
+</code></pre>
+<div class="table-wrapper">
+<table>
+<thead>
+<tr><th>Field</th><th>Required</th><th>Notes</th></tr>
+</thead>
+<tbody>
+<tr><td><code>stack</code></td><td>yes</td><td>Quantitative field to accumulate.</td></tr>
+<tr><td><code>groupby</code></td><td>no</td><td>Fields delimiting one stack — typically the dimension position channel. Omitted stacks the whole table as one group.</td></tr>
+<tr><td><code>offset</code></td><td>no</td><td><code>zero</code> (default) accumulates from the baseline; <code>normalize</code> rescales each stack onto <code>0…1</code>; <code>center</code> slides each stack so its own midpoint lands on zero.</td></tr>
+<tr><td><code>as</code></td><td>no</td><td>Output column pair <code>[start, end]</code>. Defaults to <code>["&lt;field&gt;_start", "&lt;field&gt;_end"]</code>. These are <strong>column names</strong>, not a dataset alias — <code>stack</code> publishes no alias, exactly like <code>bin</code> and <code>calculate</code>.</td></tr>
+<tr><td><code>data</code></td><td>no</td><td>Optional input alias.</td></tr>
+</tbody>
+</table>
+</div>
+<p>Semantics:</p>
+<ul>
+<li>Positive and negative values accumulate on <strong>independent cursors</strong>
+from zero, so a stack holding both grows up <em>and</em> down from the
+baseline rather than cancelling.</li>
+<li><code>normalize</code> rescales each stack over its own extent
+(<code>(v − lo) / (hi − lo)</code>), which reduces to <code>v / total</code> for
+all-positive data. A stack whose values are all zero normalises to
+zero rather than dividing by zero.</li>
+<li><code>center</code> keeps each stack’s thickness and slides the whole pair of
+bounds so the stack’s own midpoint is zero — the streamgraph
+silhouette. Output bounds are therefore <strong>signed</strong>, and every stack
+is symmetric about the same line no matter how much total it
+carries. The inside-out segment ordering a centred <em>encoding</em> stack
+applies (see
+<a href="encoding.html#centred-stacks-the-streamgraph">Encoding › Centred stacks</a>)
+is not available here — this transform has no grouping channel to
+derive series from, so it keeps upstream row order like the other
+offsets.</li>
+<li>A null or non-numeric cell contributes nothing: it gets a
+zero-height <code>[cursor, cursor]</code> bound and the cursor does not move.</li>
+<li>Segment order inside a stack is <strong>upstream row order</strong>. This
+transform carries no <code>sort</code> key of its own; order the rows with a
+preceding <code>{"sort": …}</code> transform, or bind the
+<a href="encoding.html#order-channel"><code>order</code> channel</a>, which sorts the rows
+before the stack accumulates.</li>
+<li>The output columns must not collide with existing ones;
+<code>PRISM_PLAN_STACK_OUTPUT_COLLISION</code> names the offender. A <code>stack</code>
+field the upstream table does not carry raises
+<code>PRISM_PLAN_STACK_FIELD_MISSING</code>.</li>
+</ul>
+<p>Like every other transform, <code>stack</code> accepts <strong>any</strong> upstream table — a
+leaf, inline values, or the output of an earlier transform — so it
+composes anywhere in the chain.</p>
+<h2 id="sort-direction"><a class="header" href="#sort-direction">Sort direction</a></h2>
+<p>The <code>sort</code> transform and the <code>window</code> transform’s <code>sort</code> key both take
+per-field entries of the form <code>{"field": …, "order": …}</code>. <code>order</code> is
+<code>"ascending"</code> (the default) or <code>"descending"</code>; <code>"asc"</code> and <code>"desc"</code> are
+accepted aliases. The same vocabulary applies to the
+<a href="encoding.html#order-channel"><code>order</code> channel</a>’s <code>sort</code> key.</p>
+<pre><code class="language-json">{"transform": [{"sort": [{"field": "revenue", "order": "descending"}]}]}
+</code></pre>
+<p>A <code>window</code> transform may carry its own <code>sort</code> array — it orders rows
+<em>within</em> each partition without reordering the table:</p>
+<pre><code class="language-json">{"transform": [
+  {"window": [{"op": "rank", "as": "place"}],
+   "partitionby": ["region"],
+   "sort": [{"field": "revenue", "order": "descending"}]}
+]}
+</code></pre>
+<h2 id="strict-by-default"><a class="header" href="#strict-by-default">Strict by default</a></h2>
+<ul>
+<li>Unknown fields error (typos like <code>xfield</code> vs <code>x.field</code> caught at parse).
+Strictness reaches every level: an unrecognised key inside a channel
+object, or inside that channel’s <code>axis</code> / <code>legend</code> sub-block, fails the
+decode rather than being dropped. The JSON Schema shape stage agrees —
+<code>additionalProperties: false</code> on every <code>$def</code> — so <code>prism validate</code> and a
+library caller using <code>spec.Decode</code> alone reject the same document. (That
+was not always true: a hand-written <code>UnmarshalJSON</code> receives raw bytes and
+Go does not propagate the outer decoder’s <code>DisallowUnknownFields</code> into it,
+so each decoder in <code>spec/</code> re-arms strictness itself.
+<code>internal/gates/spec_strict_decode_test.go</code> drives an unknown key through
+every one of them on each build.)</li>
+<li>Semantic violations error (agg op on incompatible field type, etc.).</li>
+<li>A key that decodes and then reaches no consumer is reported as a warning
+(below) — and, for anything newly added, fails the build:
+<code>internal/gates/spec_field_consumer_test.go</code> requires every exported,
+JSON-tagged <code>spec/</code> field to have a typed consumer outside <code>spec/</code>.</li>
+<li>24+ <code>PRISM_SPEC_*</code> rules cover field-existence, channel-for-mark,
+selection refs, structured filter / calculate predicates, scale type compatibility,
+animation easing / key constraints, and more. Run
+<code>prism errors lookup &lt;code&gt;</code> for details on any.</li>
+</ul>
+<h2 id="validate-a-spec"><a class="header" href="#validate-a-spec">Validate a spec</a></h2>
+<pre><code>prism validate my-chart.prism.json
+prism validate --json my-chart.prism.json
+</code></pre>
+<h2 id="warnings--and-the-fields-that-do-nothing"><a class="header" href="#warnings--and-the-fields-that-do-nothing">Warnings — and the fields that do nothing</a></h2>
+<p>A spec can be perfectly valid and still ask for something Prism does
+not do. Those keys used to be discarded in silence; they now report
+themselves as <strong>warnings</strong>. A warning never stops the chart: the
+document still renders, and the warning rides alongside it.</p>
+<p>Where they surface:</p>
+<ul>
+<li><code>prism plot</code> / <code>prism scene</code> print <code>WARN &lt;CODE&gt;: &lt;message&gt;</code> to
+<strong>stderr</strong>, so the rendered bytes on stdout stay clean.</li>
+<li><code>prism scene</code> also carries them in the document itself, under the
+top-level <code>warnings</code> array of the Scene IR (<code>code</code>, <code>message</code>,
+<code>details</code>) — the same array the browser runtime and the Twirp /
+MCP facades read.</li>
+<li><code>prism errors lookup &lt;CODE&gt;</code> explains any of them, with fixups.</li>
+</ul>
+<p>The <strong>inert-field</strong> family reports a key that decoded, passed
+validation, and then reached no consumer. Each one names the exact
+path (<code>layer[1].mark.tooltip</code>, <code>encoding.y.scale.padding_inner</code>)
+plus the mark or channel it was written on:</p>
+<div class="table-wrapper">
+<table>
+<thead>
+<tr><th>Code</th><th>Fires when</th></tr>
+</thead>
+<tbody>
+<tr><td><code>PRISM_WARN_MARK_DEF_INERT</code></td><td>a <code>mark_def</code> property is set on a mark that never reads it — <code>pad_angle</code> on a bar, <code>dx</code> on a rect — or on a property no mark reads at all (<code>shape</code>, <code>tooltip</code>, <code>layout</code>)</td></tr>
+<tr><td><code>PRISM_WARN_CHANNEL_INERT</code></td><td>a channel binding reaches no encoder: <code>fill</code>, <code>stroke</code>, <code>size</code>, <code>shape</code> (no mark reads them), <code>opacity</code> on anything but <code>heatmap</code>, or a <code>format</code> on a table column that also binds a sub-<code>mark</code> (that column draws geometry, not text)</td></tr>
+<tr><td><code>PRISM_WARN_SCALE_FIELD_INERT</code></td><td>a <code>scale</code> property does not apply to the family the channel resolves to — <code>padding_inner</code> on a linear scale, <code>base</code> on anything but <code>log</code>, <code>zero</code> on a log / time / discrete scale</td></tr>
+<tr><td><code>PRISM_WARN_LEGEND_NOT_BUILT</code></td><td>a <strong>quantitative or temporal</strong> <code>color</code> channel builds a gradient legend, but the mark never reads the colour ramp (only <code>heatmap</code> consumes a sequential palette today), so the key describes a scale the marks do not use</td></tr>
+<tr><td><code>PRISM_WARN_FACET_CHILD_SKIPPED</code></td><td>a facet child’s encoding asks for a channel-level <code>aggregate</code>, a <code>stack</code>, or an <code>order</code> — the child encoding is stripped before the plan is built, so none of the three is injected</td></tr>
+</tbody>
+</table>
+</div>
+<p>Silence is intentional for three groups, and none of them warns: a key
+that <strong>is</strong> honoured; a key that is <strong>rejected</strong> outright at validate
+(<code>orient: "radial"</code> → <code>PRISM_SPEC_046</code>, <code>scale.range</code> on a position
+channel → <code>PRISM_SPEC_045</code>, <code>bar</code> + <code>stack: "center"</code> →
+<code>PRISM_SPEC_053</code> — a rejection is already visible); and a key that is
+inert <em>by design</em> — the <code>json:"-"</code> internal bindings, and
+<code>axis.format</code> / <code>legend.format</code>, which a validation rule reads.
+Universal style properties (<code>fill</code>, <code>stroke</code>, <code>stroke_width</code>,
+<code>stroke_dash</code>, <code>opacity</code>, …) are never reported either: every mark
+carries them into its Scene IR style, so no mark type can render them
+inert. A
+channel carrying a <code>condition</code> is likewise never reported: the
+condition pass evaluates it whatever the channel.</p>
+<p>The report is produced once per spec, from the top of the composition
+tree, so a layer or concat child is never warned about twice.</p>
+<h2 id="spec-patches-rfc-6902"><a class="header" href="#spec-patches-rfc-6902">Spec patches (RFC 6902)</a></h2>
+<p>Iterative edits to a rendered chart don’t need a full spec re-send.
+A caller can transmit an <a href="https://www.rfc-editor.org/rfc/rfc6902">RFC 6902 JSON Patch</a> and the
+library applies it atomically, re-decodes, and re-compiles:</p>
+<pre><code class="language-json">[
+  { "op": "replace", "path": "/mark", "value": "area" },
+  { "op": "add",     "path": "/encoding/color",
+                     "value": { "field": "category", "type": "nominal" } },
+  { "op": "test",    "path": "/data/name", "value": "current_window" },
+  { "op": "remove",  "path": "/title" }
+]
+</code></pre>
+<p>Same protocol in Go and in WASM:</p>
+<pre><code class="language-go">next, err := prism.ApplyPatch(s, patch)
+// or, statefully:
+scn, _ := prism.NewScene(ctx, s, prism.CompileOptions{})
+err := scn.Apply(patch)
+</code></pre>
+<pre><code class="language-js">const newSpecJSON = prism.applyPatch(specJSON, JSON.stringify(patch));
+const patchJSON   = prism.diffSpecs(beforeJSON, afterJSON);
+</code></pre>
+<p><strong>Atomic application.</strong> Either every operation in the patch
+succeeds and the new spec replaces the old, or no state changes.
+A failing op surfaces as <code>PRISM_SPEC_PATCH_001</code> with the offending
+op index in the envelope’s <code>Details.OpIndex</code>.</p>
+<p><strong>Test operations.</strong> Include a <code>test</code> op to fail-fast on
+optimistic-concurrency violations — the patch aborts if the
+current spec value at <code>path</code> differs from the expected value.</p>
+<p><strong>Diff helper.</strong> <code>prism.DiffSpecs(before, after)</code> (Go) and
+<code>prism.diffSpecs(beforeJSON, afterJSON)</code> (WASM) produce a patch
+that transforms one spec into the other. Useful for callers that
+think in full specs and only want to transmit the delta.</p>
+<h2 id="further-reading"><a class="header" href="#further-reading">Further reading</a></h2>
+<ul>
+<li><a href="marks.html">Marks</a>, <a href="encoding.html">Encoding</a>, <a href="composition.html">Composition</a>.</li>
+<li><a href="../reference/spec.html">Spec field reference</a> — every field with type + description.</li>
+<li><a href="../gallery/index.html">Gallery</a> — 59 worked examples.</li>
+</ul>
+
+                    </main>
+
+                    <nav class="nav-wrapper" aria-label="Page navigation">
+                        <!-- Mobile navigation buttons -->
+                            <a rel="prev" href="../migration-from-vega-lite.html" class="mobile-nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
+                                <span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M41.4 233.4c-12.5 12.5-12.5 32.8 0 45.3l160 160c12.5 12.5 32.8 12.5 45.3 0s12.5-32.8 0-45.3L109.3 256 246.6 118.6c12.5-12.5 12.5-32.8 0-45.3s-32.8-12.5-45.3 0l-160 160z"/></svg></span>
+                            </a>
+
+                            <a rel="next prefetch" href="../concepts/marks.html" class="mobile-nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                                <span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M278.6 233.4c12.5 12.5 12.5 32.8 0 45.3l-160 160c-12.5 12.5-32.8 12.5-45.3 0s-12.5-32.8 0-45.3L210.7 256 73.4 118.6c-12.5-12.5-12.5-32.8 0-45.3s32.8-12.5 45.3 0l160 160z"/></svg></span>
+                            </a>
+
+                        <div style="clear: both"></div>
+                    </nav>
+                </div>
+            </div>
+
+            <nav class="nav-wide-wrapper" aria-label="Page navigation">
+                    <a rel="prev" href="../migration-from-vega-lite.html" class="nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
+                        <span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M41.4 233.4c-12.5 12.5-12.5 32.8 0 45.3l160 160c12.5 12.5 32.8 12.5 45.3 0s12.5-32.8 0-45.3L109.3 256 246.6 118.6c12.5-12.5 12.5-32.8 0-45.3s-32.8-12.5-45.3 0l-160 160z"/></svg></span>
+                    </a>
+
+                    <a rel="next prefetch" href="../concepts/marks.html" class="nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                        <span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M278.6 233.4c12.5 12.5 12.5 32.8 0 45.3l-160 160c-12.5 12.5-32.8 12.5-45.3 0s-12.5-32.8 0-45.3L210.7 256 73.4 118.6c-12.5-12.5-12.5-32.8 0-45.3s32.8-12.5 45.3 0l160 160z"/></svg></span>
+                    </a>
+            </nav>
+
+        </div>
+
+        <template id=fa-eye><span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 576 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M288 32c-80.8 0-145.5 36.8-192.6 80.6C48.6 156 17.3 208 2.5 243.7c-3.3 7.9-3.3 16.7 0 24.6C17.3 304 48.6 356 95.4 399.4C142.5 443.2 207.2 480 288 480s145.5-36.8 192.6-80.6c46.8-43.5 78.1-95.4 93-131.1c3.3-7.9 3.3-16.7 0-24.6c-14.9-35.7-46.2-87.7-93-131.1C433.5 68.8 368.8 32 288 32zM432 256c0 79.5-64.5 144-144 144s-144-64.5-144-144s64.5-144 144-144s144 64.5 144 144zM288 192c0 35.3-28.7 64-64 64c-11.5 0-22.3-3-31.6-8.4c-.2 2.8-.4 5.5-.4 8.4c0 53 43 96 96 96s96-43 96-96s-43-96-96-96c-2.8 0-5.6 .1-8.4 .4c5.3 9.3 8.4 20.1 8.4 31.6z"/></svg></span></template>
+        <template id=fa-eye-slash><span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M38.8 5.1C28.4-3.1 13.3-1.2 5.1 9.2S-1.2 34.7 9.2 42.9l592 464c10.4 8.2 25.5 6.3 33.7-4.1s6.3-25.5-4.1-33.7L525.6 386.7c39.6-40.6 66.4-86.1 79.9-118.4c3.3-7.9 3.3-16.7 0-24.6c-14.9-35.7-46.2-87.7-93-131.1C465.5 68.8 400.8 32 320 32c-68.2 0-125 26.3-169.3 60.8L38.8 5.1zM223.1 149.5C248.6 126.2 282.7 112 320 112c79.5 0 144 64.5 144 144c0 24.9-6.3 48.3-17.4 68.7L408 294.5c5.2-11.8 8-24.8 8-38.5c0-53-43-96-96-96c-2.8 0-5.6 .1-8.4 .4c5.3 9.3 8.4 20.1 8.4 31.6c0 10.2-2.4 19.8-6.6 28.3l-90.3-70.8zm223.1 298L373 389.9c-16.4 6.5-34.3 10.1-53 10.1c-79.5 0-144-64.5-144-144c0-6.9 .5-13.6 1.4-20.2L83.1 161.5C60.3 191.2 44 220.8 34.5 243.7c-3.3 7.9-3.3 16.7 0 24.6c14.9 35.7 46.2 87.7 93 131.1C174.5 443.2 239.2 480 320 480c47.8 0 89.9-12.9 126.2-32.5z"/></svg></span></template>
+        <template id=fa-copy><span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M502.6 70.63l-61.25-61.25C435.4 3.371 427.2 0 418.7 0H255.1c-35.35 0-64 28.66-64 64l.0195 256C192 355.4 220.7 384 256 384h192c35.2 0 64-28.8 64-64V93.25C512 84.77 508.6 76.63 502.6 70.63zM464 320c0 8.836-7.164 16-16 16H255.1c-8.838 0-16-7.164-16-16L239.1 64.13c0-8.836 7.164-16 16-16h128L384 96c0 17.67 14.33 32 32 32h47.1V320zM272 448c0 8.836-7.164 16-16 16H63.1c-8.838 0-16-7.164-16-16L47.98 192.1c0-8.836 7.164-16 16-16H160V128H63.99c-35.35 0-64 28.65-64 64l.0098 256C.002 483.3 28.66 512 64 512h192c35.2 0 64-28.8 64-64v-32h-47.1L272 448z"/></svg></span></template>
+        <template id=fa-play><span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 384 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M73 39c-14.8-9.1-33.4-9.4-48.5-.9S0 62.6 0 80V432c0 17.4 9.4 33.4 24.5 41.9s33.7 8.1 48.5-.9L361 297c14.3-8.7 23-24.2 23-41s-8.7-32.2-23-41L73 39z"/></svg></span></template>
+        <template id=fa-clock-rotate-left><span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M75 75L41 41C25.9 25.9 0 36.6 0 57.9V168c0 13.3 10.7 24 24 24H134.1c21.4 0 32.1-25.9 17-41l-30.8-30.8C155 85.5 203 64 256 64c106 0 192 86 192 192s-86 192-192 192c-40.8 0-78.6-12.7-109.7-34.4c-14.5-10.1-34.4-6.6-44.6 7.9s-6.6 34.4 7.9 44.6C151.2 495 201.7 512 256 512c141.4 0 256-114.6 256-256S397.4 0 256 0C185.3 0 121.3 28.7 75 75zm181 53c-13.3 0-24 10.7-24 24V256c0 6.4 2.5 12.5 7 17l72 72c9.4 9.4 24.6 9.4 33.9 0s9.4-24.6 0-33.9l-65-65V152c0-13.3-10.7-24-24-24z"/></svg></span></template>
+
+
+
+        <script>
+            window.playground_copyable = true;
+        </script>
+
+
+        <script src="../elasticlunr-ef4e11c1.min.js"></script>
+        <script src="../mark-09e88c2c.min.js"></script>
+        <script src="../searcher-09f2665d.js"></script>
+
+        <script src="../clipboard-1626706a.min.js"></script>
+        <script src="../highlight-abc7f01d.js"></script>
+        <script src="../book-609e4cb8.js"></script>
+
+        <!-- Custom JS scripts -->
+        <script src="../theme/version-dropdown-686abb3a.js"></script>
+
+
+
+    </div>
+    </body>
+</html>

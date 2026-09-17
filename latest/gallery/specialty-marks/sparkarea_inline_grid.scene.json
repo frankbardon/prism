@@ -1,0 +1,363 @@
+{
+  "version": "1.0",
+  "theme": {
+    "name": "light",
+    "color_axis": {
+      "r": 107,
+      "g": 114,
+      "b": 128,
+      "a": 255
+    },
+    "color_grid": {
+      "r": 229,
+      "g": 231,
+      "b": 235,
+      "a": 255
+    },
+    "color_text": {
+      "r": 17,
+      "g": 24,
+      "b": 39,
+      "a": 255
+    },
+    "background": "transparent",
+    "font_sans": "Inter, system-ui, sans-serif",
+    "font_mono": "ui-monospace, SF Mono, monospace",
+    "css": "\u003cstyle\u003e:root{--prism-color-axis:#6b7280;--prism-color-grid:#e5e7eb;--prism-color-text:#111827;--prism-color-bg:transparent;--prism-font-sans:Inter, system-ui, sans-serif;--prism-font-mono:ui-monospace, SF Mono, monospace;--prism-font-size-label:11px;--prism-font-size-title:16px;--prism-font-size-axis-title:12px;--prism-axis-domain-color:#6b7280;--prism-axis-domain-width:1px;--prism-axis-tick-color:#6b7280;--prism-axis-tick-width:1px;--prism-axis-tick-size:5px;--prism-grid-color:#e5e7eb;--prism-grid-width:1px;--prism-axis-label-color:#111827;--prism-axis-label-font-size:11px;--prism-axis-label-padding:4px;--prism-axis-title-color:#111827;--prism-axis-title-font-size:12px;--prism-axis-title-padding:8px;--prism-legend-padding:8px;--prism-legend-symbol-size:64px;--prism-legend-label-color:#111827;--prism-legend-label-font-size:11px;--prism-legend-title-color:#111827;--prism-legend-title-font-size:12px;--prism-legend-title-font-weight:600;--prism-legend-row-padding:4px;--prism-title-color:#111827;--prism-title-font-size:16px;--prism-title-font-weight:600;--prism-title-anchor:start;--prism-title-padding:12px;--prism-view-bg:transparent;--prism-view-padding:0px;--prism-mark-fill:#4c78a8;--prism-mark-stroke-width:0px;--prism-mark-opacity:1;--prism-deselected-opacity:0.3;--prism-selected-opacity:1;}.prism-axis-domain{stroke:var(--prism-axis-domain-color,var(--prism-color-axis));stroke-width:var(--prism-axis-domain-width,1px);fill:none;}.prism-axis-tick{stroke:var(--prism-axis-tick-color,var(--prism-color-axis));stroke-width:var(--prism-axis-tick-width,1px);}.prism-axis-label{fill:var(--prism-axis-label-color,var(--prism-color-text));font-family:var(--prism-font-sans);font-size:var(--prism-axis-label-font-size,var(--prism-font-size-label,11px));font-weight:var(--prism-axis-label-font-weight,400);}.prism-axis-title{fill:var(--prism-axis-title-color,var(--prism-color-text));font-family:var(--prism-font-sans);font-size:var(--prism-axis-title-font-size,var(--prism-font-size-axis-title,12px));font-weight:var(--prism-axis-title-font-weight,600);}.prism-grid-line{stroke:var(--prism-grid-color,var(--prism-color-grid));stroke-width:var(--prism-grid-width,1px);}.prism-title{fill:var(--prism-title-color,var(--prism-color-text));font-family:var(--prism-font-sans);font-size:var(--prism-title-font-size,var(--prism-font-size-title,16px));font-weight:var(--prism-title-font-weight,600);}.prism-legend-title{fill:var(--prism-legend-title-color,var(--prism-color-text));font-family:var(--prism-font-sans);font-size:var(--prism-legend-title-font-size,12px);font-weight:var(--prism-legend-title-font-weight,600);}.prism-legend-label{fill:var(--prism-legend-label-color,var(--prism-color-text));font-family:var(--prism-font-sans);font-size:var(--prism-legend-label-font-size,11px);}.prism-legend-swatch{stroke:none;}.prism-selected{opacity:var(--prism-selected-opacity,1);}.prism-deselected{opacity:var(--prism-deselected-opacity,0.3);}\u003c/style\u003e",
+    "axis_tick_size": 5,
+    "axis_label_padding": 4,
+    "axis_title_padding": 8
+  },
+  "grid": {
+    "layout": {
+      "rows": 3,
+      "cols": 1,
+      "gap_px": 20,
+      "headers": {}
+    },
+    "cells": [
+      {
+        "row": 0,
+        "col": 0,
+        "scene": {
+          "id": "scene-0",
+          "frame": {
+            "x": 0,
+            "y": 0,
+            "w": 800,
+            "h": 186.66666666666666
+          },
+          "plot": {
+            "x": 4,
+            "y": 4,
+            "w": 792,
+            "h": 178.66666666666666
+          },
+          "layers": [
+            {
+              "id": "layer-0",
+              "mark": "sparkarea",
+              "marks": [
+                {
+                  "type": "area",
+                  "id": "sparkarea-area-0",
+                  "style": {
+                    "fill": {
+                      "r": 76,
+                      "g": 120,
+                      "b": 168,
+                      "a": 255
+                    },
+                    "opacity": 1
+                  },
+                  "datum": {
+                    "layer_id": "layer-0",
+                    "row_id": 0
+                  },
+                  "area": {
+                    "upper": [
+                      [
+                        60.571428571428555,
+                        118.85714285714285
+                      ],
+                      [
+                        173.7142857142857,
+                        80.57142857142857
+                      ],
+                      [
+                        286.85714285714283,
+                        106.09523809523809
+                      ],
+                      [
+                        400,
+                        42.28571428571428
+                      ],
+                      [
+                        513.1428571428571,
+                        67.8095238095238
+                      ],
+                      [
+                        626.2857142857142,
+                        4
+                      ],
+                      [
+                        739.4285714285714,
+                        29.52380952380952
+                      ]
+                    ],
+                    "lower": [
+                      [
+                        60.571428571428555,
+                        182.66666666666666
+                      ],
+                      [
+                        173.7142857142857,
+                        182.66666666666666
+                      ],
+                      [
+                        286.85714285714283,
+                        182.66666666666666
+                      ],
+                      [
+                        400,
+                        182.66666666666666
+                      ],
+                      [
+                        513.1428571428571,
+                        182.66666666666666
+                      ],
+                      [
+                        626.2857142857142,
+                        182.66666666666666
+                      ],
+                      [
+                        739.4285714285714,
+                        182.66666666666666
+                      ]
+                    ],
+                    "curve": "linear"
+                  }
+                }
+              ]
+            }
+          ]
+        }
+      },
+      {
+        "row": 1,
+        "col": 0,
+        "scene": {
+          "id": "scene-1",
+          "frame": {
+            "x": 0,
+            "y": 206.66666666666666,
+            "w": 800,
+            "h": 186.66666666666666
+          },
+          "plot": {
+            "x": 4,
+            "y": 210.66666666666666,
+            "w": 792,
+            "h": 178.66666666666666
+          },
+          "layers": [
+            {
+              "id": "layer-0",
+              "mark": "sparkarea",
+              "marks": [
+                {
+                  "type": "area",
+                  "id": "sparkarea-area-0",
+                  "style": {
+                    "fill": {
+                      "r": 76,
+                      "g": 120,
+                      "b": 168,
+                      "a": 255
+                    },
+                    "opacity": 1
+                  },
+                  "datum": {
+                    "layer_id": "layer-0",
+                    "row_id": 0
+                  },
+                  "area": {
+                    "upper": [
+                      [
+                        60.571428571428555,
+                        232.10666666666665
+                      ],
+                      [
+                        173.7142857142857,
+                        253.54666666666665
+                      ],
+                      [
+                        286.85714285714283,
+                        210.66666666666666
+                      ],
+                      [
+                        400,
+                        246.39999999999998
+                      ],
+                      [
+                        513.1428571428571,
+                        217.81333333333333
+                      ],
+                      [
+                        626.2857142857142,
+                        260.6933333333333
+                      ],
+                      [
+                        739.4285714285714,
+                        224.95999999999998
+                      ]
+                    ],
+                    "lower": [
+                      [
+                        60.571428571428555,
+                        389.3333333333333
+                      ],
+                      [
+                        173.7142857142857,
+                        389.3333333333333
+                      ],
+                      [
+                        286.85714285714283,
+                        389.3333333333333
+                      ],
+                      [
+                        400,
+                        389.3333333333333
+                      ],
+                      [
+                        513.1428571428571,
+                        389.3333333333333
+                      ],
+                      [
+                        626.2857142857142,
+                        389.3333333333333
+                      ],
+                      [
+                        739.4285714285714,
+                        389.3333333333333
+                      ]
+                    ],
+                    "curve": "linear"
+                  }
+                }
+              ]
+            }
+          ]
+        }
+      },
+      {
+        "row": 2,
+        "col": 0,
+        "scene": {
+          "id": "scene-2",
+          "frame": {
+            "x": 0,
+            "y": 413.3333333333333,
+            "w": 800,
+            "h": 186.66666666666666
+          },
+          "plot": {
+            "x": 4,
+            "y": 417.3333333333333,
+            "w": 792,
+            "h": 178.66666666666666
+          },
+          "layers": [
+            {
+              "id": "layer-0",
+              "mark": "sparkarea",
+              "marks": [
+                {
+                  "type": "area",
+                  "id": "sparkarea-area-0",
+                  "style": {
+                    "fill": {
+                      "r": 76,
+                      "g": 120,
+                      "b": 168,
+                      "a": 255
+                    },
+                    "opacity": 1
+                  },
+                  "datum": {
+                    "layer_id": "layer-0",
+                    "row_id": 0
+                  },
+                  "area": {
+                    "upper": [
+                      [
+                        60.571428571428555,
+                        506.66666666666663
+                      ],
+                      [
+                        173.7142857142857,
+                        497.7333333333333
+                      ],
+                      [
+                        286.85714285714283,
+                        511.1333333333333
+                      ],
+                      [
+                        400,
+                        488.79999999999995
+                      ],
+                      [
+                        513.1428571428571,
+                        479.8666666666667
+                      ],
+                      [
+                        626.2857142857142,
+                        484.3333333333333
+                      ],
+                      [
+                        739.4285714285714,
+                        466.46666666666664
+                      ]
+                    ],
+                    "lower": [
+                      [
+                        60.571428571428555,
+                        596
+                      ],
+                      [
+                        173.7142857142857,
+                        596
+                      ],
+                      [
+                        286.85714285714283,
+                        596
+                      ],
+                      [
+                        400,
+                        596
+                      ],
+                      [
+                        513.1428571428571,
+                        596
+                      ],
+                      [
+                        626.2857142857142,
+                        596
+                      ],
+                      [
+                        739.4285714285714,
+                        596
+                      ]
+                    ],
+                    "curve": "linear"
+                  }
+                }
+              ]
+            }
+          ]
+        }
+      }
+    ],
+    "shared": {}
+  }
+}

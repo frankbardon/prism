@@ -1,0 +1,506 @@
+{
+  "version": "1.0",
+  "theme": {
+    "name": "light",
+    "color_axis": {
+      "r": 107,
+      "g": 114,
+      "b": 128,
+      "a": 255
+    },
+    "color_grid": {
+      "r": 229,
+      "g": 231,
+      "b": 235,
+      "a": 255
+    },
+    "color_text": {
+      "r": 17,
+      "g": 24,
+      "b": 39,
+      "a": 255
+    },
+    "background": "transparent",
+    "font_sans": "Inter, system-ui, sans-serif",
+    "font_mono": "ui-monospace, SF Mono, monospace",
+    "css": "\u003cstyle\u003e:root{--prism-color-axis:#6b7280;--prism-color-grid:#e5e7eb;--prism-color-text:#111827;--prism-color-bg:transparent;--prism-font-sans:Inter, system-ui, sans-serif;--prism-font-mono:ui-monospace, SF Mono, monospace;--prism-font-size-label:11px;--prism-font-size-title:16px;--prism-font-size-axis-title:12px;--prism-axis-domain-color:#6b7280;--prism-axis-domain-width:1px;--prism-axis-tick-color:#6b7280;--prism-axis-tick-width:1px;--prism-axis-tick-size:5px;--prism-grid-color:#e5e7eb;--prism-grid-width:1px;--prism-axis-label-color:#111827;--prism-axis-label-font-size:11px;--prism-axis-label-padding:4px;--prism-axis-title-color:#111827;--prism-axis-title-font-size:12px;--prism-axis-title-padding:8px;--prism-legend-padding:8px;--prism-legend-symbol-size:64px;--prism-legend-label-color:#111827;--prism-legend-label-font-size:11px;--prism-legend-title-color:#111827;--prism-legend-title-font-size:12px;--prism-legend-title-font-weight:600;--prism-legend-row-padding:4px;--prism-title-color:#111827;--prism-title-font-size:16px;--prism-title-font-weight:600;--prism-title-anchor:start;--prism-title-padding:12px;--prism-view-bg:transparent;--prism-view-padding:0px;--prism-mark-fill:#4c78a8;--prism-mark-stroke-width:0px;--prism-mark-opacity:1;--prism-mark-network-fill:#4c78a8;--prism-mark-network-stroke:#4c78a8;--prism-mark-network-stroke-width:1px;--prism-deselected-opacity:0.3;--prism-selected-opacity:1;}.prism-axis-domain{stroke:var(--prism-axis-domain-color,var(--prism-color-axis));stroke-width:var(--prism-axis-domain-width,1px);fill:none;}.prism-axis-tick{stroke:var(--prism-axis-tick-color,var(--prism-color-axis));stroke-width:var(--prism-axis-tick-width,1px);}.prism-axis-label{fill:var(--prism-axis-label-color,var(--prism-color-text));font-family:var(--prism-font-sans);font-size:var(--prism-axis-label-font-size,var(--prism-font-size-label,11px));font-weight:var(--prism-axis-label-font-weight,400);}.prism-axis-title{fill:var(--prism-axis-title-color,var(--prism-color-text));font-family:var(--prism-font-sans);font-size:var(--prism-axis-title-font-size,var(--prism-font-size-axis-title,12px));font-weight:var(--prism-axis-title-font-weight,600);}.prism-grid-line{stroke:var(--prism-grid-color,var(--prism-color-grid));stroke-width:var(--prism-grid-width,1px);}.prism-title{fill:var(--prism-title-color,var(--prism-color-text));font-family:var(--prism-font-sans);font-size:var(--prism-title-font-size,var(--prism-font-size-title,16px));font-weight:var(--prism-title-font-weight,600);}.prism-legend-title{fill:var(--prism-legend-title-color,var(--prism-color-text));font-family:var(--prism-font-sans);font-size:var(--prism-legend-title-font-size,12px);font-weight:var(--prism-legend-title-font-weight,600);}.prism-legend-label{fill:var(--prism-legend-label-color,var(--prism-color-text));font-family:var(--prism-font-sans);font-size:var(--prism-legend-label-font-size,11px);}.prism-legend-swatch{stroke:none;}.prism-selected{opacity:var(--prism-selected-opacity,1);}.prism-deselected{opacity:var(--prism-deselected-opacity,0.3);}\u003c/style\u003e",
+    "axis_tick_size": 5,
+    "axis_label_padding": 4,
+    "axis_title_padding": 8
+  },
+  "grid": {
+    "layout": {
+      "rows": 1,
+      "cols": 1,
+      "headers": {}
+    },
+    "cells": [
+      {
+        "row": 0,
+        "col": 0,
+        "scene": {
+          "id": "scene-0",
+          "frame": {
+            "x": 0,
+            "y": 0,
+            "w": 800,
+            "h": 600
+          },
+          "plot": {
+            "x": 40,
+            "y": 50,
+            "w": 740,
+            "h": 510
+          },
+          "title": {
+            "content": "Dependency graph (deterministic seed)",
+            "x": 410,
+            "y": 20,
+            "style": {}
+          },
+          "layers": [
+            {
+              "id": "layer-0",
+              "mark": "network",
+              "marks": [
+                {
+                  "type": "line",
+                  "style": {
+                    "stroke": {
+                      "r": 76,
+                      "g": 120,
+                      "b": 168,
+                      "a": 255
+                    },
+                    "stroke_width": 1,
+                    "opacity": 1
+                  },
+                  "datum": {
+                    "layer_id": "layer-0",
+                    "row_id": 0
+                  },
+                  "line": {
+                    "points": [
+                      [
+                        416.20225112708613,
+                        191.93324994090918
+                      ],
+                      [
+                        581.7579244317805,
+                        291.62419950145147
+                      ]
+                    ]
+                  }
+                },
+                {
+                  "type": "line",
+                  "style": {
+                    "stroke": {
+                      "r": 76,
+                      "g": 120,
+                      "b": 168,
+                      "a": 255
+                    },
+                    "stroke_width": 1,
+                    "opacity": 1
+                  },
+                  "datum": {
+                    "layer_id": "layer-0",
+                    "row_id": 1
+                  },
+                  "line": {
+                    "points": [
+                      [
+                        416.20225112708613,
+                        191.93324994090918
+                      ],
+                      [
+                        195.9732763662953,
+                        195.60923828888426
+                      ]
+                    ]
+                  }
+                },
+                {
+                  "type": "line",
+                  "style": {
+                    "stroke": {
+                      "r": 76,
+                      "g": 120,
+                      "b": 168,
+                      "a": 255
+                    },
+                    "stroke_width": 1,
+                    "opacity": 1
+                  },
+                  "datum": {
+                    "layer_id": "layer-0",
+                    "row_id": 2
+                  },
+                  "line": {
+                    "points": [
+                      [
+                        416.20225112708613,
+                        191.93324994090918
+                      ],
+                      [
+                        579.701028445842,
+                        87.90271711204882
+                      ]
+                    ]
+                  }
+                },
+                {
+                  "type": "line",
+                  "style": {
+                    "stroke": {
+                      "r": 76,
+                      "g": 120,
+                      "b": 168,
+                      "a": 255
+                    },
+                    "stroke_width": 1,
+                    "opacity": 1
+                  },
+                  "datum": {
+                    "layer_id": "layer-0",
+                    "row_id": 3
+                  },
+                  "line": {
+                    "points": [
+                      [
+                        581.7579244317805,
+                        291.62419950145147
+                      ],
+                      [
+                        757.168477945095,
+                        267.74532357845567
+                      ]
+                    ]
+                  }
+                },
+                {
+                  "type": "line",
+                  "style": {
+                    "stroke": {
+                      "r": 76,
+                      "g": 120,
+                      "b": 168,
+                      "a": 255
+                    },
+                    "stroke_width": 1,
+                    "opacity": 1
+                  },
+                  "datum": {
+                    "layer_id": "layer-0",
+                    "row_id": 4
+                  },
+                  "line": {
+                    "points": [
+                      [
+                        195.9732763662953,
+                        195.60923828888426
+                      ],
+                      [
+                        50.12537413403794,
+                        90.46804488039274
+                      ]
+                    ]
+                  }
+                },
+                {
+                  "type": "line",
+                  "style": {
+                    "stroke": {
+                      "r": 76,
+                      "g": 120,
+                      "b": 168,
+                      "a": 255
+                    },
+                    "stroke_width": 1,
+                    "opacity": 1
+                  },
+                  "datum": {
+                    "layer_id": "layer-0",
+                    "row_id": 5
+                  },
+                  "line": {
+                    "points": [
+                      [
+                        195.9732763662953,
+                        195.60923828888426
+                      ],
+                      [
+                        53.15362063341677,
+                        305.3402845042823
+                      ]
+                    ]
+                  }
+                },
+                {
+                  "type": "line",
+                  "style": {
+                    "stroke": {
+                      "r": 76,
+                      "g": 120,
+                      "b": 168,
+                      "a": 255
+                    },
+                    "stroke_width": 1,
+                    "opacity": 1
+                  },
+                  "datum": {
+                    "layer_id": "layer-0",
+                    "row_id": 6
+                  },
+                  "line": {
+                    "points": [
+                      [
+                        579.701028445842,
+                        87.90271711204882
+                      ],
+                      [
+                        756.0655009827382,
+                        107.38766356658624
+                      ]
+                    ]
+                  }
+                },
+                {
+                  "type": "line",
+                  "style": {
+                    "stroke": {
+                      "r": 76,
+                      "g": 120,
+                      "b": 168,
+                      "a": 255
+                    },
+                    "stroke_width": 1,
+                    "opacity": 1
+                  },
+                  "datum": {
+                    "layer_id": "layer-0",
+                    "row_id": 7
+                  },
+                  "line": {
+                    "points": [
+                      [
+                        756.0655009827382,
+                        107.38766356658624
+                      ],
+                      [
+                        757.168477945095,
+                        267.74532357845567
+                      ]
+                    ]
+                  }
+                },
+                {
+                  "type": "rect",
+                  "style": {
+                    "fill": {
+                      "r": 76,
+                      "g": 120,
+                      "b": 168,
+                      "a": 255
+                    },
+                    "stroke": {
+                      "r": 76,
+                      "g": 120,
+                      "b": 168,
+                      "a": 255
+                    },
+                    "stroke_width": 1,
+                    "opacity": 1
+                  },
+                  "rect": {
+                    "x": 412.20225112708613,
+                    "y": 187.93324994090918,
+                    "w": 8,
+                    "h": 8
+                  }
+                },
+                {
+                  "type": "rect",
+                  "style": {
+                    "fill": {
+                      "r": 76,
+                      "g": 120,
+                      "b": 168,
+                      "a": 255
+                    },
+                    "stroke": {
+                      "r": 76,
+                      "g": 120,
+                      "b": 168,
+                      "a": 255
+                    },
+                    "stroke_width": 1,
+                    "opacity": 1
+                  },
+                  "rect": {
+                    "x": 577.7579244317805,
+                    "y": 287.62419950145147,
+                    "w": 8,
+                    "h": 8
+                  }
+                },
+                {
+                  "type": "rect",
+                  "style": {
+                    "fill": {
+                      "r": 76,
+                      "g": 120,
+                      "b": 168,
+                      "a": 255
+                    },
+                    "stroke": {
+                      "r": 76,
+                      "g": 120,
+                      "b": 168,
+                      "a": 255
+                    },
+                    "stroke_width": 1,
+                    "opacity": 1
+                  },
+                  "rect": {
+                    "x": 191.9732763662953,
+                    "y": 191.60923828888426,
+                    "w": 8,
+                    "h": 8
+                  }
+                },
+                {
+                  "type": "rect",
+                  "style": {
+                    "fill": {
+                      "r": 76,
+                      "g": 120,
+                      "b": 168,
+                      "a": 255
+                    },
+                    "stroke": {
+                      "r": 76,
+                      "g": 120,
+                      "b": 168,
+                      "a": 255
+                    },
+                    "stroke_width": 1,
+                    "opacity": 1
+                  },
+                  "rect": {
+                    "x": 575.701028445842,
+                    "y": 83.90271711204882,
+                    "w": 8,
+                    "h": 8
+                  }
+                },
+                {
+                  "type": "rect",
+                  "style": {
+                    "fill": {
+                      "r": 76,
+                      "g": 120,
+                      "b": 168,
+                      "a": 255
+                    },
+                    "stroke": {
+                      "r": 76,
+                      "g": 120,
+                      "b": 168,
+                      "a": 255
+                    },
+                    "stroke_width": 1,
+                    "opacity": 1
+                  },
+                  "rect": {
+                    "x": 753.168477945095,
+                    "y": 263.74532357845567,
+                    "w": 8,
+                    "h": 8
+                  }
+                },
+                {
+                  "type": "rect",
+                  "style": {
+                    "fill": {
+                      "r": 76,
+                      "g": 120,
+                      "b": 168,
+                      "a": 255
+                    },
+                    "stroke": {
+                      "r": 76,
+                      "g": 120,
+                      "b": 168,
+                      "a": 255
+                    },
+                    "stroke_width": 1,
+                    "opacity": 1
+                  },
+                  "rect": {
+                    "x": 46.12537413403794,
+                    "y": 86.46804488039274,
+                    "w": 8,
+                    "h": 8
+                  }
+                },
+                {
+                  "type": "rect",
+                  "style": {
+                    "fill": {
+                      "r": 76,
+                      "g": 120,
+                      "b": 168,
+                      "a": 255
+                    },
+                    "stroke": {
+                      "r": 76,
+                      "g": 120,
+                      "b": 168,
+                      "a": 255
+                    },
+                    "stroke_width": 1,
+                    "opacity": 1
+                  },
+                  "rect": {
+                    "x": 49.15362063341677,
+                    "y": 301.3402845042823,
+                    "w": 8,
+                    "h": 8
+                  }
+                },
+                {
+                  "type": "rect",
+                  "style": {
+                    "fill": {
+                      "r": 76,
+                      "g": 120,
+                      "b": 168,
+                      "a": 255
+                    },
+                    "stroke": {
+                      "r": 76,
+                      "g": 120,
+                      "b": 168,
+                      "a": 255
+                    },
+                    "stroke_width": 1,
+                    "opacity": 1
+                  },
+                  "rect": {
+                    "x": 752.0655009827382,
+                    "y": 103.38766356658624,
+                    "w": 8,
+                    "h": 8
+                  }
+                }
+              ]
+            }
+          ]
+        }
+      }
+    ],
+    "shared": {}
+  }
+}

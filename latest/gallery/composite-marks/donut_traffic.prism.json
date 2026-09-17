@@ -1,0 +1,18 @@
+{
+  "$schema": "urn:prism:schema:v1:spec",
+  "title": "Traffic source share",
+  "data": {
+    "values": [
+      {"source": "organic", "visits": 4120},
+      {"source": "paid",    "visits": 2080},
+      {"source": "social",  "visits": 1530},
+      {"source": "email",   "visits": 870},
+      {"source": "direct",  "visits": 1290}
+    ]
+  },
+  "mark": "donut",
+  "encoding": {
+    "theta": {"field": "visits", "type": "quantitative"},
+    "color": {"field": "source", "type": "nominal"}
+  }
+}

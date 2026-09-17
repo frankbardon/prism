@@ -1,0 +1,15 @@
+{
+  "$schema": "urn:prism:schema:v1:spec",
+  "data": {"name": "signups", "values": [
+    {"month": "Jan", "signups": 320.0},
+    {"month": "Feb", "signups": 410.0},
+    {"month": "Mar", "signups": 385.0},
+    {"month": "Apr", "signups": 520.0},
+    {"month": "May", "signups": 610.0}
+  ]},
+  "mark": "bar",
+  "encoding": {
+    "x": {"field": "month", "type": "nominal", "axis": {"orient": "top", "title": "Month"}},
+    "y": {"field": "signups", "type": "quantitative", "axis": {"orient": "right", "title": "Signups"}}
+  }
+}

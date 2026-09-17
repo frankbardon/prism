@@ -1,0 +1,19 @@
+{
+  "$schema": "urn:prism:schema:v1:spec",
+  "title": "Region x bucket heatmap",
+  "data": {
+    "name": "matrix",
+    "values": [
+      {"region": "NA", "bucket": "0-25", "count": 10},
+      {"region": "NA", "bucket": "26-50", "count": 18},
+      {"region": "EU", "bucket": "0-25", "count": 7},
+      {"region": "EU", "bucket": "26-50", "count": 22}
+    ]
+  },
+  "mark": "heatmap",
+  "encoding": {
+    "x":     {"field": "region", "type": "nominal"},
+    "y":     {"field": "bucket", "type": "ordinal"},
+    "color": {"field": "count",  "type": "quantitative"}
+  }
+}

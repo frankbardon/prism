@@ -1,0 +1,14 @@
+{
+  "$schema": "urn:prism:schema:v1:spec",
+  "title": "Arbitrary path",
+  "data": {
+    "name": "empty",
+    "values": [{"_": 0}]
+  },
+  "mark": {
+    "type": "path",
+    "path": "M 100 100 L 200 100 L 150 200 Z",
+    "fill": "#3b82f6"
+  },
+  "encoding": {}
+}

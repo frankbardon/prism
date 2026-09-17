@@ -1,0 +1,13 @@
+{"$schema":"urn:prism:schema:v1:spec",
+ "title":"Legend layout — horizontal, shaped swatches",
+ "data":{"values":[
+   {"month":"Jan","channel":"Direct","signups":30},
+   {"month":"Jan","channel":"Referral","signups":18},
+   {"month":"Feb","channel":"Direct","signups":42},
+   {"month":"Feb","channel":"Referral","signups":26}]},
+ "mark":{"type":"point","size":90},
+ "encoding":{
+   "x":{"field":"month","type":"nominal"},
+   "y":{"field":"signups","type":"quantitative"},
+   "color":{"field":"channel","type":"nominal",
+     "legend":{"orient":"bottom","direction":"horizontal","symbol_type":"square","symbol_size":14}}}}

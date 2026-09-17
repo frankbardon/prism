@@ -1,0 +1,17 @@
+{
+  "$schema": "urn:prism:schema:v1:spec",
+  "title": "Session duration — long-tail distribution",
+  "data": {
+    "values": [
+      {"sec": 5}, {"sec": 8}, {"sec": 12}, {"sec": 15}, {"sec": 17},
+      {"sec": 21}, {"sec": 22}, {"sec": 24}, {"sec": 26}, {"sec": 29},
+      {"sec": 31}, {"sec": 33}, {"sec": 37}, {"sec": 41}, {"sec": 44},
+      {"sec": 48}, {"sec": 53}, {"sec": 61}, {"sec": 72}, {"sec": 88},
+      {"sec": 112}, {"sec": 145}, {"sec": 198}, {"sec": 240}, {"sec": 305}
+    ]
+  },
+  "mark": "histogram",
+  "encoding": {
+    "x": {"field": "sec", "type": "quantitative"}
+  }
+}

@@ -1,0 +1,21 @@
+{
+  "$schema": "urn:prism:schema:v1:spec",
+  "title": "Org chart (tree)",
+  "data": {
+    "name": "org",
+    "values": [
+      {"id": "ceo",     "parent": null,    "name": "CEO"},
+      {"id": "cto",     "parent": "ceo",   "name": "CTO"},
+      {"id": "cfo",     "parent": "ceo",   "name": "CFO"},
+      {"id": "vp_eng",  "parent": "cto",   "name": "VP Engineering"},
+      {"id": "vp_data", "parent": "cto",   "name": "VP Data"},
+      {"id": "ctrl",    "parent": "cfo",   "name": "Controller"}
+    ]
+  },
+  "mark": {"type": "tree", "node_shape": "circle", "node_size": 8, "link_shape": "step"},
+  "encoding": {
+    "source": {"field": "parent"},
+    "target": {"field": "id"},
+    "text":   {"field": "name"}
+  }
+}

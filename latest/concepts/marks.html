@@ -1,0 +1,1097 @@
+<!DOCTYPE HTML>
+<html lang="en" class="navy sidebar-visible" dir="ltr">
+    <head>
+        <!-- Book generated using mdBook -->
+        <meta charset="UTF-8">
+        <title>Marks - Prism Documentation</title>
+
+
+        <!-- Custom HTML head -->
+
+        <meta name="description" content="Visualization library for .pulse files">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <meta name="theme-color" content="#ffffff">
+
+        <link rel="icon" href="../favicon-de23e50b.svg">
+        <link rel="shortcut icon" href="../favicon-8114d1fc.png">
+        <link rel="stylesheet" href="../css/variables-8adf115d.css">
+        <link rel="stylesheet" href="../css/general-e96d0476.css">
+        <link rel="stylesheet" href="../css/chrome-d279d366.css">
+        <link rel="stylesheet" href="../css/print-9e4910d8.css" media="print">
+
+        <!-- Fonts -->
+        <link rel="stylesheet" href="../fonts/fonts-9644e21d.css">
+
+        <!-- Highlight.js Stylesheets -->
+        <link rel="stylesheet" id="mdbook-highlight-css" href="../highlight-493f70e1.css">
+        <link rel="stylesheet" id="mdbook-tomorrow-night-css" href="../tomorrow-night-4c0ae647.css">
+        <link rel="stylesheet" id="mdbook-ayu-highlight-css" href="../ayu-highlight-3fdfc3ac.css">
+
+        <!-- Custom theme stylesheets -->
+        <link rel="stylesheet" href="../theme/version-dropdown-7824718d.css">
+
+
+        <!-- Provide site root and default themes to javascript -->
+        <script>
+            const path_to_root = "../";
+            const default_light_theme = "navy";
+            const default_dark_theme = "navy";
+            window.path_to_searchindex_js = "../searchindex-19c653e4.js";
+        </script>
+        <!-- Start loading toc.js asap -->
+        <script src="../toc-a4924ec0.js"></script>
+    </head>
+    <body>
+    <div id="mdbook-help-container">
+        <div id="mdbook-help-popup">
+            <h2 class="mdbook-help-title">Keyboard shortcuts</h2>
+            <div>
+                <p>Press <kbd>←</kbd> or <kbd>→</kbd> to navigate between chapters</p>
+                <p>Press <kbd>S</kbd> or <kbd>/</kbd> to search in the book</p>
+                <p>Press <kbd>?</kbd> to show this help</p>
+                <p>Press <kbd>Esc</kbd> to hide this help</p>
+            </div>
+        </div>
+    </div>
+    <div id="mdbook-body-container">
+        <!-- Work around some values being stored in localStorage wrapped in quotes -->
+        <script>
+            try {
+                let theme = localStorage.getItem('mdbook-theme');
+                let sidebar = localStorage.getItem('mdbook-sidebar');
+
+                if (theme.startsWith('"') && theme.endsWith('"')) {
+                    localStorage.setItem('mdbook-theme', theme.slice(1, theme.length - 1));
+                }
+
+                if (sidebar.startsWith('"') && sidebar.endsWith('"')) {
+                    localStorage.setItem('mdbook-sidebar', sidebar.slice(1, sidebar.length - 1));
+                }
+            } catch (e) { }
+        </script>
+
+        <!-- Set the theme before any content is loaded, prevents flash -->
+        <script>
+            const default_theme = window.matchMedia("(prefers-color-scheme: dark)").matches ? default_dark_theme : default_light_theme;
+            let theme;
+            try { theme = localStorage.getItem('mdbook-theme'); } catch(e) { }
+            if (theme === null || theme === undefined) { theme = default_theme; }
+            const html = document.documentElement;
+            html.classList.remove('navy')
+            html.classList.add(theme);
+            html.classList.add("js");
+        </script>
+
+        <input type="checkbox" id="mdbook-sidebar-toggle-anchor" class="hidden">
+
+        <!-- Hide / unhide sidebar before it is displayed -->
+        <script>
+            let sidebar = null;
+            const sidebar_toggle = document.getElementById("mdbook-sidebar-toggle-anchor");
+            if (document.body.clientWidth >= 1080) {
+                try { sidebar = localStorage.getItem('mdbook-sidebar'); } catch(e) { }
+                sidebar = sidebar || 'visible';
+            } else {
+                sidebar = 'hidden';
+                sidebar_toggle.checked = false;
+            }
+            if (sidebar === 'visible') {
+                sidebar_toggle.checked = true;
+            } else {
+                html.classList.remove('sidebar-visible');
+            }
+        </script>
+
+        <nav id="mdbook-sidebar" class="sidebar" aria-label="Table of contents">
+            <!-- populated by js -->
+            <mdbook-sidebar-scrollbox class="sidebar-scrollbox"></mdbook-sidebar-scrollbox>
+            <noscript>
+                <iframe class="sidebar-iframe-outer" src="../toc.html"></iframe>
+            </noscript>
+            <div id="mdbook-sidebar-resize-handle" class="sidebar-resize-handle">
+                <div class="sidebar-resize-indicator"></div>
+            </div>
+        </nav>
+
+        <div id="mdbook-page-wrapper" class="page-wrapper">
+
+            <div class="page">
+                <div id="mdbook-menu-bar-hover-placeholder"></div>
+                <div id="mdbook-menu-bar" class="menu-bar sticky">
+                    <div class="left-buttons">
+                        <label id="mdbook-sidebar-toggle" class="icon-button" for="mdbook-sidebar-toggle-anchor" title="Toggle Table of Contents" aria-label="Toggle Table of Contents" aria-controls="mdbook-sidebar">
+                            <span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M0 96C0 78.3 14.3 64 32 64H416c17.7 0 32 14.3 32 32s-14.3 32-32 32H32C14.3 128 0 113.7 0 96zM0 256c0-17.7 14.3-32 32-32H416c17.7 0 32 14.3 32 32s-14.3 32-32 32H32c-17.7 0-32-14.3-32-32zM448 416c0 17.7-14.3 32-32 32H32c-17.7 0-32-14.3-32-32s14.3-32 32-32H416c17.7 0 32 14.3 32 32z"/></svg></span>
+                        </label>
+                        <button id="mdbook-theme-toggle" class="icon-button" type="button" title="Change theme" aria-label="Change theme" aria-haspopup="true" aria-expanded="false" aria-controls="mdbook-theme-list">
+                            <span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 576 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M371.3 367.1c27.3-3.9 51.9-19.4 67.2-42.9L600.2 74.1c12.6-19.5 9.4-45.3-7.6-61.2S549.7-4.4 531.1 9.6L294.4 187.2c-24 18-38.2 46.1-38.4 76.1L371.3 367.1zm-19.6 25.4l-116-104.4C175.9 290.3 128 339.6 128 400c0 3.9 .2 7.8 .6 11.6c1.8 17.5-10.2 36.4-27.8 36.4H96c-17.7 0-32 14.3-32 32s14.3 32 32 32H240c61.9 0 112-50.1 112-112c0-2.5-.1-5-.2-7.5z"/></svg></span>
+                        </button>
+                        <ul id="mdbook-theme-list" class="theme-popup" aria-label="Themes" role="menu">
+                            <li role="none"><button role="menuitem" class="theme" id="mdbook-theme-default_theme">Auto</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="mdbook-theme-light">Light</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="mdbook-theme-rust">Rust</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="mdbook-theme-coal">Coal</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="mdbook-theme-navy">Navy</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="mdbook-theme-ayu">Ayu</button></li>
+                        </ul>
+                        <button id="mdbook-search-toggle" class="icon-button" type="button" title="Search (`/`)" aria-label="Toggle Searchbar" aria-expanded="false" aria-keyshortcuts="/ s" aria-controls="mdbook-searchbar">
+                            <span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M416 208c0 45.9-14.9 88.3-40 122.7L502.6 457.4c12.5 12.5 12.5 32.8 0 45.3s-32.8 12.5-45.3 0L330.7 376c-34.4 25.2-76.8 40-122.7 40C93.1 416 0 322.9 0 208S93.1 0 208 0S416 93.1 416 208zM208 352c79.5 0 144-64.5 144-144s-64.5-144-144-144S64 128.5 64 208s64.5 144 144 144z"/></svg></span>
+                        </button>
+                    </div>
+
+                    <h1 class="menu-title">Prism Documentation</h1>
+
+                    <div class="right-buttons">
+                        <a href="../print.html" title="Print this book" aria-label="Print this book">
+                            <span class=fa-svg id="print-button"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M128 0C92.7 0 64 28.7 64 64v96h64V64H354.7L384 93.3V160h64V93.3c0-17-6.7-33.3-18.7-45.3L400 18.7C388 6.7 371.7 0 354.7 0H128zM384 352v32 64H128V384 368 352H384zm64 32h32c17.7 0 32-14.3 32-32V256c0-35.3-28.7-64-64-64H64c-35.3 0-64 28.7-64 64v96c0 17.7 14.3 32 32 32H64v64c0 35.3 28.7 64 64 64H384c35.3 0 64-28.7 64-64V384zm-16-88c-13.3 0-24-10.7-24-24s10.7-24 24-24s24 10.7 24 24s-10.7 24-24 24z"/></svg></span>
+                        </a>
+                        <a href="https://github.com/frankbardon/prism" title="Git repository" aria-label="Git repository">
+                            <span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 496 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M165.9 397.4c0 2-2.3 3.6-5.2 3.6-3.3.3-5.6-1.3-5.6-3.6 0-2 2.3-3.6 5.2-3.6 3-.3 5.6 1.3 5.6 3.6zm-31.1-4.5c-.7 2 1.3 4.3 4.3 4.9 2.6 1 5.6 0 6.2-2s-1.3-4.3-4.3-5.2c-2.6-.7-5.5.3-6.2 2.3zm44.2-1.7c-2.9.7-4.9 2.6-4.6 4.9.3 2 2.9 3.3 5.9 2.6 2.9-.7 4.9-2.6 4.6-4.6-.3-1.9-3-3.2-5.9-2.9zM244.8 8C106.1 8 0 113.3 0 252c0 110.9 69.8 205.8 169.5 239.2 12.8 2.3 17.3-5.6 17.3-12.1 0-6.2-.3-40.4-.3-61.4 0 0-70 15-84.7-29.8 0 0-11.4-29.1-27.8-36.6 0 0-22.9-15.7 1.6-15.4 0 0 24.9 2 38.6 25.8 21.9 38.6 58.6 27.5 72.9 20.9 2.3-16 8.8-27.1 16-33.7-55.9-6.2-112.3-14.3-112.3-110.5 0-27.5 7.6-41.3 23.6-58.9-2.6-6.5-11.1-33.3 2.6-67.9 20.9-6.5 69 27 69 27 20-5.6 41.5-8.5 62.8-8.5s42.8 2.9 62.8 8.5c0 0 48.1-33.6 69-27 13.7 34.7 5.2 61.4 2.6 67.9 16 17.7 25.8 31.5 25.8 58.9 0 96.5-58.9 104.2-114.8 110.5 9.2 7.9 17 22.9 17 46.4 0 33.7-.3 75.4-.3 83.6 0 6.5 4.6 14.4 17.3 12.1C428.2 457.8 496 362.9 496 252 496 113.3 383.5 8 244.8 8zM97.2 352.9c-1.3 1-1 3.3.7 5.2 1.6 1.6 3.9 2.3 5.2 1 1.3-1 1-3.3-.7-5.2-1.6-1.6-3.9-2.3-5.2-1zm-10.8-8.1c-.7 1.3.3 2.9 2.3 3.9 1.6 1 3.6.7 4.3-.7.7-1.3-.3-2.9-2.3-3.9-2-.6-3.6-.3-4.3.7zm32.4 35.6c-1.6 1.3-1 4.3 1.3 6.2 2.3 2.3 5.2 2.6 6.5 1 1.3-1.3.7-4.3-1.3-6.2-2.2-2.3-5.2-2.6-6.5-1zm-11.4-14.7c-1.6 1-1.6 3.6 0 5.9 1.6 2.3 4.3 3.3 5.6 2.3 1.6-1.3 1.6-3.9 0-6.2-1.4-2.3-4-3.3-5.6-2z"/></svg></span>
+                        </a>
+                        <a href="https://github.com/frankbardon/prism/edit/main/docs/src/src/concepts/marks.md" title="Suggest an edit" aria-label="Suggest an edit" rel="edit">
+                            <span class=fa-svg id="git-edit-button"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M421.7 220.3l-11.3 11.3-22.6 22.6-205 205c-6.6 6.6-14.8 11.5-23.8 14.1L30.8 511c-8.4 2.5-17.5 .2-23.7-6.1S-1.5 489.7 1 481.2L38.7 353.1c2.6-9 7.5-17.2 14.1-23.8l205-205 22.6-22.6 11.3-11.3 33.9 33.9 62.1 62.1 33.9 33.9zM96 353.9l-9.3 9.3c-.9 .9-1.6 2.1-2 3.4l-25.3 86 86-25.3c1.3-.4 2.5-1.1 3.4-2l9.3-9.3H112c-8.8 0-16-7.2-16-16V353.9zM453.3 19.3l39.4 39.4c25 25 25 65.5 0 90.5l-14.5 14.5-22.6 22.6-11.3 11.3-33.9-33.9-62.1-62.1L314.3 67.7l11.3-11.3 22.6-22.6 14.5-14.5c25-25 65.5-25 90.5 0z"/></svg></span>
+                        </a>
+
+                    </div>
+                </div>
+
+                <div id="mdbook-search-wrapper" class="hidden">
+                    <form id="mdbook-searchbar-outer" class="searchbar-outer">
+                        <div class="search-wrapper">
+                            <input type="search" id="mdbook-searchbar" name="searchbar" placeholder="Search this book ..." aria-controls="mdbook-searchresults-outer" aria-describedby="searchresults-header">
+                            <div class="spinner-wrapper">
+                                <span class=fa-svg id="fa-spin"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M304 48c0-26.5-21.5-48-48-48s-48 21.5-48 48s21.5 48 48 48s48-21.5 48-48zm0 416c0-26.5-21.5-48-48-48s-48 21.5-48 48s21.5 48 48 48s48-21.5 48-48zM48 304c26.5 0 48-21.5 48-48s-21.5-48-48-48s-48 21.5-48 48s21.5 48 48 48zm464-48c0-26.5-21.5-48-48-48s-48 21.5-48 48s21.5 48 48 48s48-21.5 48-48zM142.9 437c18.7-18.7 18.7-49.1 0-67.9s-49.1-18.7-67.9 0s-18.7 49.1 0 67.9s49.1 18.7 67.9 0zm0-294.2c18.7-18.7 18.7-49.1 0-67.9S93.7 56.2 75 75s-18.7 49.1 0 67.9s49.1 18.7 67.9 0zM369.1 437c18.7 18.7 49.1 18.7 67.9 0s18.7-49.1 0-67.9s-49.1-18.7-67.9 0s-18.7 49.1 0 67.9z"/></svg></span>
+                            </div>
+                        </div>
+                    </form>
+                    <div id="mdbook-searchresults-outer" class="searchresults-outer hidden">
+                        <div id="mdbook-searchresults-header" class="searchresults-header"></div>
+                        <ul id="mdbook-searchresults">
+                        </ul>
+                    </div>
+                </div>
+
+                <!-- Apply ARIA attributes after the sidebar and the sidebar toggle button are added to the DOM -->
+                <script>
+                    document.getElementById('mdbook-sidebar-toggle').setAttribute('aria-expanded', sidebar === 'visible');
+                    document.getElementById('mdbook-sidebar').setAttribute('aria-hidden', sidebar !== 'visible');
+                    Array.from(document.querySelectorAll('#mdbook-sidebar a')).forEach(function(link) {
+                        link.setAttribute('tabIndex', sidebar === 'visible' ? 0 : -1);
+                    });
+                </script>
+
+                <div id="mdbook-content" class="content">
+                    <main>
+                        <h1 id="marks"><a class="header" href="#marks">Marks</a></h1>
+<p>A mark is the visual primitive that data rows become — bars, lines,
+arcs, etc. Specify via top-level <code>mark</code> (shorthand string) or
+<code>mark: {type: "...", ...properties}</code>.</p>
+<h2 id="catalog"><a class="header" href="#catalog">Catalog</a></h2>
+<h3 id="basic-marks-vega-lite-parity"><a class="header" href="#basic-marks-vega-lite-parity">Basic marks (Vega-Lite parity)</a></h3>
+<div class="table-wrapper">
+<table>
+<thead>
+<tr><th>Mark</th><th>When to use</th></tr>
+</thead>
+<tbody>
+<tr><td><code>bar</code></td><td>Compare categories. The default. Stacks by segment — see <a href="encoding.html#stacking">Encoding › Stacking</a>.</td></tr>
+<tr><td><code>line</code></td><td>Continuous trends; ordered x-axis.</td></tr>
+<tr><td><code>area</code></td><td>Filled trends. Supports negative values, an explicit <code>y2</code> lower edge, stacking — see <a href="encoding.html#stacking">Encoding › Stacking</a> — and <a href="#orientation-markorient"><code>orient</code></a>.</td></tr>
+<tr><td><code>point</code></td><td>Scatter, dot plots.</td></tr>
+<tr><td><code>circle</code>, <code>square</code></td><td>Convenience aliases for <code>point</code> with shape preset.</td></tr>
+<tr><td><code>tick</code></td><td>Strip plots, ranking dot plots. Honours <a href="#orientation-markorient"><code>orient</code></a>.</td></tr>
+<tr><td><code>rect</code></td><td>Heatmap cells, custom rectangular layouts.</td></tr>
+<tr><td><code>rule</code></td><td>Reference lines, benchmarks, ranges.</td></tr>
+<tr><td><code>text</code></td><td>Inline labels, annotations. Content comes from the <code>text</code> channel — see <a href="#text">Text</a>.</td></tr>
+<tr><td><code>arc</code></td><td>Primitive for <code>pie</code> / <code>donut</code> / sankey links.</td></tr>
+</tbody>
+</table>
+</div>
+<h3 id="composite-marks"><a class="header" href="#composite-marks">Composite marks</a></h3>
+<div class="table-wrapper">
+<table>
+<thead>
+<tr><th>Mark</th><th>Internally expands to</th></tr>
+</thead>
+<tbody>
+<tr><td><code>histogram</code></td><td><code>bar</code> + auto-bin transform.</td></tr>
+<tr><td><code>heatmap</code></td><td><code>rect</code> + 2D bin + sequential color scale. Binds an optional field-driven <code>opacity</code> channel for per-cell shading — pair it with a crosstab <code>zscore_vs_margin</code> overlay column to fade insignificant cells (significance shading). Opacity maps the field linearly over <code>[min, max]</code> to <code>[0.15, 1.0]</code>.</td></tr>
+<tr><td><code>boxplot</code></td><td><code>rect</code> (IQR) + <code>rule</code> (median, whiskers, caps) + <code>point</code> (outliers). Honours <a href="#orientation-markorient"><code>orient</code></a>. The whiskers take the box colour; the median is drawn <em>on</em> the box, so it takes the theme’s <a href="themes.html#multi-element-marks"><code>boxplot_median</code></a> key and carries its own <code>prism-mark-boxplot-median</code> class.</td></tr>
+<tr><td><code>violin</code></td><td><code>area</code> symmetric around centerline (Epanechnikov KDE). Honours <a href="#orientation-markorient"><code>orient</code></a>.</td></tr>
+<tr><td><code>pie</code></td><td><code>arc</code> with theta computed from share.</td></tr>
+<tr><td><code>donut</code></td><td><code>arc</code> with <code>inner_radius_ratio &gt; 0</code>.</td></tr>
+</tbody>
+</table>
+</div>
+<h3 id="specialty-marks"><a class="header" href="#specialty-marks">Specialty marks</a></h3>
+<div class="table-wrapper">
+<table>
+<thead>
+<tr><th>Mark</th><th>When to use</th></tr>
+</thead>
+<tbody>
+<tr><td><code>sankey</code></td><td>Flow diagrams (source/target/value table).</td></tr>
+<tr><td><code>funnel</code></td><td>Conversion funnels — stacked trapezoids.</td></tr>
+<tr><td><code>sparkline</code></td><td>Inline micro-line charts, no axes.</td></tr>
+<tr><td><code>sparkbar</code></td><td>Inline micro-column charts, no axes — bar-family sibling of <code>sparkline</code>.</td></tr>
+<tr><td><code>winloss</code></td><td>Equal-length micro-bars by the sign of the measured value (&gt;0 one way, &lt;0 the other, ==0 flat). Magnitude is ignored — only direction encodes. Honours <a href="#orientation-markorient"><code>orient</code></a>.</td></tr>
+<tr><td><code>sparkarea</code></td><td>Inline filled micro-area charts, no axes — area-family sibling of <code>sparkline</code>; fill reaches the y=0 baseline.</td></tr>
+<tr><td><code>bullet</code></td><td>Compact KPI gauge — a measure bar over qualitative bands, with an optional comparative bar and target tick. Keeps its measure axis.</td></tr>
+<tr><td><code>progress</code></td><td>Multi-row metric bars — one value bar per row on a full-scale track. The multi-row sibling of <code>bullet</code>; row labels come from the category axis.</td></tr>
+<tr><td><code>image</code></td><td>Sprites / data-URL images at position.</td></tr>
+<tr><td><code>path</code></td><td>Raw SVG path data — escape hatch.</td></tr>
+<tr><td><code>geoshape</code></td><td>Country / admin-1 polygons (choropleth). See <a href="geo.html">Geographic Marks</a>.</td></tr>
+<tr><td><code>geopoint</code></td><td>Lon/lat → point overlay. See <a href="geo.html">Geographic Marks</a>.</td></tr>
+<tr><td><code>table</code></td><td>Interactive, paginated data table. Columns replace x/y — see <a href="#table">Table</a> below.</td></tr>
+<tr><td><code>custom</code></td><td>Escape hatch for a caller-registered renderer function. No position channels — see <a href="#custom">Custom</a> below.</td></tr>
+</tbody>
+</table>
+</div>
+<h3 id="spark-adornments"><a class="header" href="#spark-adornments">Spark adornments</a></h3>
+<p>The <code>sparkline</code>, <code>sparkbar</code>, and <code>sparkarea</code> marks accept three opt-in
+mark-def fields that emphasize specific values on the bare spark. All
+three default <strong>off</strong> — a spark with none set renders byte-identically
+to one without the fields. They are independent and compose freely; set
+any combination on the same mark.</p>
+<div class="table-wrapper">
+<table>
+<thead>
+<tr><th>Mark-def field</th><th>Type</th><th>Effect</th></tr>
+</thead>
+<tbody>
+<tr><td><code>point_last</code></td><td>boolean</td><td>Draws an emphasis dot on the final (most recent) value.</td></tr>
+<tr><td><code>point_extent</code></td><td>boolean</td><td>Draws highlight dots on the minimum and maximum values.</td></tr>
+<tr><td><code>reference_band</code></td><td><code>{from, to}</code></td><td>Shades a faint normal-range band between the two value-axis bounds, spanning the spark’s full extent across the category axis, behind the series.</td></tr>
+</tbody>
+</table>
+</div>
+<p>Dots inherit the spark’s line color; the band is a faint fill of the
+same color. <code>from</code> / <code>to</code> are data-space values on the spark’s value
+axis and may be given in either order. The <code>winloss</code> mark is <strong>not</strong> in
+scope for adornments — its bars encode direction, not a continuous
+series.</p>
+<pre><code class="language-json">{
+  "mark": {
+    "type": "sparkline",
+    "point_last": true,
+    "point_extent": true,
+    "reference_band": {"from": 15, "to": 22}
+  },
+  "encoding": {
+    "x": {"field": "t", "type": "quantitative"},
+    "y": {"field": "v", "type": "quantitative"}
+  }
+}
+</code></pre>
+<h3 id="text"><a class="header" href="#text">Text</a></h3>
+<p>The <code>text</code> mark draws one label per row at the position its <code>x</code> / <code>y</code>
+channels resolve to. Label <strong>content</strong> comes from the <code>text</code> encoding
+channel:</p>
+<div class="table-wrapper">
+<table>
+<thead>
+<tr><th><code>encoding.text</code></th><th>Label content</th></tr>
+</thead>
+<tbody>
+<tr><td><code>{"field": "label", "type": "nominal"}</code></td><td>That column’s value for the row.</td></tr>
+<tr><td><code>{"field": "score", "type": "quantitative", "format": ".1f"}</code></td><td>The column’s value through the <a href="encoding.html#text-channel">d3-format</a> subset — <code>80.04</code> renders as <code>80.0</code>.</td></tr>
+<tr><td><code>{"value": "n/a"}</code></td><td>The literal, repeated on every row (formatted too, when <code>format</code> is set).</td></tr>
+<tr><td><em>omitted</em></td><td>Fallback: the <code>y</code> field’s value verbatim (or the <code>x</code> field’s when <code>y</code> is unbound).</td></tr>
+</tbody>
+</table>
+</div>
+<p><code>text.aggregate</code> is honoured exactly like a position channel’s: it
+injects the same synthetic group-aggregate node, and a non-aggregated
+<code>text</code> field joins the group-by alongside the other channels. So
+<code>{"text": {"aggregate": "mean", "field": "score", "type": "quantitative"}}</code>
+labels each group with its mean.</p>
+<p>At least one position channel must be bound. A label-only mark (say
+<code>x</code> bound, <code>y</code> omitted) is valid — the unbound axis centres the label
+in the plot region rather than erroring.</p>
+<pre><code class="language-json">{
+  "mark": {"type": "text", "font_size": 12, "baseline": "bottom"},
+  "encoding": {
+    "x": {"field": "brand_id", "type": "nominal"},
+    "y": {"field": "score", "type": "quantitative"},
+    "text": {"field": "score", "type": "quantitative", "format": ".0%"}
+  }
+}
+</code></pre>
+<p>Mark-def fields <code>align</code> (<code>left</code> / <code>right</code>), <code>baseline</code> (<code>top</code> /
+<code>bottom</code>), <code>angle</code>, and <code>font_size</code> position and orient the label.</p>
+<p>Arbitrary free-floating annotations (“no data” callouts not tied to a
+row) are <strong>not</strong> reachable from a spec today — every text mark is
+row-driven.</p>
+<h3 id="tree--dendrogram--network"><a class="header" href="#tree--dendrogram--network">Tree / dendrogram / network</a></h3>
+<p>Hierarchical and relational marks share a small layout package
+(<code>encode/marks/layout</code>) and decompose to existing primitives (path,
+point, rect, text) so the SVG renderer handles them without
+new geometry types.</p>
+<div class="table-wrapper">
+<table>
+<thead>
+<tr><th>Mark</th><th>When to use</th></tr>
+</thead>
+<tbody>
+<tr><td><code>tree</code></td><td>Rooted hierarchy (org charts, decision trees). Reingold-Tilford tidy layout.</td></tr>
+<tr><td><code>dendrogram</code></td><td>Clustering tree — tree variant with <code>link_shape: step</code> + <code>node_shape: none</code> defaults.</td></tr>
+<tr><td><code>network</code></td><td>Undirected / directed node-link diagram. Force-directed layout (deterministic seed).</td></tr>
+</tbody>
+</table>
+</div>
+<p>Channel bindings:</p>
+<ul>
+<li><code>source</code> — parent / from-node id field (required for tree/dendrogram/network).</li>
+<li><code>target</code> — child / to-node id field (required).</li>
+<li><code>value</code> — optional edge weight (network) / node size (tree).</li>
+<li><code>text</code> — optional per-node label. See <a href="#node-labels">Node labels</a>.</li>
+<li><code>color</code>, <code>fill</code>, <code>stroke</code>, <code>opacity</code>, <code>size</code> — standard mark props.</li>
+</ul>
+<p>Mark-def options:</p>
+<ul>
+<li><code>orient</code> — <code>vertical</code> (default) or <code>horizontal</code>; picks the direction
+the layout grows. See <a href="#orientation-markorient">Orientation</a>. <code>radial</code>
+is rejected (<code>PRISM_SPEC_046</code>).</li>
+<li><code>link_shape</code> — <code>step</code> (default), <code>curve</code>, <code>straight</code>.</li>
+<li><code>node_shape</code> — <code>circle</code> (default), <code>rect</code>, <code>none</code>.</li>
+<li><code>node_size</code> — base radius / side length (default 6).</li>
+<li><code>layout</code> (network) — <code>force</code> (default), <code>random</code>.</li>
+<li><code>iterations</code>, <code>link_distance</code>, <code>charge</code>, <code>seed</code> (network).</li>
+</ul>
+<p>Validate rules: <code>PRISM_SPEC_028</code> (missing source/target),
+<code>PRISM_SPEC_029</code> (multi-root tree). Encode-time:
+<code>PRISM_ENCODE_TREE_CYCLE</code>, <code>PRISM_ENCODE_NETWORK_NONFINITE</code>,
+<code>PRISM_WARN_NETWORK_CYCLE</code>.</p>
+<h4 id="node-labels"><a class="header" href="#node-labels">Node labels</a></h4>
+<p>Bind the <code>text</code> channel to label the nodes. Content resolves through
+the same path the <code>text</code> mark uses — <code>field</code> reads a column, <code>value</code>
+supplies a literal, <code>format</code> runs the result through the d3-format
+subset — so a label formats exactly as the equivalent text mark would.
+See <a href="encoding.html#on-a-graph-mark">Encoding › Text channel</a>.</p>
+<p>Labelling is <strong>opt-in</strong>. With no <code>text</code> channel these marks emit no
+label geometry at all, which is what keeps an unlabelled tree or
+network byte-identical to one drawn before labels existed.</p>
+<p>These marks are node-oriented while the channel is row-oriented, so a
+row’s label binds to the node named by that row’s <code>target</code> value (the
+node identity); the first row wins when a target repeats. A node that
+never appears as a <code>target</code> — the root of an edge-list hierarchy, a
+pure source in a network — has no row of its own and falls back to
+its id.</p>
+<p><strong>Where the label lands</strong> follows the classic tidy-tree convention: a
+label sits on the far side of its node from that node’s subtree, so it
+never collides with the links or the children below it.</p>
+<div class="table-wrapper">
+<table>
+<thead>
+<tr><th>Mark</th><th><code>orient</code></th><th>Internal node</th><th>Leaf</th></tr>
+</thead>
+<tbody>
+<tr><td><code>tree</code>, <code>dendrogram</code></td><td><code>vertical</code> (default)</td><td>Above the node, centred</td><td>Below the node, centred</td></tr>
+<tr><td><code>tree</code>, <code>dendrogram</code></td><td><code>horizontal</code></td><td>Left of the node, right-aligned</td><td>Right of the node, left-aligned</td></tr>
+<tr><td><code>network</code></td><td>n/a</td><td>Below the node, centred</td><td>Below the node, centred</td></tr>
+</tbody>
+</table>
+</div>
+<p>A force layout has no growth direction and no leaf / internal
+distinction, so every <code>network</code> label simply hangs under its node.</p>
+<p>The plot rect is inset by the estimated label band when labels are on,
+so the outermost labels (a vertical tree’s root and leaf row, a
+horizontal tree’s root and leaf column) stay inside the chart rather
+than running off the canvas. That inset is why turning labels on also
+moves the nodes.</p>
+<p><strong>Limitation:</strong> Prism runs no text-measurement pass. Label widths are
+estimated at 6px per character — the same standing approximation the
+axis <code>label_limit</code> and <code>label_overlap</code> heuristics use — so the inset is
+approximate for very wide glyphs, and sibling labels within one depth
+row are not collision-tested against each other. Hiding a label (the
+axis heuristic’s answer to an overlap) would lose a node’s identity, so
+graph labels are never dropped; give a crowded tree more room, shorter
+labels, or <code>orient: horizontal</code>.</p>
+<h3 id="bullet"><a class="header" href="#bullet">Bullet</a></h3>
+<p>The <code>bullet</code> mark is a compact KPI gauge (after Stephen Few’s bullet
+graph). It draws, back-to-front:</p>
+<ol>
+<li>qualitative <strong>band</strong> rects — graded background ranges (dark → light),</li>
+<li>the <strong>measure</strong> bar — the encoded data value (thick),</li>
+<li>an optional <strong>comparative</strong> bar — a secondary value, thinner overlay,</li>
+<li>an optional <strong>target</strong> tick — the value to beat.</li>
+</ol>
+<p>Unlike the spark family, <code>bullet</code> keeps its measure axis, and the
+measure-axis domain is widened to span the bands / target / comparative
+so none of them clip past the data range.</p>
+<p>Channel bindings:</p>
+<ul>
+<li>Horizontal (default): <code>x</code> is the quantitative measure, <code>y</code> is the
+nominal metric label.</li>
+<li>Vertical (<code>orientation: "vertical"</code>): <code>y</code> is the quantitative measure,
+<code>x</code> is the nominal metric label.</li>
+</ul>
+<p>The headline measure reads from row 0 of the measure field (a bullet is
+a single KPI readout).</p>
+<p>Mark-def options:</p>
+<ul>
+<li><code>bands</code> — ordered list of cumulative qualitative range bounds measured
+from zero, <strong>strictly ascending</strong> (e.g. <code>[150, 225, 300]</code>). Validated
+by <code>PRISM_SPEC_036</code>.</li>
+<li><code>target</code> — the reference value to beat. A literal number, or a string
+naming a data field resolved from row 0.</li>
+<li><code>comparative</code> — a secondary measure (e.g. prior period). Like <code>target</code>,
+a literal number or a data-field name.</li>
+<li><code>orientation</code> — <code>horizontal</code> (default) or <code>vertical</code>. Note the field
+name: <code>bullet</code> keeps its own <code>orientation</code> rather than the shared
+<code>orient</code>, because it is not a category/measure swap — a bullet is a
+single KPI readout whose bands, comparative bar and target tick all
+rotate together, and its default is <code>horizontal</code> where <code>orient</code>’s is
+<code>vertical</code>. Folding it into <code>orient</code> would silently flip every
+existing bullet. See <a href="#orientation-markorient">Orientation</a>.</li>
+</ul>
+<pre><code class="language-json">{
+  "mark": {
+    "type": "bullet",
+    "bands": [150, 225, 300],
+    "comparative": 240,
+    "target": 260
+  },
+  "encoding": {
+    "x": {"field": "actual", "type": "quantitative"},
+    "y": {"field": "metric", "type": "nominal"}
+  }
+}
+</code></pre>
+<p>Validate rule: <code>PRISM_SPEC_036</code> (bands strictly ascending).</p>
+<h3 id="progress"><a class="header" href="#progress">Progress</a></h3>
+<p>The <code>progress</code> mark draws <strong>one metric row per data row</strong>: a value bar
+sitting on a full-scale track, where the visible remainder of the track
+reads as “distance still to go”. It is the layout behind a metric-row
+panel — four labelled rows, each a bar against a 0–100 ceiling.</p>
+<p>It is the multi-row sibling of <a href="#bullet"><code>bullet</code></a>. <code>bullet</code> collapses
+its measure to row 0 — it is a single KPI readout — so a four-metric
+panel needs a <code>facet</code> wrapper, and facet labels its rows
+<code>"&lt;field&gt; = &lt;value&gt;"</code> with no format control. <code>progress</code> reads every
+row, and the row labels are simply the category axis’s tick labels.</p>
+<p>Two things make it more than a bar with a background rect:</p>
+<ul>
+<li><strong>The measure domain is mark-owned.</strong> <code>total</code> names the value the
+track runs to, and the measure scale is extended to reach it before
+the scale is built. The track therefore ends at the plot edge instead
+of running past it — the clipping <code>bullet</code> still suffers when a band
+bound sits above the data range.</li>
+<li><strong>The track is a separate scene mark.</strong> Each row emits a
+<code>progress-track-N</code> rect <em>and</em> a <code>progress-N</code> value rect, in that
+order, rather than one rect with a painted backdrop. That is what
+makes the track independently themeable and independently
+selectable in CSS. Both carry the row’s <code>data-prism-datum-row</code>
+back-reference, so a hover on the filled part of a row behaves like
+a hover on its remainder.</li>
+</ul>
+<p>Channel bindings:</p>
+<ul>
+<li>Horizontal (the default reading): <code>x</code> is the quantitative value, <code>y</code>
+is the nominal metric label.</li>
+<li>Vertical: <code>x</code> is the nominal label, <code>y</code> is the quantitative value.</li>
+</ul>
+<p>Orientation comes from the shared <a href="#orientation-markorient"><code>mark.orient</code></a>
+vocabulary — <code>progress</code> does <strong>not</strong> carry a per-mark orientation field
+the way <code>bullet</code> does. You rarely write it: a nominal <code>y</code> against a
+quantitative <code>x</code> already infers horizontal.</p>
+<p>Mark-def options:</p>
+<ul>
+<li><code>total</code> — the measure ceiling the track runs to. A literal number
+applies to every row; a string names a data field read <strong>per row</strong>, so
+each metric can carry its own maximum (a per-rep quota, say). Omit it
+and the track spans the data-derived domain instead. A literal must be
+positive (<code>PRISM_SPEC_061</code>).</li>
+<li><code>thickness</code> — the fraction of the category band a row occupies,
+centred in it. Defaults to <code>0.5</code>; must be greater than 0 and at most 1.</li>
+<li><code>corner_radius</code> — the standard mark-def field, applied to both the
+track and the value bar so they round together.</li>
+</ul>
+<p>A value above its row’s <code>total</code> overflows the track rather than being
+clipped — over-attainment stays visible.</p>
+<pre><code class="language-json">{
+  "mark": {"type": "progress", "total": 100, "corner_radius": 3, "thickness": 0.45},
+  "encoding": {
+    "x": {"field": "score", "type": "quantitative"},
+    "y": {"field": "metric", "type": "nominal"}
+  }
+}
+</code></pre>
+<p>The two halves are themed independently, through two keys rather than
+one (see <a href="themes.html#multi-element-marks">Themes: multi-element marks</a>):</p>
+<div class="table-wrapper">
+<table>
+<thead>
+<tr><th>Key</th><th>Styles</th></tr>
+</thead>
+<tbody>
+<tr><td><code>marks.progress</code></td><td>The value bar. <code>mark.fill</code> and a <code>color</code> channel still shadow it, in that order.</td></tr>
+<tr><td><code>marks.progress_track</code></td><td>The unfilled track. There is no <code>mark_def</code> equivalent — the track is styled through the theme.</td></tr>
+</tbody>
+</table>
+</div>
+<p>Both take the full <code>MarkStyle</code> shape, so a track can carry a stroke, an
+opacity or a pattern fill, not just a colour. Every bundled theme sets
+both, so a progress chart tracks light / dark / print with no per-chart
+configuration; a custom theme that sets neither falls back to its own
+grid colour for the track, which keeps it reading as chrome rather than
+as a second series.</p>
+<p>In the rendered SVG the halves carry distinct classes —
+<code>prism-mark-progress</code> and <code>prism-mark-progress-track</code> — so a stylesheet
+can scope to either. Marks are otherwise classed by geometry, and both
+of these are rects.</p>
+<p>Right-hand value and delta labels (“92.4”, “+14.3 vs category”) are not
+part of the mark — layer a <code>text</code> mark over it.</p>
+<p>Validate rule: <code>PRISM_SPEC_061</code> (both position channels bound;
+<code>thickness</code> in (0, 1]; a literal <code>total</code> positive).</p>
+<h3 id="image-and-path"><a class="header" href="#image-and-path">Image and path</a></h3>
+<p><code>image</code> and <code>path</code> are single-geometry escape hatches: each spec emits
+exactly one mark from a mark-def field rather than one mark per data
+row. They take no positional data series of their own — <code>encoding</code> may
+be left empty (<code>{}</code>).</p>
+<p><strong><code>image</code></strong> places a raster sprite at a position. Key fields:</p>
+<ul>
+<li><code>url</code> (string, required) — the image source, read from <code>mark_def.url</code>.
+Offline-first: only <code>data:</code> URLs (e.g. base64-encoded PNG) and
+relative paths are accepted; remote <code>http(s)</code> fetch is rejected at
+validate time by <code>PRISM_SPEC_016</code>. The string passes through verbatim
+to the rendered <code>&lt;image href&gt;</code>.</li>
+<li><code>size</code> (number) — side length in pixels. Images are square; defaults
+to <code>64</code>.</li>
+<li>Position — when both <code>x</code> and <code>y</code> channels are bound, the image anchors
+at the scaled value of row 0; with no position channels it lands at
+the plot region’s top-left quarter (a sensible single-decoration
+default).</li>
+</ul>
+<pre><code class="language-json">{
+  "mark": {"type": "image", "url": "data:image/png;base64,iVBOR...", "size": 64},
+  "encoding": {}
+}
+</code></pre>
+<p><strong><code>path</code></strong> draws a raw SVG path — the escape hatch for primitives Prism
+does not model natively. Key field:</p>
+<ul>
+<li><code>path</code> (string, required) — the SVG <code>d</code> string, read from
+<code>mark_def.path</code> and passed through untouched to the rendered
+<code>&lt;path d=...&gt;</code> (the renderer handles attribute escaping). An empty <code>d</code>
+is rejected by <code>PRISM_SPEC_017</code>.</li>
+</ul>
+<p>Standard style props (<code>fill</code>, <code>stroke</code>, <code>stroke_width</code>, <code>opacity</code>) apply.
+For a data-driven polyline, prefer <code>line</code> with <code>x</code>/<code>y</code> encodings.</p>
+<pre><code class="language-json">{
+  "mark": {"type": "path", "path": "M 100 100 L 200 100 L 150 200 Z", "fill": "#3b82f6"},
+  "encoding": {}
+}
+</code></pre>
+<p>Validate rules: <code>PRISM_SPEC_016</code> (image URL allowed), <code>PRISM_SPEC_017</code>
+(non-empty path <code>d</code>).</p>
+<h3 id="table"><a class="header" href="#table">Table</a></h3>
+<p><code>table</code> is an interactive, paginated data table (E1). It has no
+position channels — <code>encoding.columns[]</code> is the entire visual
+contract, and each entry is a standard channel binding (<code>field</code>,
+<code>type</code>, <code>aggregate</code>, <code>title</code>, <code>format</code>, …) plus an optional <code>mark</code>
+naming a sub-mark that renders that column’s cells (e.g. <code>sparkline</code>
+for an inline trend column) instead of formatted text.</p>
+<p>Mark-def options:</p>
+<ul>
+<li><code>page_size</code> — rows rendered per page. Defaults to <code>25</code> when unset
+(<code>spec.TablePageSizeDefault</code>).</li>
+</ul>
+<p>Column fields (<code>encoding.columns[]</code>, one object per column):</p>
+<ul>
+<li><code>field</code>, <code>type</code>, <code>aggregate</code>, <code>scale</code>, <code>title</code>, <code>format</code>, <code>bin</code>,
+<code>sort</code>, <code>value</code>, <code>condition</code> — same shape and meaning as any other
+channel encoding.</li>
+<li><code>mark</code> — optional sub-mark rendering this column’s cells (e.g.
+<code>"sparkline"</code>). Omit to render the column as formatted text.</li>
+</ul>
+<p><code>format</code> is a d3-format specifier from the
+<a href="encoding.html#table-columns">supported subset</a> and is applied to the
+column’s cell text at encode time. The raw value is kept alongside the
+formatted text, so a client-side header sort still compares numbers,
+not the formatted strings. A <code>format</code> on a column that also binds a
+<code>mark</code> has no text to shape and is reported as
+<code>PRISM_WARN_CHANNEL_INERT</code>.</p>
+<pre><code class="language-json">{
+  "mark": {"type": "table", "page_size": 50},
+  "encoding": {
+    "columns": [
+      {"field": "name", "type": "nominal", "title": "Account"},
+      {"field": "revenue", "type": "quantitative", "aggregate": "sum", "format": ",.0f"},
+      {"field": "trend", "type": "quantitative", "mark": "sparkline"}
+    ]
+  }
+}
+</code></pre>
+<p>Validate rule: <code>PRISM_SPEC_040</code> (<code>encoding.columns[]</code> required and
+non-empty). See <a href="#renderer-compatibility">Renderer compatibility</a>
+below for the <code>svg</code> vs <code>html</code> backend split, and the <a href="../gallery/index.html#table">gallery <code>table/</code>
+entries</a> for full worked examples
+(including a paginated plain-column table and a <code>sparkline</code>
+sub-mark column).</p>
+<h3 id="custom"><a class="header" href="#custom">Custom</a></h3>
+<p><code>custom</code> (E2) is the escape hatch for a visualization none of the
+built-in marks express: a consuming application registers its own
+render function under a name (<code>prism.RegisterCustomMark(name, renderer)</code>), and a spec references that name instead of describing
+geometry. Like <code>table</code>, it has no position channels — the mark-def
+<code>renderer</code> field is the entire visual contract, and <code>encoding</code> may be
+left empty (<code>{}</code>).</p>
+<p>Mark-def field:</p>
+<ul>
+<li><code>renderer</code> (string, required) — the name a <code>CustomRenderer</code> was
+registered under. Always a plain string key, never executable code
+— the spec JSON never carries the implementation itself (this
+preserves Prism’s no-expression-language invariant). Resolved
+against the active registry at render time, not decode time: an
+unregistered name is a render-time error
+(<code>PRISM_RENDER_CUSTOM_MARK_NOT_FOUND</code>), not a validate-time one.</li>
+</ul>
+<p>A registered renderer implements at least one of two Go interfaces
+(<code>prism.SVGCustomRenderer</code> / <code>prism.HTMLCustomRenderer</code> — thin
+re-exports of <code>github.com/frankbardon/prism/custommark</code>, the package
+that actually owns the registry), or is registered as a synchronous JS
+callback in the browser via <code>prism.registerCustomMark(name, fn)</code>. Both
+paths, the full SVG/HTML dual-method fallback matrix, and — most
+importantly — <strong>the security contract (the renderer author owns
+escaping row data and owns all script execution, not Prism)</strong> are
+covered in the <a href="../cookbook/custom-marks.html">Custom marks cookbook
+entry</a>.</p>
+<pre><code class="language-json">{
+  "mark": {"type": "custom", "renderer": "badge"},
+  "encoding": {}
+}
+</code></pre>
+<p>Errors: <code>PRISM_RENDER_CUSTOM_MARK_NOT_FOUND</code> (unregistered <code>renderer</code>
+name at render time, naming every currently-registered name in its
+details). See <a href="#renderer-compatibility">Renderer compatibility</a> below
+— unlike <code>table</code>, <code>custom</code> renders through <strong>both</strong> backends, since a
+renderer can implement <code>RenderSVG</code>, <code>RenderHTML</code>, or both.</p>
+<h2 id="style-properties"><a class="header" href="#style-properties">Style properties</a></h2>
+<p>Beyond <code>type</code>, a <code>mark_def</code> object carries the visual properties every
+mark is drawn with. They are spec-level constants — one value for the
+whole mark — as distinct from an encoding channel, which varies per
+row. Where a mark-def property and a theme <code>mark</code> token name the same
+thing, the <strong>mark def wins</strong>; see
+<a href="themes.html#mark-style-precedence">Themes: mark style precedence</a>.</p>
+<h3 id="paint"><a class="header" href="#paint">Paint</a></h3>
+<div class="table-wrapper">
+<table>
+<thead>
+<tr><th>Property</th><th>Applies to</th><th>Meaning</th></tr>
+</thead>
+<tbody>
+<tr><td><code>fill</code></td><td>filled marks</td><td>Fill color, <code>#RRGGBB</code> / <code>#RRGGBBAA</code>.</td></tr>
+<tr><td><code>stroke</code></td><td>all</td><td>Stroke color.</td></tr>
+<tr><td><code>stroke_width</code></td><td>all</td><td>Stroke width in pixels.</td></tr>
+<tr><td><code>stroke_dash</code></td><td>all stroked marks</td><td>Dash pattern, <code>[on, off, …]</code> pixels. Emits <code>stroke-dasharray</code>.</td></tr>
+<tr><td><code>opacity</code></td><td>all</td><td>Overall element opacity, <code>[0, 1]</code>.</td></tr>
+<tr><td><code>fill_opacity</code></td><td>filled marks</td><td>Fill-paint alpha, <code>[0, 1]</code>.</td></tr>
+<tr><td><code>stroke_opacity</code></td><td>stroked marks</td><td>Stroke-paint alpha, <code>[0, 1]</code>.</td></tr>
+<tr><td><code>corner_radius</code></td><td><code>bar</code> / <code>rect</code></td><td>Corner rounding in pixels.</td></tr>
+</tbody>
+</table>
+</div>
+<p><code>stroke_dash</code> is a whole-pattern override, not a merge: a mark def
+that names it replaces the theme <code>mark</code> block’s <code>stroke_dash</code> outright,
+and one that omits it keeps the theme’s. An empty array reads the same
+as an absent key, so to draw solid over a dashed theme token, drop the
+<code>stroke_dash</code> from the theme rather than writing <code>[]</code> in the spec. A
+pattern of all zeros is treated as unset — some renderers draw an
+all-zero dash as an invisible stroke rather than a solid one.</p>
+<p><code>opacity</code>, <code>fill_opacity</code> and <code>stroke_opacity</code> are <strong>independent and
+multiplicative</strong> — none overrides another. This matches Vega-Lite,
+whose canvas renderer computes the fill alpha as
+<code>opacity × (fillOpacity ?? 1)</code> and the stroke alpha as
+<code>opacity × (strokeOpacity ?? 1)</code>. Prism emits all three as separate
+SVG attributes (<code>opacity</code>, <code>fill-opacity</code>, <code>stroke-opacity</code>), which
+SVG composites the same way, so:</p>
+<pre><code class="language-json">{"mark": {"type": "bar", "opacity": 0.5, "fill_opacity": 0.5}}
+</code></pre>
+<p>paints a fill at an effective alpha of <code>0.25</code>, not <code>0.5</code>. Set
+<code>fill_opacity</code> alone when you want a translucent fill under a solid
+stroke; set <code>opacity</code> when you want the whole mark — fill, stroke and
+all — to fade together. An explicit <code>0</code> is honoured (a fully
+transparent paint), unlike an omitted property, which inherits.</p>
+<h3 id="clipping-clip"><a class="header" href="#clipping-clip">Clipping (<code>clip</code>)</a></h3>
+<p><code>clip</code> is the one mark-def property that is not a paint at all: it
+forces the <strong>plot-region clip</strong> on (<code>true</code>) or off (<code>false</code>).</p>
+<pre><code class="language-json">{"mark": {"type": "line", "clip": true}}
+</code></pre>
+<p>Omit it and the encoder decides: the clip is armed only when a position
+channel pins an explicit <code>scale.domain</code>, which is the one way a mark can
+land outside the plot rect. Because the clip bounds a plot rect rather
+than a single mark, a <code>layer</code> resolves it once for the whole stack — one
+<code>clip: true</code> arms it for every layer, and a <code>clip: false</code> otherwise
+disarms it for all of them. See
+<a href="encoding.html#rows-outside-the-domain--overflow-and-clip">Encoding: rows outside the domain</a>.</p>
+<h3 id="typography"><a class="header" href="#typography">Typography</a></h3>
+<p>Applies to <code>text</code> marks and to any mark that draws a text component.</p>
+<div class="table-wrapper">
+<table>
+<thead>
+<tr><th>Property</th><th>Meaning</th></tr>
+</thead>
+<tbody>
+<tr><td><code>font</code></td><td>Font family, e.g. <code>"Inter, system-ui, sans-serif"</code>.</td></tr>
+<tr><td><code>font_size</code></td><td>Glyph size in pixels.</td></tr>
+<tr><td><code>font_weight</code></td><td><code>"normal"</code> | <code>"bold"</code> | <code>"lighter"</code> | <code>"bolder"</code>, or a number (100–900).</td></tr>
+<tr><td><code>font_style</code></td><td><code>"normal"</code> | <code>"italic"</code> | <code>"oblique"</code>.</td></tr>
+<tr><td><code>align</code></td><td>Horizontal anchor — <code>"left"</code> | <code>"center"</code> | <code>"right"</code>.</td></tr>
+<tr><td><code>baseline</code></td><td>Vertical anchor — <code>"top"</code> | <code>"middle"</code> | <code>"bottom"</code> | <code>"alphabetic"</code>.</td></tr>
+<tr><td><code>angle</code></td><td>Rotation in degrees about the anchor point.</td></tr>
+<tr><td><code>dx</code>, <code>dy</code></td><td>Pixel offset from the anchor point.</td></tr>
+</tbody>
+</table>
+</div>
+<p><code>font_weight</code> normalises to a number in the Scene IR, since SVG’s
+<code>font-weight</code> attribute is numeric. The CSS keywords map to their
+computed values against the default inherited weight of 400:
+<code>normal</code> → 400, <code>bold</code> → 700, <code>bolder</code> → 700, <code>lighter</code> → 100.</p>
+<p><code>dx</code> / <code>dy</code> are applied <strong>after</strong> <code>angle</code>, in the rotated frame — so a
+rotated label nudged with <code>dy: -4</code> moves 4px along its own baseline
+normal, not straight up the page. This is Vega’s rule
+(<code>translate(x,y) rotate(a) translate(dx,dy)</code>) and is what makes
+<code>dx</code>/<code>dy</code> useful for lifting a label clear of the geometry it
+annotates:</p>
+<pre><code class="language-json">{
+  "mark": {"type": "text", "dy": -6, "font_weight": "bold", "font_style": "italic"},
+  "encoding": {
+    "x": {"field": "quarter", "type": "nominal"},
+    "y": {"field": "revenue", "type": "quantitative"},
+    "text": {"field": "revenue", "type": "quantitative"}
+## Orientation (`mark.orient`)
+
+A bar does not really have an "x axis" and a "y axis" — it has a
+**category** axis (the discrete band the bar sits in, which sets its
+thickness) and a **measure** axis (the continuous value, along which it
+grows from the data-zero baseline). Which physical axis plays which
+role is the mark's orientation.
+
+| `orient` | Category axis | Measure axis | Bars grow |
+|---|---|---|---|
+| `vertical` | `x` | `y` | up/down from a baseline at `y = 0` |
+| `horizontal` | `y` | `x` | right/left from a baseline at `x = 0` |
+
+The same split applies to every cartesian family, not just `bar` —
+a boxplot's band and whisker caps sit on the category axis while its
+quantiles walk the measure axis, an area's series runs along the
+category axis and fills to a baseline on the measure axis, and a tick
+draws a short segment along the measure axis at its category's centre.
+
+### Inference
+
+**You usually do not write `orient` at all.** It is inferred from
+whichever axis carries the discrete (band) scale, the same way
+Vega-Lite infers it:
+
+| `x` scale | `y` scale | Inferred |
+|---|---|---|
+| band | continuous | `vertical` |
+| continuous | band | `horizontal` |
+| band | band | `vertical` (ambiguous; the default wins) |
+| continuous | continuous | error — neither axis can host the category |
+
+The last row holds for the marks that *need* a band to sit in (`bar`,
+`rect`, `boxplot`, `violin`, `winloss`). `area` and `tick` position
+rows along an axis that is usually continuous or temporal, so two
+continuous axes are perfectly legal there and fall back to the mark's
+historic direction — `vertical` for `area`, `horizontal` for `tick`.
+An explicit `orient` still wins on those marks, and is the only way to
+draw a horizontal area.
+
+So a nominal `y` against a quantitative `x` already draws a horizontal
+bar chart:
+
+```json
+{
+  "mark": "bar",
+  "encoding": {
+    "y": {"field": "channel", "type": "nominal"},
+    "x": {"field": "delta",   "type": "quantitative"}
+  }
+}
+</code></pre>
+<p>An explicit <code>orient</code> <strong>overrides</strong> the inference. On a mark that needs
+a band it cannot invent one, though: <code>"orient": "horizontal"</code> against a
+continuous <code>y</code> fails with <code>PRISM_ENCODE_001</code> naming the axis that needs
+the band, rather than drawing something else and hoping you notice.</p>
+<p>Everything else about the mark is orientation-agnostic: the baseline,
+<code>corner_radius</code>, <code>color</code> grouping and the <code>x2</code>/<code>y2</code>
+<a href="encoding.html#span-channels">span channels</a> all behave the same in
+either direction. A negative value crosses the baseline the same way
+too — leftward instead of downward.</p>
+<p>Categories run in the same direction as every other Prism <code>y</code> scale:
+the first category sits at the <strong>bottom</strong> of a horizontal bar chart,
+not the top. Pin an explicit order with
+<code>{"scale": {"domain": [...]}}</code> when you want a different one.</p>
+<h3 id="which-marks-read-it"><a class="header" href="#which-marks-read-it">Which marks read it</a></h3>
+<div class="table-wrapper">
+<table>
+<thead>
+<tr><th>Mark</th><th>Meaning of <code>orient</code></th><th>Default</th><th>Needs a band on the category axis</th></tr>
+</thead>
+<tbody>
+<tr><td><code>bar</code>, <code>rect</code></td><td>Swaps the category and measure axes, as above.</td><td>inferred, else <code>vertical</code></td><td>yes</td></tr>
+<tr><td><code>progress</code></td><td>Swaps the category and measure axes, as above.</td><td>inferred, else <code>horizontal</code></td><td>yes</td></tr>
+<tr><td><code>boxplot</code>, <code>violin</code></td><td>Swaps the axes: the band holds the box / density fan, the measure axis the quantiles or samples.</td><td>inferred, else <code>vertical</code></td><td>yes</td></tr>
+<tr><td><code>winloss</code></td><td>Swaps the axes: the streak runs across the band and the equal-length bars grow either side of the zero baseline.</td><td>inferred, else <code>vertical</code></td><td>yes</td></tr>
+<tr><td><code>sparkbar</code></td><td>As <code>bar</code> — <code>sparkbar</code> is a thin wrapper over the bar encoder.</td><td>inferred, else <code>vertical</code></td><td>yes</td></tr>
+<tr><td><code>area</code>, <code>sparkarea</code></td><td>Moves the series axis and the fill baseline. A horizontal area runs bottom-to-top and fills to <code>x = 0</code>.</td><td><code>vertical</code></td><td>no</td></tr>
+<tr><td><code>tick</code></td><td>Moves the short segment to the other axis, centred in its category slot.</td><td>inferred, else <code>horizontal</code></td><td>no</td></tr>
+<tr><td><code>tree</code>, <code>dendrogram</code>, <code>network</code></td><td>The direction the layout grows — not a category/measure swap. It also picks the side <a href="#node-labels">node labels</a> sit on.</td><td><code>vertical</code></td><td>n/a</td></tr>
+<tr><td><code>bullet</code></td><td>Uses its own <code>orientation</code> field instead (see <a href="#bullet">Bullet</a>).</td><td><code>horizontal</code></td><td>n/a</td></tr>
+<tr><td><code>heatmap</code></td><td>Not implemented — a heatmap is banded on <strong>both</strong> axes, so there is no category/measure split to swap.</td><td>—</td><td>—</td></tr>
+<tr><td>everything else</td><td>Not implemented — <code>orient</code> is <strong>rejected</strong>, never ignored.</td><td>—</td><td>—</td></tr>
+</tbody>
+</table>
+</div>
+<p>Two shapes are worth calling out:</p>
+<ul>
+<li><code>y2</code> supplies an area’s explicit lower edge only while the area is
+vertical. On a horizontal area the fill measures along <code>x</code>, so a
+bound <code>y2</code> would be a second position on the series axis — that
+combination is rejected rather than quietly dropped.</li>
+<li>A horizontal <code>boxplot</code> or <code>violin</code> reads its <em>category</em> from <code>y</code> and
+its values from <code>x</code>, so swap the two channel bindings (or set
+<code>orient</code> explicitly) rather than only relabelling the axes.</li>
+</ul>
+<p><code>radial</code> is named by the vocabulary but implemented by no mark, so it
+is rejected too. For a radial reading reach for a polar mark (<code>arc</code> /
+<code>pie</code> / <code>donut</code>). Both rejections are <code>PRISM_SPEC_046</code> at validate
+time; the rule is <code>mark orient supported</code> in
+<a href="https://github.com/frankbardon/prism/blob/main/validate/RULES.md"><code>validate/RULES.md</code></a>.</p>
+<h2 id="interpolation-line-and-area-curves"><a class="header" href="#interpolation-line-and-area-curves">Interpolation (<code>line</code> and <code>area</code> curves)</a></h2>
+<p><code>mark.interpolate</code> selects how consecutive points are joined. It
+applies to the <code>line</code> and <code>area</code> families (<code>sparkline</code> and <code>sparkarea</code>
+inherit it, since they are thin wrappers over the same encoders).
+Default is <code>linear</code>.</p>
+<div class="table-wrapper">
+<table>
+<thead>
+<tr><th><code>interpolate</code></th><th>Shape</th></tr>
+</thead>
+<tbody>
+<tr><td><code>linear</code></td><td>Straight segments between points. The default.</td></tr>
+<tr><td><code>monotone</code></td><td>Monotone cubic spline (Fritsch–Carlson). Smooth, and provably never overshoots the data — the safe smoothing choice.</td></tr>
+<tr><td><code>step</code></td><td>Right-angle steps with the riser midway between each pair of x values.</td></tr>
+<tr><td><code>step-before</code></td><td>Right-angle steps with the riser at the <em>earlier</em> x — the value changes before it is reached.</td></tr>
+<tr><td><code>step-after</code></td><td>Right-angle steps with the riser at the <em>later</em> x — the value holds until the next point.</td></tr>
+<tr><td><code>cardinal</code></td><td>Cardinal spline through every point. Smoother than <code>monotone</code>, but it may overshoot.</td></tr>
+</tbody>
+</table>
+</div>
+<p><code>mark.tension</code> (0–1) parameterises <code>cardinal</code> only; every other method
+ignores it. <code>0</code> is the default and the loosest curve; <code>1</code> collapses the
+spline back to straight segments. Values outside the range are clamped.</p>
+<pre><code class="language-json">{
+  "mark": {"type": "line", "interpolate": "monotone", "stroke_width": 2},
+  "encoding": {
+    "x": {"field": "day",  "type": "temporal"},
+    "y": {"field": "load", "type": "quantitative"}
+  }
+}
+</code></pre>
+<h3 id="distribution-geometry"><a class="header" href="#distribution-geometry">Distribution geometry</a></h3>
+<div class="table-wrapper">
+<table>
+<thead>
+<tr><th>Property</th><th>Mark</th><th>Meaning</th></tr>
+</thead>
+<tbody>
+<tr><td><code>maxbins</code></td><td><code>histogram</code></td><td>Upper bound on the bin count. Omit for automatic bin selection.</td></tr>
+<tr><td><code>violin_resolution</code></td><td><code>violin</code></td><td>Kernel-density sample points per violin.</td></tr>
+</tbody>
+</table>
+</div>
+<h3 id="arc-geometry"><a class="header" href="#arc-geometry">Arc geometry</a></h3>
+<div class="table-wrapper">
+<table>
+<thead>
+<tr><th>Property</th><th>Meaning</th></tr>
+</thead>
+<tbody>
+<tr><td><code>inner_radius</code></td><td>Donut hole radius in pixels (absolute; wins over the ratio).</td></tr>
+<tr><td><code>inner_radius_ratio</code></td><td>Donut hole as a fraction of the outer radius, <code>[0, 1]</code>.</td></tr>
+<tr><td><code>outer_radius</code></td><td>Outer radius in pixels.</td></tr>
+<tr><td><code>pad_angle</code></td><td>Angular gap between neighbouring sectors, in <strong>radians</strong>.</td></tr>
+</tbody>
+</table>
+</div>
+<p><code>pad_angle</code> is the gap <em>between</em> two sectors, not the inset applied to
+one: each sector gives up half the pad at each of its two ends, so two
+adjacent sectors end up <code>pad_angle</code> radians apart. A sector narrower
+than <code>pad_angle</code> collapses to nothing rather than drawing backwards.</p>
+<p>Prism applies a single constant angular inset at every radius.
+d3-shape (and therefore Vega-Lite) varies the inset with radius so the
+<em>linear</em> gap stays constant from the inner to the outer edge; the two
+agree closely for a thin annulus and diverge for a full pie with a
+large pad. <code>pad_angle: 0.02</code> (about 1.15°) is a good starting point:</p>
+<pre><code class="language-json">{"mark": {"type": "donut", "pad_angle": 0.02, "inner_radius_ratio": 0.6}}
+</code></pre>
+<p>An <code>area</code> applies its curve to <strong>both</strong> boundaries — the upper edge and
+the reversed lower/baseline edge — so a band keeps parallel outlines
+rather than a curved top over a straight bottom. The short connector
+between the two edges is always a straight segment.</p>
+<p>That is what makes <code>area</code> the streamgraph mark: a centred stack
+(<code>"stack": "center"</code>, see
+<a href="encoding.html#centred-stacks-the-streamgraph">Encoding › Centred stacks</a>)
+hands each series a floating pair of edges, and a smooth
+<code>interpolate</code> carries both of them, so the ribbons read as one
+flowing stream. <code>bar</code> cannot take the centred offset — it is
+baseline-anchored geometry, and <code>PRISM_SPEC_053</code> says so rather than
+drawing detached columns.</p>
+<p>Geometry semantics match d3-shape’s <code>curveLinear</code>, <code>curveMonotoneX</code>,
+<code>curveStep</code>/<code>curveStepBefore</code>/<code>curveStepAfter</code> and
+<code>curveCardinal.tension(t)</code>, so a Prism curve and the equivalent
+Vega-Lite / d3 curve trace the same path.</p>
+<p><strong>Out of scope.</strong> The <code>basis</code> and <code>bundle</code> families and d3’s <code>-open</code> /
+<code>-closed</code> variants are not implemented and are rejected by
+<code>schema/v1/mark.schema.json</code> at validation time rather than silently
+falling back.</p>
+<p><strong>Rendering.</strong> <code>linear</code> lines emit <code>&lt;polyline points="…"&gt;</code>; every other
+interpolation emits <code>&lt;path d="…"&gt;</code> with the same <code>prism-mark-line</code>
+class, identity and style attributes. The split is intentional —
+<code>&lt;polyline&gt;</code> expresses a linear line exactly, and keeping it pins the
+byte shape of every committed linear golden and cross-impl fixture.
+Area marks were already <code>&lt;path&gt;</code> and stay so for every curve. All
+control points route through <code>render/precision.go</code>’s 3-decimal
+quantisation, so host Go, TinyGo-via-WASM and the browser bundle emit
+identical path data.</p>
+<h2 id="nulls-markinvalid"><a class="header" href="#nulls-markinvalid">Nulls (<code>mark.invalid</code>)</a></h2>
+<p>A row carrying a null in a scale-bound channel (<code>x</code> / <code>y</code>) cannot be
+positioned, and <code>mark.invalid</code> decides what happens to it.</p>
+<div class="table-wrapper">
+<table>
+<thead>
+<tr><th>Value</th><th>Effect</th></tr>
+</thead>
+<tbody>
+<tr><td><code>"filter"</code></td><td>Drop the row. Its category leaves the scale domain with it, so the axis never mentions it and a path closes over the hole. The default, and the only behaviour before v0.16.</td></tr>
+<tr><td><code>"break"</code></td><td>Keep the row. Its category holds its slot on the axis, no mark is drawn for it, and <code>line</code> / <code>area</code> split into separate segments either side of the gap.</td></tr>
+</tbody>
+</table>
+</div>
+<p>Supported by <code>line</code>, <code>area</code>, <code>point</code>, <code>bar</code>, <code>rule</code> and <code>text</code>. Any
+other mark <strong>rejects</strong> <code>"break"</code> with <code>PRISM_SPEC_062</code> rather than
+silently filtering instead — the polar, histogram, specialty and
+geographic families build their own geometry and never hand a raw field
+value to a scale, so neither mode means anything there.</p>
+<p>A lone measurement between two gaps is drawn as a dot, because a
+one-point path renders nothing and <code>"break"</code> must not hide a row the
+author asked to keep.</p>
+<p>See <a href="multi-source.html#nulls-at-encode-time">Nulls at encode time</a> for the
+full policy, including which channels are scale-bound and what happens
+when every row is null.</p>
+<h2 id="channel-allowlists"><a class="header" href="#channel-allowlists">Channel allowlists</a></h2>
+<p>Not every channel is valid for every mark — <code>theta</code> only makes sense
+on <code>arc</code>, <code>source</code>/<code>target</code> only on <code>sankey</code>, etc. The validator
+catches mismatches with <code>PRISM_SPEC_003</code>.</p>
+<h2 id="renderer-compatibility"><a class="header" href="#renderer-compatibility">Renderer compatibility</a></h2>
+<p>Every mark listed above renders through both Go backends
+(<code>render/svg</code> and <code>render/html</code> — see <a href="themes.html#rendering-backends">Themes: Rendering
+backends</a>); <code>render/html</code> reuses
+<code>render/svg</code>’s own emitters internally, so there is nothing
+mark-specific to opt into.</p>
+<p>The one exception is the <code>table</code> mark: it renders as DOM/CSS markup —
+sortable/paginated rows, row selection — with no SVG geometry
+equivalent. Requesting a top-level <code>table</code> mark via the <code>svg</code> backend
+fails with <code>PRISM_RENDER_MARK_UNSUPPORTED</code> naming the mark and
+backend, rather than silently emitting an empty <code>&lt;svg&gt;</code>; render it via
+the <code>html</code> backend instead. This restriction applies only to a
+<code>table</code> mark used directly — embedding a geometry-bearing mark (e.g.
+a <code>sparkline</code> column) inside a table’s cells is unaffected and
+renders normally via either backend (the <code>html</code> backend re-invokes
+<code>render/svg</code>’s own emitters for that one cell’s inline <code>&lt;svg&gt;</code>).</p>
+<p>The <code>html</code> backend’s <code>&lt;table&gt;</code> markup is inert until wired up with
+<code>static/vendor/prism/prism-table.mjs</code> (E1-S5): <code>installTableHandlers(root)</code>
+attaches header-click sort (by each column’s underlying field value —
+read from a <code>data-prism-sort-value</code> attribute stamped on every <code>&lt;td&gt;</code>,
+not the cell’s rendered display, so a <code>sparkline</code> column sorts by its
+numeric series rather than by its <code>&lt;svg&gt;</code> markup), client-side
+pagination (slices the already-rendered rows using <code>page_size</code>; no
+extra network/WASM round trip), and row-click selection (dispatches
+the same structured <code>prism:select</code> event other marks emit, keyed off
+the <code>data-prism-datum-row</code> attribute every <code>&lt;tr&gt;</code> carries). A host page
+that serves/mounts server- or CLI-produced <code>html</code>-backend output
+(<code>prism plot --format html</code>) imports <code>prism-table.mjs</code> directly and
+calls <code>installTableHandlers(root)</code> itself, independent of the
+<code>&lt;prism-chart&gt;</code>/WASM pipeline.</p>
+<p><code>&lt;prism-table&gt;</code> (E4-S2, registered in <code>prism-element.mjs</code> alongside
+<code>&lt;prism-chart&gt;</code>) is the live-in-browser counterpart: it renders a
+<code>spec</code>/<code>src</code> through <code>prism.renderHTML</code> (the WASM HTML backend bridge
+— see <a href="browser.html#render-backends-svg-vs-html">Browser: Render backends</a>)
+and calls <code>installTableHandlers</code> on the mounted result automatically,
+so a <code>table</code> mark is now live-renderable in the browser exactly like
+any other mark, just through the HTML backend instead of the SVG one.</p>
+<h2 id="worked-examples"><a class="header" href="#worked-examples">Worked examples</a></h2>
+<p>Every mark above has a fixture in the <a href="../gallery/index.html">gallery</a>,
+with one exception: <code>custom</code> has no gallery fixture, since rendering
+one requires a registered <code>CustomRenderer</code> implementation (Go code),
+not just a JSON spec — see the <a href="../cookbook/custom-marks.html">Custom marks
+cookbook</a> for worked, runnable examples
+instead. Start the gallery tour with:</p>
+<ul>
+<li><a href="../gallery/basic-marks/bar_basic.prism.json">bar_basic</a></li>
+<li><a href="../gallery/basic-marks/line_basic.prism.json">line_basic</a></li>
+<li><a href="../gallery/composite-marks/histogram.prism.json">histogram</a></li>
+<li><a href="../gallery/composite-marks/pie.prism.json">pie</a></li>
+<li><a href="../gallery/specialty-marks/sankey_user_flow.prism.json">sankey_user_flow</a></li>
+<li><a href="../gallery/table/table_revenue_trend.prism.json">table_revenue_trend</a> (<code>html</code> backend; renders a <code>sparkline</code> sub-mark column)</li>
+</ul>
+
+                    </main>
+
+                    <nav class="nav-wrapper" aria-label="Page navigation">
+                        <!-- Mobile navigation buttons -->
+                            <a rel="prev" href="../concepts/spec.html" class="mobile-nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
+                                <span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M41.4 233.4c-12.5 12.5-12.5 32.8 0 45.3l160 160c12.5 12.5 32.8 12.5 45.3 0s12.5-32.8 0-45.3L109.3 256 246.6 118.6c12.5-12.5 12.5-32.8 0-45.3s-32.8-12.5-45.3 0l-160 160z"/></svg></span>
+                            </a>
+
+                            <a rel="next prefetch" href="../concepts/encoding.html" class="mobile-nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                                <span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M278.6 233.4c12.5 12.5 12.5 32.8 0 45.3l-160 160c-12.5 12.5-32.8 12.5-45.3 0s-12.5-32.8 0-45.3L210.7 256 73.4 118.6c-12.5-12.5-12.5-32.8 0-45.3s32.8-12.5 45.3 0l160 160z"/></svg></span>
+                            </a>
+
+                        <div style="clear: both"></div>
+                    </nav>
+                </div>
+            </div>
+
+            <nav class="nav-wide-wrapper" aria-label="Page navigation">
+                    <a rel="prev" href="../concepts/spec.html" class="nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
+                        <span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M41.4 233.4c-12.5 12.5-12.5 32.8 0 45.3l160 160c12.5 12.5 32.8 12.5 45.3 0s12.5-32.8 0-45.3L109.3 256 246.6 118.6c12.5-12.5 12.5-32.8 0-45.3s-32.8-12.5-45.3 0l-160 160z"/></svg></span>
+                    </a>
+
+                    <a rel="next prefetch" href="../concepts/encoding.html" class="nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                        <span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M278.6 233.4c12.5 12.5 12.5 32.8 0 45.3l-160 160c-12.5 12.5-32.8 12.5-45.3 0s-12.5-32.8 0-45.3L210.7 256 73.4 118.6c-12.5-12.5-12.5-32.8 0-45.3s32.8-12.5 45.3 0l160 160z"/></svg></span>
+                    </a>
+            </nav>
+
+        </div>
+
+        <template id=fa-eye><span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 576 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M288 32c-80.8 0-145.5 36.8-192.6 80.6C48.6 156 17.3 208 2.5 243.7c-3.3 7.9-3.3 16.7 0 24.6C17.3 304 48.6 356 95.4 399.4C142.5 443.2 207.2 480 288 480s145.5-36.8 192.6-80.6c46.8-43.5 78.1-95.4 93-131.1c3.3-7.9 3.3-16.7 0-24.6c-14.9-35.7-46.2-87.7-93-131.1C433.5 68.8 368.8 32 288 32zM432 256c0 79.5-64.5 144-144 144s-144-64.5-144-144s64.5-144 144-144s144 64.5 144 144zM288 192c0 35.3-28.7 64-64 64c-11.5 0-22.3-3-31.6-8.4c-.2 2.8-.4 5.5-.4 8.4c0 53 43 96 96 96s96-43 96-96s-43-96-96-96c-2.8 0-5.6 .1-8.4 .4c5.3 9.3 8.4 20.1 8.4 31.6z"/></svg></span></template>
+        <template id=fa-eye-slash><span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M38.8 5.1C28.4-3.1 13.3-1.2 5.1 9.2S-1.2 34.7 9.2 42.9l592 464c10.4 8.2 25.5 6.3 33.7-4.1s6.3-25.5-4.1-33.7L525.6 386.7c39.6-40.6 66.4-86.1 79.9-118.4c3.3-7.9 3.3-16.7 0-24.6c-14.9-35.7-46.2-87.7-93-131.1C465.5 68.8 400.8 32 320 32c-68.2 0-125 26.3-169.3 60.8L38.8 5.1zM223.1 149.5C248.6 126.2 282.7 112 320 112c79.5 0 144 64.5 144 144c0 24.9-6.3 48.3-17.4 68.7L408 294.5c5.2-11.8 8-24.8 8-38.5c0-53-43-96-96-96c-2.8 0-5.6 .1-8.4 .4c5.3 9.3 8.4 20.1 8.4 31.6c0 10.2-2.4 19.8-6.6 28.3l-90.3-70.8zm223.1 298L373 389.9c-16.4 6.5-34.3 10.1-53 10.1c-79.5 0-144-64.5-144-144c0-6.9 .5-13.6 1.4-20.2L83.1 161.5C60.3 191.2 44 220.8 34.5 243.7c-3.3 7.9-3.3 16.7 0 24.6c14.9 35.7 46.2 87.7 93 131.1C174.5 443.2 239.2 480 320 480c47.8 0 89.9-12.9 126.2-32.5z"/></svg></span></template>
+        <template id=fa-copy><span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M502.6 70.63l-61.25-61.25C435.4 3.371 427.2 0 418.7 0H255.1c-35.35 0-64 28.66-64 64l.0195 256C192 355.4 220.7 384 256 384h192c35.2 0 64-28.8 64-64V93.25C512 84.77 508.6 76.63 502.6 70.63zM464 320c0 8.836-7.164 16-16 16H255.1c-8.838 0-16-7.164-16-16L239.1 64.13c0-8.836 7.164-16 16-16h128L384 96c0 17.67 14.33 32 32 32h47.1V320zM272 448c0 8.836-7.164 16-16 16H63.1c-8.838 0-16-7.164-16-16L47.98 192.1c0-8.836 7.164-16 16-16H160V128H63.99c-35.35 0-64 28.65-64 64l.0098 256C.002 483.3 28.66 512 64 512h192c35.2 0 64-28.8 64-64v-32h-47.1L272 448z"/></svg></span></template>
+        <template id=fa-play><span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 384 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M73 39c-14.8-9.1-33.4-9.4-48.5-.9S0 62.6 0 80V432c0 17.4 9.4 33.4 24.5 41.9s33.7 8.1 48.5-.9L361 297c14.3-8.7 23-24.2 23-41s-8.7-32.2-23-41L73 39z"/></svg></span></template>
+        <template id=fa-clock-rotate-left><span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M75 75L41 41C25.9 25.9 0 36.6 0 57.9V168c0 13.3 10.7 24 24 24H134.1c21.4 0 32.1-25.9 17-41l-30.8-30.8C155 85.5 203 64 256 64c106 0 192 86 192 192s-86 192-192 192c-40.8 0-78.6-12.7-109.7-34.4c-14.5-10.1-34.4-6.6-44.6 7.9s-6.6 34.4 7.9 44.6C151.2 495 201.7 512 256 512c141.4 0 256-114.6 256-256S397.4 0 256 0C185.3 0 121.3 28.7 75 75zm181 53c-13.3 0-24 10.7-24 24V256c0 6.4 2.5 12.5 7 17l72 72c9.4 9.4 24.6 9.4 33.9 0s9.4-24.6 0-33.9l-65-65V152c0-13.3-10.7-24-24-24z"/></svg></span></template>
+
+
+
+        <script>
+            window.playground_copyable = true;
+        </script>
+
+
+        <script src="../elasticlunr-ef4e11c1.min.js"></script>
+        <script src="../mark-09e88c2c.min.js"></script>
+        <script src="../searcher-09f2665d.js"></script>
+
+        <script src="../clipboard-1626706a.min.js"></script>
+        <script src="../highlight-abc7f01d.js"></script>
+        <script src="../book-609e4cb8.js"></script>
+
+        <!-- Custom JS scripts -->
+        <script src="../theme/version-dropdown-686abb3a.js"></script>
+
+
+
+    </div>
+    </body>
+</html>

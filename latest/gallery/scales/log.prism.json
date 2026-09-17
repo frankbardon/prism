@@ -1,0 +1,11 @@
+{
+  "$schema": "urn:prism:schema:v1:spec",
+  "data": {"name": "d", "values": [
+    {"x": "a", "y": 1.0}, {"x": "b", "y": 10.0}, {"x": "c", "y": 1000.0}
+  ]},
+  "mark": "bar",
+  "encoding": {
+    "x": {"field": "x", "type": "nominal"},
+    "y": {"field": "y", "type": "quantitative", "scale": {"type": "log", "base": 10}}
+  }
+}

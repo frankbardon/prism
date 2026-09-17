@@ -1,0 +1,19 @@
+{
+  "$schema": "urn:prism:schema:v1:spec",
+  "title": "Unmeasured period keeps its place",
+  "data": {
+    "values": [
+      {"period": "FY25 Q1", "nps": 31},
+      {"period": "FY25 Q2", "nps": 38},
+      {"period": "FY25 Q3", "nps": 42},
+      {"period": "FY25 Q4", "nps": null},
+      {"period": "FY26 Q1", "nps": 47},
+      {"period": "FY26 Q2", "nps": 51}
+    ]
+  },
+  "mark": {"type": "line", "invalid": "break", "stroke_width": 2},
+  "encoding": {
+    "x": {"field": "period", "type": "nominal", "axis": {"title": "Quarter"}},
+    "y": {"field": "nps", "type": "quantitative", "axis": {"title": "NPS"}}
+  }
+}

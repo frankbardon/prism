@@ -1,0 +1,18 @@
+{
+  "$schema": "urn:prism:schema:v1:spec",
+  "title": "Channel contribution (horizontal bar)",
+  "data": {
+    "name": "channel_contribution",
+    "values": [
+      {"channel": "paid_search", "delta": 0.42},
+      {"channel": "organic",     "delta": 0.71},
+      {"channel": "referral",    "delta": 0.18},
+      {"channel": "display",     "delta": -0.26}
+    ]
+  },
+  "mark": {"type": "bar", "orient": "horizontal"},
+  "encoding": {
+    "y": {"field": "channel", "type": "nominal"},
+    "x": {"field": "delta",   "type": "quantitative"}
+  }
+}
