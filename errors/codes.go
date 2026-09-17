@@ -1093,6 +1093,60 @@ var Codes = map[string]CodeMetadata{
 		},
 		SeeAlso: []string{"PRISM_WARN_NULL_DROPPED", "PRISM_ENCODE_NULL_ALL_ROWS", "PRISM_SPEC_046"},
 	},
+	"PRISM_SPEC_063": {
+		Code:    "PRISM_SPEC_063",
+		Message: `Offset channel "{{.Channel}}" is bound on {{.Path}}, which mark type {{.Mark}} cannot dodge.`,
+		Fixups: []string{
+			"`x_offset`" + ` / ` + "`y_offset`" + ` subdivide one category's band slot so the rows sharing that category are drawn side by side instead of on top of one another. Only these marks implement that geometry: {{.Allowed}}.`,
+			`Every other mark that seats itself in a band fills the slot with a single shape — a ` + "`tick`" + ` is one line, a ` + "`heatmap`" + ` cell one rect, a ` + "`boxplot`" + ` one summary of the whole category — so there is nothing to divide, and the binding is rejected rather than quietly ignored.`,
+			`Switch the mark to draw grouped columns: ` + "`{\"mark\": \"bar\", \"encoding\": {\"x\": {\"field\": \"month\", \"type\": \"ordinal\"}, \"y\": {\"aggregate\": \"sum\", \"field\": \"visits\", \"type\": \"quantitative\"}, \"x_offset\": {\"field\": \"channel\", \"type\": \"nominal\"}}}`" + `.`,
+			`To separate the series without dodging, drop the offset and split the chart instead — ` + "`facet`" + ` (or the ` + "`encoding.column`" + ` shorthand) gives each series its own panel, and ` + "`color`" + ` alone distinguishes them in place.`,
+		},
+		SeeAlso: []string{"PRISM_SPEC_064", "PRISM_SPEC_003"},
+	},
+	"PRISM_SPEC_064": {
+		Code:    "PRISM_SPEC_064",
+		Message: `Offset binding on {{.Path}} is incoherent: {{.Detail}}.`,
+		Fixups: []string{
+			`An offset subdivides a band slot, so it needs a band scale to subdivide. Bind the matching position channel to a discrete field — ` + "`x_offset`" + ` needs a banded ` + "`x`" + `, ` + "`y_offset`" + ` needs a banded ` + "`y`" + ` — e.g. ` + "`{\"x\": {\"field\": \"month\", \"type\": \"ordinal\"}, \"x_offset\": {\"field\": \"channel\", \"type\": \"nominal\"}}`" + `. A quantitative position channel resolves to a continuous scale, which has no slot to divide.`,
+			`Bind one offset channel, never both. A mark dodges along a single axis: the offset categories spread across the band on that axis while the measure runs along the other, so ` + "`x_offset`" + ` and ` + "`y_offset`" + ` together describe no geometry and neither one is applied.`,
+			`For a grid of one small chart per second dimension, use ` + "`facet`" + ` (or ` + "`encoding.row`" + ` + ` + "`encoding.column`" + `) rather than a second offset channel.`,
+		},
+		SeeAlso: []string{"PRISM_SPEC_063", "PRISM_SPEC_041", "PRISM_SPEC_007"},
+	},
+	"PRISM_SPEC_065": {
+		Code:    "PRISM_SPEC_065",
+		Message: `Channel "{{.Channel}}" declares an explicit stack beside offset channel "{{.Offset}}" on {{.Path}}; implicit stacking already steps aside for an offset on its own.`,
+		Fixups: []string{
+			`Remove the ` + "`stack`" + ` key — not the offset. Dodging still happens, because that is what the offset channel asks for. Stacking and dodging spend the same geometry on the same grouping (a stack accumulates the segments along the measure axis, a dodge spreads them across the category band), so Prism keeps the one the spec asks for explicitly instead of drawing half of each.`,
+			`A bar or area that would stack implicitly stops doing so the moment an offset is bound, so ` + "`{\"mark\": \"bar\", \"encoding\": {\"x\": {\"field\": \"month\", \"type\": \"ordinal\"}, \"y\": {\"aggregate\": \"sum\", \"field\": \"visits\", \"type\": \"quantitative\"}, \"color\": {\"field\": \"channel\", \"type\": \"nominal\"}, \"x_offset\": {\"field\": \"channel\", \"type\": \"nominal\"}}}`" + ` already draws grouped columns with no ` + "`stack`" + ` key written at all. This error fires only on a stack the author typed out.`,
+			`To keep the stack instead, drop the offset channel: ` + "`\"stack\": \"zero\"`" + ` for absolute totals, ` + "`\"stack\": \"normalize\"`" + ` for a 100% stacked bar.`,
+			`Prism does not combine the two on one mark, so a stack-within-each-dodged-group chart is built by composition — draw the dodged chart and split the stacking field out with ` + "`facet`" + `.`,
+		},
+		SeeAlso: []string{"PRISM_SPEC_053", "PRISM_SPEC_066", "PRISM_SPEC_063"},
+	},
+	"PRISM_SPEC_066": {
+		Code:    "PRISM_SPEC_066",
+		Message: `Offset channel "{{.Offset}}" and span channel "{{.Span}}" are bound on the same axis ({{.Axis}}) on {{.Path}}.`,
+		Fixups: []string{
+			`The clash is per axis, and only per axis. A span channel (` + "`x2`" + ` / ` + "`y2`" + `) states both ends of the mark along its own axis, which leaves the band slot on that axis with nothing to subdivide — the offset would be dropped and the mark drawn across the whole slot. The OTHER axis is untouched: ` + "`y2`" + ` together with ` + "`x_offset`" + ` is a legal ranged, dodged bar, and so is ` + "`x2`" + ` together with ` + "`y_offset`" + `.`,
+			`Drop the span on the offset's axis — keep ` + "`{\"x\": {\"field\": \"month\", \"type\": \"ordinal\"}, \"x_offset\": {\"field\": \"channel\", \"type\": \"nominal\"}}`" + ` and let each sub-band take its share of the slot.`,
+			`Or drop the offset and keep the explicit interval: the mark then spans exactly the range you gave it, and ` + "`color`" + ` distinguishes the series in place.`,
+			`To dodge one way and range the other, move the span to the opposite axis — ` + "`{\"x\": …, \"x_offset\": …, \"y\": …, \"y2\": …}`" + ` draws grouped floating bars.`,
+		},
+		SeeAlso: []string{"PRISM_SPEC_042", "PRISM_SPEC_043", "PRISM_SPEC_065"},
+	},
+	"PRISM_WARN_OFFSET_COLLISION": {
+		Code:    "PRISM_WARN_OFFSET_COLLISION",
+		Message: `{{.Count}} rows repeat an offset key already drawn — first repeat {{.Key}} — so their marks share one sub-band and overlap.`,
+		Fixups: []string{
+			`A sub-band is identified by the (category, offset) pair, so every row carrying the pair {{.Key}} lands on exactly the same rect and only the last one drawn stays visible. {{.Count}} rows were affected.`,
+			`Aggregate the measure so each pair yields one row, e.g. ` + "`{\"y\": {\"aggregate\": \"sum\", \"field\": \"visits\", \"type\": \"quantitative\"}}`" + ` — the synthetic group-by keeps the category field and the offset field, so the duplicates collapse into one bar per sub-band.`,
+			`If the repeated rows differ by a dimension the chart never names, name it: bind it on ` + "`detail`" + ` so it survives the group-by, or make it the offset field itself so each row claims a sub-band of its own.`,
+			`If the duplicates are unwanted, remove them before the chart sees them with a ` + "`filter`" + ` or an ` + "`aggregate`" + ` transform.`,
+		},
+		SeeAlso: []string{"PRISM_SPEC_064", "PRISM_WARN_NULL_DROPPED"},
+	},
 	"PRISM_SPEC_061": {
 		Code:    "PRISM_SPEC_061",
 		Message: `Progress mark structure is invalid: {{.Path}}.`,
