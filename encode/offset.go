@@ -5,6 +5,7 @@ import (
 	"sort"
 
 	"github.com/frankbardon/prism/encode/marks"
+	"github.com/frankbardon/prism/encode/scene"
 	prismerrors "github.com/frankbardon/prism/errors"
 	"github.com/frankbardon/prism/spec"
 	"github.com/frankbardon/prism/table"
@@ -231,4 +232,189 @@ func offsetSortDescending(v any, channel string) (bool, error) {
 		fmt.Sprintf("Offset channel %s declares a sort shape nothing reads.", channel),
 		map[string]any{"Field": "<" + channel + ">", "Source": "<sort>", "Available": "ascending, descending, asc, desc, [category, …]"},
 	)
+}
+
+// Duplicate sub-band keys (E2-S3).
+//
+// A sub-band is identified by the pair (category value, offset
+// value). Two rows carrying the same pair land on the same rect and
+// only the last one drawn stays visible — the marks still overlap,
+// which is the one thing binding an offset channel was supposed to
+// stop. Vega-Lite says nothing here. Saying nothing would reproduce,
+// one level down, the invisible failure this channel exists to
+// remove: an author binds the offset, sees bars still stacked on one
+// another, and has nothing to read.
+//
+// So it is reported, and nothing geometric changes. Both rects are
+// emitted exactly as before; the author gets a PRISM_WARN_OFFSET_COLLISION
+// on SceneDoc.Warnings naming how many rows repeated and one key that
+// did.
+//
+// It is unreachable once the measure channel aggregates: the
+// synthetic group-by injected in plan/build keeps both the category
+// field and the offset field, so each pair yields exactly one row.
+// Raw un-aggregated tables are the only place duplicates survive to
+// encode.
+
+// offsetCollisionWarning reports the rows of tbl that repeat a
+// (category, offset) pair an earlier row already claimed, or nil when
+// every pair is distinct.
+//
+// The category is read off the position channel the offset
+// subdivides — the same field encode/marks/span.go hands to the
+// parent band scale — so the key this names is exactly the key the
+// geometry keyed on. Rows masked out by mark.invalid: "break" are not
+// counted: a row that is never drawn cannot overlap one that is.
+func offsetCollisionWarning(enc *spec.Encoding, bind marks.OffsetBinding, tbl *table.Table, skip []bool, layerID string) *scene.Warning {
+	if enc == nil || tbl == nil || !bind.On(bind.Axis) {
+		return nil
+	}
+	catField := fieldOf(enc.X)
+	if bind.Axis == "y" {
+		catField = fieldOf(enc.Y)
+	}
+	if catField == "" {
+		return nil
+	}
+	catCol, ok := tbl.Column(catField)
+	if !ok {
+		return nil
+	}
+	offCol, ok := tbl.Column(bind.Field)
+	if !ok {
+		return nil
+	}
+	rows := tbl.NumRows()
+	if rows > catCol.Len() {
+		rows = catCol.Len()
+	}
+	if rows > offCol.Len() {
+		rows = offCol.Len()
+	}
+
+	seen := make(map[string]bool, rows)
+	count := 0
+	example := ""
+	for i := 0; i < rows; i++ {
+		if i < len(skip) && skip[i] {
+			continue
+		}
+		cat, off := offsetKeyString(catCol.ValueAt(i)), offsetKeyString(offCol.ValueAt(i))
+		// The NUL separator keeps ("a", "b\x00c") from colliding with
+		// ("a\x00b", "c") — a collision report that was itself a
+		// collision would be a poor advertisement.
+		key := cat + "\x00" + off
+		if seen[key] {
+			count++
+			if count == 1 {
+				example = offsetCollisionKey(catField, cat, bind.Field, off)
+			}
+			continue
+		}
+		seen[key] = true
+	}
+	if count == 0 {
+		return nil
+	}
+	return &scene.Warning{
+		Code:    scene.WarnOffsetCollision,
+		Layer:   layerID,
+		Message: offsetCollisionMessage(count, example),
+		Details: map[string]any{
+			"count":          count,
+			"key":            example,
+			"channel":        bind.Axis + "_offset",
+			"category_field": catField,
+			"offset_field":   bind.Field,
+		},
+	}
+}
+
+// offsetCollisionMessage is the one place the warning's prose lives,
+// so the per-layer emission and the collapsed whole-chart entry
+// cannot word the same fact two ways.
+func offsetCollisionMessage(count int, key string) string {
+	rows, repeat := "rows", "repeat"
+	if count == 1 {
+		rows, repeat = "row", "repeats"
+	}
+	return fmt.Sprintf(
+		"%d %s %s an offset key already drawn — first repeat %s — so their marks share one sub-band and overlap.",
+		count, rows, repeat, key)
+}
+
+// offsetCollisionKey renders a key an author can read against what
+// they wrote: `quarter=Q1, series=Nike`, never a struct dump.
+func offsetCollisionKey(catField, cat, offField, off string) string {
+	return catField + "=" + cat + ", " + offField + "=" + off
+}
+
+// offsetKeyString coerces a cell to its sub-band key. Every value is
+// stringified rather than only strings, the way detailKeyOf does:
+// a category or offset column is frequently a numeric id, and
+// bucketing all of those together would report collisions that the
+// geometry never had.
+func offsetKeyString(v any) string {
+	switch t := v.(type) {
+	case nil:
+		return "null"
+	case string:
+		return t
+	default:
+		return fmt.Sprintf("%v", t)
+	}
+}
+
+// collapseOffsetCollisions folds every offset-collision warning in
+// warnings into a single entry carrying the total repeat count and
+// the first example key.
+//
+// One per chart, not one per cell. A composition encodes one scene
+// per facet / repeat / concat cell and one mark set per layer, and
+// each of those resolves its own offset binding off its own table —
+// which is right, because a collision is a property of the rows that
+// cell actually draws. But the author wrote one chart, and N
+// identically-worded warnings for N cells is noise that trains them
+// to skip the whole warning block. So the leaves report and the top
+// of the tree collapses, the same split Encode / encodeLeaf already
+// uses for the inert-field pass.
+func collapseOffsetCollisions(warnings []scene.Warning) []scene.Warning {
+	first := -1
+	total := 0
+	for i, w := range warnings {
+		if w.Code != scene.WarnOffsetCollision {
+			continue
+		}
+		if first < 0 {
+			first = i
+		}
+		if n, ok := w.Details["count"].(int); ok {
+			total += n
+		}
+	}
+	if first < 0 || total == 0 {
+		return warnings
+	}
+	merged := warnings[first]
+	key, _ := merged.Details["key"].(string)
+	details := make(map[string]any, len(merged.Details))
+	for k, v := range merged.Details {
+		details[k] = v
+	}
+	details["count"] = total
+	merged.Details = details
+	merged.Message = offsetCollisionMessage(total, key)
+
+	out := make([]scene.Warning, 0, len(warnings))
+	for i, w := range warnings {
+		switch {
+		case i == first:
+			out = append(out, merged)
+		case w.Code == scene.WarnOffsetCollision:
+			// Already folded into merged.
+		default:
+			out = append(out, w)
+		}
+	}
+	return out
 }

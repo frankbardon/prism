@@ -40,6 +40,7 @@ func EncodeComposite(s *spec.Spec, composite *plan.CompositeDAG, childTables []m
 		return nil, err
 	}
 	doc.Warnings = append(doc.Warnings, InertFieldWarnings(s)...)
+	doc.Warnings = collapseOffsetCollisions(doc.Warnings)
 	narrowDocCSS(doc, s, opts)
 	return doc, nil
 }
@@ -423,6 +424,13 @@ func encodeLayerComposite(s *spec.Spec, composite *plan.CompositeDAG, childTable
 		offsetBind, err := resolveOffsetBinding(childEnc, lc.tbl, toMarkScale(xScale), toMarkScale(yScale))
 		if err != nil {
 			return nil, err
+		}
+		// Duplicate (category, offset) keys are a property of the rows
+		// THIS layer draws, so they are detected here, per layer. The
+		// top of the tree folds the reports into one (E2-S3).
+		if offWarn := offsetCollisionWarning(childEnc, offsetBind, lc.tbl, skipRows,
+			fmt.Sprintf("layer-%d", lc.idx)); offWarn != nil {
+			warnings = append(warnings, *offWarn)
 		}
 
 		markInputs := marks.Inputs{

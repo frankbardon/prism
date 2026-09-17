@@ -45,6 +45,23 @@ const (
 	// error (PRISM_ENCODE_NULL_ALL_ROWS), not a warning.
 	WarnNullDropped = "PRISM_WARN_NULL_DROPPED"
 
+	// WarnOffsetCollision (E2-S3) fires when two or more rows share
+	// BOTH the category value and the offset value an x_offset /
+	// y_offset binding dodges by. A sub-band is identified by that
+	// pair, so the repeats land on exactly the same rect and only the
+	// last one drawn stays visible. Both rects are still emitted and
+	// the geometry is untouched — this names the overlap rather than
+	// hiding it, because a chart whose whole point is that bars stop
+	// overlapping must not go on overlapping in silence.
+	//
+	// It cannot fire when the measure channel aggregates: the
+	// synthetic group-by keeps the category field and the offset
+	// field, so the pair is unique by construction. Raw,
+	// un-aggregated tables are the only place it is reachable.
+	// Details carry the repeat count, an example key, and the
+	// channel / field names it was read from.
+	WarnOffsetCollision = "PRISM_WARN_OFFSET_COLLISION"
+
 	// The E7-S1 inert-field family. Each fires when a spec key
 	// decodes cleanly, passes validation, and then reaches no
 	// consumer — the silent no-op this effort exists to eliminate.

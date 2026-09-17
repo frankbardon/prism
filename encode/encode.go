@@ -94,6 +94,7 @@ func Encode(s *spec.Spec, tables map[plan.NodeID]*table.Table, tipID plan.NodeID
 		return nil, err
 	}
 	doc.Warnings = append(doc.Warnings, InertFieldWarnings(s)...)
+	doc.Warnings = collapseOffsetCollisions(doc.Warnings)
 	narrowDocCSS(doc, s, opts)
 	return doc, nil
 }
@@ -451,6 +452,12 @@ func encodeLeaf(s *spec.Spec, tables map[plan.NodeID]*table.Table, tipID plan.No
 	offsetBind, err := resolveOffsetBinding(enc, tbl, toMarkScale(xScale), toMarkScale(yScale))
 	if err != nil {
 		return nil, err
+	}
+	// Rows sharing both a category and an offset value land on the
+	// same sub-band and still overlap (E2-S3). Name it; draw it
+	// unchanged.
+	if offWarn := offsetCollisionWarning(enc, offsetBind, tbl, skipRows, "layer-0"); offWarn != nil {
+		warnings = append(warnings, *offWarn)
 	}
 
 	markInputs := marks.Inputs{
