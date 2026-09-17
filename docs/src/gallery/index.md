@@ -1,6 +1,6 @@
 # Prism Gallery
 
-126 fixture specs across 18 categories. Each entry pairs a `*.prism.json`
+129 fixture specs across 18 categories. Each entry pairs a `*.prism.json`
 spec with a rendered `*.svg`. Browse the source to learn the spec
 shapes; open the SVGs to see what they render. The `table/` fixtures
 are one exception — a top-level `table` mark renders only through
@@ -38,6 +38,8 @@ For live interactive rendering in a browser, see [`live.html`](live.html).
 | [area_horizontal](basic-marks/area_horizontal.prism.json) | <img src="basic-marks/area_horizontal.svg" width="240"> |
 | [tick_strip_horizontal](basic-marks/tick_strip_horizontal.prism.json) | <img src="basic-marks/tick_strip_horizontal.svg" width="240"> |
 | [streamgraph](basic-marks/streamgraph.prism.json) | <img src="basic-marks/streamgraph.svg" width="240"> |
+| [grouped_bar](basic-marks/grouped_bar.prism.json) | <img src="basic-marks/grouped_bar.svg" width="240"> |
+| [grouped_bar_horizontal](basic-marks/grouped_bar_horizontal.prism.json) | <img src="basic-marks/grouped_bar_horizontal.svg" width="240"> |
 
 ## Composite marks
 
@@ -169,6 +171,7 @@ source.
 | [filter_structured](transforms/filter_structured.prism.json) | <img src="transforms/filter_structured.svg" width="240"> |
 | [calculate_structured](transforms/calculate_structured.prism.json) | <img src="transforms/calculate_structured.svg" width="240"> |
 | [stack_explicit](transforms/stack_explicit.prism.json) | <img src="transforms/stack_explicit.svg" width="240"> |
+| [unpivot_grouped_bar](transforms/unpivot_grouped_bar.prism.json) | <img src="transforms/unpivot_grouped_bar.svg" width="240"> |
 
 ## Scales
 

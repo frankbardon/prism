@@ -95,9 +95,17 @@ type Inputs struct {
 	// and lands on the base channel's axis. A zero Channel means "no
 	// span bound", which keeps every mark on its historic
 	// baseline-anchored geometry. See span.go.
-	X2    Channel
-	Y2    Channel
-	Color *ColorChannel
+	X2 Channel
+	Y2 Channel
+	// Offset (E1-S4) is the resolved x_offset / y_offset binding: the
+	// column whose distinct values subdivide a category's band slot,
+	// plus the nested band scale that maps one of those values to a
+	// signed displacement inside that slot. The zero value means "no
+	// offset bound" — the X2 / Y2 precedent — and reduces the band
+	// arithmetic in rectAxisExtent to exactly what it was before the
+	// channel existed. See offset.go.
+	Offset OffsetBinding
+	Color  *ColorChannel
 	// Detail (E5-S1) carries the encoding.detail binding as an
 	// ordered list of table field names. Detail is a pure grouping
 	// channel: it partitions a mark's rows into separate series

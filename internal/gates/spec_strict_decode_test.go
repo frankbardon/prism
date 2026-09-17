@@ -99,6 +99,11 @@ func strictDecodeProbes() map[string]strictProbe {
 			unknown: `{"field": "a", "type": "quantitative", "zzz_unknown": 1}`,
 			decode:  func(b []byte) error { return new(spec.OrderChannel).UnmarshalJSON(b) },
 		},
+		"OffsetChannel": {
+			valid:   `{"field": "a", "type": "nominal", "sort": "descending"}`,
+			unknown: `{"field": "a", "type": "nominal", "sort": "descending", "zzz_unknown": 1}`,
+			decode:  func(b []byte) error { return new(spec.OffsetChannel).UnmarshalJSON(b) },
+		},
 		"DetailChannel": {
 			valid:   `{"field": "a", "type": "nominal"}`,
 			unknown: `{"field": "a", "type": "nominal", "zzz_unknown": 1}`,

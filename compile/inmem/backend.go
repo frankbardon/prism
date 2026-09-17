@@ -32,9 +32,26 @@ type Backend struct{}
 // do not matter.
 func New() *Backend { return &Backend{} }
 
-// Compile dispatches one node to its per-op helper. Unsupported node
-// kinds (Join, Union, Pivot, Unpivot — deferred to P07/P09/P10)
-// return PRISM_COMPILE_001 so behaviour matches the P03 stubs.
+// Compile dispatches one node to the in-memory helper that executes
+// it. The switch covers the node kinds that migrated to this backend
+// seam — it is NOT a capability list, and a transform's executability
+// must never be inferred from it.
+//
+// A node absent from the switch may execute perfectly well through its
+// own Execute body: JoinNode and UnionNode do exactly that
+// (plan/nodes/join_execute.go, plan/nodes/union_execute.go), and
+// plan.Execute calls node.Execute directly, so they never needed to
+// move here. Reading this switch as the set of supported transforms is
+// how `join` and `union` came to be described as unimplemented when
+// both run fine.
+//
+// PivotNode is the one node kind that genuinely has no executor, and
+// the `pivot` transform behind it is refused at validate with
+// PRISM_SPEC_067 before a plan is ever built. The authority on what
+// actually runs is internal/gates/transform_executable_sync_test.go,
+// which drives every transform end to end through the real planner and
+// this backend rather than trusting any stated list — this comment
+// included.
 func (b *Backend) Compile(ctx context.Context, node plan.Node, ins []*table.Table) (*table.Table, error) {
 	if err := ctx.Err(); err != nil {
 		return nil, err
@@ -66,19 +83,27 @@ func (b *Backend) Compile(ctx context.Context, node plan.Node, ins []*table.Tabl
 		return executeRegression(ctx, n, ins)
 	case *nodes.StackNode:
 		return executeStack(ctx, n, ins)
+	case *nodes.UnpivotNode:
+		return executeUnpivot(ctx, n, ins)
 	}
 	return nil, notImplemented(node)
 }
 
-// notImplemented mirrors the PRISM_COMPILE_001 shape the P03 stubs
-// emit so backend-routed calls fail the same way until a real impl
-// lands. Carries the concrete node kind for the diagnostic.
+// notImplemented is the PRISM_COMPILE_001 a node raises when it
+// reaches this backend and no helper above claims it. It carries the
+// concrete node kind for the diagnostic.
+//
+// The NodeType + Phase context pair is the typed signature
+// internal/gates/transform_executable_sync_test.go matches on: it tells
+// a genuine missing implementation apart from plan.Execute's codeFor,
+// which stamps PRISM_COMPILE_001 on any node error carrying no PRISM_*
+// code of its own. Both keys must stay.
 func notImplemented(node plan.Node) error {
 	kind := fmt.Sprintf("%T", node)
 	return prismerrors.New(
 		"PRISM_COMPILE_001",
-		fmt.Sprintf("Node type %s is not implemented yet (lands in a later phase).", kind),
-		map[string]any{"NodeType": kind, "Phase": "P07+"},
+		fmt.Sprintf("Node type %s has no execution implementation.", kind),
+		map[string]any{"NodeType": kind, "Phase": "unimplemented"},
 	)
 }
 

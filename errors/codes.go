@@ -146,12 +146,14 @@ var Codes = map[string]CodeMetadata{
 	},
 	"PRISM_COMPILE_001": {
 		Code:    "PRISM_COMPILE_001",
-		Message: `Node type {{.NodeType}} is not implemented yet (lands in {{.Phase}}).`,
+		Message: `Plan node {{.NodeType}} has no execution implementation.`,
 		Fixups: []string{
-			`This node is a P03 placeholder; the real Execute body ships in {{.Phase}}.`,
-			`Until then the DAG builds and the rest of the pipeline runs — only this node fails.`,
-			`Track progress: ` + "`prism errors lookup PRISM_COMPILE_001`" + ` or .planning/ROADMAP.md.`,
+			`The DAG built and every other node ran — this one alone failed, so the rest of the plan diagnostic is trustworthy. Inspect it with ` + "`prism plan --format json`" + `.`,
+			"`PivotNode`" + ` is the only node kind that still reaches this from an ordinary spec, and the ` + "`pivot`" + ` transform behind it is now refused at validate as PRISM_SPEC_067 before a plan is ever built. Use ` + "`crosstab`" + ` for the same long → wide reshape, or do the reshape upstream and hand Prism the finished rows.`,
+			`Any other node kind here means a transform was wired only halfway: executing a node needs both an implementation (a compile/inmem executor, or an Execute body on the node itself) AND, for the backend-routed kinds, the SetBackend wiring that reaches it. An executor with no wiring is unreachable and the node fails exactly like an unimplemented one.`,
+			`This code is also the catch-all plan.Execute stamps on a node error that carries no PRISM_* code of its own, so a message that does not read as "not implemented" is an untyped failure inside that node — the node id in the diagnostic names it.`,
 		},
+		SeeAlso: []string{"PRISM_SPEC_067", "PRISM_COMPILE_002"},
 	},
 	"PRISM_COMPILE_002": {
 		Code:    "PRISM_COMPILE_002",
@@ -1092,6 +1094,82 @@ var Codes = map[string]CodeMetadata{
 			`Leave ` + "`invalid`" + ` off to take the default. Nulls in a NON-scale-bound channel (` + "`color`" + `, ` + "`text`" + `, ` + "`tooltip`" + `, ` + "`detail`" + `) never remove a mark under either mode.`,
 		},
 		SeeAlso: []string{"PRISM_WARN_NULL_DROPPED", "PRISM_ENCODE_NULL_ALL_ROWS", "PRISM_SPEC_046"},
+	},
+	"PRISM_SPEC_063": {
+		Code:    "PRISM_SPEC_063",
+		Message: `Offset channel "{{.Channel}}" is bound on {{.Path}}, which mark type {{.Mark}} cannot dodge.`,
+		Fixups: []string{
+			"`x_offset`" + ` / ` + "`y_offset`" + ` subdivide one category's band slot so the rows sharing that category are drawn side by side instead of on top of one another. Only these marks implement that geometry: {{.Allowed}}.`,
+			`Every other mark that seats itself in a band fills the slot with a single shape — a ` + "`tick`" + ` is one line, a ` + "`heatmap`" + ` cell one rect, a ` + "`boxplot`" + ` one summary of the whole category — so there is nothing to divide, and the binding is rejected rather than quietly ignored.`,
+			`Switch the mark to draw grouped columns: ` + "`{\"mark\": \"bar\", \"encoding\": {\"x\": {\"field\": \"month\", \"type\": \"ordinal\"}, \"y\": {\"aggregate\": \"sum\", \"field\": \"visits\", \"type\": \"quantitative\"}, \"x_offset\": {\"field\": \"channel\", \"type\": \"nominal\"}}}`" + `.`,
+			`To separate the series without dodging, drop the offset and split the chart instead — ` + "`facet`" + ` (or the ` + "`encoding.column`" + ` shorthand) gives each series its own panel, and ` + "`color`" + ` alone distinguishes them in place.`,
+		},
+		SeeAlso: []string{"PRISM_SPEC_064", "PRISM_SPEC_003"},
+	},
+	"PRISM_SPEC_064": {
+		Code:    "PRISM_SPEC_064",
+		Message: `Offset binding on {{.Path}} is incoherent: {{.Detail}}.`,
+		Fixups: []string{
+			`An offset subdivides a band slot, so it needs a band scale to subdivide. Bind the matching position channel to a discrete field — ` + "`x_offset`" + ` needs a banded ` + "`x`" + `, ` + "`y_offset`" + ` needs a banded ` + "`y`" + ` — e.g. ` + "`{\"x\": {\"field\": \"month\", \"type\": \"ordinal\"}, \"x_offset\": {\"field\": \"channel\", \"type\": \"nominal\"}}`" + `. A quantitative position channel resolves to a continuous scale, which has no slot to divide.`,
+			`Bind one offset channel, never both. A mark dodges along a single axis: the offset categories spread across the band on that axis while the measure runs along the other, so ` + "`x_offset`" + ` and ` + "`y_offset`" + ` together describe no geometry and neither one is applied.`,
+			`For a grid of one small chart per second dimension, use ` + "`facet`" + ` (or ` + "`encoding.row`" + ` + ` + "`encoding.column`" + `) rather than a second offset channel.`,
+		},
+		SeeAlso: []string{"PRISM_SPEC_063", "PRISM_SPEC_041", "PRISM_SPEC_007"},
+	},
+	"PRISM_SPEC_065": {
+		Code:    "PRISM_SPEC_065",
+		Message: `Channel "{{.Channel}}" declares an explicit stack beside offset channel "{{.Offset}}" on {{.Path}}; implicit stacking already steps aside for an offset on its own.`,
+		Fixups: []string{
+			`Remove the ` + "`stack`" + ` key — not the offset. Dodging still happens, because that is what the offset channel asks for. Stacking and dodging spend the same geometry on the same grouping (a stack accumulates the segments along the measure axis, a dodge spreads them across the category band), so Prism keeps the one the spec asks for explicitly instead of drawing half of each.`,
+			`A bar or area that would stack implicitly stops doing so the moment an offset is bound, so ` + "`{\"mark\": \"bar\", \"encoding\": {\"x\": {\"field\": \"month\", \"type\": \"ordinal\"}, \"y\": {\"aggregate\": \"sum\", \"field\": \"visits\", \"type\": \"quantitative\"}, \"color\": {\"field\": \"channel\", \"type\": \"nominal\"}, \"x_offset\": {\"field\": \"channel\", \"type\": \"nominal\"}}}`" + ` already draws grouped columns with no ` + "`stack`" + ` key written at all. This error fires only on a stack the author typed out.`,
+			`To keep the stack instead, drop the offset channel: ` + "`\"stack\": \"zero\"`" + ` for absolute totals, ` + "`\"stack\": \"normalize\"`" + ` for a 100% stacked bar.`,
+			`Prism does not combine the two on one mark, so a stack-within-each-dodged-group chart is built by composition — draw the dodged chart and split the stacking field out with ` + "`facet`" + `.`,
+		},
+		SeeAlso: []string{"PRISM_SPEC_053", "PRISM_SPEC_066", "PRISM_SPEC_063"},
+	},
+	"PRISM_SPEC_066": {
+		Code:    "PRISM_SPEC_066",
+		Message: `Offset channel "{{.Offset}}" and span channel "{{.Span}}" are bound on the same axis ({{.Axis}}) on {{.Path}}.`,
+		Fixups: []string{
+			`The clash is per axis, and only per axis. A span channel (` + "`x2`" + ` / ` + "`y2`" + `) states both ends of the mark along its own axis, which leaves the band slot on that axis with nothing to subdivide — the offset would be dropped and the mark drawn across the whole slot. The OTHER axis is untouched: ` + "`y2`" + ` together with ` + "`x_offset`" + ` is a legal ranged, dodged bar, and so is ` + "`x2`" + ` together with ` + "`y_offset`" + `.`,
+			`Drop the span on the offset's axis — keep ` + "`{\"x\": {\"field\": \"month\", \"type\": \"ordinal\"}, \"x_offset\": {\"field\": \"channel\", \"type\": \"nominal\"}}`" + ` and let each sub-band take its share of the slot.`,
+			`Or drop the offset and keep the explicit interval: the mark then spans exactly the range you gave it, and ` + "`color`" + ` distinguishes the series in place.`,
+			`To dodge one way and range the other, move the span to the opposite axis — ` + "`{\"x\": …, \"x_offset\": …, \"y\": …, \"y2\": …}`" + ` draws grouped floating bars.`,
+		},
+		SeeAlso: []string{"PRISM_SPEC_042", "PRISM_SPEC_043", "PRISM_SPEC_065"},
+	},
+	"PRISM_SPEC_067": {
+		Code:    "PRISM_SPEC_067",
+		Message: `Transform "{{.Transform}}" at {{.Path}} is accepted by the spec grammar but no backend can execute it.`,
+		Fixups: []string{
+			"`{{.Transform}}`" + ` decodes, passes shape validation and builds a plan node, but nothing implements that node's execution. Left alone it fails later with PRISM_COMPILE_001 naming an internal node kind you never wrote, so the rejection happens here instead: validate does not call a spec valid when the engine cannot run it.`,
+			`For ` + "`pivot`" + ` (long → wide) use ` + "`crosstab`" + `, which builds the same wide contingency shape and does execute: ` + "`{\"crosstab\": {\"rows\": [{\"field\": \"region\"}], \"columns\": [{\"field\": \"quarter\"}], \"cell\": {\"aggregate\": \"sum\", \"field\": \"revenue\"}}}`" + `.`,
+			`Prism consumes already-materialized rows by design, so the general answer is to do the reshape (or the join) upstream and hand Prism the finished table — inline it as ` + "`data.values`" + `, publish it through the ` + "`datasets`" + ` block, or supply it at runtime with a ` + "`DataResolver`" + ` and a ` + "`data: {\"ref\": …}`" + ` binding.`,
+			`These transforms execute today: {{.Executable}}.`,
+		},
+		SeeAlso: []string{"PRISM_COMPILE_001", "PRISM_SPEC_032"},
+	},
+	"PRISM_WARN_OFFSET_COLLISION": {
+		Code:    "PRISM_WARN_OFFSET_COLLISION",
+		Message: `{{.Count}} rows repeat an offset key already drawn — first repeat {{.Key}} — so their marks share one sub-band and overlap.`,
+		Fixups: []string{
+			`A sub-band is identified by the (category, offset) pair, so every row carrying the pair {{.Key}} lands on exactly the same rect and only the last one drawn stays visible. {{.Count}} rows were affected.`,
+			`Aggregate the measure so each pair yields one row, e.g. ` + "`{\"y\": {\"aggregate\": \"sum\", \"field\": \"visits\", \"type\": \"quantitative\"}}`" + ` — the synthetic group-by keeps the category field and the offset field, so the duplicates collapse into one bar per sub-band.`,
+			`If the repeated rows differ by a dimension the chart never names, name it: bind it on ` + "`detail`" + ` so it survives the group-by, or make it the offset field itself so each row claims a sub-band of its own.`,
+			`If the duplicates are unwanted, remove them before the chart sees them with a ` + "`filter`" + ` or an ` + "`aggregate`" + ` transform.`,
+		},
+		SeeAlso: []string{"PRISM_SPEC_064", "PRISM_WARN_NULL_DROPPED"},
+	},
+
+	"PRISM_WARN_OFFSET_CONFIG_CONFLICT": {
+		Code:    "PRISM_WARN_OFFSET_CONFIG_CONFLICT",
+		Message: `Shared {{.Channel}} scale: {{.Winner}} already set {{.Property}}; {{.Loser}} disagrees and is ignored.`,
+		Fixups: []string{
+			`Set "{{.Property}}" identically on every child that binds {{.Channel}}, or on only one of them — the first child that specifies a property wins, so the value kept is {{.Kept}} and {{.Ignored}} was dropped.`,
+			`Children share one offset scale by default so their sub-bands line up. To let each child divide its band slot its own way, opt out with "resolve": {"scale": {"{{.Channel}}": "independent"}}.`,
+			`The sub-band order is resolved once for the whole chart: "scale": {"domain": [...]} pins it outright, then a "sort" naming categories, then a "sort" direction, then the distinct values ascending.`,
+		},
+		SeeAlso: []string{"PRISM_WARN_AXIS_CONFIG_CONFLICT", "PRISM_WARN_OFFSET_COLLISION"},
 	},
 	"PRISM_SPEC_061": {
 		Code:    "PRISM_SPEC_061",

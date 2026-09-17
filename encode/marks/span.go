@@ -71,10 +71,20 @@ func spanPixels(in Inputs, base, upper Channel) ([][2]float64, error) {
 //   - A bound span channel wins: the rect runs from the lower pixel to
 //     the upper one.
 //   - Otherwise the base channel positions the rect in its band slot
-//     and the band width sizes it.
+//     and the band width sizes it. When an offset channel is bound on
+//     this axis (E1-S4) the row takes the SUB-band its offset value
+//     names inside that slot rather than the whole slot.
 //   - With neither, bandRequired decides: a bar hard-fails (it needs a
 //     categorical slot to sit in), while a rect falls back to the 1-px
 //     cell it has always drawn for a fully quantitative pair.
+//
+// The sub-band subdivision lands here, and nowhere else, because this
+// is the one place a signed band step is normalised: the sub-band's
+// displacement and its width carry the parent's sign, and folding
+// them in before the correction means one rule covers both
+// orientations. A span channel on the same axis still wins outright —
+// an offset alongside a span is incoherent and validate rejects it
+// (PRISM_SPEC_066) rather than letting the two fight over one axis.
 func rectAxisExtent(in Inputs, name string, base, upper Channel, bandRequired bool) ([][2]float64, error) {
 	if base.Field == "" || base.Scale == nil {
 		return nil, prismerrors.New(
@@ -106,6 +116,23 @@ func rectAxisExtent(in Inputs, name string, base, upper Channel, bandRequired bo
 			map[string]any{"Field": base.Field, "Source": "<scale>", "Available": "band"},
 		)
 	}
+	// A bound offset channel (E1-S4) turns each slot into a row of
+	// sub-bands. Resolve the column and the nested scale once, outside
+	// the loop; both stay nil when nothing is bound on this axis,
+	// which is what leaves the arithmetic below untouched.
+	var (
+		offsetVals []any
+		offsetBand BandScaler
+	)
+	if isBand && in.Offset.On(name) {
+		if b, ok := in.Offset.band(); ok {
+			offsetVals, err = readField(in.Table, in.Offset.Field)
+			if err != nil {
+				return nil, err
+			}
+			offsetBand = b
+		}
+	}
 	out := make([][2]float64, len(vals))
 	for i := range vals {
 		p, err := base.Scale.Apply(vals[i])
@@ -118,12 +145,23 @@ func rectAxisExtent(in Inputs, name string, base, upper Channel, bandRequired bo
 			// the band's *lower* pixel edge. Normalise to (top-left
 			// start, positive length) so both orientations produce a
 			// drawable rect.
-			w := band.BandWidth()
+			start, w := p, band.BandWidth()
+			if offsetBand != nil && i < len(offsetVals) {
+				// The nested scale's range is (0, parent BandWidth()),
+				// so its Apply is a signed displacement from the
+				// slot's leading edge and its BandWidth() carries the
+				// parent's sign. Both ride the same correction below.
+				d, derr := in.Offset.Scale.Apply(offsetVals[i])
+				if derr != nil {
+					return nil, derr
+				}
+				start, w = p+d, offsetBand.BandWidth()
+			}
 			if w < 0 {
-				out[i] = [2]float64{p + w, -w}
+				out[i] = [2]float64{start + w, -w}
 				continue
 			}
-			out[i] = [2]float64{p, w}
+			out[i] = [2]float64{start, w}
 			continue
 		}
 		// Fully quantitative and unranged: the historic 1-px cell.

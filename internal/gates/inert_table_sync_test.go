@@ -69,6 +69,8 @@ var honouredChannels = map[string]string{
 	"y":         "position; resolves a cartesian scale.",
 	"x2":        "span companion, bound to x's resolved scale (encode/span.go).",
 	"y2":        "span companion, bound to y's resolved scale (encode/span.go).",
+	"x_offset":  "E1-S4 builds a nested band scale from it (encode/offset.go) and rectAxisExtent hands the bar its sub-band.",
+	"y_offset":  "E1-S4 builds a nested band scale from it (encode/offset.go) and rectAxisExtent hands the bar its sub-band.",
 	"theta":     "polar angle, read by the arc / pie / donut encoders.",
 	"radius":    "polar radius, read by the arc / pie / donut encoders.",
 	"color":     "drives the palette and the legend.",

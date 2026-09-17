@@ -1,5 +1,183 @@
 # Changelog
 
+## v0.17.0 — unreleased
+
+Additive feature release: the offset (dodge) position channels, plus a
+working `unpivot`. v0.16 spec and rendering semantics are preserved for
+every spec that does not bind an offset — an unbound offset channel
+resolves to nothing, injects no node, builds no scale, and every
+committed golden that predates it is byte-identical. Two changes do
+alter what an existing spec does; both are called out under
+**Behaviour changes** below.
+
+### Offset (dodge) position channels
+
+- **`x_offset` / `y_offset`** — a second discrete binding that
+  subdivides one category's band slot, so the rows sharing a category
+  are drawn side by side instead of on top of one another. Vega-Lite's
+  `xOffset` / `yOffset` under Prism's snake_case rule. Bind one beside a
+  banded `x` (or `y`) and the mark draws grouped columns:
+
+  ```json
+  {"mark": "bar", "encoding": {
+    "x": {"field": "metric", "type": "nominal"},
+    "y": {"aggregate": "sum", "field": "score", "type": "quantitative"},
+    "x_offset": {"field": "series", "type": "nominal"}
+  }}
+  ```
+
+- **`bar` only.** Every other mark **rejects** the channel
+  (`PRISM_SPEC_063`) rather than ignoring it. That rejection is
+  load-bearing, not defensive: every band-seated mark reaches the same
+  slot geometry, so without it a `tick` or a `heatmap` with an offset
+  would quietly draw dodged shapes no mark documents.
+- **Sub-band order**, highest precedence first: `scale.domain`, then a
+  `sort` naming the categories outright, then a `sort` direction (all
+  four spellings), then the distinct values **ascending**. Ascending —
+  rather than the first-seen order the x / y band scales use — is a
+  considered divergence: an offset decides which sub-band a series
+  occupies, and deriving that from row order would make the same data
+  draw differently after an upstream re-sort. It is stable for a given
+  set of values, **not across datasets**, so a chart whose category set
+  varies between renders should pin `scale.domain` on the offset
+  channel.
+- **Offset scale padding defaults to inner 0 / outer 0** (the parent
+  band keeps 0.1 / 0.05 / 0.5), so sub-bands touch and together fill the
+  slot. That zero is what reduces a single distinct offset value to one
+  sub-band spanning the whole slot — i.e. byte-identical to the channel
+  being absent.
+- **Horizontal dodging reads mirrored against Vega-Lite.** Prism's y
+  band runs bottom-to-top, so with `y_offset` the first offset category
+  takes the sub-band at the slot's **lower** pixel edge, the same
+  direction the parent assigns its own categories.
+- An offset scale reads `domain`, `padding`, `padding_inner`,
+  `padding_outer`, `align`, `round` and `reverse`. Every other `scale`
+  key on an offset channel now reports itself as
+  `PRISM_WARN_SCALE_FIELD_INERT` instead of being discarded in silence.
+- New gallery fixtures: `basic-marks/grouped_bar`,
+  `basic-marks/grouped_bar_horizontal`,
+  `transforms/unpivot_grouped_bar`.
+
+### Composition
+
+- **`resolve.scale.x_offset` / `y_offset`** — offsets are **shared by
+  default** across `layer` children and `facet` cells, like x / y, so a
+  series occupies the same sub-band in every panel it appears in. Opt
+  out per channel with
+  `{"resolve": {"scale": {"x_offset": "independent"}}}`.
+- `concat` / `hconcat` / `vconcat` / `repeat` keep **independent**
+  offsets. Those operators share no position scales at all today, so
+  sharing an offset there would mean sharing x / y there first.
+- Children that describe the shared offset differently fold
+  **first-specified-wins per property** over `sort` and every property
+  of the offset channel's `scale` block, and raise
+  `PRISM_WARN_OFFSET_CONFIG_CONFLICT`. A conflict is never resolved
+  silently. (`field` / `type` are taken from the first binding child and
+  are not conflict-reported — the values are unioned regardless of which
+  column they came from, the way a shared x scale unions layers binding
+  different fields.)
+
+### Transforms
+
+- **`unpivot` executes** — wide → long, the Vega-Lite `fold` analogue,
+  and the usual way to get several wide metric columns onto one
+  categorical axis. It decoded, validated and built a plan node before,
+  then failed at execute: the node carried no backend wiring, so its
+  dispatch arm was unreachable. Now: row count is
+  `input_rows × len(unpivot)`, checked against `PRISM_TABLE_MAX_ROWS`
+  before anything is materialised; row order is row-major, so a source
+  row's outputs stay adjacent; nulls survive as nulls rather than being
+  dropped or coerced to zero; and a non-numeric source column, or an
+  `as` name colliding with a carried column, is refused with
+  `PRISM_COMPILE_002` naming the column.
+- **`pivot` is the only transform that parses but cannot execute.** It
+  is now rejected at validate (`PRISM_SPEC_067`, below) instead of
+  failing mid-pipeline. Use `crosstab` for the same long → wide shape.
+
+### Validation and diagnostics
+
+New error codes:
+
+| Code | Fires when |
+|---|---|
+| `PRISM_SPEC_063` | an offset channel is bound on a mark that cannot dodge — anything but `bar` |
+| `PRISM_SPEC_064` | the offset binding is incoherent: the matching position channel is not banded, or both `x_offset` and `y_offset` are bound |
+| `PRISM_SPEC_065` | an explicit `stack` is written beside a bound offset |
+| `PRISM_SPEC_066` | an offset and a span channel (`x2` / `y2`) are bound on the same axis, which would leave the offset nothing to subdivide |
+| `PRISM_SPEC_067` | a transform the spec grammar accepts but no backend can execute |
+
+New warnings:
+
+| Code | Fires when |
+|---|---|
+| `PRISM_WARN_OFFSET_COLLISION` | two or more rows repeat one (category, offset) pair, so their marks share a sub-band and only the last drawn stays visible |
+| `PRISM_WARN_OFFSET_CONFIG_CONFLICT` | composition children disagree about a shared offset scale; first-specified wins |
+
+`PRISM_WARN_SCALE_FIELD_INERT` gained coverage of an offset channel's
+`scale` block (see above). `PRISM_COMPILE_001`'s catalogue text was
+rewritten: it described a phase rollout that finished long ago and
+pointed at a planning file that no longer exists.
+
+Warnings ride on `SceneDoc.Warnings` / `CompiledPlan.Diagnostics`.
+`prism plot` and `prism scene` print them to stderr and `prism scene`
+also carries them in the document's `warnings` array — but a library
+embedder that renders `CompiledPlan.Scene` without reading
+`Diagnostics` sees none of them. Read the field.
+
+### Behaviour changes
+
+Two changes alter what an already-valid spec does.
+
+1. **Binding an offset suppresses implicit stacking.** A bar spec with
+   an aggregated measure and a bound grouping channel stacked before;
+   adding `x_offset` / `y_offset` now dodges instead. Stacking and
+   dodging spend the same geometry on the same grouping, so one of them
+   has to yield, and the explicit request wins. The suppression lives in
+   `spec.ResolveStack` — the single decision point the planner and the
+   encoder share — so the two stages cannot disagree. It yields to the
+   **inferred** stack only: an explicit `stack` written beside an offset
+   is rejected as `PRISM_SPEC_065` rather than silently dropped.
+2. **`PRISM_SPEC_067` moves an existing execute-time failure to validate
+   time.** It creates no new failure. Every spec it rejects already
+   failed, further down the pipeline, as `PRISM_COMPILE_001` naming an
+   internal node kind the author never wrote. **`pivot` is the only
+   transform affected** — `join` and `union` execute (their `Execute`
+   bodies live on the plan nodes rather than in the in-memory backend,
+   which is why they are absent from its dispatch table), and `unpivot`
+   executes as of this release.
+
+### Go API
+
+- **`spec.OffsetChannel`** — the `x_offset` / `y_offset` channel type
+  (`field`, `type`, `sort`, `scale`), bound on `spec.Encoding.XOffset` /
+  `.YOffset`.
+- **`spec.ResolveOffset(*spec.Encoding) *spec.OffsetBinding`** — the
+  single decision point for whether an offset is bound and on which
+  axis, called by both the plan builder and the encoder. An offset
+  carrying no `field` binds nothing; an offset bound on both axes is
+  refused outright rather than half-honoured.
+- **`encode.OffsetDomain`** — a resolved sub-band category order plus
+  band options. It is not a `Scale`: an offset scale's range is the
+  parent band width of the cell being drawn, which is only knowable per
+  child.
+- **`encode.EncodeOpts.OverrideOffset`** — hands a composition child the
+  shared offset domain, mirroring `OverrideXScale` / `OverrideYScale`.
+- **`spec.ResolveChannelMap`** gains `x_offset` / `y_offset`.
+
+### Docs
+
+- `concepts/encoding.md` — Offset channels: the global (not
+  per-category) sub-band domain, padding, ordering and its
+  cross-dataset caveat, duplicate sub-bands.
+- `concepts/marks.md` — Grouped bars (dodging).
+- `concepts/composition.md` — Offset (dodge) scales: what shares, what
+  does not, and how conflicts fold.
+- `concepts/spec.md` — the `unpivot` transform, a wide → long → grouped
+  bar worked example, and `pivot` as the one transform that parses but
+  does not execute.
+- `migration-from-vega-lite.md` — the `xOffset` → `x_offset` rename, the
+  mirrored horizontal sub-band direction, and stack-vs-dodge.
+
 ## v0.4.0 — 2026-06-18
 
 Additive feature release surfacing Pulse v0.22 capabilities as Prism

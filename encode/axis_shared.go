@@ -171,8 +171,8 @@ func mergeSharedAxisSpec(channel scene.Channel, blocks []sharedAxisBlock) (*spec
 				continue
 			}
 			warnings = append(warnings, axisConflictWarning(
-				channel, axisPropertyName(typ.Field(i)), b.Label, winners[i],
-				axisDisplayValue(outVal.Field(i)), axisDisplayValue(f)))
+				channel, specPropertyName(typ.Field(i)), b.Label, winners[i],
+				specDisplayValue(outVal.Field(i)), specDisplayValue(f)))
 		}
 	}
 	if !specified {
@@ -181,9 +181,11 @@ func mergeSharedAxisSpec(channel scene.Channel, blocks []sharedAxisBlock) (*spec
 	return out, warnings
 }
 
-// axisPropertyName returns the wire (snake_case) name of an axis
-// property, falling back to the Go field name.
-func axisPropertyName(f reflect.StructField) string {
+// specPropertyName returns the wire (snake_case) name of a spec
+// property, falling back to the Go field name. Shared by the axis
+// fold above and the shared-offset fold in offset_shared.go — both
+// report a conflict by the key the author wrote.
+func specPropertyName(f reflect.StructField) string {
 	tag := f.Tag.Get("json")
 	for i := 0; i < len(tag); i++ {
 		if tag[i] == ',' {
@@ -197,10 +199,10 @@ func axisPropertyName(f reflect.StructField) string {
 	return tag
 }
 
-// axisDisplayValue renders an axis property for diagnostics,
+// specDisplayValue renders a spec property for diagnostics,
 // dereferencing the optional-pointer fields so a warning reports
 // `false` rather than a pointer address.
-func axisDisplayValue(v reflect.Value) any {
+func specDisplayValue(v reflect.Value) any {
 	if v.Kind() == reflect.Pointer && !v.IsNil() {
 		return v.Elem().Interface()
 	}

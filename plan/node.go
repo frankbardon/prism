@@ -32,8 +32,9 @@ type NodeID string
 //
 // Schema(in) lets callers reason about a node's output shape without
 // executing — required for DAG visualisation, optimizer-pass
-// eligibility, and the stubbed P03 nodes whose Execute bodies return
-// PRISM_COMPILE_001 until P04. The `in` slice carries upstream
+// eligibility, and any node with no executor, whose Execute body
+// returns PRISM_COMPILE_001 (PivotNode alone today). The `in` slice
+// carries upstream
 // schemas in declaration order; nodes that ignore inputs (Source)
 // pass nil.
 //

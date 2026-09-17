@@ -5,10 +5,17 @@ package scene
 type Channel string
 
 const (
-	ChannelX       Channel = "x"
-	ChannelY       Channel = "y"
-	ChannelX2      Channel = "x2"
-	ChannelY2      Channel = "y2"
+	ChannelX  Channel = "x"
+	ChannelY  Channel = "y"
+	ChannelX2 Channel = "x2"
+	ChannelY2 Channel = "y2"
+	// ChannelXOffset / ChannelYOffset name the offset (dodge)
+	// sub-band scale a position channel's band slot is divided by.
+	// They carry no axis and no legend; they exist so cross-child
+	// scale resolution can address the offset scale by name the way
+	// `resolve.scale.x_offset` does on the wire.
+	ChannelXOffset Channel = "x_offset"
+	ChannelYOffset Channel = "y_offset"
 	ChannelColor   Channel = "color"
 	ChannelSize    Channel = "size"
 	ChannelShape   Channel = "shape"

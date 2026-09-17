@@ -1,22 +1,19 @@
-// File stub.go centralises the helpers every P03 stub node uses:
+// File stub.go centralises the helpers the node implementations in
+// this package share:
 //
-//   - notImplementedErr(kind) — the PRISM_COMPILE_001 error returned by
-//     every stubbed Execute body until P04 lands the real impls.
+//   - notImplementedErr(kind) — the PRISM_COMPILE_001 error a node with
+//     no executor returns. PivotNode is the only node whose Execute
+//     body is that one line; for a backend-routed node it is the
+//     fallback taken when the builder wired no backend.
 //   - cloneSchema / appendField / projectFields — pure helpers that
 //     compute deterministic output schemas from input schemas plus op
-//     parameters, so Schema(in) works in P03 without execution data.
+//     parameters, so Schema(in) answers without executing.
 //   - fingerprintFor(kind, parts...) — sha256-prefixed cache-key
 //     component, deterministic across runs.
 //
-// Stub nodes (everything that is not SourceNode, InlineNode, or
-// SinkNode) wire these helpers in their per-type files (filter.go,
-// project.go, ...). The Execute body is always one line:
-//
-//	return nil, notImplementedErr("FilterNode")
-//
-// P04 swaps each stub's body for the real implementation; tests that
-// currently assert PRISM_COMPILE_001 flip to assert correct output
-// tables.
+// Nodes reach Execute by one of two routes, and neither is visible
+// from here: through the injected compile backend (the majority), or
+// through an Execute body on the node itself (JoinNode, UnionNode).
 package nodes
 
 import (
@@ -30,15 +27,20 @@ import (
 	prismerrors "github.com/frankbardon/prism/errors"
 )
 
-// notImplementedErr returns the canonical PRISM_COMPILE_001 AppError
-// every stubbed Execute body emits. The Phase context is hard-coded to
-// "P04" because every stub lands in that phase; if the rollout slips
-// the message references the actual landing phase, not P04.
+// notImplementedErr returns the canonical PRISM_COMPILE_001 AppError a
+// node with no executor emits — PivotNode's Execute body, and the
+// fallback a backend-routed node takes when no backend was wired.
+//
+// The NodeType + Phase context pair is the typed signature
+// internal/gates/transform_executable_sync_test.go matches on: it tells
+// a genuine missing implementation apart from plan.Execute's codeFor,
+// which stamps PRISM_COMPILE_001 on any node error carrying no PRISM_*
+// code of its own. Both keys must stay.
 func notImplementedErr(nodeType string) error {
 	return prismerrors.New(
 		"PRISM_COMPILE_001",
-		fmt.Sprintf("Node type %s is not implemented yet (lands in P04).", nodeType),
-		map[string]any{"NodeType": nodeType, "Phase": "P04"},
+		fmt.Sprintf("Node type %s has no execution implementation.", nodeType),
+		map[string]any{"NodeType": nodeType, "Phase": "unimplemented"},
 	)
 }
 

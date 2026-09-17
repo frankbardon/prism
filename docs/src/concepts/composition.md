@@ -173,15 +173,55 @@ changes whether scales/axes are shared or independent across cells.
 
 ## Scale resolution
 
-`resolve.scale.{x,y,color,size}` controls cross-cell scale sharing:
+`resolve.scale.{x,y,x_offset,y_offset,color,size}` controls cross-cell
+scale sharing:
 
 | Value | Behavior |
 |---|---|
-| `shared` (default for x/y) | Union of domains across cells/layers, single axis. |
+| `shared` (default for x/y and x_offset/y_offset) | Union of domains across cells/layers, single axis. |
 | `independent` (default for color) | Per-cell domains, per-cell axes. |
 
 Mixing incompatible types on a shared scale (quantitative + nominal)
 raises `PRISM_PLAN_005`.
+
+### Offset (dodge) scales
+
+`x_offset` / `y_offset` subdivide a category's band slot so rows
+sharing that category draw side by side. They resolve **shared by
+default**, exactly as `x` and `y` do, and for the same reason: two
+children that divide one slot differently produce marks that do not
+line up, which reads as a rendering fault rather than a configuration
+one. A child that binds only two of three series still reserves three
+sub-bands, so a bar is the same width everywhere and a series sits in
+the same place in every layer and every facet cell.
+
+What is shared is the sub-band **order**, not a scale object — an
+offset scale's range is the parent band width of the cell being drawn,
+so only the domain can be resolved once. The order comes from the
+usual precedence chain, applied to the union of every child's values:
+`scale.domain`, then a `sort` naming categories, then a `sort`
+direction, then the distinct values ascending.
+
+Children that describe the shared offset scale differently are folded
+**first specified wins, per property** — the same rule a shared axis
+uses — and a disagreement raises `PRISM_WARN_OFFSET_CONFIG_CONFLICT`
+naming the channel, the property, the winning child and the ignored
+value. It is never settled in silence.
+
+```json
+{
+  "resolve": {"scale": {"x_offset": "independent"}}
+}
+```
+
+opts out, and each child divides its band slot from its own rows.
+`concat` / `hconcat` / `vconcat` / `repeat` cells are separate charts
+with their own position scales, so their offsets are independent too;
+the fold applies to `layer` and `facet`.
+
+Warnings land on `SceneDoc.Warnings` (`CompiledPlan.Diagnostics` from
+the Go API). `prism plot` and `prism scene` print them to stderr; a
+library embedder sees nothing unless it reads the field.
 
 ## Axis config under shared vs independent scales
 

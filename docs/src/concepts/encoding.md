@@ -7,6 +7,7 @@ The `encoding` object binds data fields to visual channels.
 | Family | Channels |
 |---|---|
 | Position | `x`, `y`, `x2`, `y2` (see [Span channels](#span-channels)), `theta`, `radius` |
+| Offset | `x_offset`, `y_offset` — see [Offset channels](#offset-channels-x_offset--y_offset) |
 | Color & opacity | `color`, `fill`, `stroke`, `opacity` |
 | Size & shape | `size`, `shape` |
 | Text & order | `text` (see [Text channel](#text-channel)), `tooltip`, `order` — see [Order channel](#order-channel) |
@@ -479,7 +480,8 @@ Under `layer`, the layers share one pair of axes, so `orient` folds
 across them first-specified-wins like every other axis property — the
 first layer that sets it decides the side, and a later layer asking
 for a different one raises `PRISM_WARN_AXIS_CONFIG_CONFLICT` and is
-ignored. Under `facet` and `repeat`, every cell renders the same child
+ignored (see [Where warnings surface](#where-warnings-surface) for
+where that reaches you). Under `facet` and `repeat`, every cell renders the same child
 spec, so the child's `orient` places the shared axis for the whole
 grid: a top-oriented x axis anchors to the top row instead of the
 bottom, and a right-oriented y axis to the last column instead of the
@@ -607,7 +609,9 @@ unreadable for the scale family, or a category the domain does not
 contain — is **dropped**, not drawn off-plot, and reported as
 `PRISM_WARN_AXIS_VALUES_DROPPED` listing every casualty. A dropped
 value takes its gridline with it. If the values are the ones you want,
-widen the domain with [`scale.domain`](#scales).
+widen the domain with [`scale.domain`](#scales). The warning reaches
+you through `SceneDoc.Warnings` — see
+[Where warnings surface](#where-warnings-surface).
 
 **Pinning suppresses minor ticks.** Minor ticks are midpoints of a
 generated nice sequence; an author-chosen set has no such sequence to
@@ -997,6 +1001,289 @@ palette entry), whereas a `detail` key is the value's string form —
 a numeric series id groups per distinct number rather than collapsing
 into one bucket.
 
+## Offset channels (`x_offset` / `y_offset`)
+
+`x_offset` and `y_offset` cut the band slot a category owns into
+sub-bands, so the rows sharing that category draw **side by side**
+instead of on top of one another. That is the grouped — or dodged —
+bar. Vega-Lite spells the channels `xOffset` / `yOffset`; Prism is
+snake_case throughout, so they are `x_offset` / `y_offset`.
+
+`x_offset` subdivides `x`'s slot, `y_offset` subdivides `y`'s. Bind
+one or the other, never both: a mark dodges along a single axis, while
+the measure runs along the other.
+
+```json
+{
+  "$schema": "urn:prism:schema:v1:spec",
+  "data": {"values": [
+    {"metric": "Awareness",     "series": "Acme",             "score": 62},
+    {"metric": "Awareness",     "series": "category average", "score": 48},
+    {"metric": "Consideration", "series": "Acme",             "score": 41},
+    {"metric": "Consideration", "series": "category average", "score": 44},
+    {"metric": "Preference",    "series": "Acme",             "score": 28},
+    {"metric": "Preference",    "series": "category average", "score": 31}
+  ]},
+  "mark": {"type": "bar"},
+  "encoding": {
+    "x":        {"field": "metric", "type": "nominal"},
+    "y":        {"field": "score",  "type": "quantitative"},
+    "x_offset": {"field": "series", "type": "nominal"},
+    "color":    {"field": "series", "type": "nominal"}
+  }
+}
+```
+
+Three metric slots, each split in two: one bar for the brand and one
+for its category average, adjacent and equally wide. Only `bar` draws
+this geometry — see [Marks › Grouped bars](marks.md#grouped-bars-dodging)
+for the mark-side rules and the horizontal form.
+
+### The four keys
+
+An offset channel takes `field`, `type`, `sort` and `scale`, and
+nothing else.
+
+| Key | Purpose |
+|---|---|
+| `field` | The column whose distinct values become the sub-bands. It is what makes the channel do anything: an offset object carrying no field binds nothing and behaves exactly as an absent channel. |
+| `type` | `nominal` or `ordinal`. A slot is subdivided by a discrete field; `quantitative` / `temporal` describes no subdivision and is refused. Omitting the key is read as discrete. |
+| `sort` | The sub-band order: a direction (`"ascending"` / `"descending"`, with `"asc"` / `"desc"` as aliases) or an array naming the categories outright. |
+| `scale` | The sub-band scale's own band geometry: `domain`, `padding`, `padding_inner`, `padding_outer`, `align`, `reverse`, `round`. Independent of the parent band's own settings. |
+
+**The omissions are the point.** Reusing the `x` / `y` channel shape
+would have admitted `axis`, `stack`, `aggregate`, `condition`,
+`format`, `bin`, `value`, `title` and `key` — nine keys nothing on the
+offset path reads, which would decode, validate and then quietly do
+nothing. An unknown key inside an `x_offset` / `y_offset` object is
+rejected at decode instead. Keys on the `scale` block that describe
+something other than a band subdivision (`type`, `zero`, `nice`,
+`scheme`, `range`, …) are likewise unread there: write only the
+band-geometry keys listed above.
+
+### The sub-band domain is global, not per category
+
+The sub-bands come from the distinct values of the offset field across
+the **whole table**, not from the values present in each category.
+
+That is what makes bar widths comparable. A per-category domain would
+give a lone member of one group the full slot while a two-member group
+got half-slots each, and the eye would read the wider bar as the
+bigger number. With a global domain every group is cut the same way,
+so a series sits in the same place in every group and every bar is the
+same width — which is the one thing a grouped bar exists to make
+possible.
+
+The consequence for ragged data: a category missing a series leaves
+that series' sub-band **empty**. The gap is the honest reading — the
+series has no value here — and the neighbouring bars do not widen to
+absorb it.
+
+### Padding — sub-bands touch by default
+
+The offset scale is a band scale in its own right, with its **own**
+padding, defaulting to `padding_inner: 0` and `padding_outer: 0`. The
+sub-bands therefore touch each other and together fill the parent slot
+exactly, which is the classic grouped-bar look and matches Vega-Lite's
+offset-scale defaults.
+
+The parent band's defaults (inner `0.1`, outer `0.05`) are untouched,
+so the spacing *between* groups and the spacing *within* a group are
+configured separately:
+
+```json
+"x":        {"field": "metric", "type": "nominal", "scale": {"padding_inner": 0.3}},
+"x_offset": {"field": "series", "type": "nominal", "scale": {"padding_inner": 0.1}}
+```
+
+Zero inner padding also buys a guarantee worth relying on: a field
+with a **single** distinct value reduces to one sub-band spanning the
+whole slot at zero displacement, so the chart is geometrically
+identical to the same spec with the offset channel removed. Any
+non-zero padding would break that.
+
+### It builds no legend
+
+Like [`detail`](#detail-channel), an offset channel is a pure
+positional grouping. It consumes no palette slot, changes no colour
+and emits no legend entry — a dodged chart with nothing else bound
+draws every bar in the same fill.
+
+To name the series, bind `color` to **the same field**:
+
+```json
+"x_offset": {"field": "series", "type": "nominal"},
+"color":    {"field": "series", "type": "nominal"}
+```
+
+The legend is then built from `color` in the ordinary way. The two
+channels are resolved independently, so nothing forces them to agree:
+binding `color` to a *different* field is legal and produces bars that
+dodge by one dimension and are coloured by another.
+
+### Ordering the sub-bands
+
+Which series sits left and which sits right is decided by one
+precedence chain, highest first:
+
+| Tier | Form | Effect |
+|---|---|---|
+| 1 | `"scale": {"domain": [...]}` | Pins the order outright. A partial domain leads, and any value it does not name is **appended** after it rather than dropped. |
+| 2 | `"sort": ["b", "a"]` | Names the categories in order. Same append rule. |
+| 3 | `"sort": "descending"` | A direction over the distinct values. All four spellings are honoured. |
+| 4 | nothing | The distinct values **ascending**. |
+
+An unrecognised `sort` spelling is an error, not a silent fall back to
+ascending.
+
+Note the default in tier 4: **ascending, not first-seen table order.**
+This diverges from Prism's `x` / `y` band scales on purpose. An
+offset's order decides which sub-band a series occupies, and deriving
+it from row order would make the same data draw differently after an
+upstream sort — an unreadable chart change with no spec change behind
+it. Ascending is also Vega-Lite's documented default for a discrete
+channel.
+
+It does mean **a chart's category axis is in first-seen order while
+its sub-bands are alphabetical.** That inconsistency is real and you
+will notice it: the metrics run along the x axis in the order the rows
+arrived, while the two series inside each slot are sorted by name. Pin
+whichever you care about.
+
+#### Stable for a set of values, not across datasets
+
+This is the caveat that matters for anything rendered more than once.
+
+The ascending default is deterministic **for a given set of values** —
+permute the rows, add a transform, re-run the query, and the sub-bands
+stay put. It is *not* stable **across datasets**, and a spec written
+once as a template is run against many.
+
+Consider two sub-bands, a brand name and the literal
+`"category average"`. Ascending is byte order, and every ASCII capital
+sorts before every lowercase letter, so `"Zenith"` takes the left
+sub-band — but the same brand styled `"zenith"` takes the right one,
+and the same template, on the same chart kind, has swapped the pair.
+The order hinges on a label's first byte.
+
+So: **any chart whose category set varies between renders should pin
+`scale.domain` on the offset channel.**
+
+```json
+"x_offset": {
+  "field": "series",
+  "type": "nominal",
+  "scale": {"domain": ["category average", "Acme"]}
+}
+```
+
+Prefer `scale.domain` over `sort` for this. It is the higher-precedence
+tier, it reads as a statement of intent rather than a rule, and a
+partial domain appends unlisted categories rather than dropping their
+rows — so a series that appears for the first time next month lands on
+the end of the group instead of breaking the chart.
+
+### Stacking steps aside
+
+A `bar` that would [stack](#stacking) implicitly stops doing so the
+moment an offset is bound. Stacking and dodging spend the same
+geometry on the same grouping, and the offset is the thing the author
+asked for explicitly, so the inferred stack yields to it. No `stack`
+key is needed to get grouped columns.
+
+An **explicit** `stack` written beside an offset is a contradiction
+and is rejected with `PRISM_SPEC_065` rather than half-honoured. Both
+opt-outs (`"stack": null` and `"stack": false`) agree with the offset
+and stay silent.
+
+### What it rejects
+
+Every one of these is refused with a code rather than ignored.
+
+| Code | Condition |
+|---|---|
+| `PRISM_SPEC_063` | The mark cannot dodge. Only `bar` implements the geometry; every other band-seated mark (`rect`, `tick`, `heatmap`, `boxplot`, `violin`, `winloss`, `progress`, the spark adornments) fills its slot with a single shape, so there is nothing to divide. |
+| `PRISM_SPEC_064` | The binding is incoherent: **both** offset channels bound, or the position channel the offset subdivides is unbound, quantitative / temporal, or declares a `scale.type` that resolves to no band. An offset needs a band slot to cut. |
+| `PRISM_SPEC_065` | An explicit `stack` on a position channel sits beside a bound offset — see above. |
+| `PRISM_SPEC_066` | A span channel claims the offset's own axis. |
+
+`PRISM_SPEC_066` is **per axis, and only per axis.** `x2` states both
+ends of the mark along `x`, which leaves `x`'s slot with nothing to
+subdivide — so `x2` + `x_offset` is refused. The other axis is
+untouched: **`y2` together with `x_offset` is a legal ranged, dodged
+bar**, and so is `x2` together with `y_offset`.
+
+Two shapes are decided later than the rest, because the spec alone
+cannot answer them: an offset channel declaring `"type":
+"quantitative"`, and a `sort` spelling nothing acts on, both surface at
+encode time as `PRISM_ENCODE_001` naming the channel. Named, but later
+than `PRISM_SPEC_06*`.
+
+### Duplicate sub-bands warn
+
+A sub-band is identified by the pair *(category value, offset value)*.
+Two rows carrying the same pair land on exactly the same rect, and
+only the last one drawn stays visible — the marks overlap, which is
+the one thing binding an offset was supposed to stop.
+
+Nothing geometric changes, but it is reported:
+`PRISM_WARN_OFFSET_COLLISION`, naming how many rows repeated and one
+key that did.
+
+It is unreachable once the measure channel aggregates. The synthetic
+group-by keeps both the category field and the offset field — an
+offset is a pure grouping binding, exactly like `detail` — so each
+pair yields exactly one row:
+
+```json
+"y":        {"aggregate": "mean", "field": "score", "type": "quantitative"},
+"x_offset": {"field": "series", "type": "nominal"}
+```
+
+Raw, un-aggregated tables are the only place duplicates survive to
+encode.
+
+### Where warnings surface
+
+`PRISM_WARN_OFFSET_COLLISION` and
+`PRISM_WARN_OFFSET_CONFIG_CONFLICT` — and every other `PRISM_WARN_*`
+this page mentions — land on **`SceneDoc.Warnings`**, surfaced as
+`CompiledPlan.Diagnostics` from the Go API.
+
+- `prism plot` and `prism scene` print them to **stderr**, so a CLI
+  user sees them without asking.
+- `prism scene` also writes them into the Scene IR document itself,
+  as its `warnings` array, so a consumer of that JSON gets them for
+  free. (`prism validate` does not: it runs no rows, so an
+  encode-time warning has not happened yet.)
+- **A library embedder sees nothing unless it reads the field.** A
+  host that holds a `CompiledPlan`, hands `plan.Scene` to a renderer
+  and never touches `plan.Diagnostics` drops every warning on the
+  floor — including `PRISM_WARN_NULL_DROPPED`, which means rows have
+  silently left the chart.
+
+If you embed Prism, read the diagnostics and log them. A warning is
+only as good as the consumer reading it.
+
+### Under composition
+
+An offset scale is **shared by default** across the children of a
+`layer` and the cells of a `facet`, exactly as `x` and `y` are, so a
+series sits in the same sub-band in every layer and every cell even
+when a child binds only some of the values. Opt out per channel:
+
+```json
+"resolve": {"scale": {"x_offset": "independent"}}
+```
+
+`concat` / `hconcat` / `vconcat` / `repeat` cells are separate charts
+with their own position scales, so their offsets are independent too —
+there is nothing to opt out of. Children that describe a shared offset
+differently fold first-specified-wins per property and raise
+`PRISM_WARN_OFFSET_CONFIG_CONFLICT`; it is never settled in silence.
+See [Composition › Offset (dodge) scales](composition.md#offset-dodge-scales)
+for the full rule.
+
 ## Stacking
 
 A `bar` or `area` whose measure channel is **aggregated** and whose
@@ -1023,6 +1310,12 @@ The `stack` key on the measure channel controls it explicitly:
 | `"center"` | Float each stack's baseline so the band is symmetric about zero — the streamgraph. See [Centred stacks](#centred-stacks-the-streamgraph). |
 | `null` / `false` | Opt out; every segment returns to the baseline. |
 
+Stacking and dodging are alternatives, not layers: binding an
+[offset channel](#offset-channels-x_offset--y_offset) suppresses the
+implicit stack above, and an **explicit** `stack` written beside an
+offset is rejected with `PRISM_SPEC_065` rather than half-applied.
+`"stack": null` / `false` agree with the offset and stay silent.
+
 Semantics:
 
 | Aspect | Behaviour |
@@ -1032,7 +1325,7 @@ Semantics:
 | Segment order | First-appearance order of the (colour, detail…) tuple across the whole table — the same order the mark partitioner and the legend use, so a segment sits in the same slot in every stack. A centred stack reorders inside-out instead; see below. |
 | Axis domain | The stacked totals reach scale resolution, so the measure axis spans `0…sum`, not `0…max`. |
 | Negatives | Positive and negative values accumulate independently from zero, so a mixed-sign stack grows in both directions. |
-| Opt-outs | An explicit `x2` / `y2` span wins (the mark already knows both edges), as does a non-linear measure scale. |
+| Opt-outs | An explicit `x2` / `y2` span wins (the mark already knows both edges), as does a non-linear measure scale, as does a bound [offset channel](#offset-channels-x_offset--y_offset) — a dodged mark already spends the band slot on its grouping. |
 
 Stacking is not a rendering trick: it compiles to a real
 [`stack` transform](spec.md#stack-transform) node in the plan, whose

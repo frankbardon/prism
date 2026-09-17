@@ -171,6 +171,11 @@ func stackableMark(markType string) bool {
 //   - the other position channel is bound (it becomes the groupby);
 //   - at least one discrete grouping channel (colour or detail) is
 //     bound, so there is more than one segment to stack;
+//   - no offset channel is bound — a dodged mark already spends the
+//     band slot on its grouping, and the implicit default yields to
+//     it (see ResolveOffset). An explicit `stack` alongside an offset
+//     still binds here; validate rejects that spec rather than
+//     letting this function drop it silently;
 //   - neither span channel is bound on the stacked axis — an explicit
 //     x2 / y2 interval already says where the mark starts and ends;
 //   - the stacked channel declares no scale type other than linear.
@@ -214,6 +219,30 @@ func ResolveStack(s *Spec) *StackBinding {
 			return nil
 		}
 		if len(StackByFields(enc)) == 0 {
+			return nil
+		}
+		// A bound offset channel supersedes the implicit default.
+		// The grouped-bar spec is character for character the shape
+		// tested just above — bar, one aggregated quantitative
+		// measure, a bound dimension, a grouping channel — so without
+		// this an author who binds x_offset gets a chart that dodges
+		// AND stacks, two mechanisms owning one piece of geometry.
+		// Offset wins because it is the thing the author asked for
+		// explicitly; the stack was only ever inferred.
+		//
+		// This yields to the IMPLICIT default only. An explicit
+		// `stack` value alongside a bound offset still returns a
+		// binding from the branches above, because that spec is a
+		// contradiction the author wrote out in full and validate
+		// rejects it with PRISM_SPEC_065. Swallowing it here would
+		// turn a rejectable error into a silent behaviour change.
+		//
+		// The suppression lives inside ResolveStack rather than at a
+		// call site on purpose: split across the planner and the
+		// encoder it would give the two stages two chances to
+		// disagree, which is the exact property this function exists
+		// to deny them.
+		if ResolveOffset(enc) != nil {
 			return nil
 		}
 		if xAgg {

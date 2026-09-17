@@ -458,6 +458,188 @@ every Prism transform, composes anywhere in a chain.
 `day_of_week` and other component-extraction units (which return an
 ordinal, not a date) land in a follow-up.
 
+## Unpivot transform
+
+The `unpivot` transform reshapes wide → long: one input row carrying N
+measure columns becomes N output rows, each repeating the untouched
+remaining columns, naming the measure in a key column and carrying its
+value in a value column. It is the Vega-Lite `fold` analogue, and the
+usual way to get several wide metric columns onto one categorical
+axis (colour or dodge by the key column).
+
+```json
+{
+  "data": {"values": [
+    {"region": "east", "q1": 1, "q2": 2},
+    {"region": "west", "q1": 3, "q2": 4}
+  ]},
+  "transform": [{"unpivot": ["q1", "q2"], "as": ["quarter", "amount"]}],
+  "mark": "bar",
+  "encoding": {
+    "x": {"field": "region", "type": "nominal"},
+    "y": {"field": "amount", "type": "quantitative"},
+    "color": {"field": "quarter", "type": "nominal"}
+  }
+}
+```
+
+| Field | Required | Notes |
+|---|---|---|
+| `unpivot` | yes | Columns to stack. Each must be numeric — the value column is `f64`. |
+| `as`      | no  | `[key_column, value_column]` output names. Defaults to `["key", "value"]`. |
+| `data`    | no  | Optional input alias, like every other transform. |
+
+Output schema is the input schema minus the unpivoted fields, plus the
+key column (categorical, carrying the source **column name**) and the
+value column (numeric), in that order.
+
+- **Row count** is `input_rows × len(unpivot)`. The reshape multiplies
+  rows, so the product is checked against `PRISM_TABLE_MAX_ROWS` before
+  anything is materialised; an overflow is `PRISM_RESOLVE_007`.
+- **Row order** is row-major: every measure of input row 0 in `unpivot`
+  declaration order, then every measure of input row 1, and so on. A
+  source row's outputs stay adjacent.
+- **Nulls** survive. A null measure cell produces an output row whose
+  value is null — the row is not dropped and the value is never
+  coerced to zero. What happens to it next is the encode-time null
+  policy (see [Multi-source](multi-source.md)).
+- **Types.** A categorical, boolean or date column cannot fill a
+  numeric value column; naming one in `unpivot` is refused with
+  `PRISM_COMPILE_002` rather than yielding zeros or NaN. A key / value
+  name that collides with a carried column is refused the same way —
+  rename through `as`.
+
+### Worked example: wide → long → grouped bar
+
+The usual reason to reshape is that the stored table is **wide** — one
+row per series, one *column* per metric, because in the source schema
+a metric is a column and not a dimension. A grouped bar wants the
+opposite: the metric on the category axis, the series dodged inside
+each slot. `unpivot` is the step between the two, and the
+[`x_offset` channel](encoding.md#offset-channels-x_offset--y_offset)
+is what dodges the result.
+
+Start from the wide table:
+
+| series           | awareness | consideration | familiarity | trust |
+|---|---|---|---|---|
+| Northwind        | 68 | 47 | 61 | 72 |
+| Category average | 54 | 51 | 57 | 58 |
+
+```json
+{
+  "$schema": "urn:prism:schema:v1:spec",
+  "data": {"values": [
+    {"series": "Northwind",        "awareness": 68, "consideration": 47, "familiarity": 61, "trust": 72},
+    {"series": "Category average", "awareness": 54, "consideration": 51, "familiarity": 57, "trust": 58}
+  ]},
+  "transform": [
+    {"unpivot": ["awareness", "consideration", "familiarity", "trust"],
+     "as": ["metric", "score"]}
+  ],
+  "mark": "bar",
+  "encoding": {
+    "x": {"field": "metric", "type": "nominal"},
+    "y": {"field": "score", "type": "quantitative"},
+    "x_offset": {
+      "field": "series",
+      "type": "nominal",
+      "scale": {"domain": ["Northwind", "Category average"]}
+    },
+    "color": {
+      "field": "series",
+      "type": "nominal",
+      "scale": {"domain": ["Northwind", "Category average"]}
+    }
+  }
+}
+```
+
+The transform turns 2 rows × 4 measures into 8 long rows — `series`
+carried through untouched, `metric` naming the source column, `score`
+carrying its value:
+
+| series | metric | score |
+|---|---|---|
+| Northwind | awareness | 68 |
+| Northwind | consideration | 47 |
+| Northwind | familiarity | 61 |
+| Northwind | trust | 72 |
+| Category average | awareness | 54 |
+| … | … | … |
+
+Four things are worth reading off that spec:
+
+- **`series` survives because it is not named in `unpivot`.** Every
+  column the transform does not stack is repeated on each output row,
+  which is what leaves a dimension for the offset channel to dodge on.
+- **The x axis order is the `unpivot` declaration order.** Output is
+  row-major, so the first input row emits its measures in the order
+  they are listed, and the band scale assigns slots first-seen from
+  there. Reordering the `unpivot` list reorders the axis.
+- **`x_offset` and `color` bind the same field, and both pin the same
+  `scale.domain`.** Pinning is what keeps the legend order and the
+  sub-band order in agreement, and what keeps a template's pair order
+  from moving when the underlying category set changes between
+  renders — see
+  [Encoding › Ordering the sub-bands](encoding.md#ordering-the-sub-bands).
+- **The bars dodge, they do not stack.** Every bar keeps its own
+  baseline; the offset scale subdivides the metric's band slot and its
+  padding defaults to zero, so the pair touches and together fills the
+  slot.
+
+The rendered result is the
+[`unpivot_grouped_bar`](../gallery/transforms/unpivot_grouped_bar.prism.json)
+gallery fixture.
+
+## Pivot transform — parses, does not execute
+
+`pivot` is the long → wide counterpart of `unpivot`, and it is the **one
+transform the spec grammar accepts that no backend can run**. It decodes,
+it has a JSON Schema variant, it builds a plan node — and nothing
+implements that node's execution.
+
+Rather than let it fail mid-pipeline, validate refuses it up front:
+
+```
+PRISM_SPEC_067: Transform "pivot" at transform[0] is accepted by the spec
+grammar but no backend can execute it.
+```
+
+This moved an existing failure earlier; it did not create one. Before the
+rule, a `pivot` spec validated cleanly and then died inside execute as
+`PRISM_COMPILE_001`, naming an internal node kind (`PivotNode`) the
+author never wrote. Every other transform variant executes — `filter`,
+`calculate`, `aggregate`, `bin`, `window`, `join`, `union`, `unpivot`,
+`sample`, `sort`, `limit`, `crosstab`, `regression`, `timeunit`, `stack`.
+That list is not a promise typed into a doc: `validate/rules/transform_executable.go`
+states it, and a repo gate drives one minimal spec per variant through
+the real planner and the real in-memory backend, failing just as loudly
+when a transform named there stops working as when one omitted there
+starts.
+
+**Use [`crosstab`](#crosstab-transform) for the same long → wide shape.**
+It spreads the distinct values of one field across columns and does
+execute:
+
+```json
+{
+  "transform": [
+    {"crosstab": {
+      "rows":    [{"field": "region"}],
+      "columns": [{"field": "quarter"}],
+      "cell":    {"aggregate": "sum", "field": "revenue"}
+    }}
+  ]
+}
+```
+
+The general answer, when a reshape is outside what the built-in
+transforms express, is the same one Prism gives everywhere: it consumes
+already-materialized rows, so do the reshape upstream and hand it the
+finished table — inline as `data.values`, through the `datasets` block,
+or at runtime via a `DataResolver` and a `data: {"ref": …}` binding.
+
 ## Stack transform
 
 The `stack` transform accumulates one quantitative field into per-row

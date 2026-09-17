@@ -119,7 +119,7 @@ func TestPrismSharedAxisMergeCoversEveryProperty(t *testing.T) {
 			if warns[0].Code != scene.WarnAxisConfigConflict {
 				t.Errorf("%s: warning code = %q, want %q", f.Name, warns[0].Code, scene.WarnAxisConfigConflict)
 			}
-			if want := axisPropertyName(f); warns[0].Details["Property"] != want {
+			if want := specPropertyName(f); warns[0].Details["Property"] != want {
 				t.Errorf("%s: warning property = %v, want %q", f.Name, warns[0].Details["Property"], want)
 			}
 
