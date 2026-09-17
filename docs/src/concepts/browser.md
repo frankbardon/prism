@@ -29,7 +29,7 @@ browser artifact:
 
 | Build | Command | Raw | Gzipped | Loader |
 |---|---|---|---|---|
-| **TinyGo** | `make build-wasm-tinygo` | ~7.6 MiB (7,953,738 B) | **~2.4 MiB (2,506,204 B)** | TinyGo's `wasm_exec.js` |
+| **TinyGo** | `make build-wasm-tinygo` | ~7.6 MiB (8,022,421 B) | **~2.4 MiB (2,547,567 B)** | TinyGo's `wasm_exec.js` |
 
 TinyGo links a lean runtime and GC, producing a module roughly half
 the size the standard Go toolchain would emit. `make build-wasm-tinygo`
