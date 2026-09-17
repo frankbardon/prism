@@ -250,7 +250,8 @@ func TestPrismPivotNodeStub(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Schema: %v", err)
 	}
-	// P03 conservative default — input shape verbatim (TODO P04).
+	// Conservative default — input shape verbatim; PivotNode derives
+	// no wide schema because it has no executor.
 	if len(out.Fields) != 3 {
 		t.Errorf("pivot stub schema fields=%d, want 3 (conservative)", len(out.Fields))
 	}

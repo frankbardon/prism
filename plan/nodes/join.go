@@ -9,9 +9,10 @@ import (
 	"github.com/frankbardon/prism/table"
 )
 
-// JoinKind is the join semantics token: inner|left|outer|anti. The
-// schema computation does not branch on kind in P03 (the column set is
-// the union either way; null behaviour comes in at Execute time, P07).
+// JoinKind is the join semantics token: inner|left|outer|anti. Schema
+// computation does not branch on kind — the column set is the union
+// either way; the kind decides which rows survive and where nulls land,
+// which is an Execute-time concern.
 type JoinKind string
 
 const (
@@ -21,7 +22,9 @@ const (
 	JoinAnti  JoinKind = "anti"
 )
 
-// JoinNode hash-joins two inputs on equality. P03 stub.
+// JoinNode hash-joins two inputs on equality. It executes through its
+// own Execute body (join_execute.go) rather than the compile backend,
+// so it never appears in compile/inmem's dispatch switch.
 type JoinNode struct {
 	id      plan.NodeID
 	left    plan.NodeID
@@ -54,9 +57,8 @@ func (n *JoinNode) Schema(in []*table.Schema) (*table.Schema, error) {
 	return joinedSchema(in[0], in[1], n.on), nil
 }
 
-// Execute implements plan.Node. Hash join body lives in
-// join_execute.go (kept separate for diffability against the P03 stub
-// surface).
+// Execute implements plan.Node. The hash-join body lives in
+// join_execute.go (kept in its own file for readability).
 func (n *JoinNode) Execute(ctx context.Context, in []*table.Table) (*table.Table, error) {
 	return n.executeJoin(ctx, in)
 }

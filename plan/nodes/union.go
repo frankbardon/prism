@@ -8,15 +8,13 @@ import (
 	"github.com/frankbardon/prism/table"
 )
 
-// UnionNode vertically concatenates N inputs. P03 stub.
+// UnionNode vertically concatenates N inputs. It executes through its
+// own Execute body (union_execute.go) rather than the compile backend,
+// so it never appears in compile/inmem's dispatch switch.
 //
-// Schema computation in P03 returns the first input's schema verbatim;
-// the real Execute path (P07) will validate cross-input schema
-// compatibility (same field names, compatible types). Marked here so
-// the eventual swap is mechanical.
-//
-// TODO P07: validate that every input schema matches in[0] and emit a
-// PRISM_PLAN_* code on mismatch.
+// Schema returns the first input's schema verbatim; Execute is what
+// checks cross-input compatibility (same field names and types, same
+// order) and raises PRISM_PLAN_004 on a mismatch.
 type UnionNode struct {
 	id     plan.NodeID
 	inputs []plan.NodeID
