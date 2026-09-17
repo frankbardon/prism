@@ -60,4 +60,5 @@ func init() {
 	validate.RegisterDefault(func() validate.SemanticRule { return OffsetAxisCoherent{} })
 	validate.RegisterDefault(func() validate.SemanticRule { return OffsetStackExclusive{} })
 	validate.RegisterDefault(func() validate.SemanticRule { return OffsetSpanExclusive{} })
+	validate.RegisterDefault(func() validate.SemanticRule { return TransformExecutable{} })
 }

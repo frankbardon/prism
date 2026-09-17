@@ -1136,6 +1136,17 @@ var Codes = map[string]CodeMetadata{
 		},
 		SeeAlso: []string{"PRISM_SPEC_042", "PRISM_SPEC_043", "PRISM_SPEC_065"},
 	},
+	"PRISM_SPEC_067": {
+		Code:    "PRISM_SPEC_067",
+		Message: `Transform "{{.Transform}}" at {{.Path}} is accepted by the spec grammar but no backend can execute it.`,
+		Fixups: []string{
+			"`{{.Transform}}`" + ` decodes, passes shape validation and builds a plan node, but nothing implements that node's execution. Left alone it fails later with PRISM_COMPILE_001 naming an internal node kind you never wrote, so the rejection happens here instead: validate does not call a spec valid when the engine cannot run it.`,
+			`For ` + "`pivot`" + ` (long → wide) use ` + "`crosstab`" + `, which builds the same wide contingency shape and does execute: ` + "`{\"crosstab\": {\"rows\": [{\"field\": \"region\"}], \"columns\": [{\"field\": \"quarter\"}], \"cell\": {\"aggregate\": \"sum\", \"field\": \"revenue\"}}}`" + `.`,
+			`Prism consumes already-materialized rows by design, so the general answer is to do the reshape (or the join) upstream and hand Prism the finished table — inline it as ` + "`data.values`" + `, publish it through the ` + "`datasets`" + ` block, or supply it at runtime with a ` + "`DataResolver`" + ` and a ` + "`data: {\"ref\": …}`" + ` binding.`,
+			`These transforms execute today: {{.Executable}}.`,
+		},
+		SeeAlso: []string{"PRISM_COMPILE_001", "PRISM_SPEC_032"},
+	},
 	"PRISM_WARN_OFFSET_COLLISION": {
 		Code:    "PRISM_WARN_OFFSET_COLLISION",
 		Message: `{{.Count}} rows repeat an offset key already drawn — first repeat {{.Key}} — so their marks share one sub-band and overlap.`,
