@@ -1,0 +1,31 @@
+{
+  "$schema": "urn:prism:schema:v1:spec",
+  "title": "Brand tracker: Northwind against the category average",
+  "data": {
+    "values": [
+      {"metric": "awareness",     "series": "Northwind",        "score": 68},
+      {"metric": "awareness",     "series": "Category average", "score": 54},
+      {"metric": "consideration", "series": "Northwind",        "score": 47},
+      {"metric": "consideration", "series": "Category average", "score": 51},
+      {"metric": "trust",         "series": "Northwind",        "score": 72},
+      {"metric": "trust",         "series": "Category average", "score": 58},
+      {"metric": "value",         "series": "Northwind",        "score": 39},
+      {"metric": "value",         "series": "Category average", "score": 46}
+    ]
+  },
+  "mark": "bar",
+  "encoding": {
+    "x": {"field": "metric", "type": "nominal"},
+    "y": {"field": "score", "type": "quantitative"},
+    "x_offset": {
+      "field": "series",
+      "type": "nominal",
+      "scale": {"domain": ["Northwind", "Category average"]}
+    },
+    "color": {
+      "field": "series",
+      "type": "nominal",
+      "scale": {"domain": ["Northwind", "Category average"]}
+    }
+  }
+}

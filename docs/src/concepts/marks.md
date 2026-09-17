@@ -638,6 +638,10 @@ Three metric slots, two bars in each: the brand's score beside its
 category average. The sub-bands touch and together fill the slot
 exactly, so the grouped bars read as one block per metric.
 
+Runnable versions of both orientations live in the gallery:
+[grouped_bar](../gallery/basic-marks/grouped_bar.prism.json) and
+[grouped_bar_horizontal](../gallery/basic-marks/grouped_bar_horizontal.prism.json).
+
 `bar` is the **only** mark that draws this. Every other band-seated
 mark fills its slot with a single shape — a `tick` is one line, a
 `heatmap` cell one rect, a `boxplot` one summary of the whole
