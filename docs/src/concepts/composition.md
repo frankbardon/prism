@@ -9,6 +9,55 @@ Prism supports five composition primitives, all v1:
 | `facet` | Grid by data values (one cell per partition) | usually single source |
 | `repeat` | Grid by field list (one cell per field) | usually single source |
 
+## What a parent passes down
+
+A composition parent inherits exactly three things to its children:
+
+| Key | Inherited? | Rule |
+|---|---|---|
+| `datasets` | yes | Merged; an entry the child redeclares wins. |
+| `data` | yes | Only when the child declares no `data` of its own. |
+| `$schema` | yes | Only when the child omits it. |
+| `encoding` | **no** | — |
+| `mark`, `transform`, `title`, `theme`, … | **no** | — |
+
+Every layer and every panel is a self-contained chart. That is a
+divergence from Vega-Lite, which inherits a parent `encoding` into
+layer children.
+
+Because nothing reads it, an `encoding` block written beside a
+composition operator is **rejected**, not ignored:
+
+```json
+{
+  "$schema": "urn:prism:schema:v1:spec",
+  "encoding": {"x": {"field": "month", "type": "ordinal"}},
+  "layer": [ ... ]
+}
+```
+
+```
+PRISM_SPEC_054: An "encoding" block on the spec root sits beside
+"layer", where nothing reads it.
+```
+
+The rule (`validate/rules/composite_parent_encoding.go`) covers every
+operator — `layer`, `concat`, `hconcat`, `vconcat`, `facet`, `repeat` —
+and walks the whole tree, so a `layer` nested inside a `concat` panel is
+caught at `concat[1].layer`. Two shapes stay legal, because their
+encoding really is read:
+
+- the `spec` child of a `facet` or `repeat` parent — that child *is* the
+  chart being drawn, so its own `encoding` is where the chart lives;
+- a flat spec with `mark` + `encoding` and no composition operator,
+  including the `encoding.row` / `encoding.column` facet shorthand.
+
+To share channel config across layers, repeat the block on each child
+and leave `resolve` at its default (`shared`) — the encoder folds the
+children's `axis` blocks and reports a disagreement rather than dropping
+one. See [the shared-axis rule](#the-shared-axis-rule-first-specified-wins-per-property)
+below.
+
 ## Layer
 
 ```json

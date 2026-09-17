@@ -144,9 +144,20 @@ type PositionChannel struct {
 // either a bare string or a {"repeat": <axis>} substitution object,
 // and the `axis` / `stack` keys so an explicit null is
 // distinguishable from an absent key. All other keys decode through
-// the default struct path;
-// unknown keys still error per Decode's DisallowUnknownFields
-// setting.
+// the default struct path.
+//
+// Strictness caveat: a custom UnmarshalJSON receives raw bytes, and
+// the outer decoder's DisallowUnknownFields setting does not reach
+// inside it, so an unknown key written *within* a channel object is
+// dropped here rather than raising a decode error. Every other
+// channel class with a custom decoder (MarkChannel, TooltipChannel,
+// OrderChannel, DetailChannel) and every block they decode by hand
+// (Axis, Legend) share the caveat. The JSON Schema shape stage is
+// what rejects those keys — `additionalProperties: false` on each
+// channel $def in schema/v1/encoding.schema.json — so a caller that
+// runs spec.Decode without validate.ShapeValidator sees the key
+// silently dropped. Route decoding through the validator, not
+// Decode alone, when strictness matters.
 func (p *PositionChannel) UnmarshalJSON(data []byte) error {
 	type alias PositionChannel
 	var aux struct {
