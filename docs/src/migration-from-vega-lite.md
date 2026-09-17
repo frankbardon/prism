@@ -19,6 +19,7 @@ guide to port specs in minutes.
 | `layer`, `concat`, `facet`, `repeat` | same | full composition v1 |
 | `condition` encodings | same shape | selection + test predicate conditions supported |
 | `strokeWidth` (camelCase) | `stroke_width` | snake_case throughout |
+| `xOffset` / `yOffset` | `x_offset` / `y_offset` | snake_case; same grouped-bar primitive — see [Offset (dodge) channels](#offset-dodge-channels) |
 | Vega expression language | structured `filter` / `calculate` built-ins | no expression language, no JS eval |
 
 ## snake_case (D019)
@@ -34,6 +35,59 @@ Vega-Lite vocabulary (`mark`, `encoding`, `transform`, `layer`,
 | `fontSize` | `font_size` |
 | `tickCount` | `tick_count` |
 | `labelOverlap` | `label_overlap` |
+| `xOffset` | `x_offset` |
+| `yOffset` | `y_offset` |
+
+## Offset (dodge) channels
+
+Vega-Lite's `xOffset` / `yOffset` are `x_offset` / `y_offset` here —
+the same grouped-bar primitive, renamed by the snake_case rule above.
+The camelCase spelling is **rejected at decode** (`PRISM_SPEC_009`,
+unknown field), never silently dropped, so a ported spec tells you
+immediately rather than rendering an ungrouped chart.
+
+```json
+{
+  "$schema": "urn:prism:schema:v1:spec",
+  "data": {"values": [
+    {"metric": "Awareness",     "series": "Acme",             "score": 62},
+    {"metric": "Awareness",     "series": "category average", "score": 48},
+    {"metric": "Consideration", "series": "Acme",             "score": 41},
+    {"metric": "Consideration", "series": "category average", "score": 44}
+  ]},
+  "mark": {"type": "bar"},
+  "encoding": {
+    "x":        {"field": "metric", "type": "nominal"},
+    "y":        {"field": "score",  "type": "quantitative"},
+    "x_offset": {"field": "series", "type": "nominal"},
+    "color":    {"field": "series", "type": "nominal"}
+  }
+}
+```
+
+Two behavioural divergences to know before porting a dodged chart:
+
+**Grouped *and* stacked bars are not supported.** An explicit `stack`
+written beside a bound offset is rejected with `PRISM_SPEC_065` rather
+than half-applied — the two spend the same geometry on the same
+grouping. Dodging alone needs no `stack` key at all, because the
+implicit bar/area stack yields to a bound offset. For a stack inside
+each dodged group, draw the dodged chart and split the stacking field
+out with `facet`.
+
+**Horizontal groups are mirrored.** Prism's `y` band scale runs
+bottom-to-top, and sub-bands run in the same direction the parent band
+assigns its own categories, so with `y_offset` the **first** offset
+category takes the **lower** sub-band of each slot. Vega-Lite's `y`
+band runs top-to-bottom, so the identical spec placed side by side
+looks flipped. Pin the order explicitly with
+`"x_offset": {"scale": {"domain": [...]}}` (or `y_offset`) when the
+comparison matters.
+
+Sub-band ordering otherwise matches Vega-Lite: `scale.domain` first,
+then a `sort` naming categories, then a `sort` direction, then the
+distinct values ascending. See
+[Encoding › Offset channels](concepts/encoding.md#offset-channels-x_offset--y_offset).
 
 ## Structured transforms (D005)
 

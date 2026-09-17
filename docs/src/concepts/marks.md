@@ -10,7 +10,7 @@ arcs, etc. Specify via top-level `mark` (shorthand string) or
 
 | Mark | When to use |
 |---|---|
-| `bar` | Compare categories. The default. Stacks by segment — see [Encoding › Stacking](encoding.md#stacking). |
+| `bar` | Compare categories. The default. Stacks by segment — see [Encoding › Stacking](encoding.md#stacking) — or draws side-by-side groups when an offset channel is bound, see [Grouped bars](#grouped-bars-dodging). |
 | `line` | Continuous trends; ordered x-axis. |
 | `area` | Filled trends. Supports negative values, an explicit `y2` lower edge, stacking — see [Encoding › Stacking](encoding.md#stacking) — and [`orient`](#orientation-markorient). |
 | `point` | Scatter, dot plots. |
@@ -601,6 +601,120 @@ annotates:
     "x": {"field": "quarter", "type": "nominal"},
     "y": {"field": "revenue", "type": "quantitative"},
     "text": {"field": "revenue", "type": "quantitative"}
+  }
+}
+```
+
+## Grouped bars (dodging)
+
+A `bar` normally fills the whole band slot its category owns. Bind an
+[offset channel](encoding.md#offset-channels-x_offset--y_offset) —
+`x_offset` or `y_offset` — and the slot is cut into one sub-band per
+distinct value of the offset field, so the rows sharing a category
+draw side by side:
+
+```json
+{
+  "$schema": "urn:prism:schema:v1:spec",
+  "data": {"values": [
+    {"metric": "Awareness",     "series": "Acme",             "score": 62},
+    {"metric": "Awareness",     "series": "category average", "score": 48},
+    {"metric": "Consideration", "series": "Acme",             "score": 41},
+    {"metric": "Consideration", "series": "category average", "score": 44},
+    {"metric": "Preference",    "series": "Acme",             "score": 28},
+    {"metric": "Preference",    "series": "category average", "score": 31}
+  ]},
+  "mark": {"type": "bar"},
+  "encoding": {
+    "x":        {"field": "metric", "type": "nominal"},
+    "y":        {"field": "score",  "type": "quantitative"},
+    "x_offset": {"field": "series", "type": "nominal"},
+    "color":    {"field": "series", "type": "nominal"}
+  }
+}
+```
+
+Three metric slots, two bars in each: the brand's score beside its
+category average. The sub-bands touch and together fill the slot
+exactly, so the grouped bars read as one block per metric.
+
+`bar` is the **only** mark that draws this. Every other band-seated
+mark fills its slot with a single shape — a `tick` is one line, a
+`heatmap` cell one rect, a `boxplot` one summary of the whole
+category — so there is nothing to divide, and an offset bound on one
+of them is rejected with `PRISM_SPEC_063` rather than quietly changing
+the geometry.
+
+### Both orientations
+
+Dodging follows [orientation](#orientation-markorient) like everything
+else about the mark. Put the category on `y` and the measure on `x`
+and use `y_offset`:
+
+```json
+{
+  "$schema": "urn:prism:schema:v1:spec",
+  "data": {"values": [
+    {"metric": "Awareness",     "series": "Acme",             "score": 62},
+    {"metric": "Awareness",     "series": "category average", "score": 48},
+    {"metric": "Consideration", "series": "Acme",             "score": 41},
+    {"metric": "Consideration", "series": "category average", "score": 44},
+    {"metric": "Preference",    "series": "Acme",             "score": 28},
+    {"metric": "Preference",    "series": "category average", "score": 31}
+  ]},
+  "mark": {"type": "bar"},
+  "encoding": {
+    "y":        {"field": "metric", "type": "nominal"},
+    "x":        {"field": "score",  "type": "quantitative"},
+    "y_offset": {"field": "series", "type": "nominal"},
+    "color":    {"field": "series", "type": "nominal"}
+  }
+}
+```
+
+The offset must sit on the **band** axis — the one carrying the
+categories. `x_offset` against a quantitative `x` has no slot to cut
+and is rejected with `PRISM_SPEC_064`, as is binding both offset
+channels at once.
+
+Sub-bands run in the same direction the parent band assigns its own
+categories. Prism's `y` scale runs bottom-to-top, so in the horizontal
+form above the **first** offset category takes the **lower** sub-band
+of each slot.
+
+### Dodging replaces stacking
+
+A bar that would [stack](encoding.md#stacking) implicitly — aggregated
+measure, discrete grouping — stops doing so the moment an offset is
+bound. The two spend the same geometry on the same grouping: a stack
+accumulates the segments along the measure axis, a dodge spreads them
+across the category band. The offset is what the author asked for
+explicitly, so the inferred stack yields to it and no `stack` key is
+needed.
+
+Writing an explicit `stack` beside an offset is a contradiction and is
+rejected with `PRISM_SPEC_065`. Remove the `stack`, not the offset:
+dodging is the thing the spec asked for outright, and Prism refuses
+rather than drawing half of each. `"stack": null` and `"stack": false`
+are opt-outs, agree with the offset, and are accepted in silence.
+
+Prism does not combine the two on one mark. A chart that stacks within
+each dodged group is built by composition instead: draw the dodged
+chart and split the stacking field out with `facet`.
+
+### What else to know
+
+- The sub-band domain is the distinct offset values across the
+  **whole** table, so every bar is the same width and a category
+  missing a series leaves that series' sub-band empty.
+- The offset builds **no legend**. Bind `color` to the same field, as
+  both examples above do.
+- `y2` together with `x_offset` is a legal ranged, dodged bar; a span
+  on the offset's *own* axis is rejected with `PRISM_SPEC_066`.
+- Sub-band order, padding, composition behaviour and the diagnostics
+  are all covered in
+  [Encoding › Offset channels](encoding.md#offset-channels-x_offset--y_offset).
+
 ## Orientation (`mark.orient`)
 
 A bar does not really have an "x axis" and a "y axis" — it has a
@@ -825,6 +939,13 @@ when every row is null.
 Not every channel is valid for every mark — `theta` only makes sense
 on `arc`, `source`/`target` only on `sankey`, etc. The validator
 catches mismatches with `PRISM_SPEC_003`.
+
+Three capabilities are gated by their own codes rather than by the
+general allowlist, because the mark accepts the channel's *shape* and
+simply cannot draw what it asks for: the [span channels](encoding.md#span-channels)
+(`PRISM_SPEC_042`), [`mark.orient`](#orientation-markorient)
+(`PRISM_SPEC_046`) and the [offset channels](#grouped-bars-dodging)
+(`PRISM_SPEC_063`). All three reject rather than ignore.
 
 ## Renderer compatibility
 
