@@ -35,6 +35,18 @@ import (
 // goldens stay byte-identical because the 1×1 single-layer case is
 // preserved.
 func EncodeComposite(s *spec.Spec, composite *plan.CompositeDAG, childTables []map[plan.NodeID]*table.Table, opts EncodeOpts) (*scene.SceneDoc, error) {
+	doc, err := encodeComposite(s, composite, childTables, opts)
+	if err != nil {
+		return nil, err
+	}
+	doc.Warnings = append(doc.Warnings, InertFieldWarnings(s)...)
+	return doc, nil
+}
+
+// encodeComposite is EncodeComposite without the top-of-tree
+// inert-field pass (E7-S1); see Encode / encodeLeaf for why the two
+// are split.
+func encodeComposite(s *spec.Spec, composite *plan.CompositeDAG, childTables []map[plan.NodeID]*table.Table, opts EncodeOpts) (*scene.SceneDoc, error) {
 	if s == nil {
 		return nil, fmt.Errorf("encode: nil spec")
 	}
@@ -378,6 +390,13 @@ func encodeLayerComposite(s *spec.Spec, composite *plan.CompositeDAG, childTable
 			// paint; the track's Style is theme-resolved, not derived
 			// from the layer's own mark style (E10-S1).
 			TrackStyle: progressTrackStyle(fullTheme),
+			// Same reasoning for a funnel's stage labels: they take
+			// the theme's "text" style, not the layer's own mark
+			// style, so a funnel inside a layer drew its labels with
+			// an empty style until E7-S1 filled this in. The flat
+			// encoder uses the auto-dark variant; a composite cell
+			// keeps the baked-hex path (E4-S3's scope boundary).
+			LabelStyle: defaultMarkStyle(fullTheme, "text"),
 		}
 		if lc.child.Spec.Mark != nil {
 			markInputs.Mark = lc.child.Spec.Mark.Def
@@ -902,7 +921,7 @@ func encodeConcatComposite(s *spec.Spec, composite *plan.CompositeDAG, childTabl
 
 		// Each concat child is a flat chart (D050 forbids nested
 		// composition in v1); call Encode directly.
-		childDoc, err := Encode(child.Spec, childTables[i], child.Tip, childOpts)
+		childDoc, err := encodeLeaf(child.Spec, childTables[i], child.Tip, childOpts)
 		if err != nil {
 			return nil, fmt.Errorf("concat child %d: %w", i, err)
 		}

@@ -539,6 +539,76 @@ var Codes = map[string]CodeMetadata{
 		SeeAlso: []string{"PRISM_WARN_AXIS_CONFIG_CONFLICT"},
 	},
 
+	// --- E7-S1 inert-field warnings. A spec key that decodes, passes
+	// validation and then reaches no consumer now says so instead of
+	// being silently discarded. All six are emitted once per spec by
+	// encode.InertFieldWarnings, from the top of the composition tree.
+	"PRISM_WARN_MARK_DEF_INERT": {
+		Code:    "PRISM_WARN_MARK_DEF_INERT",
+		Message: `{{.Path}}: mark_def "{{.Property}}" is not read by the "{{.Mark}}" mark.`,
+		Fixups: []string{
+			`The property is {{.Owners}} — on any other mark it decodes and is discarded.`,
+			`Remove "{{.Property}}" from the mark_def, or change the mark type to one that reads it.`,
+			`docs/src/concepts/marks.md lists the mark_def properties each mark family consumes.`,
+		},
+		SeeAlso: []string{"PRISM_WARN_CHANNEL_INERT", "PRISM_WARN_SCALE_FIELD_INERT"},
+	},
+
+	"PRISM_WARN_CHANNEL_INERT": {
+		Code:    "PRISM_WARN_CHANNEL_INERT",
+		Message: `{{.Path}}: this encoding binding reaches no consumer — {{.Reason}}.`,
+		Fixups: []string{
+			`Remove the binding, or move the intent onto a channel the mark reads (docs/src/concepts/encoding.md lists them per mark).`,
+			`A constant is usually available on the mark_def instead — mark_def.fill / .stroke / .size / .opacity.`,
+			`A channel-level "condition" is still evaluated, so a conditional binding on the same channel is not reported.`,
+		},
+		SeeAlso: []string{"PRISM_WARN_MARK_DEF_INERT"},
+	},
+
+	"PRISM_WARN_SCALE_FIELD_INERT": {
+		Code:    "PRISM_WARN_SCALE_FIELD_INERT",
+		Message: `{{.Path}}: scale "{{.Property}}" does not apply to the {{.Family}} scale this channel resolves to.`,
+		Fixups: []string{
+			`{{.Reason}}.`,
+			`Set "scale": {"type": "..."} explicitly if you meant a different scale family.`,
+			`docs/src/concepts/encoding.md's scale section lists which knob each family reads.`,
+		},
+		SeeAlso: []string{"PRISM_SPEC_041", "PRISM_SPEC_045"},
+	},
+
+	"PRISM_WARN_LEGEND_FIELD_INERT": {
+		Code:    "PRISM_WARN_LEGEND_FIELD_INERT",
+		Message: `{{.Path}}: legend "{{.Property}}" is not read by the legend builder.`,
+		Fixups: []string{
+			`{{.Reason}}.`,
+			`"title", "values", "format", "label_limit", "orient", "offset" and "padding" are the legend keys that do take effect.`,
+			`Remove the key rather than relying on it — it round-trips through the spec unchanged and changes nothing.`,
+		},
+		SeeAlso: []string{"PRISM_WARN_LEGEND_NOT_BUILT"},
+	},
+
+	"PRISM_WARN_LEGEND_NOT_BUILT": {
+		Code:    "PRISM_WARN_LEGEND_NOT_BUILT",
+		Message: `{{.Path}}: a {{.Type}} colour channel renders with no legend at all, so the colour encoding has no key.`,
+		Fixups: []string{
+			`The symbol legend is built from discrete colour categories; a continuous colour channel needs a gradient legend, which no code path produces yet.`,
+			`Bin the field ("bin": true) or declare it "nominal" / "ordinal" to get a symbol legend today.`,
+			`Suppress the warning on purpose with "legend": null on the channel if the chart is meant to carry no key.`,
+		},
+		SeeAlso: []string{"PRISM_WARN_LEGEND_FIELD_INERT"},
+	},
+
+	"PRISM_WARN_FACET_CHILD_SKIPPED": {
+		Code:    "PRISM_WARN_FACET_CHILD_SKIPPED",
+		Message: `{{.Path}}: a facet child's {{.Feature}} is dropped — the child encoding is stripped before the plan is built.`,
+		Fixups: []string{
+			`{{.Reason}}.`,
+			`Do the work upstream instead: an explicit "aggregate" / "stack" / "sort" transform in the child's transform list survives faceting.`,
+			`Pre-aggregate the rows before handing them to Prism when the transform list cannot express it.`,
+		},
+		SeeAlso: []string{"PRISM_WARN_CHANNEL_INERT"},
+	},
+
 	// --- P09 facet / repeat codes.
 	"PRISM_SPEC_012": {
 		Code:    "PRISM_SPEC_012",

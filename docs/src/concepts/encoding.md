@@ -692,6 +692,11 @@ swapping the swatches.
 **`format` goes through the real formatter.** `legend.format` is
 parsed by the same `encode/format` d3 subset that
 `PRISM_SPEC_011` validates it against, so `".1%"` renders `12.3%`.
+Since E7-S1 `axis.format` takes the identical path — it ran through
+`fmt.Sprintf` before, which rendered a documented specifier like
+`".0%"` as `%!(NOVERB)` on an axis while the same string worked on a
+legend. A specifier the subset cannot parse falls back to the default
+`%g` label rather than emitting a broken one.
 It applies to gradient stop labels always, and to a symbol label
 whose category reads as a number; a non-numeric category is passed
 through untouched.

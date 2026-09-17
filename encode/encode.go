@@ -76,7 +76,24 @@ func isSparkMark(markType string) bool {
 //     (full nesting always; no flat-chart special case).
 //
 // All warnings collected along the way attach to SceneDoc.Warnings.
+//
+// Encode is the top-of-tree entry point: it delegates the encoding to
+// encodeLeaf and then appends the spec-wide inert-field warnings
+// (E7-S1). Composition cells call encodeLeaf directly, which is what
+// keeps InertFieldWarnings a single reporter — a layer child is
+// walked once, from the root spec, never once per cell.
 func Encode(s *spec.Spec, tables map[plan.NodeID]*table.Table, tipID plan.NodeID, opts EncodeOpts) (*scene.SceneDoc, error) {
+	doc, err := encodeLeaf(s, tables, tipID, opts)
+	if err != nil {
+		return nil, err
+	}
+	doc.Warnings = append(doc.Warnings, InertFieldWarnings(s)...)
+	return doc, nil
+}
+
+// encodeLeaf is Encode without the inert-field pass — the entry every
+// composition cell uses.
+func encodeLeaf(s *spec.Spec, tables map[plan.NodeID]*table.Table, tipID plan.NodeID, opts EncodeOpts) (*scene.SceneDoc, error) {
 	if s == nil {
 		return nil, fmt.Errorf("encode: nil spec")
 	}

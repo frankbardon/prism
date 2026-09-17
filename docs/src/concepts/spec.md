@@ -564,6 +564,50 @@ prism validate my-chart.prism.json
 prism validate --json my-chart.prism.json
 ```
 
+## Warnings — and the fields that do nothing
+
+A spec can be perfectly valid and still ask for something Prism does
+not do. Those keys used to be discarded in silence; they now report
+themselves as **warnings**. A warning never stops the chart: the
+document still renders, and the warning rides alongside it.
+
+Where they surface:
+
+- `prism plot` / `prism scene` print `WARN <CODE>: <message>` to
+  **stderr**, so the rendered bytes on stdout stay clean.
+- `prism scene` also carries them in the document itself, under the
+  top-level `warnings` array of the Scene IR (`code`, `message`,
+  `details`) — the same array the browser runtime and the Twirp /
+  MCP facades read.
+- `prism errors lookup <CODE>` explains any of them, with fixups.
+
+The **inert-field** family reports a key that decoded, passed
+validation, and then reached no consumer. Each one names the exact
+path (`layer[1].mark.stroke_dash`, `encoding.y.scale.padding_inner`)
+plus the mark or channel it was written on:
+
+| Code | Fires when |
+|---|---|
+| `PRISM_WARN_MARK_DEF_INERT` | a `mark_def` property is set on a mark that never reads it — `pad_angle` on a bar, `dx` on a rect — or on a property no mark reads at all (`stroke_dash`, `shape`, `tooltip`, `layout`) |
+| `PRISM_WARN_CHANNEL_INERT` | a channel binding reaches no encoder: `fill`, `stroke`, `size`, `shape` (no mark reads them), `opacity` on anything but `heatmap`, or a table column's `format` |
+| `PRISM_WARN_SCALE_FIELD_INERT` | a `scale` property does not apply to the family the channel resolves to — `padding_inner` on a linear scale, `base` on anything but `log`, `zero` on a log / time / discrete scale |
+| `PRISM_WARN_LEGEND_FIELD_INERT` | a `legend` property has no consumer: `type`, `direction`, `symbol_type`, `symbol_size`, `tick_count` |
+| `PRISM_WARN_LEGEND_NOT_BUILT` | a **quantitative or temporal** `color` channel is bound — the symbol legend needs discrete categories and no gradient legend is produced, so the chart renders with no colour key |
+| `PRISM_WARN_FACET_CHILD_SKIPPED` | a facet child's encoding asks for a channel-level `aggregate`, a `stack`, or an `order` — the child encoding is stripped before the plan is built, so none of the three is injected |
+
+Silence is intentional for three groups, and none of them warns: a key
+that **is** honoured; a key that is **rejected** outright at validate
+(`orient: "radial"` → `PRISM_SPEC_046`, `scale.range` on a position
+channel → `PRISM_SPEC_045`, `bar` + `stack: "center"` →
+`PRISM_SPEC_053` — a rejection is already visible); and a key that is
+inert *by design* — the `json:"-"` internal bindings, and
+`axis.format` / `legend.format`, which a validation rule reads. A
+channel carrying a `condition` is likewise never reported: the
+condition pass evaluates it whatever the channel.
+
+The report is produced once per spec, from the top of the composition
+tree, so a layer or concat child is never warned about twice.
+
 ## Spec patches (RFC 6902)
 
 Iterative edits to a rendered chart don't need a full spec re-send.
