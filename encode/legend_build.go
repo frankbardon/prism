@@ -390,7 +390,7 @@ func DefaultLegendPosition(kind LegendKind) scene.LegendPosition {
 // sequential ramp the marks themselves interpolate within. Returns
 // nil when there is nothing to draw: no field, no column, no numeric
 // cell in it, or an empty palette.
-func legendGradientFor(id, field string, tbl *table.Table, palette []*scene.Color, labelFormat string) *GradientLegend {
+func legendGradientFor(id, field string, tbl *table.Table, palette []*scene.Color, labelFormat string, domain *[2]float64) *GradientLegend {
 	if field == "" || tbl == nil || len(palette) == 0 {
 		return nil
 	}
@@ -401,6 +401,9 @@ func legendGradientFor(id, field string, tbl *table.Table, palette []*scene.Colo
 	mn, mx, ok := columnNumericExtent(col)
 	if !ok {
 		return nil
+	}
+	if domain != nil {
+		mn, mx = domain[0], domain[1]
 	}
 	return &GradientLegend{
 		ID:          id,
@@ -480,10 +483,14 @@ type colorLegendInputs struct {
 	Categories []string
 	Palette    []*scene.Color
 	Sequential []*scene.Color
-	Table      *table.Table
-	Placement  LegendPlacement
-	Content    LegendContent
-	Plot       scene.Rect
+	// Domain is the channel's explicit [lo, hi] (sequentialDomainOf);
+	// nil spans the column's own extent. The gradient bar labels the
+	// span the marks are coloured over.
+	Domain    *[2]float64
+	Table     *table.Table
+	Placement LegendPlacement
+	Content   LegendContent
+	Plot      scene.Rect
 }
 
 // buildColorLegend builds the color channel's legend in whichever
@@ -498,7 +505,7 @@ type colorLegendInputs struct {
 func buildColorLegend(in colorLegendInputs) (*scene.Legend, *scene.Gradient) {
 	if in.Kind == LegendKindGradient {
 		id := LegendGradientID(in.SceneID, in.Channel)
-		if g := legendGradientFor(id, in.Field, in.Table, in.Sequential, in.Format); g != nil {
+		if g := legendGradientFor(id, in.Field, in.Table, in.Sequential, in.Format, in.Domain); g != nil {
 			lg := BuildGradientLegend(LegendInputs{
 				Channel:   in.Channel,
 				Title:     in.Title,

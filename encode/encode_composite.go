@@ -397,6 +397,7 @@ func encodeLayerComposite(s *spec.Spec, composite *plan.CompositeDAG, childTable
 				// gradient legend draws its stops from the same slice,
 				// so bar and cells cannot describe different ramps.
 				SequentialPalette: ResolveSequentialPaletteWithOpts(fullTheme, colorScaleOpts(childEnc.Color)),
+				SequentialDomain:  sequentialDomainOf(childEnc.Color),
 			}
 			ll := legendPls[lc.idx]
 			if (len(cats) > 1 || ll.kind == LegendKindGradient) && ll.enabled && !legendHidden(childEnc.Color) {
@@ -410,6 +411,7 @@ func encodeLayerComposite(s *spec.Spec, composite *plan.CompositeDAG, childTable
 					Categories: cats,
 					Palette:    colorChannel.Palette,
 					Sequential: colorChannel.SequentialPalette,
+					Domain:     colorChannel.SequentialDomain,
 					Table:      lc.tbl,
 					Placement:  ll.placement,
 					Content:    ll.content,

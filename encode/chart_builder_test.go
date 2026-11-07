@@ -146,3 +146,27 @@ func hasWarning(ws []scene.Warning, code, pathPart string) bool {
 	}
 	return false
 }
+
+func TestHeatmapColorDomainAndReverse(t *testing.T) {
+	heat := func(values, scale string) []string {
+		doc := encodeFlatJSON(t, `{"$schema": "urn:prism:schema:v1:spec", "data": {"values": [`+values+`]},
+			"mark": "heatmap", "encoding": {"x": {"field": "x", "type": "nominal"}, "y": {"field": "y", "type": "nominal"},
+			"color": {"field": "v", "type": "quantitative"`+scale+`}}}`)
+		var fills []string
+		for _, l := range doc.Grid.Cells[0].Scene.Layers {
+			for _, m := range l.Marks {
+				fills = append(fills, m.Style.Fill.CSS())
+			}
+		}
+		return fills
+	}
+	full := heat(`{"x": "a", "y": "p", "v": -1}, {"x": "b", "y": "p", "v": 1}, {"x": "c", "y": "p", "v": 0}`, "")
+	pinned := heat(`{"x": "c", "y": "p", "v": 0}, {"x": "d", "y": "p", "v": 0.5}`, `, "scale": {"domain": [-1, 1]}`)
+	if pinned[0] != full[2] {
+		t.Errorf("0 over domain [-1, 1] = %s, want the midpoint colour %s", pinned[0], full[2])
+	}
+	reversed := heat(`{"x": "a", "y": "p", "v": -1}, {"x": "b", "y": "p", "v": 1}`, `, "scale": {"reverse": true}`)
+	if reversed[0] != full[1] || reversed[1] != full[0] {
+		t.Errorf("reversed %v, want the ends swapped from %v", reversed, full[:2])
+	}
+}

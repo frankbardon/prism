@@ -423,6 +423,7 @@ func encodeLeaf(s *spec.Spec, tables map[plan.NodeID]*table.Table, tipID plan.No
 			Categories:        cats,
 			Palette:           ResolveCategoricalPaletteWithOpts(fullTheme, colorScaleOpts(enc.Color)),
 			SequentialPalette: ResolveSequentialPaletteWithOpts(fullTheme, colorScaleOpts(enc.Color)),
+			SequentialDomain:  sequentialDomainOf(enc.Color),
 		}
 		if darkTheme != nil {
 			colorChannel.DarkPalette = ResolveCategoricalPaletteWithOpts(darkTheme, colorScaleOpts(enc.Color))
@@ -663,6 +664,7 @@ func encodeLeaf(s *spec.Spec, tables map[plan.NodeID]*table.Table, tipID plan.No
 			Categories: colorChannel.Categories,
 			Palette:    colorChannel.Palette,
 			Sequential: colorChannel.SequentialPalette,
+			Domain:     colorChannel.SequentialDomain,
 			Table:      tbl,
 			Placement:  legendPl,
 			Content:    legendContent,
@@ -739,6 +741,7 @@ func buildSceneDoc(
 			Categories: colorChannel.Categories,
 			Palette:    colorChannel.Palette,
 			Sequential: colorChannel.SequentialPalette,
+			Domain:     colorChannel.SequentialDomain,
 			Table:      tbl,
 			Placement:  legendPl,
 			Content:    legendContent,

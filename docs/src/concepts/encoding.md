@@ -194,6 +194,13 @@ epoch-millisecond number. A discrete scale (`band`, `point`,
 }
 ```
 
+**On the color channel.** A categorical `color` reads its `domain` the
+same way: the listed categories take the palette's first slots (and
+the legend's first entries) in that order, so a category keeps its
+colour whichever row it first appears in. A quantitative `color` on a
+`heatmap` reads `domain` as the `[lo, hi]` its ramp spans and
+`reverse` as a flip of the ramp; see [Marks](marks.md).
+
 A discrete `domain` pins the **leading** order; any data category the
 list omits is appended after it in first-seen order, so a partial
 domain reorders without dropping rows. This is Prism's one intentional

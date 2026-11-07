@@ -2,6 +2,7 @@ package encode
 
 import (
 	"github.com/frankbardon/prism/encode/scene"
+	"github.com/frankbardon/prism/spec"
 	"github.com/frankbardon/prism/theme"
 )
 
@@ -111,12 +112,50 @@ func ResolveSequentialPalette(t *theme.Theme, scaleScheme string) []*scene.Color
 // lerp, the Scene IR's gradient stops, the vendored JS renderer —
 // blends adjacent stops linearly and still lands on the requested
 // space's curve. `rgb` (the default) returns the ramp untouched.
+//
+// `scale.reverse` flips the resolved ramp end for end, so the low end
+// of the domain takes the ramp's last stop: the heatmap fill and the
+// gradient legend both read this one slice, so they flip together.
 func ResolveSequentialPaletteWithOpts(t *theme.Theme, opts ScaleOpts) []*scene.Color {
-	return ResampleRamp(
+	ramp := ResampleRamp(
 		resolveSequentialStops(t, opts),
 		opts.Interpolate,
 		InterpolatedRampStops,
 	)
+	if opts.reverseEnabled() && len(ramp) > 1 {
+		flipped := make([]*scene.Color, len(ramp))
+		for i, c := range ramp {
+			flipped[len(ramp)-1-i] = c
+		}
+		ramp = flipped
+	}
+	return ramp
+}
+
+// sequentialDomainOf is SequentialDomain for a color channel, in the
+// shape marks.ColorChannel carries; nil when none is pinned.
+func sequentialDomainOf(ch *spec.MarkChannel) *[2]float64 {
+	lo, hi, ok := SequentialDomain(colorScaleOpts(ch))
+	if !ok {
+		return nil
+	}
+	return &[2]float64{lo, hi}
+}
+
+// SequentialDomain is a quantitative color channel's explicit
+// `scale.domain`, as the [lo, hi] the ramp spans: the first and last
+// numbers of the list. ok is false when the channel pins no numeric
+// domain (the data's own extent then stands).
+func SequentialDomain(opts ScaleOpts) (lo, hi float64, ok bool) {
+	if len(opts.Domain) < 2 {
+		return 0, 0, false
+	}
+	lo, ok1 := legendValueFloat(opts.Domain[0])
+	hi, ok2 := legendValueFloat(opts.Domain[len(opts.Domain)-1])
+	if !ok1 || !ok2 || lo == hi {
+		return 0, 0, false
+	}
+	return lo, hi, true
 }
 
 func resolveSequentialStops(t *theme.Theme, opts ScaleOpts) []*scene.Color {
