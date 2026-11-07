@@ -703,23 +703,27 @@ theme with no `dark_variant` at all.
 static per-mark-type theme colors (`theme.MarkStyle.Fill`/`Stroke` via
 `applyThemeMarkStyle`) — against **both** the active theme and its
 `dark_variant` counterpart. Each distinct `(light, dark)` pair
-encountered gets a stable variable name in first-encounter order:
-`--prism-resolved-0`, `--prism-resolved-1`, … (same input spec + theme
-pairing → same names every render, so golden fixtures stay stable).
-Both values land in the `<style>` block — light under the base
-`:root{...}`, dark under the `@media` rule above — and the mark
-element emits `fill="var(--prism-resolved-N)"` /
-`stroke="var(--prism-resolved-N)"` instead of a baked hex literal:
+encountered gets a variable named after its two values —
+`--prism-resolved-<light hex>-<dark hex>`, e.g.
+`--prism-resolved-4c78a8-4269d0` (a colour that is not opaque hex is
+named by a hash of the pair instead). Because the name depends only on
+the values, several Prism SVGs can sit inline in one HTML document:
+every `<style>` block that declares a name declares it with the same
+pair, so no chart picks up another chart's colours whichever block
+the page applies last. Both values land in the `<style>` block — light
+under the base `:root{...}`, dark under the `@media` rule above — and
+the mark element emits `fill="var(--prism-resolved-…)"` /
+`stroke="var(--prism-resolved-…)"` instead of a baked hex literal:
 
 ```css
-:root { --prism-resolved-0: #4c78a8; }
+:root { --prism-resolved-4c78a8-4269d0: #4c78a8; }
 @media (prefers-color-scheme: dark) {
-  :root { --prism-resolved-0: #4269d0; }
+  :root { --prism-resolved-4c78a8-4269d0: #4269d0; }
 }
 ```
 
 ```xml
-<rect class="prism-mark-bar" fill="var(--prism-resolved-0)" .../>
+<rect class="prism-mark-bar" fill="var(--prism-resolved-4c78a8-4269d0)" .../>
 ```
 
 This is carried on the scene IR by `scene.Style.FillVar`/`StrokeVar`
@@ -729,8 +733,17 @@ over the baked value" precedent as the gradient/pattern `FillRef`).
 `render/html/` inherits this automatically, same as every other
 `render/svg` emission. When `dark_variant` is unset, none of this
 runs: every mark keeps baking a literal hex exactly as before E4-S3.
-Legend swatches are not yet re-plumbed onto resolved vars — they still
-bake the light-theme hex, a known gap for a future story.
+
+**Every composition and every legend pairs too (v0.18).** One registry
+serves the whole document: the top-of-tree encoder creates it and
+hands it to every `layer`, `concat` / `hconcat` / `vconcat` cell,
+`facet` cell and `repeat` cell (`encode/autodark.go`), then emits the
+pairs once. Symbol-legend swatches paint with the same variable as the
+marks of their category (`scene.SwatchSpec.ColorVar`), and a gradient
+legend's stops pair with the dark ramp (`scene.GradientStop.ColorVar`),
+so a legend flips with the marks it describes. A per-cell theme
+override (`cell_overrides`) still pairs against the root theme's
+`dark_variant`.
 
 **Validation:** a non-empty `dark_variant` must name a theme already
 present in the registry — checked at the same fail-loud entry points
@@ -924,7 +937,7 @@ subset of these variables (axis/grid/legend/title/view/selection-state
 time, inside an `@media (prefers-color-scheme: dark) { :root { ... } }`
 rule appended after the base block in the same `<style>` element.
 Resolved per-instance mark colors ride a separate
-`--prism-resolved-N` family (E4-S3, see
+`--prism-resolved-*` family (E4-S3, see
 [Dark variant pairing](#dark-variant-pairing)) that IS doubled the
 same way — light value in the base block, dark value in the media
 rule — since those are the actual colors marks paint with once

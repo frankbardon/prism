@@ -102,12 +102,13 @@ func TestPrismHTMLGolden_DarkVariantMarkColors(t *testing.T) {
 		t.Errorf("rendered HTML missing dark-variant media query block")
 	}
 	barCount := strings.Count(htmlText, `class="prism-mark-bar"`)
+	swatchCount := strings.Count(htmlText, `class="prism-legend-swatch"`)
 	varCount := strings.Count(htmlText, `fill="var(--prism-resolved-`)
-	if barCount == 0 {
-		t.Fatalf("fixture produced no bar marks — test is vacuous")
+	if barCount == 0 || swatchCount == 0 {
+		t.Fatalf("fixture produced no bar marks or no legend — test is vacuous")
 	}
-	if varCount != barCount {
-		t.Errorf("expected all %d bar marks to carry a var(--prism-resolved-N) fill, found %d", barCount, varCount)
+	if varCount != barCount+swatchCount {
+		t.Errorf("expected all %d bar marks and %d legend swatches to carry a var(--prism-resolved-*) fill, found %d", barCount, swatchCount, varCount)
 	}
 }
 

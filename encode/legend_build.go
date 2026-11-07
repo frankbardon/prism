@@ -4,6 +4,7 @@ import (
 	"fmt"
 
 	"github.com/frankbardon/prism/encode/format"
+	"github.com/frankbardon/prism/encode/marks"
 	"github.com/frankbardon/prism/encode/scene"
 	"github.com/frankbardon/prism/spec"
 	"github.com/frankbardon/prism/table"
@@ -54,7 +55,13 @@ type LegendInputs struct {
 	Title      string
 	Categories []string       // for symbol legends
 	Palette    []*scene.Color // for symbol legends
-	Placement  LegendPlacement
+	// DarkPalette + Registry (E4-S3, symbol legends): when both are
+	// set each swatch is paired with the DarkVariant colour at the same
+	// palette slot, exactly as the marks are, so the key flips with
+	// the marks under prefers-color-scheme.
+	DarkPalette []*scene.Color
+	Registry    *marks.ColorVarRegistry
+	Placement   LegendPlacement
 	// Content is the resolved content half of the channel's legend
 	// block (E3-S3): title override, entry filter, label format and
 	// label limit. The zero value reproduces the defaults.
@@ -486,11 +493,17 @@ type colorLegendInputs struct {
 	// Domain is the channel's explicit [lo, hi] (sequentialDomainOf);
 	// nil spans the column's own extent. The gradient bar labels the
 	// span the marks are coloured over.
-	Domain    *[2]float64
-	Table     *table.Table
-	Placement LegendPlacement
-	Content   LegendContent
-	Plot      scene.Rect
+	Domain *[2]float64
+	// DarkPalette / DarkSequential / Registry pair the swatches and
+	// gradient stops with the DarkVariant's colours (E4-S3), the same
+	// pairing the marks get; all nil when auto-dark is off.
+	DarkPalette    []*scene.Color
+	DarkSequential []*scene.Color
+	Registry       *marks.ColorVarRegistry
+	Table          *table.Table
+	Placement      LegendPlacement
+	Content        LegendContent
+	Plot           scene.Rect
 }
 
 // buildColorLegend builds the color channel's legend in whichever
@@ -506,6 +519,7 @@ func buildColorLegend(in colorLegendInputs) (*scene.Legend, *scene.Gradient) {
 	if in.Kind == LegendKindGradient {
 		id := LegendGradientID(in.SceneID, in.Channel)
 		if g := legendGradientFor(id, in.Field, in.Table, in.Sequential, in.Format, in.Domain); g != nil {
+			pairStops(g.Stops, in.DarkSequential, in.Registry)
 			lg := BuildGradientLegend(LegendInputs{
 				Channel:   in.Channel,
 				Title:     in.Title,
@@ -523,13 +537,29 @@ func buildColorLegend(in colorLegendInputs) (*scene.Legend, *scene.Gradient) {
 		}
 	}
 	return BuildSymbolLegend(LegendInputs{
-		Channel:    in.Channel,
-		Title:      in.Title,
-		Categories: in.Categories,
-		Palette:    in.Palette,
-		Placement:  in.Placement,
-		Content:    in.Content,
+		Channel:     in.Channel,
+		Title:       in.Title,
+		Categories:  in.Categories,
+		Palette:     in.Palette,
+		DarkPalette: in.DarkPalette,
+		Registry:    in.Registry,
+		Placement:   in.Placement,
+		Content:     in.Content,
 	}, in.Plot), nil
+}
+
+// pairStops files each gradient stop's colour with the stop at the
+// same position on the dark ramp, so the legend bar flips with the
+// cells it describes. A no-op when auto-dark is off or the ramps
+// differ in length.
+func pairStops(stops []scene.GradientStop, dark []*scene.Color, reg *marks.ColorVarRegistry) {
+	if reg == nil || len(dark) != len(stops) {
+		return
+	}
+	for i := range stops {
+		light := stops[i].Color
+		stops[i].ColorVar = reg.Resolve(&light, dark[i])
+	}
 }
 
 // registerSceneGradient files a legend's gradient under the scene's
@@ -622,9 +652,13 @@ func BuildSymbolLegend(in LegendInputs, plot scene.Rect) *scene.Legend {
 		if len(in.Palette) > 0 {
 			color = in.Palette[idx%len(in.Palette)]
 		}
+		sw := in.Content.swatchFor(color)
+		if in.Registry != nil && color != nil && len(in.DarkPalette) > 0 {
+			sw.ColorVar = in.Registry.Resolve(color, in.DarkPalette[idx%len(in.DarkPalette)])
+		}
 		entries[i] = scene.LegendEntry{
 			Label:  in.Content.Truncate(in.Content.Label(in.Categories[idx])),
-			Swatch: in.Content.swatchFor(color),
+			Swatch: sw,
 		}
 	}
 	title := legendTitle(in.Title, in.Content)

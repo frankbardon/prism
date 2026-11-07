@@ -91,8 +91,13 @@ type LegendTick struct {
 // symbol), which is what keeps every committed legend golden
 // byte-identical.
 type SwatchSpec struct {
-	Type       SwatchType `json:"type"`
-	Color      *Color     `json:"color,omitempty"`
+	Type  SwatchType `json:"type"`
+	Color *Color     `json:"color,omitempty"`
+	// ColorVar is the auto-dark custom property (no leading "--") the
+	// swatch paints with when the theme pairs a DarkVariant — the same
+	// variable the marks of this category use (see Style.FillVar).
+	// Color still carries the light value for IR consumers.
+	ColorVar   string     `json:"color_var,omitempty"`
 	GradientID string     `json:"gradient_id,omitempty"`
 	Shape      PointShape `json:"shape,omitempty"`
 	Size       float64    `json:"size,omitempty"`

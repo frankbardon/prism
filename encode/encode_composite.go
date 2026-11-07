@@ -97,6 +97,10 @@ func encodeLayerComposite(s *spec.Spec, composite *plan.CompositeDAG, childTable
 	if err != nil {
 		return nil, err
 	}
+	// Auto-dark (E4-S3): the layers pair their mark and legend colours
+	// in the document's one registry, as a single view does.
+	ad, adOwner := autoDarkFor(opts, fullTheme)
+	colorReg, darkTheme := ad.registry(), ad.darkTheme()
 
 	hasTitle := s.Title != nil
 	// Layers share one pair of axes, so the suppression has to be
@@ -399,23 +403,30 @@ func encodeLayerComposite(s *spec.Spec, composite *plan.CompositeDAG, childTable
 				SequentialPalette: ResolveSequentialPaletteWithOpts(fullTheme, colorScaleOpts(childEnc.Color)),
 				SequentialDomain:  sequentialDomainOf(childEnc.Color),
 			}
+			if darkTheme != nil {
+				colorChannel.DarkPalette = ResolveCategoricalPaletteWithOpts(darkTheme, colorScaleOpts(childEnc.Color))
+				colorChannel.DarkSequentialPalette = ResolveSequentialPaletteWithOpts(darkTheme, colorScaleOpts(childEnc.Color))
+			}
 			ll := legendPls[lc.idx]
 			if (len(cats) > 1 || ll.kind == LegendKindGradient) && ll.enabled && !legendHidden(childEnc.Color) {
 				legend, grad := buildColorLegend(colorLegendInputs{
-					Kind:       ll.kind,
-					SceneID:    flatSceneID,
-					Channel:    scene.ChannelColor,
-					Title:      layerLegendTitle(lc.idx, childEnc.Color),
-					Field:      childEnc.Color.Field,
-					Format:     childEnc.Color.Format,
-					Categories: cats,
-					Palette:    colorChannel.Palette,
-					Sequential: colorChannel.SequentialPalette,
-					Domain:     colorChannel.SequentialDomain,
-					Table:      lc.tbl,
-					Placement:  ll.placement,
-					Content:    ll.content,
-					Plot:       layout.Plot,
+					Kind:           ll.kind,
+					SceneID:        flatSceneID,
+					Channel:        scene.ChannelColor,
+					Title:          layerLegendTitle(lc.idx, childEnc.Color),
+					Field:          childEnc.Color.Field,
+					Format:         childEnc.Color.Format,
+					Categories:     cats,
+					Palette:        colorChannel.Palette,
+					Sequential:     colorChannel.SequentialPalette,
+					Domain:         colorChannel.SequentialDomain,
+					DarkPalette:    colorChannel.DarkPalette,
+					DarkSequential: colorChannel.DarkSequentialPalette,
+					Registry:       colorReg,
+					Table:          lc.tbl,
+					Placement:      ll.placement,
+					Content:        ll.content,
+					Plot:           layout.Plot,
 				})
 				if legend != nil {
 					// Every layer's bar would otherwise file under the
@@ -446,7 +457,7 @@ func encodeLayerComposite(s *spec.Spec, composite *plan.CompositeDAG, childTable
 			}
 		}
 
-		style := defaultMarkStyle(fullTheme, markType)
+		style := defaultMarkStyleAuto(fullTheme, darkTheme, colorReg, markType)
 		if lc.child.Spec.Mark != nil && lc.child.Spec.Mark.Def != nil {
 			applyMarkDef(lc.child.Spec.Mark.Def, &style)
 		}
@@ -487,13 +498,14 @@ func encodeLayerComposite(s *spec.Spec, composite *plan.CompositeDAG, childTable
 			// "text" style rather than the layer's own mark style —
 			// see marks.Inputs.LabelStyle. Without this a labelled
 			// tree inside a layer emits text with no fill at all.
-			LabelStyle: defaultMarkStyle(fullTheme, "text"),
+			LabelStyle: defaultMarkStyleAuto(fullTheme, darkTheme, colorReg, "text"),
 			// A progress mark inside a layer still needs its track to
 			// paint; the track's Style is theme-resolved, not derived
 			// from the layer's own mark style (E10-S1).
-			TrackStyle:  progressTrackStyle(fullTheme),
-			MedianStyle: boxplotMedianStyle(fullTheme, style),
-			Skip:        skipRows,
+			TrackStyle:    progressTrackStyle(fullTheme),
+			MedianStyle:   boxplotMedianStyle(fullTheme, style),
+			Skip:          skipRows,
+			ColorRegistry: colorReg,
 		}
 		if lc.child.Spec.Mark != nil {
 			markInputs.Mark = lc.child.Spec.Mark.Def
@@ -541,6 +553,7 @@ func encodeLayerComposite(s *spec.Spec, composite *plan.CompositeDAG, childTable
 	// across the parent spec and its layer children.
 	armPlotClip(&sceneObj, wantsPlotClip(s))
 
+	finalizeAutoDarkCSS(sceneTheme, fullTheme, colorReg, adOwner)
 	doc := scene.NewDoc()
 	doc.Theme = sceneTheme
 	doc.Grid = scene.SceneGrid{
@@ -1072,6 +1085,7 @@ func encodeConcatComposite(s *spec.Spec, composite *plan.CompositeDAG, childTabl
 	if err != nil {
 		return nil, err
 	}
+	ad, adOwner := autoDarkFor(opts, fullTheme)
 
 	rows := composite.Rows
 	cols := composite.Cols
@@ -1103,6 +1117,10 @@ func encodeConcatComposite(s *spec.Spec, composite *plan.CompositeDAG, childTabl
 		// discarded below and only the child's scenes are kept.
 		childOpts.Theme = sceneTheme
 		childOpts.FullTheme = fullTheme
+		// One auto-dark registry for the whole document: the cells
+		// pair their marks and swatches in it, and this call (when it
+		// owns the state) emits the pairs once, below.
+		childOpts = ad.cellOpts(childOpts)
 
 		var childDoc *scene.SceneDoc
 		if child.Composite != nil {
@@ -1136,6 +1154,7 @@ func encodeConcatComposite(s *spec.Spec, composite *plan.CompositeDAG, childTabl
 		warnings = append(warnings, childDoc.Warnings...)
 	}
 
+	finalizeAutoDarkCSS(sceneTheme, fullTheme, ad.registry(), adOwner)
 	doc := scene.NewDoc()
 	doc.Theme = sceneTheme
 	doc.Grid = scene.SceneGrid{

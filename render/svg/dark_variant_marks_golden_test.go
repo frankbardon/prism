@@ -5,6 +5,7 @@ import (
 	"context"
 	"os"
 	"path/filepath"
+	"regexp"
 	"strings"
 	"testing"
 
@@ -119,15 +120,17 @@ func TestPrismSVGGolden_DarkVariantMarkColors(t *testing.T) {
 		t.Errorf("dark media block has %d --prism-resolved-N declarations, want %d (must match the base block 1:1)",
 			darkResolvedCount, lightResolvedCount)
 	}
-	// Every bar mark must reference a resolved var, never a baked hex,
-	// once auto-dark is active.
+	// Every bar mark — and, since v0.18, every legend swatch — must
+	// reference a resolved var, never a baked hex, once auto-dark is
+	// active.
 	barFillCount := strings.Count(svgText, `class="prism-mark-bar"`)
+	swatchCount := strings.Count(svgText, `class="prism-legend-swatch"`)
 	varFillCount := strings.Count(svgText, `fill="var(--prism-resolved-`)
-	if barFillCount == 0 {
-		t.Fatalf("fixture produced no bar marks — test is vacuous")
+	if barFillCount == 0 || swatchCount == 0 {
+		t.Fatalf("fixture produced no bar marks or no legend — test is vacuous")
 	}
-	if varFillCount != barFillCount {
-		t.Errorf("expected all %d bar marks to carry a var(--prism-resolved-N) fill, found %d", barFillCount, varFillCount)
+	if varFillCount != barFillCount+swatchCount {
+		t.Errorf("expected all %d bar marks and %d legend swatches to carry a var(--prism-resolved-*) fill, found %d", barFillCount, swatchCount, varFillCount)
 	}
 	if strings.Contains(svgText, `fill="#`) && strings.Count(svgText, `class="prism-mark-bar"`) > 0 {
 		// A literal hex fill can legitimately appear elsewhere (e.g. a
@@ -165,22 +168,12 @@ func TestPrismSVGGolden_NoDarkVariant_MarkColorsUnaffected(t *testing.T) {
 }
 
 // darkVariantHConcatSpec is a 2-panel hconcat where each child has its
-// own categorical color encoding — the composite shape that exposed a
-// real correctness gap during E4-S3 development: encodeConcatComposite
-// used to let each child independently re-resolve its own theme (and,
-// after this story added mark-color auto-dark, its own resolved-var
-// registry) via a totally separate *scene.Theme that the composite
-// then discarded, keeping only childDoc.Grid.Cells[0].Scene — so a
-// child-registered "prism-resolved-N" var would never actually appear
-// in the final document's <style> block, leaving marks pointing at an
-// undeclared custom property. The fix threads the outer document's
-// already-resolved sceneTheme/fullTheme down to each child (matching
-// the facet/repeat composite path, which already did this), making
-// concat children non-owners of theme resolution — see
-// encode_composite.go's encodeConcatComposite. This test is the
-// regression guard for that fix, not new E4-S3 surface: concat marks
-// are expected to keep baking literal hex under DarkVariant (the same
-// scope boundary as facet/repeat), never a dangling var() reference.
+// own categorical color encoding. E4-S3 left concat marks baked (a
+// child that registered its own resolved vars in a theme the composite
+// then discarded would have pointed at undeclared properties). Since
+// v0.18 the top-level composite owns ONE registry, hands it to every
+// cell (encode/autodark.go) and emits the pairs once, so concat marks
+// and legend swatches dark-swap like a single view.
 const darkVariantHConcatSpec = `{
   "$schema": "urn:prism:schema:v1:spec",
   "title": "E4-S3 concat + DarkVariant regression",
@@ -212,14 +205,11 @@ const darkVariantHConcatSpec = `{
   ]
 }`
 
-// TestPrismSVGGolden_DarkVariantConcatMarksStayBaked is the concat
-// regression guard described above: rendering a 2-panel hconcat with
-// per-child categorical color encodings under an active DarkVariant
-// must never emit a var(--prism-resolved-N) mark fill with no
-// matching declaration in the <style> block. Chrome still dark-swaps
-// (the outer document's own theme resolution, untouched by this
-// story) but every bar mark across both panels keeps its baked hex.
-func TestPrismSVGGolden_DarkVariantConcatMarksStayBaked(t *testing.T) {
+// TestPrismSVGGolden_DarkVariantConcatMarksPaired: a 2-panel hconcat
+// under an active DarkVariant paints every bar and every legend swatch
+// through a resolved var, and every var it references is declared in
+// both the light :root block and the dark media block.
+func TestPrismSVGGolden_DarkVariantConcatMarksPaired(t *testing.T) {
 	s, err := spec.DecodeBytes([]byte(darkVariantHConcatSpec))
 	if err != nil {
 		t.Fatalf("decode: %v", err)
@@ -252,18 +242,25 @@ func TestPrismSVGGolden_DarkVariantConcatMarksStayBaked(t *testing.T) {
 	}
 
 	svgText := string(got)
-	if !strings.Contains(svgText, "@media (prefers-color-scheme: dark)") {
-		t.Errorf("expected chrome dark-swap media query to still be present for a concat composite")
-	}
-	if strings.Contains(svgText, "prism-resolved-") {
-		t.Errorf("concat marks must not reference (or declare) a resolved-var — they should stay on baked hex until concat gets its own E4-S3 support; got:\n%s", svgText)
+	root, media, ok := splitRootAndMediaBlocks(svgText)
+	if !ok {
+		t.Fatalf("expected a light :root block and a dark media block")
 	}
 	barCount := strings.Count(svgText, `class="prism-mark-bar"`)
 	if barCount != 4 {
 		t.Fatalf("expected 4 bar marks (2 panels x 2 rows), got %d", barCount)
 	}
-	if strings.Count(svgText, `fill="#`) < barCount {
-		t.Errorf("expected every one of the %d bar marks to carry a baked hex fill, found fewer than that many fill=\"#...\" attrs", barCount)
+	refs := regexp.MustCompile(`(?:fill|stroke)="var\(--(prism-resolved-[^)]+)\)"`).FindAllStringSubmatch(svgText, -1)
+	if len(refs) < barCount+4 {
+		t.Errorf("expected every bar and the 4 legend swatches to paint through a resolved var, found %d references", len(refs))
+	}
+	for _, m := range refs {
+		if !strings.Contains(root, "--"+m[1]+":") || !strings.Contains(media, "--"+m[1]+":") {
+			t.Errorf("var --%s is referenced but not declared in both blocks", m[1])
+		}
+	}
+	if regexp.MustCompile(`class="prism-mark-bar"[^>]*fill="#`).MatchString(svgText) {
+		t.Errorf("a bar mark still bakes a hex fill under DarkVariant")
 	}
 }
 

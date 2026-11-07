@@ -125,9 +125,7 @@ func renderLegend(w *Writer, lg scene.Legend, theme *scene.Theme) {
 			w.AttrFloat("y", y)
 			w.AttrFloat("width", size)
 			w.AttrFloat("height", size)
-			if entry.Swatch.Color != nil {
-				w.Attr("fill", entry.Swatch.Color.CSS())
-			}
+			writeSwatchFill(w, entry.Swatch)
 			w.SelfClose()
 			w.OpenTag("text")
 			w.Attr("class", "prism-legend-label")
@@ -183,9 +181,7 @@ func renderLegend(w *Writer, lg scene.Legend, theme *scene.Theme) {
 			w.Attr("class", "prism-legend-symbol")
 			writeSymbolGeom(w, entry.Swatch.Shape,
 				sx+legendSwatchSize/2, y+legendSwatchSize/2, size/2)
-			if entry.Swatch.Color != nil {
-				w.Attr("fill", entry.Swatch.Color.CSS())
-			}
+			writeSwatchFill(w, entry.Swatch)
 			w.SelfClose()
 			w.OpenTag("text")
 			w.Attr("class", "prism-legend-label")
@@ -249,7 +245,7 @@ func renderDefs(w *Writer, defs *scene.Defs) {
 			for _, s := range g.Stops {
 				w.OpenTag("stop")
 				w.AttrFloat("offset", s.Offset)
-				w.Attr("stop-color", (&s.Color).CSS())
+				writeStopColor(w, s)
 				w.SelfClose()
 			}
 			w.EndTag("linearGradient")
@@ -264,7 +260,7 @@ func renderDefs(w *Writer, defs *scene.Defs) {
 			for _, s := range g.Stops {
 				w.OpenTag("stop")
 				w.AttrFloat("offset", s.Offset)
-				w.Attr("stop-color", (&s.Color).CSS())
+				writeStopColor(w, s)
 				w.SelfClose()
 			}
 			w.EndTag("radialGradient")
@@ -283,4 +279,26 @@ func renderDefs(w *Writer, defs *scene.Defs) {
 		w.EndTag("clipPath")
 	}
 	w.EndTag("defs")
+}
+
+// writeSwatchFill paints a solid / symbol swatch: the auto-dark
+// variable its category's marks paint with when the theme pairs a
+// DarkVariant (scene.SwatchSpec.ColorVar), else the baked colour.
+func writeSwatchFill(w *Writer, sw scene.SwatchSpec) {
+	switch {
+	case sw.ColorVar != "":
+		w.Attr("fill", "var(--"+sw.ColorVar+")")
+	case sw.Color != nil:
+		w.Attr("fill", sw.Color.CSS())
+	}
+}
+
+// writeStopColor paints one gradient stop, through its auto-dark
+// variable when it has one (scene.GradientStop.ColorVar).
+func writeStopColor(w *Writer, s scene.GradientStop) {
+	if s.ColorVar != "" {
+		w.Attr("stop-color", "var(--"+s.ColorVar+")")
+		return
+	}
+	w.Attr("stop-color", (&s.Color).CSS())
 }

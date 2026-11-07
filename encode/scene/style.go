@@ -22,7 +22,7 @@ type Style struct {
 	FillRef   string `json:"fill_ref,omitempty"`
 	StrokeRef string `json:"stroke_ref,omitempty"`
 	// FillVar/StrokeVar carry a CSS custom-property name (no leading
-	// "--", e.g. "prism-resolved-0") when the active theme's
+	// "--", e.g. "prism-resolved-4c78a8-4269d0") when the active theme's
 	// DarkVariant (E4-S3) requires this mark's color to repaint under
 	// @media (prefers-color-scheme: dark) in the same SVG — see
 	// theme.Theme.CSSVariables and encode/marks.ColorVarRegistry. When

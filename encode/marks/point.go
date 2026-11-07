@@ -93,7 +93,7 @@ func lookupCategoryColor(category string, categories []string, palette []*scene.
 // (callers only reach this when in.Color != nil), returning either a
 // baked *scene.Color (in.ColorRegistry == nil — the pre-E4-S3 path
 // every caller keeps by default) or a nil color plus a
-// "prism-resolved-N" var name (auto-dark active — see
+// "prism-resolved-<light>-<dark>" var name (auto-dark active — see
 // scene.Style.FillVar/StrokeVar). Callers assign the pair to
 // Style.Fill/FillVar or Style.Stroke/StrokeVar depending on which
 // paint the mark uses. Returns (nil, "") when cat has no palette

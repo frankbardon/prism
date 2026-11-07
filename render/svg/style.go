@@ -282,7 +282,7 @@ func writeGradientDef(w *Writer, id string, g scene.Gradient) {
 	for _, s := range g.Stops {
 		w.OpenTag("stop")
 		w.AttrFloat("offset", s.Offset)
-		w.Attr("stop-color", (&s.Color).CSS())
+		writeStopColor(w, s)
 		w.SelfClose()
 	}
 	w.EndTag(tag)

@@ -64,6 +64,7 @@ func encodeFacetComposite(s *spec.Spec, composite *plan.CompositeDAG, childTable
 	if err != nil {
 		return nil, err
 	}
+	ad, adOwner := autoDarkFor(opts, fullTheme)
 
 	rows := len(partitions.RowValues)
 	cols := len(partitions.ColValues)
@@ -196,6 +197,7 @@ func encodeFacetComposite(s *spec.Spec, composite *plan.CompositeDAG, childTable
 			cellScene, cellFull := resolveCellTheme(sceneTheme, fullTheme, findCellThemeOverride(s.Facet.CellOverrides, ri, ci))
 			cellOpts.Theme = cellScene
 			cellOpts.FullTheme = cellFull
+			cellOpts = ad.cellOpts(cellOpts)
 
 			cellDoc, err := encodeFacetCell(child.Spec, partTbl, cellOpts)
 			if err != nil {
@@ -235,6 +237,7 @@ func encodeFacetComposite(s *spec.Spec, composite *plan.CompositeDAG, childTable
 		}
 	}
 
+	finalizeAutoDarkCSS(sceneTheme, fullTheme, ad.registry(), adOwner)
 	doc := scene.NewDoc()
 	doc.Theme = sceneTheme
 	doc.Grid = scene.SceneGrid{
