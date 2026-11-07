@@ -121,26 +121,37 @@ func encodeFacetComposite(s *spec.Spec, composite *plan.CompositeDAG, childTable
 	placement.ReserveFrom(
 		specSharedAxisOpts(scene.ChannelX, facetSpecs),
 		specSharedAxisOpts(scene.ChannelY, facetSpecs))
+	cellSides := placement.Sides()
 	cellLayout := Compute(LayoutOpts{
 		Width:  cellW,
 		Height: cellH,
-		Sides:  placement.Sides(),
+		Sides:  cellSides,
 	})
 	xMode := resolution[scene.ChannelX]
 	yMode := resolution[scene.ChannelY]
 
 	var xShared Scale
 	var yShared Scale
-	if xMode.Scale == encresolve.ModeShared {
-		xShared, err = buildSharedScaleForFacet(child.Spec, partitions, scene.ChannelX,
-			cellLayout.Plot.X, cellLayout.Plot.Right())
-		if err != nil {
-			return nil, err
-		}
-	}
 	if yMode.Scale == encresolve.ModeShared {
 		yShared, err = buildSharedScaleForFacet(child.Spec, partitions, scene.ChannelY,
 			cellLayout.Plot.Bottom(), cellLayout.Plot.Y)
+		if err != nil {
+			return nil, err
+		}
+		// Each cell's flat Encode fits its y axis's labels and title
+		// to the cell (FitSideAxis) from this same shared scale and
+		// the same axis block, so the shared x range has to be
+		// resolved across the plot width that fit leaves.
+		if enc := childEncoding(child.Spec); enc != nil && !placement.YHidden {
+			probe := BuildAxisWithOpts(yShared, scene.ChannelY, placement.Y, cellLayout.Plot, axisOptsFor(enc.Y))
+			if cellSides.FitSideAxis(probe, cellW) {
+				cellLayout = Compute(LayoutOpts{Width: cellW, Height: cellH, Sides: cellSides})
+			}
+		}
+	}
+	if xMode.Scale == encresolve.ModeShared {
+		xShared, err = buildSharedScaleForFacet(child.Spec, partitions, scene.ChannelX,
+			cellLayout.Plot.X, cellLayout.Plot.Right())
 		if err != nil {
 			return nil, err
 		}

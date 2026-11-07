@@ -53,7 +53,7 @@ func (s *PointScale) layout() (step, offset float64) {
 		sign = -1
 	}
 	mag := math.Abs(span)
-	divisor := n - 1 + 2*s.Padding
+	divisor := n - 1 + float64(2*s.Padding)
 	if divisor < 1 {
 		divisor = 1
 	}
@@ -61,7 +61,7 @@ func (s *PointScale) layout() (step, offset float64) {
 	if s.Round {
 		step = math.Floor(step)
 	}
-	offset = (mag - step*(n-1)) * s.Align
+	offset = (mag - float64(step*(n-1))) * s.Align
 	if s.Round {
 		offset = math.Round(offset)
 	}
@@ -85,7 +85,7 @@ func (s *PointScale) Apply(value any) (float64, error) {
 			if s.Reverse {
 				slot = len(s.Categories) - 1 - i
 			}
-			return s.RangeMin + offset + float64(slot)*step, nil
+			return s.RangeMin + offset + float64(float64(slot)*step), nil
 		}
 	}
 	return 0, prismerrors.New(

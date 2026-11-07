@@ -99,3 +99,33 @@ func TestPrismSVGAxisTitlePaddingIsPerProperty(t *testing.T) {
 		t.Error("axis_y.title_padding leaked into the x axis")
 	}
 }
+
+// A left / right title clears its axis's widest tick label rather than
+// sitting at the fixed offset under it: the title's baseline moves out
+// past the label band by the title padding plus the title's descent,
+// on whichever side the axis is.
+func TestPrismSVGSideAxisTitleClearsLongLabels(t *testing.T) {
+	a := titledLeftAxis()
+	a.Ticks = append(a.Ticks, scene.Tick{Value: 2, Pixel: 500, Label: "z (std. residual)"})
+	band := scene.EstimateTextWidth("z (std. residual)", scene.AxisLabelFontSize)
+	// Labels end 8 px left of the plot edge (x=40); the title clears
+	// them by the 8 px padding plus its 3 px descent.
+	want := 40 - (8 + band + 8 + scene.AxisTitleDescent)
+	out := renderAxisDoc(t, a, nil)
+	if !strings.Contains(out, rotateAttr(want, 290)) {
+		t.Errorf("left title did not clear the label band (want x=%v):\n%s", want, out)
+	}
+
+	r := a
+	r.Position = scene.AxisPositionRight
+	out = renderAxisDoc(t, r, nil)
+	if want := 780 + (8 + band + 8 + scene.AxisTitleDescent); !strings.Contains(out, rotateAttr90(want, 290)) {
+		t.Errorf("right title did not clear the label band (want x=%v):\n%s", want, out)
+	}
+
+	// Hidden labels draw nothing, so the title keeps its fixed offset.
+	a.HideLabels = true
+	if out := renderAxisDoc(t, a, nil); !strings.Contains(out, "rotate(-90 10 290)") {
+		t.Errorf("hidden labels still pushed the title out:\n%s", out)
+	}
+}

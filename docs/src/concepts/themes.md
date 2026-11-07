@@ -405,8 +405,11 @@ nothing — takes both theme values.
 **`title_padding` is measured from the tick labels, not from the plot
 edge**, and it is added to a fixed per-side text allowance rather than
 replacing it, so the 8 px every built-in theme states reproduces the
-title position Prism has always drawn. Note that a padding larger than
-the default draws into the outer margin: the layout reserves a fixed
+title position Prism has always drawn. A left / right axis whose
+labels are wider than that allowance pushes its title out past them,
+and the layout widens the side to hold both (see
+[encoding](encoding.md)). Note that a theme padding larger than the
+default draws into the outer margin: the layout reserves a fixed
 depth per side and does not grow it to follow a token, the same
 text-metric deferral `tick_size` and `label_padding` are subject to.
 

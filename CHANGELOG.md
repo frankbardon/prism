@@ -1,5 +1,31 @@
 # Changelog
 
+## v0.19.1 — unreleased
+
+Fix release: long y-axis labels no longer clip at the frame edge.
+
+### Axis fixes
+
+- **A left / right axis fits its tick labels and title.** The y axis
+  reserved a fixed 40 px whatever its labels said, so a long category
+  name (`control`, `z (std. residual)`) ran off the left edge of the
+  SVG and the rotated axis title sat on top of the labels. The encoder
+  now estimates the widest shown label (`scene.EstimateTextWidth`, a
+  conservative per-glyph estimate for the default sans stack that
+  never reads narrower than Chrome's system-ui) and widens that side
+  of the plot to hold the labels and the title; the renderer places
+  the title `title_padding` clear of the labels. One side axis claims
+  at most a third of the frame width. Flat, histogram, layered and
+  faceted charts all fit the same way.
+
+### Behaviour changes
+
+- **Charts whose y labels or title did not fit the fixed reservation
+  render with a narrower plot** and the y title further out. That is
+  most titled y axes (any label over one character used to run under
+  the title); an untitled axis whose labels are about three characters
+  or fewer is byte-identical. Goldens regenerated accordingly.
+
 ## v0.19.0 — unreleased
 
 Additive recipes release: what report series panels, goodness-of-fit

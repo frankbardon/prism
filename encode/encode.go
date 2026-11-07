@@ -387,6 +387,30 @@ func encodeLeaf(s *spec.Spec, tables map[plan.NodeID]*table.Table, tipID plan.No
 		}
 	}
 
+	// Fit the y axis's labels and title (left / right side). The fixed
+	// side reservation holds only a few characters, so a long category
+	// name used to run off the frame edge and under the axis title.
+	// The y ticks run along the side, so widening it moves only the x
+	// range: re-resolve x against the new plot rect (its warnings are
+	// domain warnings, already collected). A composite caller handing
+	// in an x scale ran the same fit on the same y axis first, so its
+	// range already matches.
+	if yScale != nil && !placement.YHidden && !isSparkMark(markType) && !geoMark {
+		probe := BuildAxisWithOpts(yScale, scene.ChannelY, placement.Y, layout.Plot, axisOptsFor(enc.Y))
+		if sides.FitSideAxis(probe, width) {
+			layout = Compute(LayoutOpts{Width: width, Height: height, Title: hasTitle, Sides: sides})
+			if reservedLegendSide {
+				legendPl.Reserve = layout.Padding.LegendBand(legendPl.Position, hasTitle)
+			}
+			if xScale != nil && opts.OverrideXScale == nil {
+				xScale, _, err = resolveChannel(enc.X, tbl, layout.Plot.X, layout.Plot.Right(), xExtra...)
+				if err != nil {
+					return nil, err
+				}
+			}
+		}
+	}
+
 	// Build axes (only when the channel was bound). Sparkline (D067)
 	// suppresses axes entirely — leave axes empty. A channel with
 	// `"axis": null` is suppressed the same way: no domain line,
@@ -587,6 +611,22 @@ func encodeLeaf(s *spec.Spec, tables map[plan.NodeID]*table.Table, tipID plan.No
 		hr, herr := marks.EncodeHistogram(markInputs)
 		if herr != nil {
 			return nil, herr
+		}
+		// The bin-count axis is fitted like any other y axis (see
+		// above); the histogram owns its scales, so a widened side
+		// means encoding the bins again across the narrower plot.
+		if hr.YScale != nil && !placement.YHidden {
+			probe := BuildAxisWithOpts(hr.YScale, scene.ChannelY, placement.Y, layout.Plot, axisOptsForTitled(enc.Y, "count"))
+			if sides.FitSideAxis(probe, width) {
+				layout = Compute(LayoutOpts{Width: width, Height: height, Title: hasTitle, Sides: sides})
+				if reservedLegendSide {
+					legendPl.Reserve = layout.Padding.LegendBand(legendPl.Position, hasTitle)
+				}
+				markInputs.Layout = layout.Plot
+				if hr, herr = marks.EncodeHistogram(markInputs); herr != nil {
+					return nil, herr
+				}
+			}
 		}
 		// Attach tooltips per bin if requested (one TooltipLine per
 		// bin with the bin index — simple but functional).
