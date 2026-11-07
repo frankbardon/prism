@@ -5,22 +5,22 @@
     <text class="prism-title" x="410" y="20" text-anchor="middle">Dependency graph (deterministic seed)</text>
     <g class="prism-plot">
       <g class="prism-layer" data-layer-id="layer-0" data-prism-layer="layer-0">
-        <polyline class="prism-mark-line" data-prism-datum-row="0" points="416.203,191.924 581.791,291.579" fill="none" stroke="#4c78a8" stroke-width="1"/>
-        <polyline class="prism-mark-line" data-prism-datum-row="1" points="416.203,191.924 195.972,195.633" fill="none" stroke="#4c78a8" stroke-width="1"/>
-        <polyline class="prism-mark-line" data-prism-datum-row="2" points="416.203,191.924 579.721,87.913" fill="none" stroke="#4c78a8" stroke-width="1"/>
-        <polyline class="prism-mark-line" data-prism-datum-row="3" points="581.791,291.579 757.277,267.715" fill="none" stroke="#4c78a8" stroke-width="1"/>
-        <polyline class="prism-mark-line" data-prism-datum-row="4" points="195.972,195.633 50.124,90.479" fill="none" stroke="#4c78a8" stroke-width="1"/>
-        <polyline class="prism-mark-line" data-prism-datum-row="5" points="195.972,195.633 53.148,305.368" fill="none" stroke="#4c78a8" stroke-width="1"/>
-        <polyline class="prism-mark-line" data-prism-datum-row="6" points="579.721,87.913 756.147,107.365" fill="none" stroke="#4c78a8" stroke-width="1"/>
-        <polyline class="prism-mark-line" data-prism-datum-row="7" points="756.147,107.365 757.277,267.715" fill="none" stroke="#4c78a8" stroke-width="1"/>
-        <rect class="prism-mark-bar" x="412.203" y="187.924" width="8" height="8" fill="#4c78a8" stroke="#4c78a8" stroke-width="1"/>
-        <rect class="prism-mark-bar" x="577.791" y="287.579" width="8" height="8" fill="#4c78a8" stroke="#4c78a8" stroke-width="1"/>
-        <rect class="prism-mark-bar" x="191.972" y="191.633" width="8" height="8" fill="#4c78a8" stroke="#4c78a8" stroke-width="1"/>
-        <rect class="prism-mark-bar" x="575.721" y="83.913" width="8" height="8" fill="#4c78a8" stroke="#4c78a8" stroke-width="1"/>
-        <rect class="prism-mark-bar" x="753.277" y="263.715" width="8" height="8" fill="#4c78a8" stroke="#4c78a8" stroke-width="1"/>
-        <rect class="prism-mark-bar" x="46.124" y="86.479" width="8" height="8" fill="#4c78a8" stroke="#4c78a8" stroke-width="1"/>
-        <rect class="prism-mark-bar" x="49.148" y="301.368" width="8" height="8" fill="#4c78a8" stroke="#4c78a8" stroke-width="1"/>
-        <rect class="prism-mark-bar" x="752.147" y="103.365" width="8" height="8" fill="#4c78a8" stroke="#4c78a8" stroke-width="1"/>
+        <polyline class="prism-mark-line" data-prism-datum-row="0" points="416.202,191.94 581.732,291.656" fill="none" stroke="#4c78a8" stroke-width="1"/>
+        <polyline class="prism-mark-line" data-prism-datum-row="1" points="416.202,191.94 195.974,195.594" fill="none" stroke="#4c78a8" stroke-width="1"/>
+        <polyline class="prism-mark-line" data-prism-datum-row="2" points="416.202,191.94 579.684,87.895" fill="none" stroke="#4c78a8" stroke-width="1"/>
+        <polyline class="prism-mark-line" data-prism-datum-row="3" points="581.732,291.656 757.081,267.769" fill="none" stroke="#4c78a8" stroke-width="1"/>
+        <polyline class="prism-mark-line" data-prism-datum-row="4" points="195.974,195.594 50.126,90.461" fill="none" stroke="#4c78a8" stroke-width="1"/>
+        <polyline class="prism-mark-line" data-prism-datum-row="5" points="195.974,195.594 53.157,305.321" fill="none" stroke="#4c78a8" stroke-width="1"/>
+        <polyline class="prism-mark-line" data-prism-datum-row="6" points="579.684,87.895 755.994,107.404" fill="none" stroke="#4c78a8" stroke-width="1"/>
+        <polyline class="prism-mark-line" data-prism-datum-row="7" points="755.994,107.404 757.081,267.769" fill="none" stroke="#4c78a8" stroke-width="1"/>
+        <rect class="prism-mark-bar" x="412.202" y="187.94" width="8" height="8" fill="#4c78a8" stroke="#4c78a8" stroke-width="1"/>
+        <rect class="prism-mark-bar" x="577.732" y="287.656" width="8" height="8" fill="#4c78a8" stroke="#4c78a8" stroke-width="1"/>
+        <rect class="prism-mark-bar" x="191.974" y="191.594" width="8" height="8" fill="#4c78a8" stroke="#4c78a8" stroke-width="1"/>
+        <rect class="prism-mark-bar" x="575.684" y="83.895" width="8" height="8" fill="#4c78a8" stroke="#4c78a8" stroke-width="1"/>
+        <rect class="prism-mark-bar" x="753.081" y="263.769" width="8" height="8" fill="#4c78a8" stroke="#4c78a8" stroke-width="1"/>
+        <rect class="prism-mark-bar" x="46.126" y="86.461" width="8" height="8" fill="#4c78a8" stroke="#4c78a8" stroke-width="1"/>
+        <rect class="prism-mark-bar" x="49.157" y="301.321" width="8" height="8" fill="#4c78a8" stroke="#4c78a8" stroke-width="1"/>
+        <rect class="prism-mark-bar" x="751.994" y="103.404" width="8" height="8" fill="#4c78a8" stroke="#4c78a8" stroke-width="1"/>
       </g>
     </g>
   </g>

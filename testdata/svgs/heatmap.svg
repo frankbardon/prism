@@ -12,8 +12,8 @@
       <g class="prism-layer" data-layer-id="layer-0" data-prism-layer="layer-0">
         <rect class="prism-mark-bar" data-prism-id="heatmap-0" data-prism-datum-row="0" x="77.315" y="317.75" width="271.701" height="229.5" fill="#423c82"/>
         <rect class="prism-mark-bar" data-prism-id="heatmap-1" data-prism-datum-row="1" x="77.315" y="62.75" width="271.701" height="229.5" fill="#32b37b"/>
-        <rect class="prism-mark-bar" data-prism-id="heatmap-2" data-prism-datum-row="2" x="379.204" y="317.75" width="271.701" height="229.5" fill="#440154"/>
-        <rect class="prism-mark-bar" data-prism-id="heatmap-3" data-prism-datum-row="3" x="379.204" y="62.75" width="271.701" height="229.5" fill="#fde725"/>
+        <rect class="prism-mark-bar" data-prism-id="heatmap-2" data-prism-datum-row="2" x="379.205" y="317.75" width="271.701" height="229.5" fill="#440154"/>
+        <rect class="prism-mark-bar" data-prism-id="heatmap-3" data-prism-datum-row="3" x="379.205" y="62.75" width="271.701" height="229.5" fill="#fde725"/>
       </g>
     </g>
     <g class="prism-legends"><g class="prism-legend prism-legend-color" data-prism-legend-id="legend-color"><text class="prism-legend-title" x="680" y="64">count</text><rect class="prism-legend-swatch" x="680" y="76" width="12" height="104" fill="url(#gradient-scene-0-color)"/><text class="prism-legend-label" x="698" y="80">7</text><text class="prism-legend-label" x="698" y="106">10.75</text><text class="prism-legend-label" x="698" y="132">14.5</text><text class="prism-legend-label" x="698" y="158">18.25</text><text class="prism-legend-label" x="698" y="184">22</text></g></g>

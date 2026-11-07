@@ -26,7 +26,7 @@
     <g class="prism-plot">
       <g class="prism-layer" data-layer-id="layer-0" data-prism-layer="layer-0">
         <rect class="prism-mark-bar" data-prism-id="bar-0" data-prism-datum-row="0" x="460.642" y="131.6" width="72.765" height="428.4" fill="#4c78a8"/>
-        <rect class="prism-mark-bar" data-prism-id="bar-1" data-prism-datum-row="1" x="541.493" y="254" width="72.765" height="306" fill="#4c78a8"/>
+        <rect class="prism-mark-bar" data-prism-id="bar-1" data-prism-datum-row="1" x="541.492" y="254" width="72.765" height="306" fill="#4c78a8"/>
         <rect class="prism-mark-bar" data-prism-id="bar-2" data-prism-datum-row="2" x="622.342" y="376.4" width="72.765" height="183.6" fill="#4c78a8"/>
         <rect class="prism-mark-bar" data-prism-id="bar-3" data-prism-datum-row="3" x="703.192" y="458" width="72.765" height="102" fill="#4c78a8"/>
       </g>

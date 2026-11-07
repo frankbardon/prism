@@ -13,8 +13,8 @@
         <line class="prism-mark-boxplot-median" data-prism-id="boxplot-a-median" data-prism-datum-row="1" x1="64.935" y1="407" x2="394.965" y2="407" fill="#4c78a8" stroke="#ffffff" stroke-width="1"/>
         <line class="prism-mark-rule" data-prism-id="boxplot-a-w-stem-hi" data-prism-datum-row="2" x1="229.95" y1="368.75" x2="229.95" y2="330.5" fill="#4c78a8" stroke="#4c78a8" stroke-width="1"/>
         <line class="prism-mark-rule" data-prism-id="boxplot-a-w-stem-lo" data-prism-datum-row="3" x1="229.95" y1="458" x2="229.95" y2="509" fill="#4c78a8" stroke="#4c78a8" stroke-width="1"/>
-        <line class="prism-mark-rule" data-prism-id="boxplot-a-w-cap-hi" data-prism-datum-row="4" x1="147.442" y1="330.5" x2="312.457" y2="330.5" fill="#4c78a8" stroke="#4c78a8" stroke-width="1"/>
-        <line class="prism-mark-rule" data-prism-id="boxplot-a-w-cap-lo" data-prism-datum-row="5" x1="147.442" y1="509" x2="312.457" y2="509" fill="#4c78a8" stroke="#4c78a8" stroke-width="1"/>
+        <line class="prism-mark-rule" data-prism-id="boxplot-a-w-cap-hi" data-prism-datum-row="4" x1="147.443" y1="330.5" x2="312.457" y2="330.5" fill="#4c78a8" stroke="#4c78a8" stroke-width="1"/>
+        <line class="prism-mark-rule" data-prism-id="boxplot-a-w-cap-lo" data-prism-datum-row="5" x1="147.443" y1="509" x2="312.457" y2="509" fill="#4c78a8" stroke="#4c78a8" stroke-width="1"/>
         <rect class="prism-mark-bar" data-prism-id="boxplot-b-box" x="431.635" y="152" width="330.03" height="102" fill="#4c78a8"/>
         <line class="prism-mark-boxplot-median" data-prism-id="boxplot-b-median" x1="431.635" y1="203" x2="761.665" y2="203" fill="#4c78a8" stroke="#ffffff" stroke-width="1"/>
         <line class="prism-mark-rule" data-prism-id="boxplot-b-w-stem-hi" x1="596.65" y1="152" x2="596.65" y2="101" fill="#4c78a8" stroke="#4c78a8" stroke-width="1"/>

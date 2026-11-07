@@ -69,7 +69,7 @@ func (s *BandScale) layout() (step, offset, width float64) {
 		sign = -1
 	}
 	mag := math.Abs(span)
-	divisor := n - s.PaddingInner + 2*s.PaddingOuter
+	divisor := n - s.PaddingInner + float64(2*s.PaddingOuter)
 	if divisor < 1 {
 		divisor = 1
 	}
@@ -77,7 +77,7 @@ func (s *BandScale) layout() (step, offset, width float64) {
 	if s.Round {
 		step = math.Floor(step)
 	}
-	offset = (mag - step*(n-s.PaddingInner)) * s.Align
+	offset = (mag - float64(step*(n-s.PaddingInner))) * s.Align
 	width = step * (1 - s.PaddingInner)
 	if s.Round {
 		offset = math.Round(offset)
@@ -111,7 +111,7 @@ func (s *BandScale) Apply(value any) (float64, error) {
 			if s.Reverse {
 				slot = len(s.Categories) - 1 - i
 			}
-			return s.RangeMin + offset + float64(slot)*step, nil
+			return s.RangeMin + offset + float64(float64(slot)*step), nil
 		}
 	}
 	return 0, prismerrors.New(

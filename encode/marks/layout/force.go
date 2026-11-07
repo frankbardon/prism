@@ -110,7 +110,7 @@ func ForceLayout(g *Graph, opts ForceOpts) ([]ForcePosition, error) {
 			for j := i + 1; j < n; j++ {
 				dx := pos[i].X - pos[j].X
 				dy := pos[i].Y - pos[j].Y
-				dist := math.Hypot(dx, dy)
+				dist := hypot(dx, dy)
 				if dist == 0 {
 					dist = 0.001
 					dx = 0.001
@@ -118,10 +118,10 @@ func ForceLayout(g *Graph, opts ForceOpts) ([]ForcePosition, error) {
 				force := (k * k / dist) * math.Abs(charge) / 30.0
 				ux := dx / dist
 				uy := dy / dist
-				displacement[i].X += ux * force
-				displacement[i].Y += uy * force
-				displacement[j].X -= ux * force
-				displacement[j].Y -= uy * force
+				displacement[i].X += float64(ux * force)
+				displacement[i].Y += float64(uy * force)
+				displacement[j].X -= float64(ux * force)
+				displacement[j].Y -= float64(uy * force)
 			}
 		}
 		// Attractive forces — every edge pulls its endpoints together
@@ -134,27 +134,27 @@ func ForceLayout(g *Graph, opts ForceOpts) ([]ForcePosition, error) {
 			}
 			dx := pos[ai].X - pos[bi].X
 			dy := pos[ai].Y - pos[bi].Y
-			dist := math.Hypot(dx, dy)
+			dist := hypot(dx, dy)
 			if dist == 0 {
 				continue
 			}
 			force := (dist * dist / k) * (dist / link)
 			ux := dx / dist
 			uy := dy / dist
-			displacement[ai].X -= ux * force
-			displacement[ai].Y -= uy * force
-			displacement[bi].X += ux * force
-			displacement[bi].Y += uy * force
+			displacement[ai].X -= float64(ux * force)
+			displacement[ai].Y -= float64(uy * force)
+			displacement[bi].X += float64(ux * force)
+			displacement[bi].Y += float64(uy * force)
 		}
 		// Apply displacement, capped by temperature, clamped to box.
 		for i := range pos {
-			d := math.Hypot(displacement[i].X, displacement[i].Y)
+			d := hypot(displacement[i].X, displacement[i].Y)
 			if d == 0 {
 				continue
 			}
 			limit := math.Min(d, temperature)
-			pos[i].X += displacement[i].X * (limit / d)
-			pos[i].Y += displacement[i].Y * (limit / d)
+			pos[i].X += float64(displacement[i].X * (limit / d))
+			pos[i].Y += float64(displacement[i].Y * (limit / d))
 			pos[i].X = math.Max(0, math.Min(width, pos[i].X))
 			pos[i].Y = math.Max(0, math.Min(height, pos[i].Y))
 			if !isFinite(pos[i].X) || !isFinite(pos[i].Y) {
@@ -167,6 +167,16 @@ func ForceLayout(g *Graph, opts ForceOpts) ([]ForcePosition, error) {
 		}
 	}
 	return pos, nil
+}
+
+// hypot is sqrt(x²+y²) with each square rounded on its own. math.Hypot
+// is assembly on amd64 but pure Go elsewhere, where 1+q*q may fuse into
+// one FMA, so the layout (which amplifies the last bit over every
+// iteration) would differ across architectures. The explicit float64
+// conversions forbid the fusion; layout coordinates never get near
+// overflow, so Hypot's scaling buys nothing here.
+func hypot(x, y float64) float64 {
+	return math.Sqrt(float64(x*x) + float64(y*y))
 }
 
 func isFinite(v float64) bool {
@@ -184,5 +194,5 @@ func (l *lcg) next() uint64 {
 }
 
 func (l *lcg) uniform(lo, hi float64) float64 {
-	return lo + (float64(l.next()&0xFFFFFFFF)/float64(1<<32))*(hi-lo)
+	return lo + float64((float64(l.next()&0xFFFFFFFF)/float64(1<<32))*(hi-lo))
 }

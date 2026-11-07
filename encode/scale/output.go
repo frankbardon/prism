@@ -22,6 +22,12 @@ type ContinuousOutput struct {
 // fraction the caller computed; clamping it to [0,1] is equivalent to
 // pinning the input value to the domain edge, and keeps the policy in
 // one place for every continuous family.
+//
+// The float64 conversion keeps t*(rangeMax-rangeMin) a separately
+// rounded product: without it arm64 fuses the multiply-add into one
+// FMA and amd64 does not, so a pixel on a 3-decimal rounding tie
+// serialises differently per architecture. The band and point layouts
+// guard their products the same way.
 func (o ContinuousOutput) interpolate(t, rangeMin, rangeMax float64) float64 {
 	if o.Clamp {
 		if t < 0 {
@@ -31,7 +37,7 @@ func (o ContinuousOutput) interpolate(t, rangeMin, rangeMax float64) float64 {
 			t = 1
 		}
 	}
-	return o.quantise(rangeMin + t*(rangeMax-rangeMin))
+	return o.quantise(rangeMin + float64(t*(rangeMax-rangeMin)))
 }
 
 // quantise applies the round policy to an already-resolved pixel.
