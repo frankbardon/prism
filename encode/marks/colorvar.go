@@ -2,6 +2,7 @@ package marks
 
 import (
 	"fmt"
+	"hash/fnv"
 
 	"github.com/frankbardon/prism/encode/scene"
 )
@@ -9,14 +10,20 @@ import (
 // ColorVarRegistry accumulates distinct (light, dark) resolved
 // mark-color pairs encountered during a single Encode pass when the
 // active theme has DarkVariant set (E4-S3 — auto light/dark in one
-// SVG). Each distinct pair is assigned a stable CSS custom-property
-// name ("prism-resolved-N", no leading "--") in first-encounter
-// order, so the same input spec + theme pairing always produces the
-// same names across runs — required for golden-fixture stability.
+// SVG). Each distinct pair is assigned a CSS custom-property name
+// derived from its two values ("prism-resolved-<light>-<dark>", no
+// leading "--"; see resolvedPair.varName) and emitted in
+// first-encounter order, so the same input spec + theme pairing always
+// produces the same CSS — required for golden-fixture stability.
+//
+// One registry serves a whole document: a composition's top-level
+// encoder creates it and hands it to every cell and layer through
+// EncodeOpts (encode/autodark.go), so layered and concatenated marks
+// and legend swatches are paired too, and the owner emits the CSS
+// once.
 //
 // A nil *ColorVarRegistry means auto-dark is inactive for this encode
-// call (the active theme has no DarkVariant, or this call is not the
-// theme-resolution owner — see encode.Encode's isThemeOwner). Every
+// call (the active theme has no DarkVariant). Every
 // mark-color call site treats nil as "bake the literal light color",
 // exactly the pre-E4-S3 behavior — see scene.Style.FillVar/StrokeVar.
 type ColorVarRegistry struct {
@@ -25,7 +32,7 @@ type ColorVarRegistry struct {
 }
 
 // resolvedPair is the dedup key: the light/dark CSS color strings
-// that together define one prism-resolved-N variable's two values.
+// that together define one prism-resolved-* variable's two values.
 type resolvedPair struct {
 	light string
 	dark  string
@@ -58,17 +65,43 @@ func (r *ColorVarRegistry) Resolve(light, dark *scene.Color) string {
 		d = light
 	}
 	key := resolvedPair{light: light.CSS(), dark: d.CSS()}
-	if i, ok := r.index[key]; ok {
-		return varName(i)
+	if _, ok := r.index[key]; !ok {
+		r.index[key] = len(r.order)
+		r.order = append(r.order, key)
 	}
-	i := len(r.order)
-	r.order = append(r.order, key)
-	r.index[key] = i
-	return varName(i)
+	return key.varName()
 }
 
-func varName(i int) string {
-	return fmt.Sprintf("prism-resolved-%d", i)
+// varName names the pair by its two values — "prism-resolved-" plus
+// the light and the dark hex digits ("prism-resolved-4c78a8-4269d0"),
+// or a hash of both CSS strings for a colour that is not opaque hex.
+// A name that depends only on the values is what lets several Prism
+// SVGs sit inline in one document: every <style> block that declares
+// a name declares it with the same pair, so whichever block the page
+// applies last, no chart picks up another chart's colours. (A
+// first-seen counter, the E4-S3 scheme, restarted in every SVG.)
+func (p resolvedPair) varName() string {
+	if l, ok := opaqueHexDigits(p.light); ok {
+		if d, ok := opaqueHexDigits(p.dark); ok {
+			return "prism-resolved-" + l + "-" + d
+		}
+	}
+	h := fnv.New32a()
+	_, _ = h.Write([]byte(p.light + "|" + p.dark))
+	return fmt.Sprintf("prism-resolved-%08x", h.Sum32())
+}
+
+// opaqueHexDigits returns the six digits of a "#rrggbb" colour.
+func opaqueHexDigits(css string) (string, bool) {
+	if len(css) != 7 || css[0] != '#' {
+		return "", false
+	}
+	for _, c := range css[1:] {
+		if !(c >= '0' && c <= '9' || c >= 'a' && c <= 'f') {
+			return "", false
+		}
+	}
+	return css[1:], true
 }
 
 // ResolvedVar is one (name, light hex, dark hex) triple ready to hand
@@ -87,7 +120,7 @@ func (r *ColorVarRegistry) Pairs() []ResolvedVar {
 	}
 	out := make([]ResolvedVar, len(r.order))
 	for i, k := range r.order {
-		out[i] = ResolvedVar{Name: varName(i), Light: k.light, Dark: k.dark}
+		out[i] = ResolvedVar{Name: k.varName(), Light: k.light, Dark: k.dark}
 	}
 	return out
 }

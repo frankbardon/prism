@@ -37,7 +37,8 @@ The `encoding` object binds data fields to visual channels.
 | `axis` | Axis config (`orient`, `title`, `format`, `grid`, `tick_count`, `label_angle`, ...) — see [Axis placement](#axis-placement) — or `null` to [hide the axis](#hiding-an-axis-or-legend). |
 | `legend` | Legend config — placement (`orient`, `padding`, `offset`; see [Legend placement](#legend-placement)), content (`title`, `values`, `format`, `tick_count`, `label_limit`; see [Legend content](#legend-content)) and layout (`type`, `direction`, `symbol_type`, `symbol_size`; see [Symbol or gradient](#symbol-or-gradient--type)) — or `null` to [hide the legend](#hiding-an-axis-or-legend). |
 | `format` | d3-format string for label formatting. Read on the [`text`](#text-channel) and [`tooltip`](#tooltip-channel) channels and on a [table column](#table-columns); on any other channel it is validated and then unread — put it on `axis.format` / `legend.format` instead, and see [Spec › Warnings](spec.md#warnings--and-the-fields-that-do-nothing) for the diagnostic that says so. |
-| `sort` | `"ascending"` / `"descending"` / `"-y"` / `[explicit, order, ...]`. |
+| `title` | On `x` / `y`, the axis title; on `color`, the legend title. Precedence: `axis.title` / `legend.title` > the channel `title` > the field name. On any other channel it is reported as `PRISM_WARN_CHANNEL_INERT`. |
+| `sort` | Category order on `x` / `y` (a discrete scale) and `color`: an array naming the categories in order (unlisted data categories follow, first-seen), or a direction — `"ascending"` / `"descending"` (`"asc"` / `"desc"`) — ordering them by value. An explicit `scale.domain` outranks it. Sorting by another channel (`"-y"`) or by a field object is not implemented and is reported as `PRISM_WARN_CHANNEL_INERT`. |
 | `stack` | Position channels only. `"zero"` / `"normalize"` / `"center"` / `true` to stack, `null` / `false` to opt out — see [Stacking](#stacking). |
 | `key` | `true` to mark this channel as the animation join key — see [Spec › Animation](spec.md#animation). At most one channel per encoding may set this; only valid on position channels (`x`, `y`, `x2`, `y2`, `theta`, `radius`) and mark channels (`color`, `fill`, `stroke`, `opacity`, `size`, `shape`, sankey `source`/`target`/`value`, geo `longitude`/`latitude`/`feature`). |
 
@@ -192,6 +193,13 @@ epoch-millisecond number. A discrete scale (`band`, `point`,
   "scale": {"domain": ["small", "medium", "large"]}
 }
 ```
+
+**On the color channel.** A categorical `color` reads its `domain` the
+same way: the listed categories take the palette's first slots (and
+the legend's first entries) in that order, so a category keeps its
+colour whichever row it first appears in. A quantitative `color` on a
+`heatmap` reads `domain` as the `[lo, hi]` its ramp spans and
+`reverse` as a flip of the ramp; see [Marks](marks.md).
 
 A discrete `domain` pins the **leading** order; any data category the
 list omits is appended after it in first-seen order, so a partial
@@ -885,7 +893,7 @@ slimmer channel shape: `field`, `type`, `aggregate`, `format`,
 |---|---|
 | `field` | The column whose value becomes the label. |
 | `value` | A literal label, repeated on every row. Used when no `field` is set. |
-| `format` | d3-format specifier applied to the label — `.1f` renders `80.04` as `80.0`, `.0%` renders `0.42` as `42%`. Invalid specifiers are rejected at validate time with `PRISM_SPEC_011`. |
+| `format` | d3-format specifier applied to the label — `.1f` renders `80.04` as `80.0`, `.0%` renders `0.42` as `42%`, `.3~g` renders `1.50` as `1.5` (`~` trims trailing zeros), `+.1f` renders `2` as `+2.0`. The grammar is `[sign][,][.precision][~][type]` with types `f % d e s g` (`encode/format/README.md`). Invalid specifiers are rejected at validate time with `PRISM_SPEC_011`. |
 | `aggregate` | Honoured exactly like a position channel's: it injects the same synthetic group-aggregate node, and a non-aggregated `text` field joins the group-by. |
 
 With **no** `text` channel bound, a `text` mark falls back to
@@ -956,7 +964,20 @@ See [Marks › Table](marks.md#table) for the mark-side rules.
 ]
 ```
 
-Materialized in the Scene IR as pre-formatted `TooltipLine` lists.
+Materialized in the Scene IR as pre-formatted `TooltipLine` lists,
+one `<label>: <value>` line per entry. The label is the entry's
+`title`, else its field name; the value goes through the entry's
+`format` (see [Text channel](#text-channel)), and a null cell reads
+`–`. So a numeric column can position a mark and still read well in
+its tooltip, with no pre-formatted string copy:
+
+```json
+"tooltip": [
+  {"field": "test", "title": "Test"},
+  {"field": "diff", "title": "Difference", "format": ".3~g"}
+]
+```
+
 SVG emits `<title>` per mark; the JS port renders rich HTML tooltips
 in P12+.
 

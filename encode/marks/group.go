@@ -40,7 +40,7 @@ type rowGroup struct {
 	detail  []string
 	indices []int
 	color   *scene.Color
-	// varName (E4-S3) carries the "prism-resolved-N" var name when
+	// varName (E4-S3) carries the "prism-resolved-<light>-<dark>" var name when
 	// in.ColorRegistry is active — the auto-dark counterpart to color
 	// (see resolveCategoryColor). Empty means color (if non-nil) is a
 	// baked literal, the pre-E4-S3 path.

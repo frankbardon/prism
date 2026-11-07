@@ -16,7 +16,8 @@ import (
 )
 
 // EncodeOpts controls the encoder's per-call layout knobs. Width
-// and Height default to 800×600 when zero. ThemeName selects a
+// and Height, when zero, come from the spec's own top-level `width` /
+// `height` (withSpecFrame), else default to 800×600. ThemeName selects a
 // registered theme (light/dark/print + user-loaded); Theme is the
 // resolved scene-IR theme override (wins over ThemeName).
 //
@@ -46,6 +47,10 @@ type EncodeOpts struct {
 	// an offset scale's range is the parent band width of the cell
 	// being drawn, which only the child can know.
 	OverrideOffset *OffsetDomain
+	// autoDark is the document's auto light/dark state, handed down by
+	// a composition parent to its cells (autoDarkFor). Nil at the top
+	// of the tree and whenever auto-dark is off.
+	autoDark *autoDark
 }
 
 // flatSceneID is the id the flat encoder stamps on the single scene
@@ -97,6 +102,7 @@ func isSparkMark(markType string) bool {
 // keeps InertFieldWarnings a single reporter — a layer child is
 // walked once, from the root spec, never once per cell.
 func Encode(s *spec.Spec, tables map[plan.NodeID]*table.Table, tipID plan.NodeID, opts EncodeOpts) (*scene.SceneDoc, error) {
+	opts = withSpecFrame(opts, s)
 	doc, err := encodeLeaf(s, tables, tipID, opts)
 	if err != nil {
 		return nil, err
@@ -125,24 +131,15 @@ func encodeLeaf(s *spec.Spec, tables map[plan.NodeID]*table.Table, tipID plan.No
 	if err != nil {
 		return nil, err
 	}
-	// E4-S3 auto-dark mark colors: this Encode call "owns" the theme
-	// (opts.Theme == nil — a genuine top-of-tree resolve, not a
-	// composite-cell reuse of an already-resolved *scene.Theme). Only
-	// the owner is allowed to create the registry and, at the end of
-	// this function, regenerate sceneTheme.CSS to include the
-	// resolved-var declarations — composite cells (opts.Theme != nil)
-	// keep colorReg/darkTheme nil and every mark color call site below
-	// falls back to the pre-E4-S3 baked-hex path unchanged. See
-	// finalizeAutoDarkCSS.
-	isThemeOwner := opts.Theme == nil
-	var colorReg *marks.ColorVarRegistry
-	var darkTheme *theme.Theme
-	if isThemeOwner && fullTheme != nil && fullTheme.DarkVariant != "" {
-		if dv, ok := theme.Get(fullTheme.DarkVariant); ok {
-			darkTheme = dv
-			colorReg = marks.NewColorVarRegistry()
-		}
-	}
+	// E4-S3 auto-dark mark colors. The document's state comes from a
+	// composition parent when this is a cell; a top-of-tree call whose
+	// theme names a DarkVariant creates it and is the owner, the one
+	// call that folds the resolved-var pairs into sceneTheme.CSS at
+	// the end (finalizeAutoDarkCSS). With auto-dark off colorReg /
+	// darkTheme stay nil and every mark colour is baked.
+	ad, isThemeOwner := autoDarkFor(opts, fullTheme)
+	colorReg := ad.registry()
+	darkTheme := ad.darkTheme()
 
 	tbl, ok := tables[tipID]
 	if !ok || tbl == nil {
@@ -415,12 +412,13 @@ func encodeLeaf(s *spec.Spec, tables map[plan.NodeID]*table.Table, tipID plan.No
 				map[string]any{"Field": enc.Color.Field, "Source": "<table>", "Available": joinTableFields(tbl)},
 			)
 		}
-		cats := distinctStringValues(col)
+		cats := colorCategories(col, enc.Color)
 		colorChannel = &marks.ColorChannel{
 			Field:             enc.Color.Field,
 			Categories:        cats,
 			Palette:           ResolveCategoricalPaletteWithOpts(fullTheme, colorScaleOpts(enc.Color)),
 			SequentialPalette: ResolveSequentialPaletteWithOpts(fullTheme, colorScaleOpts(enc.Color)),
+			SequentialDomain:  sequentialDomainOf(enc.Color),
 		}
 		if darkTheme != nil {
 			colorChannel.DarkPalette = ResolveCategoricalPaletteWithOpts(darkTheme, colorScaleOpts(enc.Color))
@@ -611,8 +609,10 @@ func encodeLeaf(s *spec.Spec, tables map[plan.NodeID]*table.Table, tipID plan.No
 			axes = append(axes, BuildAxisWithOpts(hr.YScale, scene.ChannelY, placement.Y, layout.Plot,
 				axisOptsForTitled(enc.Y, "count").withWarnings(&warnings)))
 		}
+		doc := buildSceneDoc(s, layout, axes, hr.Marks, markType, colorChannel, enc, sceneTheme, warnings, hasTitle, legendPl, legendEnabled, legendContent, legendKind, tbl, colorReg)
+		// After the legend: its swatches register pairs too.
 		finalizeAutoDarkCSS(sceneTheme, fullTheme, colorReg, isThemeOwner)
-		return buildSceneDoc(s, layout, axes, hr.Marks, markType, colorChannel, enc, sceneTheme, warnings, hasTitle, legendPl, legendEnabled, legendContent, legendKind, tbl), nil
+		return doc, nil
 	}
 
 	markList, markWarn, err := marks.Encode(markType, markInputs)
@@ -648,23 +648,27 @@ func encodeLeaf(s *spec.Spec, tables map[plan.NodeID]*table.Table, tipID plan.No
 		// as the legend title in that case.
 		title := colorChannel.Field
 		if enc.Color != nil && enc.Color.Field != "" {
-			title = enc.Color.Field
+			title = colorLegendTitle(enc)
 		}
 		legendGradientKey = LegendGradientID(flatSceneID, scene.ChannelColor)
 		legend, grad := buildColorLegend(colorLegendInputs{
-			Kind:       legendKind,
-			SceneID:    flatSceneID,
-			Channel:    scene.ChannelColor,
-			Title:      title,
-			Field:      colorChannel.Field,
-			Format:     colorChannelFormat(enc),
-			Categories: colorChannel.Categories,
-			Palette:    colorChannel.Palette,
-			Sequential: colorChannel.SequentialPalette,
-			Table:      tbl,
-			Placement:  legendPl,
-			Content:    legendContent,
-			Plot:       layout.Plot,
+			Kind:           legendKind,
+			SceneID:        flatSceneID,
+			Channel:        scene.ChannelColor,
+			Title:          title,
+			Field:          colorChannel.Field,
+			Format:         colorChannelFormat(enc),
+			Categories:     colorChannel.Categories,
+			Palette:        colorChannel.Palette,
+			Sequential:     colorChannel.SequentialPalette,
+			Domain:         colorChannel.SequentialDomain,
+			DarkPalette:    colorChannel.DarkPalette,
+			DarkSequential: colorChannel.DarkSequentialPalette,
+			Registry:       colorReg,
+			Table:          tbl,
+			Placement:      legendPl,
+			Content:        legendContent,
+			Plot:           layout.Plot,
 		})
 		if legend != nil {
 			legends = append(legends, *legend)
@@ -715,7 +719,7 @@ func buildSceneDoc(
 	markType string, colorChannel *marks.ColorChannel, enc *spec.Encoding,
 	sceneTheme *scene.Theme, warnings []scene.Warning, hasTitle bool,
 	legendPl LegendPlacement, legendEnabled bool, legendContent LegendContent,
-	legendKind LegendKind, tbl *table.Table,
+	legendKind LegendKind, tbl *table.Table, colorReg *marks.ColorVarRegistry,
 ) *scene.SceneDoc {
 	layer := scene.SceneLayer{
 		ID:    "layer-0",
@@ -728,19 +732,23 @@ func buildSceneDoc(
 	if legendEnabled && !legendHidden(enc.Color) && colorChannel != nil &&
 		(len(colorChannel.Categories) > 1 || legendKind == LegendKindGradient) {
 		legend, grad := buildColorLegend(colorLegendInputs{
-			Kind:       legendKind,
-			SceneID:    flatSceneID,
-			Channel:    scene.ChannelColor,
-			Title:      enc.Color.Field,
-			Field:      colorChannel.Field,
-			Format:     colorChannelFormat(enc),
-			Categories: colorChannel.Categories,
-			Palette:    colorChannel.Palette,
-			Sequential: colorChannel.SequentialPalette,
-			Table:      tbl,
-			Placement:  legendPl,
-			Content:    legendContent,
-			Plot:       layout.Plot,
+			Kind:           legendKind,
+			SceneID:        flatSceneID,
+			Channel:        scene.ChannelColor,
+			Title:          colorLegendTitle(enc),
+			Field:          colorChannel.Field,
+			Format:         colorChannelFormat(enc),
+			Categories:     colorChannel.Categories,
+			Palette:        colorChannel.Palette,
+			Sequential:     colorChannel.SequentialPalette,
+			Domain:         colorChannel.SequentialDomain,
+			DarkPalette:    colorChannel.DarkPalette,
+			DarkSequential: colorChannel.DarkSequentialPalette,
+			Registry:       colorReg,
+			Table:          tbl,
+			Placement:      legendPl,
+			Content:        legendContent,
+			Plot:           layout.Plot,
 		})
 		if legend != nil {
 			legends = append(legends, *legend)
@@ -805,7 +813,7 @@ func resolveChannel(ch *spec.PositionChannel, tbl *table.Table, rmin, rmax float
 	// extra carries mark-supplied domain values (bullet bands / target /
 	// comparative) that must widen the data-derived domain.
 	values = append(values, extra...)
-	opts := ScaleOptsFromSpec(ch.Scale)
+	opts := positionScaleOpts(ch)
 	if ch.Scale != nil && ch.Scale.Type != "" {
 		return ResolveScaleTyped(scene.ScaleType(ch.Scale.Type), values, rmin, rmax, opts)
 	}
@@ -1136,7 +1144,7 @@ func applyThemeMarkStyle(style *scene.Style, ms *theme.MarkStyle, t *theme.Theme
 	}
 }
 
-// resolveDarkPairedColor returns the "prism-resolved-N" var name for
+// resolveDarkPairedColor returns the "prism-resolved-<light>-<dark>" var name for
 // (light, darkHex) when reg is active (auto-dark) and darkHex parses
 // to a valid color; "" otherwise — the caller then falls back to
 // baking light as a literal hex, exactly the pre-E4-S3 behavior. This
@@ -1563,9 +1571,14 @@ func layerAxisHidden(specs []*spec.Spec, ch scene.Channel) bool {
 // format}. Defaults match DefaultAxisOpts; the spec selectively
 // overrides.
 func axisOptsFor(ch *spec.PositionChannel) AxisOpts {
+	// Title precedence: axis.title > the channel-level title > the
+	// field name.
 	title := ""
 	if ch != nil {
 		title = ch.Field
+		if ch.Title != "" {
+			title = ch.Title
+		}
 	}
 	opts := DefaultAxisOpts(title)
 	if ch == nil {

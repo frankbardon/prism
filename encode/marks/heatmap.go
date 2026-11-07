@@ -10,8 +10,9 @@ import (
 // encodeHeatmap emits one RectGeom per (x, y) cell. When both axes
 // are band scales (the categorical fixture case), each row maps to
 // one cell sized by the band widths. The color channel must be a
-// quantitative field; the encoder builds a sequential color via
-// SequentialColor over the field's [min, max] range.
+// quantitative field; the encoder interpolates the resolved
+// sequential ramp over the channel's scale.domain, else the field's
+// [min, max] range.
 //
 // 2D quantitative binning (continuous x + y) is forward-looking; v1
 // requires both axes to be discrete (band/ordinal). Validator
@@ -70,9 +71,13 @@ func encodeHeatmap(in Inputs) ([]scene.Mark, error) {
 		}
 	}
 
-	// Compute color range.
+	// Compute color range: the channel's explicit scale.domain when it
+	// pins one (so 0 can sit on a diverging ramp's midpoint whatever
+	// the data spans), else the data's own extent.
 	mn, mx := 0.0, 0.0
-	if len(colorValues) > 0 {
+	if in.Color != nil && in.Color.SequentialDomain != nil {
+		mn, mx = in.Color.SequentialDomain[0], in.Color.SequentialDomain[1]
+	} else if len(colorValues) > 0 {
 		mn, mx = colorValues[0], colorValues[0]
 		for _, v := range colorValues[1:] {
 			if v < mn {

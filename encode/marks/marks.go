@@ -58,6 +58,10 @@ type ColorChannel struct {
 	// (ColorRegistry.Resolve) instead of baked as a literal hex.
 	DarkPalette           []*scene.Color
 	DarkSequentialPalette []*scene.Color
+	// SequentialDomain is the channel's explicit numeric
+	// `scale.domain` as [lo, hi]; nil spans the data's own [min, max].
+	// A value outside it takes the nearer end of the ramp.
+	SequentialDomain *[2]float64
 }
 
 // OpacityChannel is a field-driven per-mark opacity binding. The

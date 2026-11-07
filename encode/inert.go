@@ -374,19 +374,45 @@ func inertChannelCommon(common *spec.ChannelCommon, channel, chPath string, out 
 	if common == nil {
 		return
 	}
-	if common.Title != "" {
+	if common.Title != "" && !channelTitleRead(channel) {
 		where := "axis.title"
 		if isMarkChannelName(channel) {
 			where = "legend.title"
 		}
 		appendChannelInert(out, joinInertPath(chPath, "title"), channel, "",
-			"a channel-level title is not read — the axis / legend title comes from the field name or from "+where)
+			"a channel-level title is read on x / y (the axis title) and color (the legend title) only — here the title comes from the field name or from "+where)
+	}
+	if common.Sort != nil && !channelSortRead(channel, common.Sort) {
+		appendChannelInert(out, joinInertPath(chPath, "sort"), channel, "",
+			"a channel-level sort is read on x / y and color as a category list or a direction (ascending / descending); sorting by another channel or field is not implemented — list the categories in order, or pin scale.domain")
 	}
 	if common.Format != "" && channel != "text" && channel != "tooltip" {
 		appendChannelInert(out, joinInertPath(chPath, "format"), channel, "",
 			"a channel-level format is validated (PRISM_SPEC_011) but read by nothing — use axis.format / legend.format, or the text / tooltip channel's own format")
 	}
 	inertScale(common.Scale, common.Type, channel, chPath, out)
+}
+
+// channelTitleRead reports whether a channel-level `title` reaches a
+// consumer: the axis title of x / y (axisOptsFor), the legend title of
+// color (markChannelTitle).
+func channelTitleRead(channel string) bool {
+	switch channel {
+	case "x", "y", "color":
+		return true
+	}
+	return false
+}
+
+// channelSortRead reports whether a channel-level `sort` reaches a
+// consumer: a category list or a direction on x / y
+// (positionScaleOpts) and color (colorCategories).
+func channelSortRead(channel string, v any) bool {
+	switch channel {
+	case "x", "y", "color":
+		return positionSortRead(v)
+	}
+	return false
 }
 
 func isMarkChannelName(channel string) bool {

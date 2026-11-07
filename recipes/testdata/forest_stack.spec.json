@@ -1,0 +1,249 @@
+{
+  "$schema": "urn:prism:schema:v1:spec",
+  "vconcat": [
+    {
+      "$schema": "urn:prism:schema:v1:spec",
+      "data": {
+        "values": [
+          {
+            "d": 1,
+            "h": 1.5,
+            "l": 0.5,
+            "t": "A"
+          }
+        ]
+      },
+      "layer": [
+        {
+          "$schema": "urn:prism:schema:v1:spec",
+          "data": {
+            "values": [
+              {
+                "value": 0
+              }
+            ]
+          },
+          "mark": {
+            "type": "rule",
+            "stroke_dash": [
+              4,
+              3
+            ]
+          },
+          "encoding": {
+            "x": {
+              "field": "value",
+              "type": "quantitative"
+            }
+          }
+        },
+        {
+          "$schema": "urn:prism:schema:v1:spec",
+          "data": {
+            "values": [
+              {
+                "d": 1,
+                "h": 1.5,
+                "l": 0.5,
+                "t": "A"
+              }
+            ]
+          },
+          "mark": "rule",
+          "encoding": {
+            "x": {
+              "field": "l",
+              "type": "quantitative",
+              "title": "d"
+            },
+            "y": {
+              "field": "t",
+              "type": "nominal",
+              "scale": {
+                "reverse": true
+              },
+              "sort": [
+                "A"
+              ],
+              "axis": null
+            },
+            "x2": {
+              "field": "h"
+            }
+          }
+        },
+        {
+          "$schema": "urn:prism:schema:v1:spec",
+          "data": {
+            "values": [
+              {
+                "d": 1,
+                "h": 1.5,
+                "l": 0.5,
+                "t": "A"
+              }
+            ]
+          },
+          "mark": {
+            "type": "point",
+            "size": 64
+          },
+          "encoding": {
+            "x": {
+              "field": "d",
+              "type": "quantitative",
+              "title": "d"
+            },
+            "y": {
+              "field": "t",
+              "type": "nominal",
+              "scale": {
+                "reverse": true
+              },
+              "sort": [
+                "A"
+              ],
+              "axis": null
+            }
+          }
+        }
+      ],
+      "height": 132,
+      "title": "A"
+    },
+    {
+      "$schema": "urn:prism:schema:v1:spec",
+      "data": {
+        "values": [
+          {
+            "d": 120,
+            "h": 160,
+            "l": 80,
+            "t": "B"
+          },
+          {
+            "d": 40,
+            "h": 90,
+            "l": -10,
+            "t": "C"
+          }
+        ]
+      },
+      "layer": [
+        {
+          "$schema": "urn:prism:schema:v1:spec",
+          "data": {
+            "values": [
+              {
+                "value": 0
+              }
+            ]
+          },
+          "mark": {
+            "type": "rule",
+            "stroke_dash": [
+              4,
+              3
+            ]
+          },
+          "encoding": {
+            "x": {
+              "field": "value",
+              "type": "quantitative"
+            }
+          }
+        },
+        {
+          "$schema": "urn:prism:schema:v1:spec",
+          "data": {
+            "values": [
+              {
+                "d": 120,
+                "h": 160,
+                "l": 80,
+                "t": "B"
+              },
+              {
+                "d": 40,
+                "h": 90,
+                "l": -10,
+                "t": "C"
+              }
+            ]
+          },
+          "mark": "rule",
+          "encoding": {
+            "x": {
+              "field": "l",
+              "type": "quantitative",
+              "title": "d"
+            },
+            "y": {
+              "field": "t",
+              "type": "nominal",
+              "scale": {
+                "reverse": true
+              },
+              "sort": [
+                "B",
+                "C"
+              ],
+              "axis": {
+                "title": ""
+              }
+            },
+            "x2": {
+              "field": "h"
+            }
+          }
+        },
+        {
+          "$schema": "urn:prism:schema:v1:spec",
+          "data": {
+            "values": [
+              {
+                "d": 120,
+                "h": 160,
+                "l": 80,
+                "t": "B"
+              },
+              {
+                "d": 40,
+                "h": 90,
+                "l": -10,
+                "t": "C"
+              }
+            ]
+          },
+          "mark": {
+            "type": "point",
+            "size": 64
+          },
+          "encoding": {
+            "x": {
+              "field": "d",
+              "type": "quantitative",
+              "title": "d"
+            },
+            "y": {
+              "field": "t",
+              "type": "nominal",
+              "scale": {
+                "reverse": true
+              },
+              "sort": [
+                "B",
+                "C"
+              ],
+              "axis": {
+                "title": ""
+              }
+            }
+          }
+        }
+      ],
+      "height": 168,
+      "title": "B and C"
+    }
+  ]
+}

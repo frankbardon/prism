@@ -3,6 +3,13 @@
 All notable changes to the Prism JSON Schema bundle are recorded here.
 The schema URN namespace is `urn:prism:schema:v1:*`.
 
+## Unreleased (Prism v0.18.0) — additive
+
+- `spec.schema.json` — `columns` (integer ≥ 1) wraps a `concat`; it
+  requires `concat` (`dependentRequired`). The `width` / `height`
+  descriptions now say a number is read (frame size, or a concat
+  panel's asked-for size).
+
 ## v1.0.0 — initial release
 
 Initial 14-file schema bundle for Prism v1 specs.

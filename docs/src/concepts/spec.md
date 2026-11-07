@@ -41,15 +41,25 @@ Five top-level keys are typically present:
 ```
 $schema       data            datasets        transform
 mark          encoding        layer           concat
-hconcat       vconcat         facet           repeat
-spec          selection       resolve         theme
-width         height          padding         background
-title         subtitle        description     projection
-animation
+hconcat       vconcat         columns         facet
+repeat        spec            selection       resolve
+theme         width           height          padding
+background    title           subtitle        description
+projection    animation
 ```
 
 Exactly one of `mark | layer | concat | hconcat | vconcat | facet | repeat`
 must be present. The validator enforces this with `PRISM_SPEC_*` codes.
+
+### Frame size
+
+A numeric top-level `width` / `height` sizes the chart frame in pixels.
+The caller's own size wins when it gives one (`EncodeOpts.Width` /
+`Height`, the CLI's `--width` / `--height`); otherwise the spec's is
+used; otherwise the encoder's default of 800 × 600 — or, for a concat
+whose panels all declare sizes, their sum (see
+[Composition › Panel sizes](composition.md#panel-sizes)). A token such
+as `"container"` leaves the size to the caller.
 
 ## Animation
 

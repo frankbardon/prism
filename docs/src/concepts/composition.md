@@ -83,8 +83,51 @@ Layer order = render order = z-index (last is on top).
 ```
 
 `hconcat` lays out left-to-right. `vconcat` top-to-bottom. `concat`
-is a flat array; today it behaves like `hconcat` (the `columns` wrap
-parameter is post-v1).
+is a flat array that behaves like `hconcat` unless it sets `columns`,
+which wraps it into rows of at most that many cells, filled left to
+right (the last row may be short):
+
+```json
+{"columns": 3, "concat": [ ... seven panels ... ]}
+```
+
+`columns` is read on `concat` only: the schema rejects it on a spec
+without `concat` (`hconcat` is always one row, `vconcat` one column).
+
+### Panel sizes
+
+A panel's own numeric `width` / `height` is the size it asks for. A
+column asks for the widest width among its panels, a row for the
+tallest height. When the concat itself has no size — no `width` /
+`height` on the root spec and none from the caller — and every column
+(or row) asks for one, the panels get exactly what they asked for and
+the chart is their sum plus a 20 px gap between cells. Otherwise the
+concat's size (800 × 600 by default) is shared out in proportion to
+the asked-for sizes, a panel that asks for nothing counting as the
+mean of the others; with no sizes at all that is an equal split.
+
+```json
+{"vconcat": [
+  {"height": 120, "layer": [ ... ]},
+  {"height": 300, "mark": "bar", "encoding": { ... }}
+]}
+```
+
+draws a 440 px tall chart: a 120 px panel, the gap, a 300 px panel.
+
+### Nesting
+
+A `concat` / `hconcat` / `vconcat` panel may itself be a `layer` or
+another concat — a column of layered panels (a forest plot split by
+unit), a wrapped grid of layered small multiples. The nested
+composition is encoded at its panel's size, and a layer's shared axes
+are drawn inside its panel. A `layer`'s children must still be flat,
+and a `facet` / `repeat` cannot sit under a concat (`PRISM_PLAN_002`,
+`Kind: composition:nested`); facet and repeat take composite `spec`
+children as described below. In the plan, every leaf of a nested panel
+is staged on that panel's one DAG under its own id namespace
+(`0/inline:1`, `1/inline:1`, …), so executing the panel's DAG yields
+every table it draws.
 
 ## Facet
 

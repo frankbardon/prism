@@ -30,6 +30,7 @@
 - [Selection Events](cookbook/selection-events.md)
 - [Runtime Data References](cookbook/runtime-data-refs.md)
 - [Spec Patches (RFC 6902)](cookbook/spec-patches.md)
+- [Chart Recipes (Go)](cookbook/chart-recipes.md)
 
 # Playground
 

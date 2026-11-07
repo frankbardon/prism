@@ -1,6 +1,7 @@
 package build_test
 
 import (
+	"context"
 	"errors"
 	"path/filepath"
 	"testing"
@@ -145,10 +146,10 @@ func TestPrismBuildConcatVertical(t *testing.T) {
 }
 
 func TestPrismBuildNestedCompositionRejected(t *testing.T) {
-	// concat[ layer[...] ] — nested composition.
+	// layer[ layer[...] ] — a layer's children must be flat.
 	body := []byte(`{
 		"$schema": "urn:prism:schema:v1:spec",
-		"hconcat": [
+		"layer": [
 			{
 				"$schema": "urn:prism:schema:v1:spec",
 				"datasets": {
@@ -224,5 +225,102 @@ func TestPrismIsCompositeDetectsAllFour(t *testing.T) {
 				t.Errorf("IsComposite=%v, want %v", got, c.want)
 			}
 		})
+	}
+}
+
+// TestPrismBuildNestedConcat: a concat child may be a layer or a
+// concat. The subtree's leaves share one DAG under namespaced ids, and
+// executing it yields every leaf's tip table.
+func TestPrismBuildNestedConcat(t *testing.T) {
+	body := []byte(`{
+		"$schema": "urn:prism:schema:v1:spec",
+		"data": {"values": [{"x": "a", "y": 1}, {"x": "b", "y": 2}]},
+		"vconcat": [
+			{"layer": [
+				{"mark": "bar", "encoding": {"x": {"field": "x", "type": "nominal"}, "y": {"field": "y", "type": "quantitative"}}},
+				{"mark": "point", "encoding": {"x": {"field": "x", "type": "nominal"}, "y": {"field": "y", "type": "quantitative"}}}
+			]},
+			{"concat": [
+				{"mark": "bar", "encoding": {"x": {"field": "x", "type": "nominal"}, "y": {"field": "y", "type": "quantitative"}}},
+				{"layer": [{"mark": "point", "encoding": {"x": {"field": "x", "type": "nominal"}, "y": {"field": "y", "type": "quantitative"}}}]}
+			]},
+			{"mark": "bar", "encoding": {"x": {"field": "x", "type": "nominal"}, "y": {"field": "y", "type": "quantitative"}}}
+		]
+	}`)
+	s, err := spec.DecodeBytes(body)
+	if err != nil {
+		t.Fatalf("decode: %v", err)
+	}
+	c, err := build.BuildComposite(s, build.Options{})
+	if err != nil {
+		t.Fatalf("BuildComposite: %v", err)
+	}
+	if len(c.Children) != 3 || c.Rows != 3 {
+		t.Fatalf("children=%d rows=%d, want 3 / 3", len(c.Children), c.Rows)
+	}
+	layer := c.Children[0]
+	if layer.Composite == nil || layer.Composite.Kind != plan.CompositeLayer || len(layer.Composite.Children) != 2 {
+		t.Fatalf("child 0 = %+v, want a nested 2-layer composite", layer.Composite)
+	}
+	if c.Children[2].Composite != nil {
+		t.Fatal("child 2 is flat, want no Composite")
+	}
+	inner := c.Children[1].Composite
+	if inner == nil || inner.Kind != plan.CompositeConcat || inner.Children[1].Composite == nil {
+		t.Fatalf("child 1 = %+v, want concat[bar, layer]", inner)
+	}
+	res, err := plan.Execute(context.Background(), c.Children[1].DAG, plan.ExecOpts{Workers: 1})
+	if err != nil || len(res.Errors) > 0 {
+		t.Fatalf("execute: %v %v", err, res.Errors)
+	}
+	tips := []plan.NodeID{inner.Children[0].Tip, inner.Children[1].Composite.Children[0].Tip}
+	if tips[0] == tips[1] {
+		t.Fatalf("leaf tips collide: %v", tips)
+	}
+	for _, tip := range tips {
+		if inner.Children[0].DAG != c.Children[1].DAG {
+			t.Fatal("nested leaves do not share the child's DAG")
+		}
+		if tbl := res.Tables[tip]; tbl == nil || tbl.NumRows() != 2 {
+			t.Errorf("tip %s: table %v, want 2 rows", tip, tbl)
+		}
+	}
+	if c.Children[1].Tip != tips[0] {
+		t.Errorf("nested Tip = %s, want the first leaf's %s", c.Children[1].Tip, tips[0])
+	}
+
+	// A facet under a concat stays rejected.
+	facet := []byte(`{"$schema": "urn:prism:schema:v1:spec", "data": {"values": [{"x": "a", "y": 1}]},
+		"hconcat": [{"facet": {"column": {"field": "x", "type": "nominal"}},
+			"spec": {"mark": "bar", "encoding": {"x": {"field": "x", "type": "nominal"}, "y": {"field": "y", "type": "quantitative"}}}}]}`)
+	fs, err := spec.DecodeBytes(facet)
+	if err != nil {
+		t.Fatalf("decode facet: %v", err)
+	}
+	if _, err := build.BuildComposite(fs, build.Options{}); err == nil {
+		t.Fatal("facet under hconcat: want PRISM_PLAN_002")
+	}
+}
+
+// TestPrismBuildConcatColumns: `columns` wraps a concat into rows.
+func TestPrismBuildConcatColumns(t *testing.T) {
+	leaf := `{"mark": "bar", "encoding": {"x": {"field": "x", "type": "nominal"}, "y": {"field": "y", "type": "quantitative"}}}`
+	for _, tc := range []struct {
+		columns    string
+		rows, cols int
+	}{{"", 1, 5}, {`"columns": 2,`, 3, 2}, {`"columns": 5,`, 1, 5}, {`"columns": 9,`, 1, 5}} {
+		body := []byte(`{"$schema": "urn:prism:schema:v1:spec", "data": {"values": [{"x": "a", "y": 1}]}, ` + tc.columns +
+			`"concat": [` + leaf + `,` + leaf + `,` + leaf + `,` + leaf + `,` + leaf + `]}`)
+		s, err := spec.DecodeBytes(body)
+		if err != nil {
+			t.Fatalf("decode: %v", err)
+		}
+		c, err := build.BuildComposite(s, build.Options{})
+		if err != nil {
+			t.Fatalf("BuildComposite: %v", err)
+		}
+		if c.Rows != tc.rows || c.Cols != tc.cols {
+			t.Errorf("%q: shape %dx%d, want %dx%d", tc.columns, c.Rows, c.Cols, tc.rows, tc.cols)
+		}
 	}
 }

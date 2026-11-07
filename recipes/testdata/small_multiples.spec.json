@@ -1,0 +1,141 @@
+{
+  "$schema": "urn:prism:schema:v1:spec",
+  "concat": [
+    {
+      "$schema": "urn:prism:schema:v1:spec",
+      "data": {
+        "values": [
+          {
+            "m": "jan",
+            "s": "south",
+            "v": 5
+          },
+          {
+            "m": "feb",
+            "s": "south",
+            "v": 6
+          },
+          {
+            "m": "mar",
+            "s": "south",
+            "v": 7
+          }
+        ]
+      },
+      "mark": "line",
+      "encoding": {
+        "x": {
+          "field": "m",
+          "type": "ordinal",
+          "sort": [
+            "jan",
+            "feb",
+            "mar"
+          ]
+        },
+        "y": {
+          "field": "v",
+          "type": "quantitative",
+          "scale": {
+            "domain": [
+              4,
+              7
+            ]
+          }
+        }
+      },
+      "title": "south"
+    },
+    {
+      "$schema": "urn:prism:schema:v1:spec",
+      "data": {
+        "values": [
+          {
+            "m": "jan",
+            "s": "north",
+            "v": 5
+          },
+          {
+            "m": "feb",
+            "s": "north",
+            "v": 6
+          },
+          {
+            "m": "mar",
+            "s": "north",
+            "v": 7
+          }
+        ]
+      },
+      "mark": "line",
+      "encoding": {
+        "x": {
+          "field": "m",
+          "type": "ordinal",
+          "sort": [
+            "jan",
+            "feb",
+            "mar"
+          ]
+        },
+        "y": {
+          "field": "v",
+          "type": "quantitative",
+          "scale": {
+            "domain": [
+              4,
+              7
+            ]
+          }
+        }
+      },
+      "title": "north"
+    },
+    {
+      "$schema": "urn:prism:schema:v1:spec",
+      "data": {
+        "values": [
+          {
+            "m": "jan",
+            "s": "east",
+            "v": 4
+          },
+          {
+            "m": "feb",
+            "s": "east",
+            "v": 5
+          },
+          {
+            "m": "mar",
+            "s": "east",
+            "v": 6
+          }
+        ]
+      },
+      "mark": "line",
+      "encoding": {
+        "x": {
+          "field": "m",
+          "type": "ordinal",
+          "sort": [
+            "jan",
+            "feb",
+            "mar"
+          ]
+        },
+        "y": {
+          "field": "v",
+          "type": "quantitative",
+          "scale": {
+            "domain": [
+              4,
+              7
+            ]
+          }
+        }
+      },
+      "title": "east"
+    }
+  ],
+  "columns": 2
+}

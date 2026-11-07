@@ -13,15 +13,17 @@ import (
 // TooltipChannel binding. Returns nil when ch is nil (caller leaves
 // Mark.Tooltip nil — per-mark renderers skip the <title> child).
 //
-// Each TooltipLine is formatted as "<field>: <formatted_value>" where
-// the formatter is the channel's `format` specifier through
-// encode/format (matching axis-label formatting), falling back to
-// fmt.Sprintf("%v", value) when no format is set.
+// Each TooltipLine is formatted as "<label>: <formatted_value>" where
+// the label is the entry's `title` (else its field name) and the
+// formatter is the entry's `format` specifier through encode/format
+// (matching axis-label formatting), falling back to
+// fmt.Sprintf("%v", value) when no format is set. A null cell renders
+// as "–", so a row missing one value still lines up with its peers.
 //
 // Single tooltip: 1 line per row.
 // Multi tooltip:  N lines per row (one per Multi entry).
 //
-// Missing fields render as "<field>: <missing>" — tooltips are
+// Missing fields render as "<label>: <missing>" — tooltips are
 // diagnostic, never blocking. See D063.
 func BuildTooltips(tbl *table.Table, ch *spec.TooltipChannel, rowCount int) []*scene.Tooltip {
 	if ch == nil || rowCount == 0 {
@@ -64,12 +66,19 @@ func tooltipLineLabel(tbl *table.Table, e spec.TextChannel, row int) string {
 		}
 		return ""
 	}
+	label := field
+	if e.Title != "" {
+		label = e.Title
+	}
 	col, ok := tbl.Column(field)
 	if !ok {
-		return fmt.Sprintf("%s: <missing>", field)
+		return fmt.Sprintf("%s: <missing>", label)
 	}
 	if row >= col.Len() {
-		return fmt.Sprintf("%s: <missing>", field)
+		return fmt.Sprintf("%s: <missing>", label)
+	}
+	if col.IsNull(row) {
+		return fmt.Sprintf("%s: –", label)
 	}
 	value := col.ValueAt(row)
 	var formatted string
@@ -83,7 +92,7 @@ func tooltipLineLabel(tbl *table.Table, e spec.TextChannel, row int) string {
 	} else {
 		formatted = fmt.Sprintf("%v", value)
 	}
-	return fmt.Sprintf("%s: %s", field, formatted)
+	return fmt.Sprintf("%s: %s", label, formatted)
 }
 
 // AttachTooltips attaches tooltips[i] to marks[i].Tooltip in 1:1

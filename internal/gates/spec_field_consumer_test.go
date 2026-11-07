@@ -53,10 +53,6 @@ import (
 // exemption.
 var knownInertSpecFields = map[string]string{
 	// --- Top-level chart properties -------------------------------------
-	"Spec.Width": "chart size comes from encode.EncodeOpts (the CLI --width flag, the rpc render request, " +
-		"or the web component's attribute); the spec-level width is decoded and dropped.",
-	"Spec.Height": "chart size comes from encode.EncodeOpts (the CLI --height flag, the rpc render request, " +
-		"or the web component's attribute); the spec-level height is decoded and dropped.",
 	"Spec.Padding": "plot padding is computed by encode/layout.go from the resolved axis placement and " +
 		"theme metrics; the spec-level padding block is decoded and dropped.",
 	"Spec.Background": "the chart background comes from the resolved theme (theme/css.go emits it as a CSS " +
@@ -90,12 +86,8 @@ var knownInertSpecFields = map[string]string{
 	// --- Channel-level keys ----------------------------------------------
 	"ChannelCommon.Bin": "channel-level binning is not implemented — no synthetic bin node is injected. Use " +
 		"the `bin` transform, or mark_def.maxbins on a histogram.",
-	"ChannelCommon.Sort": "channel-level sorting is not implemented. A discrete scale's category order " +
-		"follows the data (or an explicit scale.domain); use the `sort` transform or the `order` channel.",
 	"TextChannel.Type": "a text / tooltip channel formats the raw cell value and resolves no scale, so its " +
 		"declared type is not read. (The `type` on a position / mark channel is read.)",
-	"TextChannel.Title": "a text / tooltip channel has no axis or legend to title. A *table column* title IS " +
-		"honoured — that is ChannelCommon.Title reached through spec.TableColumn, a different field.",
 	"OrderChannelEntry.Type": "the order channel sorts on the column's own table kind; the declared type is " +
 		"not read.",
 	"DetailChannelEntry.Type": "the detail channel only partitions rows on the tuple of its field values " +

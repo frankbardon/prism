@@ -4,15 +4,20 @@
 //
 // Number specifier grammar (subset):
 //
-//	[,]?[.<int>]?[Nf|N%|%|d|Ne|Ns]
+//	[sign]?[,]?[.<int>]?[~]?[f|%|d|e|s|g]
 //
-//	,   thousands separator
-//	.N  precision (digits after decimal, or significant figures for s)
-//	f   fixed-point ("1234.50")
-//	%   percent (multiply by 100, append "%")
-//	d   integer
-//	e   scientific ("1.234e+03")
-//	s   SI prefix ("1k", "1.2M")
+//	sign  "-" (default: minus only), "+" (plus for zero and positives),
+//	      " " (a space for zero and positives)
+//	,     thousands separator
+//	.N    precision (digits after decimal; significant digits for g)
+//	~     trim insignificant trailing zeros ("1.50" → "1.5", "2.00" → "2")
+//	f     fixed-point ("1234.50")
+//	%     percent (multiply by 100, append "%")
+//	d     integer
+//	e     scientific ("1.234e+03")
+//	s     SI prefix ("1k", "1.2M")
+//	g     significant digits, d3's toPrecision rule ("1235", "0.0001235",
+//	      "1.235e+7"); without a precision, the shortest round-trip form
 //
 // Time specifier grammar (subset of strftime):
 //
@@ -53,7 +58,14 @@ type NumberSpec struct {
 	Thousands bool
 	Precision int  // -1 = unset
 	HasPrec   bool // distinguishes ".0f" from "f"
-	Type      byte // 'f' | '%' | 'd' | 'e' | 's'
+	Type      byte // 'f' | '%' | 'd' | 'e' | 's' | 'g'
+	// Sign is the d3 sign flag: '-' (the default, a minus for
+	// negatives only), '+' or ' ' (a plus / space for zero and
+	// positives too).
+	Sign byte
+	// Trim is d3's "~": drop insignificant trailing zeros (and a
+	// dangling decimal point) from the digits.
+	Trim bool
 }
 
 // TimeSpec captures the parsed time format.
@@ -126,8 +138,25 @@ func (sp *Spec) Apply(v any) string {
 	return fmt.Sprintf("%v", v)
 }
 
-// format renders f with the number spec.
+// format renders f with the number spec: the digits, then d3's "~"
+// trim, then the sign flag.
 func (n *NumberSpec) format(f float64) string {
+	out := n.digits(f)
+	if n.Trim {
+		out = trimZeros(out)
+	}
+	if n.Sign == '+' || n.Sign == ' ' {
+		// A value that rounds to zero prints unsigned, as d3 does.
+		if !strings.HasPrefix(out, "-") {
+			out = string(n.Sign) + out
+		}
+	}
+	return out
+}
+
+// digits renders f with the number spec's type, precision and
+// thousands flag.
+func (n *NumberSpec) digits(f float64) string {
 	switch n.Type {
 	case 'f':
 		prec := n.Precision
@@ -163,14 +192,75 @@ func (n *NumberSpec) format(f float64) string {
 		return strconv.FormatFloat(f, 'e', prec, 64)
 	case 's':
 		return siPrefix(f, n.Precision, n.HasPrec)
+	case 'g':
+		if !n.HasPrec {
+			break
+		}
+		out := toPrecision(f, n.Precision)
+		if n.Thousands {
+			out = insertThousands(out)
+		}
+		return out
 	}
 	return strconv.FormatFloat(f, 'g', -1, 64)
 }
 
+// toPrecision is JavaScript's Number.prototype.toPrecision, the rule
+// d3's "g" type uses: p significant digits, fixed-point unless the
+// decimal exponent is below -6 or at least p, then exponential with
+// an unpadded exponent ("1.2e+7", never "1.2e+07").
+func toPrecision(f float64, p int) string {
+	if p < 1 {
+		p = 1
+	}
+	if f == 0 {
+		return strconv.FormatFloat(0, 'f', p-1, 64)
+	}
+	// Round to p significant digits first, so the exponent is that of
+	// the rounded value (9.99 at 2 digits is 10, exponent 1).
+	e := strconv.FormatFloat(f, 'e', p-1, 64)
+	mant, expStr, _ := strings.Cut(e, "e")
+	exp, _ := strconv.Atoi(expStr)
+	if exp < -6 || exp >= p {
+		sign := "+"
+		if exp < 0 {
+			sign = "-"
+			exp = -exp
+		}
+		return mant + "e" + sign + strconv.Itoa(exp)
+	}
+	return strconv.FormatFloat(f, 'f', p-1-exp, 64)
+}
+
+// trimZeros drops insignificant trailing zeros from the fractional
+// digits of a rendered number, and the decimal point when nothing is
+// left after it. Any suffix after the digits (an exponent, an SI
+// prefix, a percent sign) is kept: "1.500e+3" → "1.5e+3", "2.00k" →
+// "2k", "12.50%" → "12.5%".
+func trimZeros(s string) string {
+	dot := strings.IndexByte(s, '.')
+	if dot < 0 {
+		return s
+	}
+	end := dot + 1
+	for end < len(s) && s[end] >= '0' && s[end] <= '9' {
+		end++
+	}
+	frac := strings.TrimRight(s[dot+1:end], "0")
+	if frac == "" {
+		return s[:dot] + s[end:]
+	}
+	return s[:dot+1] + frac + s[end:]
+}
+
 // parseNumber walks the spec body and builds a NumberSpec.
 func parseNumber(s string) (*NumberSpec, error) {
-	out := &NumberSpec{Precision: -1}
+	out := &NumberSpec{Precision: -1, Sign: '-'}
 	i := 0
+	if i < len(s) && (s[i] == '-' || s[i] == '+' || s[i] == ' ') {
+		out.Sign = s[i]
+		i++
+	}
 	if i < len(s) && s[i] == ',' {
 		out.Thousands = true
 		i++
@@ -191,6 +281,10 @@ func parseNumber(s string) (*NumberSpec, error) {
 		out.Precision = p
 		out.HasPrec = true
 		i = j
+	}
+	if i < len(s) && s[i] == '~' {
+		out.Trim = true
+		i++
 	}
 	if i >= len(s) {
 		// Bare "," or no type — default to 'f'.

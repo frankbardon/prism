@@ -17,7 +17,7 @@ arcs, etc. Specify via top-level `mark` (shorthand string) or
 | `circle`, `square` | Convenience aliases for `point` with shape preset. |
 | `tick` | Strip plots, ranking dot plots. Honours [`orient`](#orientation-markorient). |
 | `rect` | Heatmap cells, custom rectangular layouts. |
-| `rule` | Reference lines, benchmarks, ranges. |
+| `rule` | Reference lines, benchmarks, ranges. A categorical `color` channel strokes each rule in its row's category colour (the colour a point or bar of that category fills with), so an interval rule matches the dot it brackets. |
 | `text` | Inline labels, annotations. Content comes from the `text` channel — see [Text](#text). |
 | `arc` | Primitive for `pie` / `donut` / sankey links. |
 
@@ -26,7 +26,7 @@ arcs, etc. Specify via top-level `mark` (shorthand string) or
 | Mark | Internally expands to |
 |---|---|
 | `histogram` | `bar` + auto-bin transform. |
-| `heatmap` | `rect` + 2D bin + sequential color scale. Binds an optional field-driven `opacity` channel for per-cell shading — pair it with a crosstab `zscore_vs_margin` overlay column to fade insignificant cells (significance shading). Opacity maps the field linearly over `[min, max]` to `[0.15, 1.0]`. |
+| `heatmap` | `rect` + 2D bin + sequential color scale. The ramp spans the color channel's `scale.domain` when it pins one (`[-1, 1]` puts 0 on a diverging ramp's midpoint; values outside take the nearer end), else the data's `[min, max]`; `scale.reverse` flips the ramp. The gradient legend labels the same span. Binds an optional field-driven `opacity` channel for per-cell shading — pair it with a crosstab `zscore_vs_margin` overlay column to fade insignificant cells (significance shading). Opacity maps the field linearly over `[min, max]` to `[0.15, 1.0]`. |
 | `boxplot` | `rect` (IQR) + `rule` (median, whiskers, caps) + `point` (outliers). Honours [`orient`](#orientation-markorient). The whiskers take the box colour; the median is drawn *on* the box, so it takes the theme's [`boxplot_median`](themes.md#multi-element-marks) key and carries its own `prism-mark-boxplot-median` class. |
 | `violin` | `area` symmetric around centerline (Epanechnikov KDE). Honours [`orient`](#orientation-markorient). |
 | `pie` | `arc` with theta computed from share. |

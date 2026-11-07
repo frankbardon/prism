@@ -1,0 +1,141 @@
+{
+  "$schema": "urn:prism:schema:v1:spec",
+  "data": {
+    "values": [
+      {
+        "id": 6,
+        "q": -1.4342001596863794,
+        "r": -2.2
+      },
+      {
+        "id": 0,
+        "q": -0.8524950342746939,
+        "r": -1.2
+      },
+      {
+        "id": 3,
+        "q": -0.4727891209922673,
+        "r": -0.4
+      },
+      {
+        "id": 4,
+        "q": -0.15250597424624437,
+        "r": 0.1
+      },
+      {
+        "id": 1,
+        "q": 0.15250597424624424,
+        "r": 0.3
+      },
+      {
+        "id": 5,
+        "q": 0.4727891209922672,
+        "r": 0.9
+      },
+      {
+        "id": 7,
+        "q": 0.8524950342746939,
+        "r": 1.1
+      },
+      {
+        "id": 2,
+        "q": 1.4342001596863794,
+        "r": 2.4
+      }
+    ]
+  },
+  "layer": [
+    {
+      "$schema": "urn:prism:schema:v1:spec",
+      "data": {
+        "values": [
+          {
+            "order": 0,
+            "x": -1.4342001596863794,
+            "y": -1.4729199623623888
+          },
+          {
+            "order": 1,
+            "x": 1.4342001596863794,
+            "y": 1.8229199623623888
+          }
+        ]
+      },
+      "mark": {
+        "type": "line",
+        "stroke_dash": [
+          4,
+          3
+        ]
+      },
+      "encoding": {
+        "x": {
+          "field": "x",
+          "type": "quantitative"
+        },
+        "y": {
+          "field": "y",
+          "type": "quantitative"
+        },
+        "order": {
+          "field": "order",
+          "type": "quantitative"
+        }
+      }
+    },
+    {
+      "$schema": "urn:prism:schema:v1:spec",
+      "data": {
+        "values": [
+          {
+            "value": 0
+          }
+        ]
+      },
+      "mark": {
+        "type": "rule",
+        "stroke_dash": [
+          4,
+          3
+        ]
+      },
+      "encoding": {
+        "y": {
+          "field": "value",
+          "type": "quantitative"
+        }
+      }
+    },
+    {
+      "$schema": "urn:prism:schema:v1:spec",
+      "mark": {
+        "type": "point",
+        "fill_opacity": 0.6,
+        "size": 24
+      },
+      "encoding": {
+        "x": {
+          "field": "q",
+          "type": "quantitative",
+          "title": "Theoretical quantiles"
+        },
+        "y": {
+          "field": "r",
+          "type": "quantitative",
+          "title": "Standardized residuals"
+        },
+        "tooltip": [
+          {
+            "field": "id",
+            "title": "Row"
+          },
+          {
+            "field": "r",
+            "format": ".3~g",
+            "title": "Residual"
+          }
+        ]
+      }
+    }
+  ]
+}

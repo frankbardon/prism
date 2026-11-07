@@ -27,6 +27,7 @@
     "concat":   {"$ref": "composition.schema.json#/$defs/concat", "description": "Reading-order concatenation."},
     "hconcat":  {"$ref": "composition.schema.json#/$defs/hconcat", "description": "Horizontal concatenation."},
     "vconcat":  {"$ref": "composition.schema.json#/$defs/vconcat", "description": "Vertical concatenation."},
+    "columns":  {"type": "integer", "minimum": 1, "description": "Wrap a concat into rows of at most this many cells. Read on concat only."},
     "facet":    {"$ref": "composition.schema.json#/$defs/facet", "description": "Facet channels driving small multiples."},
     "repeat":   {"$ref": "composition.schema.json#/$defs/repeat", "description": "Repeat configuration for repeated specs."},
     "spec":     {"$ref": "urn:prism:schema:v1:spec", "description": "Child spec used inside facet or repeat."},
@@ -38,8 +39,8 @@
     },
     "resolve":  {"$ref": "resolve.schema.json#/$defs/resolve", "description": "Cross-layer resolution rules."},
     "theme":    {"$ref": "theme.schema.json#/$defs/theme_override", "description": "Spec-level theme override."},
-    "width":    {"$ref": "shared.schema.json#/$defs/dimension", "description": "Chart width in pixels or token."},
-    "height":   {"$ref": "shared.schema.json#/$defs/dimension", "description": "Chart height in pixels or token."},
+    "width":    {"$ref": "shared.schema.json#/$defs/dimension", "description": "Chart width in pixels or token. A number sizes the frame when the caller passes no width; on a concat child it is the width that child's column asks for."},
+    "height":   {"$ref": "shared.schema.json#/$defs/dimension", "description": "Chart height in pixels or token. A number sizes the frame when the caller passes no height; on a concat child it is the height that child's row asks for."},
     "padding":  {"$ref": "shared.schema.json#/$defs/padding", "description": "Chart padding."},
     "background": {"$ref": "shared.schema.json#/$defs/color", "description": "Chart background color."},
     "title":    {"$ref": "shared.schema.json#/$defs/text_or_text_obj", "description": "Chart title."},
@@ -48,6 +49,7 @@
     "projection": {"$ref": "projection.schema.json#/$defs/projection", "description": "Geographic projection for geoshape / geopoint marks."},
     "animation": {"$ref": "animation.schema.json#/$defs/animation", "description": "Client-side tween configuration (browser only)."}
   },
+  "dependentRequired": {"columns": ["concat"]},
   "oneOf": [
     {"required": ["mark"]},
     {"required": ["layer"]},

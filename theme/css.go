@@ -38,7 +38,7 @@ import (
 //   - --prism-deselected-*  selection state
 //
 // ResolvedColorVar is one entry in the E4-S3 mark-color auto-dark
-// registry: a stable "prism-resolved-N" name (assigned by
+// registry: a stable "prism-resolved-<light>-<dark>" name (assigned by
 // encode/marks.ColorVarRegistry, no leading "--") plus the light/dark
 // CSS color strings the encoder resolved a scale-driven or static
 // theme mark color to. CSSVariables emits Name's Light value under

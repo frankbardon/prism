@@ -46,6 +46,7 @@ func encodeRepeatComposite(s *spec.Spec, composite *plan.CompositeDAG, childTabl
 	if err != nil {
 		return nil, err
 	}
+	ad, adOwner := autoDarkFor(opts, fullTheme)
 
 	rows := composite.Rows
 	cols := composite.Cols
@@ -108,6 +109,7 @@ func encodeRepeatComposite(s *spec.Spec, composite *plan.CompositeDAG, childTabl
 		cellScene, cellFull := resolveCellTheme(sceneTheme, fullTheme, findCellThemeOverride(s.Repeat.CellOverrides, row, col))
 		childOpts.Theme = cellScene
 		childOpts.FullTheme = cellFull
+		childOpts = ad.cellOpts(childOpts)
 		// No shared-scale override under independent defaults. The
 		// offset sub-band order follows the position scales it
 		// subdivides (E3-S1): each repeat cell is its own chart with
@@ -134,6 +136,7 @@ func encodeRepeatComposite(s *spec.Spec, composite *plan.CompositeDAG, childTabl
 		warnings = append(warnings, childDoc.Warnings...)
 	}
 
+	finalizeAutoDarkCSS(sceneTheme, fullTheme, ad.registry(), adOwner)
 	doc := scene.NewDoc()
 	doc.Theme = sceneTheme
 	doc.Grid = scene.SceneGrid{

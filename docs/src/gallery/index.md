@@ -290,7 +290,7 @@ is currently in), so verify the effect one of two ways:
   a re-render.
 - View source on `themes/bar_dark_variant.svg` and look for the
   `@media (prefers-color-scheme: dark)` block inside the `<style>`
-  element, plus `fill="var(--prism-resolved-N)"` on the `<rect>`
+  element, plus `fill="var(--prism-resolved-<light>-<dark>)"` on the `<rect>`
   elements — those are the doubled CSS custom properties described in
   the docs.
 

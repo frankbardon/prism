@@ -31,6 +31,10 @@ type Gradient struct {
 type GradientStop struct {
 	Offset float64 `json:"offset"`
 	Color  Color   `json:"color"`
+	// ColorVar is the auto-dark custom property (no leading "--") the
+	// stop paints with when the theme pairs a DarkVariant; Color keeps
+	// the light value.
+	ColorVar string `json:"color_var,omitempty"`
 }
 
 // Pattern is a tiled fill pattern (e.g. crosshatch for accessibility).

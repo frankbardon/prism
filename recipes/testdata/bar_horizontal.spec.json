@@ -1,0 +1,38 @@
+{
+  "$schema": "urn:prism:schema:v1:spec",
+  "data": {
+    "values": [
+      {
+        "hi": 140,
+        "lo": 100,
+        "region": "North",
+        "sales": 120
+      },
+      {
+        "hi": 95,
+        "lo": 60,
+        "region": "South",
+        "sales": 80
+      },
+      {
+        "region": "East",
+        "sales": 150
+      }
+    ]
+  },
+  "mark": "bar",
+  "encoding": {
+    "x": {
+      "field": "sales",
+      "type": "quantitative"
+    },
+    "y": {
+      "field": "region",
+      "type": "nominal",
+      "scale": {
+        "reverse": true
+      }
+    }
+  },
+  "height": 204
+}
