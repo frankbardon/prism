@@ -17,7 +17,7 @@ arcs, etc. Specify via top-level `mark` (shorthand string) or
 | `circle`, `square` | Convenience aliases for `point` with shape preset. |
 | `tick` | Strip plots, ranking dot plots. Honours [`orient`](#orientation-markorient). |
 | `rect` | Heatmap cells, custom rectangular layouts. |
-| `rule` | Reference lines, benchmarks, ranges. |
+| `rule` | Reference lines, benchmarks, ranges. A categorical `color` channel strokes each rule in its row's category colour (the colour a point or bar of that category fills with), so an interval rule matches the dot it brackets. |
 | `text` | Inline labels, annotations. Content comes from the `text` channel — see [Text](#text). |
 | `arc` | Primitive for `pie` / `donut` / sankey links. |
 

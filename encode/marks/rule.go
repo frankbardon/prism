@@ -18,6 +18,10 @@ func encodeRule(in Inputs) ([]scene.Mark, error) {
 	if spanBound(in.X2) || spanBound(in.Y2) {
 		return encodeRuleSpan(in)
 	}
+	style, err := ruleStyles(in)
+	if err != nil {
+		return nil, err
+	}
 	yBound := in.Y.Field != ""
 	xBound := in.X.Field != ""
 	if !yBound && !xBound {
@@ -46,7 +50,7 @@ func encodeRule(in Inputs) ([]scene.Mark, error) {
 			marks = append(marks, scene.Mark{
 				Type:  scene.MarkRule,
 				ID:    fmt.Sprintf("rule-%d", i),
-				Style: in.Style,
+				Style: style(i),
 				Rule: &scene.RuleGeom{
 					X1: in.Layout.X,
 					Y1: y,
@@ -76,7 +80,7 @@ func encodeRule(in Inputs) ([]scene.Mark, error) {
 			marks = append(marks, scene.Mark{
 				Type:  scene.MarkRule,
 				ID:    fmt.Sprintf("rule-%d", i),
-				Style: in.Style,
+				Style: style(i),
 				Rule: &scene.RuleGeom{
 					X1: x,
 					Y1: in.Layout.Y,
@@ -118,7 +122,7 @@ func encodeRule(in Inputs) ([]scene.Mark, error) {
 		marks = append(marks, scene.Mark{
 			Type:  scene.MarkRule,
 			ID:    fmt.Sprintf("rule-%d", i),
-			Style: in.Style,
+			Style: style(i),
 			Rule: &scene.RuleGeom{
 				X1: x - 0.5,
 				Y1: y,
@@ -161,6 +165,10 @@ func encodeRuleSpan(in Inputs) ([]scene.Mark, error) {
 	if len(xs) != len(ys) {
 		return nil, fmt.Errorf("encodeRuleSpan: column length mismatch (x=%d, y=%d)", len(xs), len(ys))
 	}
+	style, err := ruleStyles(in)
+	if err != nil {
+		return nil, err
+	}
 	var x2s, y2s []any
 	if spanBound(in.X2) {
 		if x2s, err = readField(in.Table, in.X2.Field); err != nil {
@@ -200,7 +208,7 @@ func encodeRuleSpan(in Inputs) ([]scene.Mark, error) {
 		marks = append(marks, scene.Mark{
 			Type:  scene.MarkRule,
 			ID:    fmt.Sprintf("rule-%d", i),
-			Style: in.Style,
+			Style: style(i),
 			Rule: &scene.RuleGeom{
 				X1: x1,
 				Y1: y1,
@@ -210,4 +218,31 @@ func encodeRuleSpan(in Inputs) ([]scene.Mark, error) {
 		})
 	}
 	return marks, nil
+}
+
+// ruleStyles returns the style of row i's rule. With a categorical
+// color channel bound, a rule strokes in its row's category colour —
+// the colour a point or bar of the same category fills with, paired
+// for auto-dark through the same registry — so an interval drawn as a
+// rule matches the dot or bar it brackets. Unbound, every rule keeps
+// in.Style.
+func ruleStyles(in Inputs) (func(i int) scene.Style, error) {
+	if in.Color == nil || in.Color.Field == "" {
+		return func(int) scene.Style { return in.Style }, nil
+	}
+	cats, err := readField(in.Table, in.Color.Field)
+	if err != nil {
+		return nil, err
+	}
+	return func(i int) scene.Style {
+		style := in.Style
+		if i >= len(cats) {
+			return style
+		}
+		cat, _ := cats[i].(string)
+		if c, v := resolveCategoryColor(in, cat); c != nil || v != "" {
+			style.Stroke, style.StrokeRef, style.StrokeVar = c, "", v
+		}
+		return style
+	}, nil
 }

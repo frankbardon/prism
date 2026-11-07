@@ -170,3 +170,16 @@ func TestHeatmapColorDomainAndReverse(t *testing.T) {
 		t.Errorf("reversed %v, want the ends swapped from %v", reversed, full[:2])
 	}
 }
+
+func TestRuleColorChannel(t *testing.T) {
+	doc := encodeFlatJSON(t, `{"$schema": "urn:prism:schema:v1:spec", "data": {"values": [{"k": "a", "lo": 1, "hi": 2, "s": "no"}, {"k": "b", "lo": 2, "hi": 4, "s": "yes"}]},
+		"mark": "rule", "encoding": {"y": {"field": "k", "type": "nominal"}, "x": {"field": "lo", "type": "quantitative"}, "x2": {"field": "hi"},
+		"color": {"field": "s", "type": "nominal"}}}`)
+	marks := doc.Grid.Cells[0].Scene.Layers[0].Marks
+	if len(marks) != 2 || marks[0].Style.Stroke == nil || marks[1].Style.Stroke == nil {
+		t.Fatalf("rules %+v, want two stroked rules", marks)
+	}
+	if marks[0].Style.Stroke.CSS() == marks[1].Style.Stroke.CSS() {
+		t.Errorf("both categories stroke %s, want one colour each", marks[0].Style.Stroke.CSS())
+	}
+}
