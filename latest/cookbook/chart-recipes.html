@@ -36,7 +36,7 @@
             const path_to_root = "../";
             const default_light_theme = "navy";
             const default_dark_theme = "navy";
-            window.path_to_searchindex_js = "../searchindex-9453dc17.js";
+            window.path_to_searchindex_js = "../searchindex-0233bf35.js";
         </script>
         <!-- Start loading toc.js asap -->
         <script src="../toc-522f32d0.js"></script>
@@ -221,11 +221,11 @@ the option when a required column is unset.</p>
 </thead>
 <tbody>
 <tr><td><code>Forest(rows, ForestOptions)</code></td><td>One row per label: interval rule <code>Low</code>→<code>High</code>, point at <code>Estimate</code>, dashed <code>References</code> (e.g. 0 or 1). Optional <code>Color</code> by a category.</td></tr>
-<tr><td><code>Bar(rows, BarOptions)</code></td><td>One bar per category, optional <code>Low</code>/<code>High</code> interval rule, <code>Horizontal</code>.</td></tr>
+<tr><td><code>Bar(rows, BarOptions)</code></td><td>One bar per category, optional <code>Low</code>/<code>High</code> interval rule, <code>Horizontal</code>. <code>Start</code> makes each bar a span from that column to <code>Value</code> (a range; with a series <code>Color</code>, a bullet’s observed bar and expected tick). <code>Bands</code> (<code>Band{Low, High, Opacity}</code>) shade a value span behind every category, <code>References</code> draw dashed value rules over the bars, <code>Labels</code> / <code>LabelField</code> letter each bar at its end.</td></tr>
 <tr><td><code>GroupedBar(rows, GroupedBarOptions)</code></td><td>Bars dodged by <code>Group</code> within each <code>Category</code> (<code>x_offset</code> / <code>y_offset</code>), coloured and legended by group.</td></tr>
 <tr><td><code>Line(rows, LineOptions)</code></td><td>Lines over <code>X</code> (<code>XType</code> temporal / quantitative / ordinal), one per <code>Series</code>, optional <code>Points</code>.</td></tr>
 <tr><td><code>Scatter(rows, ScatterOptions)</code></td><td>Points with optional <code>Color</code>, pinned domains, and <code>References</code>: <code>RuleX</code>, <code>RuleY</code>, <code>Polyline</code> (a fitted or reference curve).</td></tr>
-<tr><td><code>Heatmap(rows, HeatmapOptions)</code></td><td>One cell per (<code>X</code>, <code>Y</code>) shaded by <code>Value</code>; <code>Domain</code> pins the ramp (<code>[-1, 1]</code> for a correlation), <code>Reverse</code> flips it, <code>Labels</code> prints each value.</td></tr>
+<tr><td><code>Heatmap(rows, HeatmapOptions)</code></td><td>One cell per (<code>X</code>, <code>Y</code>) shaded by <code>Value</code>; <code>Domain</code> pins the ramp (<code>[-1, 1]</code> for a correlation), <code>Reverse</code> flips it, <code>Labels</code> prints each value (or <code>LabelField</code>); <code>LabelRows</code> letters only the named <code>Y</code> rows (a key row under a grid too large to letter), leaving the other cells plain and opaque.</td></tr>
 <tr><td><code>Box(rows, BoxOptions)</code></td><td>Horizontal summary boxes from <strong>precomputed</strong> statistics: whisker rule, interquartile bar, centre dot.</td></tr>
 <tr><td><code>Tiles(rows, TilesOptions)</code></td><td>One big number per row, labelled above it.</td></tr>
 </tbody>
