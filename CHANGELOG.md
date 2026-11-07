@@ -1,5 +1,95 @@
 # Changelog
 
+## v0.18.0 — unreleased
+
+Feature release for building report charts from Go: a `recipes`
+package over tidy rows, plus the spec features its charts needed —
+sized and wrapped concat panels, nested concat, channel titles and
+sort, tooltip titles, the d3 `~` / sign / `g` format forms, a heatmap
+colour domain, and dark-mode pairing across compositions. Several of
+these make Prism honour keys it previously accepted and ignored, so a
+spec that already carried them renders differently; those are listed
+under **Behaviour changes**.
+
+### Recipes (`github.com/frankbardon/prism/recipes`)
+
+- **`Forest`, `Bar`, `GroupedBar`, `Line`, `Scatter`, `Heatmap`,
+  `Box`, `Tiles`** build a plain `*spec.Spec` from `[]recipes.Row`
+  plus an options struct naming the columns (`Field{Name, Title,
+  Format}`, `Color`, `Frame`). Category columns keep the given order,
+  else first-seen order, and are stringified so numeric keys still
+  band. `Scatter` takes `RuleX` / `RuleY` / `Polyline` references;
+  `Box` draws precomputed statistics only.
+- **`Stack`, `Grid`, `SmallMultiples`, `Split`** compose recipes
+  through `vconcat` / wrapped `concat`, so each cell can be layered and
+  keep its own scales; `Extent` gives a shared domain to pin.
+- **`NormalQuantile`, `PPoints`, `Quantile`, `NormalQQ`** — the
+  geometry of a normal QQ plot (R's `qnorm`, `ppoints`, type-7
+  quantile, `qqline`). Model statistics stay with the caller.
+- Cookbook page: `docs/src/cookbook/chart-recipes.md`.
+
+### Composition
+
+- **`width` / `height` on a spec are honoured** as the frame size of a
+  leaf chart and of a concat panel. In a concat a panel's declared
+  size sets its share of the row or column; when every panel declares
+  one, the composite's size is their sum plus the 20 px gaps.
+- **`columns`** on a `concat` wraps its panels into rows of at most
+  that many (`dependentRequired`: `columns` needs `concat`).
+- **Nested concat**: a concat child may itself be a `layer` or a
+  concat. Facet / repeat under a concat, and any composite inside a
+  `layer`, are still rejected (`PRISM_PLAN_002`, `composition:nested`).
+
+### Encoding
+
+- **Channel `title`** on `x`, `y` and `color` titles the axis or
+  legend (precedence: `axis.title` / `legend.title`, then the channel
+  `title`, then the field). In a layer, the shared axis and legend take
+  the first child's channel title.
+- **Channel `sort` on a position channel**: a list fixes the band
+  order, `"ascending"` / `"descending"` sort the categories. Sort by
+  another channel (`"-y"`) is not implemented and warns
+  `PRISM_WARN_CHANNEL_INERT`.
+- **Colour category order follows `scale.domain` or `sort`** for the
+  palette and the legend, in flat charts and in layers.
+- **Tooltip lines use the entry's `title`**, else the field name; a
+  null cell prints `–`.
+- **Heatmap `color.scale.domain` (`[lo, hi]`) and `reverse`**: the ramp
+  and the gradient legend span the given domain (values outside take
+  the nearer end) and flip on `reverse`.
+- **`rule` strokes by its `color` channel**, like the other marks.
+
+### Number format
+
+- `format` accepts `[sign][,][.N][~][type]`: the sign flag (`+`, `-`,
+  space), the `~` trim of insignificant trailing zeros, and `g`
+  with a precision (JavaScript `toPrecision` semantics).
+
+### Theme
+
+- **Auto-dark pairing across compositions and legends.** With a
+  `theme.dark_variant` and no explicit theme, layered, concatenated,
+  faceted and repeated charts pair every mark, legend swatch and
+  gradient stop with its dark-variant colour, as a single chart
+  already did. One SVG then follows `prefers-color-scheme` throughout.
+
+### Behaviour changes
+
+- **Paired colour CSS variables are renamed** to
+  `--prism-resolved-<light hex>-<dark hex>` (an fnv hash for a colour
+  that is not opaque hex), so two inline SVGs on one page agree on a name.
+  Legend swatches and gradient stops now use them too. Pages that
+  styled the old numbered names must update.
+- **`width` / `height` now size the chart**; previously they were
+  inert and the renderer's size applied.
+- **A colour `scale.domain` or `sort` now orders the palette and
+  legend**; previously the categories took first-seen order.
+- **An unread channel `title` or `sort`** (a sort by another channel such as
+  `"-y"`, or a `title` / `sort` on a channel other than `x`, `y`,
+  `color`) now warns
+  `PRISM_WARN_CHANNEL_INERT` instead of passing silently.
+- **A null tooltip cell prints `–`** rather than an empty value.
+
 ## v0.17.0 — unreleased
 
 Additive feature release: the offset (dodge) position channels, plus a
