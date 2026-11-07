@@ -2,6 +2,7 @@ package encode
 
 import (
 	"fmt"
+	"math"
 
 	"github.com/frankbardon/prism/encode/marks"
 	encresolve "github.com/frankbardon/prism/encode/resolve"
@@ -27,14 +28,15 @@ import (
 // missing tips emit PRISM_WARN_LAYER_SKIPPED and that child is
 // dropped from the output (the other children still render).
 //
-// Per D050 nested composites are rejected at BuildComposite time;
-// EncodeComposite does not recurse into a child composite — children
-// here are always flat (built via Build).
+// A layer's children are always flat (D050). A concat child may be a
+// layer or another concat (plan.ChildDAG.Composite), which
+// encodeConcatComposite encodes recursively into its cell.
 //
 // The flat-chart Encode path is unchanged; existing P05 / P06 / P07
 // goldens stay byte-identical because the 1×1 single-layer case is
 // preserved.
 func EncodeComposite(s *spec.Spec, composite *plan.CompositeDAG, childTables []map[plan.NodeID]*table.Table, opts EncodeOpts) (*scene.SceneDoc, error) {
+	opts = withSpecFrame(opts, s)
 	doc, err := encodeComposite(s, composite, childTables, opts)
 	if err != nil {
 		return nil, err
@@ -1025,19 +1027,13 @@ func scaleFromUnified(ty scene.ScaleType, domain []any, rmin, rmax float64, opts
 	return nil, fmt.Errorf("scaleFromUnified: unknown scale type %q", ty)
 }
 
-// encodeConcatComposite assembles a multi-cell SceneGrid (concat /
-// hconcat / vconcat). Each child encodes via the standard Encode
-// path; its produced Scene is offset into a per-cell sub-frame and
-// stitched into SceneGrid.Cells in row-major order.
+// encodeConcatComposite lays the children of a concat / hconcat /
+// vconcat out on a rows × cols grid (concatGrid) and encodes each into
+// its cell. A child may itself be a composition (a layer, or another
+// concat — plan/build buildNested): it is encoded recursively at its
+// cell's size and every scene it produces is moved into the cell, its
+// grid-level shared axes folded into the scene so they travel with it.
 func encodeConcatComposite(s *spec.Spec, composite *plan.CompositeDAG, childTables []map[plan.NodeID]*table.Table, opts EncodeOpts) (*scene.SceneDoc, error) {
-	outerW := opts.Width
-	if outerW == 0 {
-		outerW = 800
-	}
-	outerH := opts.Height
-	if outerH == 0 {
-		outerH = 600
-	}
 	sceneTheme, fullTheme, err := resolveThemeFull(opts, s.Theme)
 	if err != nil {
 		return nil, err
@@ -1051,22 +1047,15 @@ func encodeConcatComposite(s *spec.Spec, composite *plan.CompositeDAG, childTabl
 	if cols < 1 {
 		cols = 1
 	}
-	gap := 20.0
-	cellW := (outerW - gap*float64(cols-1)) / float64(cols)
-	cellH := (outerH - gap*float64(rows-1)) / float64(rows)
-	if cellW < 1 {
-		cellW = outerW / float64(cols)
-	}
-	if cellH < 1 {
-		cellH = outerH / float64(rows)
-	}
+	const gap = 20.0
+	grid := concatGrid(composite, rows, cols, opts.Width, opts.Height, gap)
 
 	var cells []scene.SceneCell
 	var warnings []scene.Warning
 	for i, child := range composite.Children {
 		row, col := rowColForIndex(composite.Kind, i, rows, cols)
-		offsetX := float64(col) * (cellW + gap)
-		offsetY := float64(row) * (cellH + gap)
+		offsetX, cellW := grid.col(col)
+		offsetY, cellH := grid.row(row)
 
 		childOpts := opts
 		childOpts.Width = cellW
@@ -1074,38 +1063,41 @@ func encodeConcatComposite(s *spec.Spec, composite *plan.CompositeDAG, childTabl
 		// Share the outer document's already-resolved theme (matching
 		// the facet/repeat composite path) rather than letting each
 		// child re-resolve its own from scratch: resolveThemeFull's
-		// opts.Theme != nil branch reuses the pointer verbatim, so a
-		// child's mutations to sceneTheme.CSS (E4-S3's
-		// finalizeAutoDarkCSS, gated on opts.Theme == nil / isThemeOwner)
-		// are skipped here by design — the OUTER document's <style>
-		// block (built once, above) is the one that actually reaches
-		// the rendered output, since childDoc.Theme is discarded below
-		// and only childDoc.Grid.Cells[0].Scene is kept. Sharing avoids
-		// silently dropping resolved-color-var declarations a child
-		// would otherwise register into a Theme that never gets
-		// emitted. Concat cells therefore keep baked-hex mark colors
-		// under an active DarkVariant for now (same scope boundary as
-		// facet/repeat); see FOLLOWUPS.
+		// opts.Theme != nil branch reuses the pointer verbatim, so the
+		// OUTER document's <style> block (built once, above) is the one
+		// that reaches the rendered output, since childDoc.Theme is
+		// discarded below and only the child's scenes are kept.
 		childOpts.Theme = sceneTheme
 		childOpts.FullTheme = fullTheme
 
-		// Each concat child is a flat chart (D050 forbids nested
-		// composition in v1); call Encode directly.
-		childDoc, err := encodeLeaf(child.Spec, childTables[i], child.Tip, childOpts)
+		var childDoc *scene.SceneDoc
+		if child.Composite != nil {
+			// Every leaf of a nested child was staged on the child's one
+			// DAG, so its single table map serves each grandchild.
+			grand := make([]map[plan.NodeID]*table.Table, len(child.Composite.Children))
+			for j := range grand {
+				grand[j] = childTables[i]
+			}
+			childDoc, err = encodeComposite(child.Spec, child.Composite, grand, childOpts)
+		} else {
+			childDoc, err = encodeLeaf(child.Spec, childTables[i], child.Tip, childOpts)
+		}
 		if err != nil {
 			return nil, fmt.Errorf("concat child %d: %w", i, err)
 		}
-		if len(childDoc.Grid.Cells) == 0 {
-			continue
+		for k, c := range childDoc.Grid.Cells {
+			childScene := c.Scene
+			if k == 0 {
+				foldSharedAxes(&childScene, childDoc.Grid.Shared)
+			}
+			offsetScene(&childScene, offsetX, offsetY)
+			renameScene(&childScene, fmt.Sprintf("scene-%d", len(cells)))
+			cells = append(cells, scene.SceneCell{
+				Row:   row,
+				Col:   col,
+				Scene: childScene,
+			})
 		}
-		childScene := childDoc.Grid.Cells[0].Scene
-		offsetScene(&childScene, offsetX, offsetY)
-		renameScene(&childScene, fmt.Sprintf("scene-%d", i))
-		cells = append(cells, scene.SceneCell{
-			Row:   row,
-			Col:   col,
-			Scene: childScene,
-		})
 		// Inherit child warnings into the outer document.
 		warnings = append(warnings, childDoc.Warnings...)
 	}
@@ -1120,13 +1112,117 @@ func encodeConcatComposite(s *spec.Spec, composite *plan.CompositeDAG, childTabl
 	return doc, nil
 }
 
+// foldSharedAxes moves a nested layer's grid-level shared axes into
+// its (single) scene, so they are offset with the scene and drawn in
+// its cell instead of at the outer grid's edge. A flat child has none.
+func foldSharedAxes(sc *scene.Scene, shared scene.SharedAxes) {
+	if shared.X != nil {
+		sc.Axes = append(sc.Axes, *shared.X)
+	}
+	if shared.Y != nil {
+		sc.Axes = append(sc.Axes, *shared.Y)
+	}
+}
+
+// concatLayout is a concat's resolved grid: the pixel offset and size
+// of every column and row.
+type concatLayout struct {
+	colAt, colSize []float64
+	rowAt, rowSize []float64
+}
+
+func (g concatLayout) col(c int) (at, size float64) { return g.colAt[c], g.colSize[c] }
+func (g concatLayout) row(r int) (at, size float64) { return g.rowAt[r], g.rowSize[r] }
+
+// concatGrid sizes a concat's columns and rows. A child's own numeric
+// `width` / `height` is what it asks for: a column asks for the widest
+// width its children declare, a row the tallest height. When the outer
+// size is not given (width / height 0 — no EncodeOpts size and no
+// spec-level one, see withSpecFrame) and every track declares one, the
+// tracks get exactly what they asked for and the outer frame is their
+// sum plus the gaps. Otherwise the outer size (800 × 600 by default)
+// is shared out in proportion to the declared sizes, an undeclared
+// track counting as the mean declared one — and with nothing declared
+// that is the equal split concat has always drawn.
+func concatGrid(c *plan.CompositeDAG, rows, cols int, outerW, outerH, gap float64) concatLayout {
+	wantW := make([]float64, cols)
+	wantH := make([]float64, rows)
+	for i, child := range c.Children {
+		r, col := rowColForIndex(c.Kind, i, rows, cols)
+		if r >= rows || col >= cols {
+			continue
+		}
+		wantW[col] = math.Max(wantW[col], specDimension(child.Spec.Width))
+		wantH[r] = math.Max(wantH[r], specDimension(child.Spec.Height))
+	}
+	var g concatLayout
+	g.colAt, g.colSize = concatTrack(wantW, outerW, 800, gap)
+	g.rowAt, g.rowSize = concatTrack(wantH, outerH, 600, gap)
+	return g
+}
+
+// concatTrack resolves one axis of the concat grid (see concatGrid):
+// want holds each track's declared size (0 = none), outer the given
+// outer size (0 = derive, falling back to def).
+func concatTrack(want []float64, outer, def, gap float64) (at, size []float64) {
+	n := len(want)
+	at = make([]float64, n)
+	size = make([]float64, n)
+	gaps := gap * float64(n-1)
+	declared, sum := 0, 0.0
+	for _, w := range want {
+		if w > 0 {
+			declared++
+			sum += w
+		}
+	}
+	switch {
+	case outer > 0:
+	case declared == n:
+		outer = sum + gaps
+	default:
+		outer = def
+	}
+	avail := outer - gaps
+	if avail < float64(n) {
+		// Too small to keep the gaps: share the whole span, no gaps.
+		avail, gap = outer, 0
+	}
+	fill := 1.0
+	if declared > 0 {
+		fill = sum / float64(declared)
+	}
+	total := 0.0
+	for i, w := range want {
+		if w <= 0 {
+			w = fill
+		}
+		size[i] = w
+		total += w
+	}
+	pos := 0.0
+	for i := range size {
+		size[i] = avail * size[i] / total
+		at[i] = pos
+		pos += size[i] + gap
+	}
+	return at, size
+}
+
 // rowColForIndex maps a child index to its (row, col) cell position
 // based on the composite kind. vconcat fills the column top-to-bottom;
-// hconcat / concat fill the row left-to-right.
+// hconcat / concat fill the row left-to-right, and a concat wrapped by
+// `columns` continues on the next row.
 func rowColForIndex(kind plan.CompositeKind, i, rows, cols int) (row, col int) {
 	switch kind {
 	case plan.CompositeVConcat:
 		return i, 0
+	case plan.CompositeConcat:
+		// A wrapped concat (`columns`) fills rows left to right.
+		if rows > 1 && cols > 0 {
+			return i / cols, i % cols
+		}
+		return 0, i
 	default:
 		return 0, i
 	}

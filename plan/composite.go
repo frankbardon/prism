@@ -47,6 +47,13 @@ type ChildDAG struct {
 	// Spec is the merged child spec (parent datasets / data already
 	// folded in by BuildComposite).
 	Spec *spec.Spec
+	// Composite is set when the child is itself a composition (a layer
+	// or a concat nested in a concat). Its children share this child's
+	// DAG — every leaf of the subtree was staged on it under its own id
+	// namespace — and each names its own leaf's Tip, so executing DAG
+	// once yields every table the subtree encodes. Tip is then the
+	// first leaf's. Nil for a flat child.
+	Composite *CompositeDAG
 }
 
 // CompositeDAG is the plan-stage representation of a composite spec

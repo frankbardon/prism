@@ -93,19 +93,38 @@ func Build(s *spec.Spec, opts Options) (*plan.DAG, plan.NodeID, error) {
 	}
 
 	b := plan.NewBuilder()
+	tip, err := buildInto(b, "", s, opts)
+	if err != nil {
+		return nil, "", err
+	}
+	dag, err := b.Build()
+	if err != nil {
+		return nil, "", err
+	}
+	return dag, tip, nil
+}
+
+// buildInto stages one flat spec's nodes on b and marks its tip as a
+// sink, returning the tip. Every node id it mints is prefixed with ns,
+// which is what lets a nested composition stage several leaves on one
+// shared Builder (composite.go buildNestedInto) without their ids
+// colliding: Build passes "", so a flat spec's ids are unchanged.
+// opts must already carry the FS / Resolver defaults Build fills in.
+func buildInto(b *plan.Builder, ns string, s *spec.Spec, opts Options) (plan.NodeID, error) {
 	ctx := newBuildCtx(b, opts)
+	ctx.ns = ns
 
 	// Register every declared dataset as a leaf. The top-level data
 	// gets registered first so its leaf wins the "active" slot even
 	// if a sibling named dataset has the same source ref.
 	if s.Data != nil {
 		if err := ctx.registerTopLevel(s.Data); err != nil {
-			return nil, "", err
+			return "", err
 		}
 	}
 	for name, ds := range s.Datasets {
 		if err := ctx.registerDataset(name, ds); err != nil {
-			return nil, "", err
+			return "", err
 		}
 	}
 
@@ -114,19 +133,19 @@ func Build(s *spec.Spec, opts Options) (*plan.DAG, plan.NodeID, error) {
 	// back to the first registered dataset (deterministic by name).
 	active, err := ctx.activeLeaf(s)
 	if err != nil {
-		return nil, "", err
+		return "", err
 	}
 
 	// Walk the transform chain.
 	tip, err := ctx.applyTransforms(active, s.Transform)
 	if err != nil {
-		return nil, "", err
+		return "", err
 	}
 
 	// If the encoding declares an aggregate, inject a GroupAggregate.
 	tip, err = ctx.injectEncodingAggregate(tip, s.Encoding)
 	if err != nil {
-		return nil, "", err
+		return "", err
 	}
 
 	// If the encoding binds `order`, inject a SortNode so the rows
@@ -138,7 +157,7 @@ func Build(s *spec.Spec, opts Options) (*plan.DAG, plan.NodeID, error) {
 	// all three senses of the channel.
 	tip, err = ctx.injectEncodingOrder(tip, s.Encoding)
 	if err != nil {
-		return nil, "", err
+		return "", err
 	}
 
 	// If the encoding stacks — explicitly via `stack`, or implicitly
@@ -149,20 +168,16 @@ func Build(s *spec.Spec, opts Options) (*plan.DAG, plan.NodeID, error) {
 	// thing before the sink.
 	tip, err = ctx.injectEncodingStack(tip, s)
 	if err != nil {
-		return nil, "", err
+		return "", err
 	}
 
 	// Mark the tip as the DAG's sole sink. Encode stage consumes the
 	// table at this id; renderers locate it via DAG.Sinks(). D040
 	// retired the synthetic SinkNode that P03 wired here.
 	if err := b.MarkSink(tip); err != nil {
-		return nil, "", err
+		return "", err
 	}
-	dag, err := b.Build()
-	if err != nil {
-		return nil, "", err
-	}
-	return dag, tip, nil
+	return tip, nil
 }
 
 // rejectOutOfScope walks the spec for features the builder cannot yet
@@ -219,6 +234,9 @@ type buildCtx struct {
 	leafBySource map[string]plan.NodeID // source ref → SourceNode id (dedupe)
 	topLeaf      plan.NodeID            // the top-level (anonymous) leaf, if any
 	counter      int
+	// ns prefixes every minted node id (see buildInto); "" for a
+	// top-level flat Build.
+	ns string
 }
 
 func newBuildCtx(b *plan.Builder, opts Options) *buildCtx {
@@ -232,7 +250,7 @@ func newBuildCtx(b *plan.Builder, opts Options) *buildCtx {
 
 func (c *buildCtx) nextID(prefix string) plan.NodeID {
 	c.counter++
-	return plan.NodeID(prefix + ":" + strconv.Itoa(c.counter))
+	return plan.NodeID(c.ns + prefix + ":" + strconv.Itoa(c.counter))
 }
 
 // registerTopLevel registers s.Data and records its leaf id as the

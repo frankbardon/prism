@@ -11,16 +11,20 @@ package spec
 // schema/v1/spec.schema.json. Exactly one of mark/layer/concat/hconcat/
 // vconcat/facet/repeat must be set; the JSON Schema layer enforces this.
 type Spec struct {
-	Schema      string               `json:"$schema"`
-	Data        *Data                `json:"data,omitempty"`
-	Datasets    map[string]*Data     `json:"datasets,omitempty"`
-	Transform   []Transform          `json:"transform,omitempty"`
-	Mark        *Mark                `json:"mark,omitempty"`
-	Encoding    *Encoding            `json:"encoding,omitempty"`
-	Layer       []*Spec              `json:"layer,omitempty"`
-	Concat      []*Spec              `json:"concat,omitempty"`
-	HConcat     []*Spec              `json:"hconcat,omitempty"`
-	VConcat     []*Spec              `json:"vconcat,omitempty"`
+	Schema    string           `json:"$schema"`
+	Data      *Data            `json:"data,omitempty"`
+	Datasets  map[string]*Data `json:"datasets,omitempty"`
+	Transform []Transform      `json:"transform,omitempty"`
+	Mark      *Mark            `json:"mark,omitempty"`
+	Encoding  *Encoding        `json:"encoding,omitempty"`
+	Layer     []*Spec          `json:"layer,omitempty"`
+	Concat    []*Spec          `json:"concat,omitempty"`
+	HConcat   []*Spec          `json:"hconcat,omitempty"`
+	VConcat   []*Spec          `json:"vconcat,omitempty"`
+	// Columns wraps a `concat` into rows of at most this many cells
+	// (Vega-Lite's `columns`). Unset — or any value of at least the
+	// child count — keeps the single row concat has always drawn.
+	Columns     *int                 `json:"columns,omitempty"`
 	Facet       *Facet               `json:"facet,omitempty"`
 	Repeat      *Repeat              `json:"repeat,omitempty"`
 	ChildSpec   *Spec                `json:"spec,omitempty"`

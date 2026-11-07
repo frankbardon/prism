@@ -16,7 +16,8 @@ import (
 )
 
 // EncodeOpts controls the encoder's per-call layout knobs. Width
-// and Height default to 800×600 when zero. ThemeName selects a
+// and Height, when zero, come from the spec's own top-level `width` /
+// `height` (withSpecFrame), else default to 800×600. ThemeName selects a
 // registered theme (light/dark/print + user-loaded); Theme is the
 // resolved scene-IR theme override (wins over ThemeName).
 //
@@ -97,6 +98,7 @@ func isSparkMark(markType string) bool {
 // keeps InertFieldWarnings a single reporter — a layer child is
 // walked once, from the root spec, never once per cell.
 func Encode(s *spec.Spec, tables map[plan.NodeID]*table.Table, tipID plan.NodeID, opts EncodeOpts) (*scene.SceneDoc, error) {
+	opts = withSpecFrame(opts, s)
 	doc, err := encodeLeaf(s, tables, tipID, opts)
 	if err != nil {
 		return nil, err
