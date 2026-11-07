@@ -210,11 +210,14 @@ func TestScatterDiagnostics(t *testing.T) {
 		rows[k] = recipes.Row{"q": theory[k], "r": sorted[k], "id": order[k]}
 	}
 	lo, hi := theory[0], theory[len(theory)-1]
+	// float64(...) blocks a fused multiply-add (arm64 fuses, amd64 does
+	// not), so the golden is the same on every machine.
+	line := func(x float64) float64 { return b0 + float64(b1*x) }
 	golden(t, "normal_qq", must(t)(recipes.Scatter(rows, recipes.ScatterOptions{
 		X: recipes.Field{Name: "q", Title: "Theoretical quantiles"},
 		Y: recipes.Field{Name: "r", Title: "Standardized residuals"},
 		References: []recipes.Reference{
-			recipes.Polyline([][2]float64{{lo, b0 + b1*lo}, {hi, b0 + b1*hi}}),
+			recipes.Polyline([][2]float64{{lo, line(lo)}, {hi, line(hi)}}),
 			recipes.RuleY(0),
 		},
 		Tooltip: []recipes.Field{{Name: "id", Title: "Row"}, {Name: "r", Title: "Residual", Format: ".3~g"}},
