@@ -1,0 +1,90 @@
+{
+  "$schema": "urn:prism:schema:v1:spec",
+  "data": {
+    "values": [
+      {
+        "exp": 5000,
+        "hi": 5120,
+        "lo": 0,
+        "obs": 5120,
+        "series": "Observed",
+        "value": "control"
+      },
+      {
+        "exp": 5000,
+        "hi": 4880,
+        "lo": 0,
+        "obs": 4880,
+        "series": "Observed",
+        "value": "variant"
+      },
+      {
+        "exp": 5000,
+        "hi": 5012.8,
+        "lo": 4987.2,
+        "obs": 5120,
+        "series": "Expected",
+        "value": "control"
+      },
+      {
+        "exp": 5000,
+        "hi": 5012.8,
+        "lo": 4987.2,
+        "obs": 4880,
+        "series": "Expected",
+        "value": "variant"
+      }
+    ]
+  },
+  "mark": "bar",
+  "encoding": {
+    "x": {
+      "field": "lo",
+      "type": "quantitative",
+      "title": "Count"
+    },
+    "y": {
+      "field": "value",
+      "type": "nominal",
+      "scale": {
+        "reverse": true
+      },
+      "title": "Arm"
+    },
+    "x2": {
+      "field": "hi"
+    },
+    "color": {
+      "field": "series",
+      "type": "nominal",
+      "scale": {
+        "domain": [
+          "Observed",
+          "Expected"
+        ]
+      },
+      "title": "Series",
+      "legend": {
+        "orient": "right"
+      }
+    },
+    "tooltip": [
+      {
+        "field": "value",
+        "title": "Arm"
+      },
+      {
+        "field": "obs",
+        "format": ",.0f",
+        "title": "Observed"
+      },
+      {
+        "field": "exp",
+        "format": ",.0f",
+        "title": "Expected"
+      }
+    ]
+  },
+  "height": 168,
+  "title": "Sample ratio"
+}

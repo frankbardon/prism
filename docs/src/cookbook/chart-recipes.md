@@ -34,11 +34,11 @@ the option when a required column is unset.
 | Recipe | Draws |
 |---|---|
 | `Forest(rows, ForestOptions)` | One row per label: interval rule `Low`→`High`, point at `Estimate`, dashed `References` (e.g. 0 or 1). Optional `Color` by a category. |
-| `Bar(rows, BarOptions)` | One bar per category, optional `Low`/`High` interval rule, `Horizontal`. |
+| `Bar(rows, BarOptions)` | One bar per category, optional `Low`/`High` interval rule, `Horizontal`. `Start` makes each bar a span from that column to `Value` (a range; with a series `Color`, a bullet's observed bar and expected tick). `Bands` (`Band{Low, High, Opacity}`) shade a value span behind every category, `References` draw dashed value rules over the bars, `Labels` / `LabelField` letter each bar at its end. |
 | `GroupedBar(rows, GroupedBarOptions)` | Bars dodged by `Group` within each `Category` (`x_offset` / `y_offset`), coloured and legended by group. |
 | `Line(rows, LineOptions)` | Lines over `X` (`XType` temporal / quantitative / ordinal), one per `Series`, optional `Points`. |
 | `Scatter(rows, ScatterOptions)` | Points with optional `Color`, pinned domains, and `References`: `RuleX`, `RuleY`, `Polyline` (a fitted or reference curve). |
-| `Heatmap(rows, HeatmapOptions)` | One cell per (`X`, `Y`) shaded by `Value`; `Domain` pins the ramp (`[-1, 1]` for a correlation), `Reverse` flips it, `Labels` prints each value. |
+| `Heatmap(rows, HeatmapOptions)` | One cell per (`X`, `Y`) shaded by `Value`; `Domain` pins the ramp (`[-1, 1]` for a correlation), `Reverse` flips it, `Labels` prints each value (or `LabelField`); `LabelRows` letters only the named `Y` rows (a key row under a grid too large to letter), leaving the other cells plain and opaque. |
 | `Box(rows, BoxOptions)` | Horizontal summary boxes from **precomputed** statistics: whisker rule, interquartile bar, centre dot. |
 | `Tiles(rows, TilesOptions)` | One big number per row, labelled above it. |
 

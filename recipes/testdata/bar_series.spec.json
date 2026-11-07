@@ -1,0 +1,206 @@
+{
+  "$schema": "urn:prism:schema:v1:spec",
+  "data": {
+    "values": [
+      {
+        "g": "A",
+        "label": "2.4 *",
+        "z": 2.4
+      },
+      {
+        "g": "B",
+        "label": "-0.8",
+        "z": -0.8
+      },
+      {
+        "g": "C",
+        "label": "1.1",
+        "z": 1.1
+      }
+    ]
+  },
+  "layer": [
+    {
+      "$schema": "urn:prism:schema:v1:spec",
+      "data": {
+        "values": [
+          {
+            "band_high": 1.96,
+            "band_low": -1.96,
+            "g": "A"
+          },
+          {
+            "band_high": 1.96,
+            "band_low": -1.96,
+            "g": "B"
+          },
+          {
+            "band_high": 1.96,
+            "band_low": -1.96,
+            "g": "C"
+          },
+          {
+            "band_high": 1.96,
+            "band_low": -1.96,
+            "g": "D"
+          }
+        ]
+      },
+      "mark": {
+        "type": "bar",
+        "fill_opacity": 0.15
+      },
+      "encoding": {
+        "x": {
+          "field": "g",
+          "type": "nominal",
+          "title": "Group",
+          "sort": [
+            "A",
+            "B",
+            "C",
+            "D"
+          ]
+        },
+        "y": {
+          "field": "band_low",
+          "type": "quantitative",
+          "scale": {
+            "domain": [
+              -2.5,
+              3
+            ]
+          },
+          "title": "z-score"
+        },
+        "y2": {
+          "field": "band_high"
+        }
+      }
+    },
+    {
+      "$schema": "urn:prism:schema:v1:spec",
+      "mark": "bar",
+      "encoding": {
+        "x": {
+          "field": "g",
+          "type": "nominal",
+          "title": "Group",
+          "sort": [
+            "A",
+            "B",
+            "C",
+            "D"
+          ]
+        },
+        "y": {
+          "field": "z",
+          "type": "quantitative",
+          "scale": {
+            "domain": [
+              -2.5,
+              3
+            ]
+          },
+          "title": "z-score"
+        },
+        "tooltip": [
+          {
+            "field": "g"
+          },
+          {
+            "field": "z",
+            "format": ".2f"
+          }
+        ]
+      }
+    },
+    {
+      "$schema": "urn:prism:schema:v1:spec",
+      "data": {
+        "values": [
+          {
+            "value": 0
+          }
+        ]
+      },
+      "mark": {
+        "type": "rule",
+        "stroke_dash": [
+          4,
+          3
+        ]
+      },
+      "encoding": {
+        "y": {
+          "field": "value",
+          "type": "quantitative"
+        }
+      }
+    },
+    {
+      "$schema": "urn:prism:schema:v1:spec",
+      "data": {
+        "values": [
+          {
+            "g": "A",
+            "label": "2.4 *",
+            "z": 2.4
+          },
+          {
+            "g": "B",
+            "label": "-0.8",
+            "z": -0.8
+          },
+          {
+            "g": "C",
+            "label": "1.1",
+            "z": 1.1
+          }
+        ]
+      },
+      "mark": {
+        "type": "text",
+        "font_size": 11
+      },
+      "encoding": {
+        "x": {
+          "field": "g",
+          "type": "nominal",
+          "title": "Group",
+          "sort": [
+            "A",
+            "B",
+            "C",
+            "D"
+          ]
+        },
+        "y": {
+          "field": "z",
+          "type": "quantitative",
+          "scale": {
+            "domain": [
+              -2.5,
+              3
+            ]
+          },
+          "title": "z-score"
+        },
+        "text": {
+          "field": "label"
+        },
+        "tooltip": [
+          {
+            "field": "g"
+          },
+          {
+            "field": "z",
+            "format": ".2f"
+          }
+        ]
+      }
+    }
+  ],
+  "height": 220,
+  "title": "z-scores"
+}

@@ -1,0 +1,108 @@
+{
+  "$schema": "urn:prism:schema:v1:spec",
+  "data": {
+    "values": [
+      {
+        "g": "A",
+        "label": "2.4 *",
+        "z": 2.4
+      },
+      {
+        "g": "B",
+        "label": "-0.8",
+        "z": -0.8
+      },
+      {
+        "g": "C",
+        "label": "1.1",
+        "z": 1.1
+      }
+    ]
+  },
+  "layer": [
+    {
+      "$schema": "urn:prism:schema:v1:spec",
+      "mark": "bar",
+      "encoding": {
+        "x": {
+          "field": "z",
+          "type": "quantitative"
+        },
+        "y": {
+          "field": "g",
+          "type": "nominal",
+          "scale": {
+            "reverse": true
+          }
+        }
+      }
+    },
+    {
+      "$schema": "urn:prism:schema:v1:spec",
+      "data": {
+        "values": [
+          {
+            "value": 0
+          }
+        ]
+      },
+      "mark": {
+        "type": "rule",
+        "stroke_dash": [
+          4,
+          3
+        ]
+      },
+      "encoding": {
+        "x": {
+          "field": "value",
+          "type": "quantitative"
+        }
+      }
+    },
+    {
+      "$schema": "urn:prism:schema:v1:spec",
+      "data": {
+        "values": [
+          {
+            "g": "A",
+            "label": "2.4 *",
+            "z": 2.4
+          },
+          {
+            "g": "B",
+            "label": "-0.8",
+            "z": -0.8
+          },
+          {
+            "g": "C",
+            "label": "1.1",
+            "z": 1.1
+          }
+        ]
+      },
+      "mark": {
+        "type": "text",
+        "font_size": 11
+      },
+      "encoding": {
+        "x": {
+          "field": "z",
+          "type": "quantitative"
+        },
+        "y": {
+          "field": "g",
+          "type": "nominal",
+          "scale": {
+            "reverse": true
+          }
+        },
+        "text": {
+          "field": "z",
+          "format": ".1f"
+        }
+      }
+    }
+  ],
+  "height": 204
+}
