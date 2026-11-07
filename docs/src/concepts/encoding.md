@@ -885,7 +885,7 @@ slimmer channel shape: `field`, `type`, `aggregate`, `format`,
 |---|---|
 | `field` | The column whose value becomes the label. |
 | `value` | A literal label, repeated on every row. Used when no `field` is set. |
-| `format` | d3-format specifier applied to the label — `.1f` renders `80.04` as `80.0`, `.0%` renders `0.42` as `42%`. Invalid specifiers are rejected at validate time with `PRISM_SPEC_011`. |
+| `format` | d3-format specifier applied to the label — `.1f` renders `80.04` as `80.0`, `.0%` renders `0.42` as `42%`, `.3~g` renders `1.50` as `1.5` (`~` trims trailing zeros), `+.1f` renders `2` as `+2.0`. The grammar is `[sign][,][.precision][~][type]` with types `f % d e s g` (`encode/format/README.md`). Invalid specifiers are rejected at validate time with `PRISM_SPEC_011`. |
 | `aggregate` | Honoured exactly like a position channel's: it injects the same synthetic group-aggregate node, and a non-aggregated `text` field joins the group-by. |
 
 With **no** `text` channel bound, a `text` mark falls back to

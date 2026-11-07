@@ -65,3 +65,53 @@ func TestPrismFormatEpochMsAsTime(t *testing.T) {
 		t.Errorf("Apply(epoch_ms) = %q, want 2026-05-19", got)
 	}
 }
+
+// TestPrismFormatTrimSignPrecision covers the d3 pieces added for
+// chart builders that format in the spec rather than upstream: the
+// "~" trim, the sign flag and "g" with a precision (toPrecision).
+func TestPrismFormatTrimSignPrecision(t *testing.T) {
+	cases := []struct {
+		spec string
+		in   any
+		want string
+	}{
+		{".2~f", 1.5, "1.5"},
+		{".2~f", 2.0, "2"},
+		{".2~f", 0.126, "0.13"},
+		{",.2~f", 1234.5, "1,234.5"},
+		{".1~%", 0.25, "25%"},
+		{".2~%", 0.1234, "12.34%"},
+		{".3~e", 1500.0, "1.5e+03"},
+		{".2~s", 2000.0, "2k"},
+		{".4g", 1234.5678, "1235"},
+		{".4g", 0.00012346, "0.0001235"},
+		{".4g", 12345678.0, "1.235e+7"},
+		{".2g", 9.99, "10"},
+		{".3g", 0.0, "0.00"},
+		{".3~g", 0.0, "0"},
+		{".3~g", 1.5, "1.5"},
+		{".4~g", 0.000000123, "1.23e-7"},
+		{",.4~g", 123456.0, "1.235e+5"},
+		{",.6~g", 123456.0, "123,456"},
+		{"+.1f", 2.0, "+2.0"},
+		{"+.1f", -2.0, "-2.0"},
+		{"+.1f", 0.0, "+0.0"},
+		{"+d", 3.0, "+3"},
+		{" .1f", 2.0, " 2.0"},
+		{"-.1f", 2.0, "2.0"},
+	}
+	for _, tc := range cases {
+		sp, err := Parse(tc.spec)
+		if err != nil {
+			t.Fatalf("Parse(%q): %v", tc.spec, err)
+		}
+		if got := sp.Apply(tc.in); got != tc.want {
+			t.Errorf("Parse(%q).Apply(%v) = %q, want %q", tc.spec, tc.in, got, tc.want)
+		}
+	}
+	for _, bad := range []string{"~~f", ".2f~", "++f"} {
+		if _, err := Parse(bad); err == nil {
+			t.Errorf("Parse(%q): want an error", bad)
+		}
+	}
+}

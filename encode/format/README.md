@@ -17,7 +17,21 @@ mini-mapping for time formats. Pure stdlib; no external date library.
 | `.3e`    | 1234.5   | `1.235e+03`  | Scientific with 3 decimals.              |
 | `.0s`    | 1234     | `1k`         | SI prefix (no decimals).                 |
 | `.2s`    | 1234     | `1.23k`      | SI prefix with 2 decimals.               |
+| `.4g`    | 1234.567 | `1235`       | 4 significant digits (JS `toPrecision`). |
+| `.4g`    | 1.2345e7 | `1.235e+7`   | Exponential once the exponent ≥ precision or < -6. |
+| `.2~f`   | 1.5      | `1.5`        | `~` trims insignificant trailing zeros.  |
+| `.2~f`   | 2        | `2`          | ...and a dangling decimal point.         |
+| `,.4~g`  | 1234.5   | `1,235`      | Flags compose: thousands + trim + `g`.   |
+| `+.1f`   | 2        | `+2.0`       | Sign flag `+` (or ` `) marks zero and positives. |
 | (empty)  | 3.14159  | `3.14159`    | Default `%g` rendering.                  |
+
+The grammar is `[sign][,][.precision][~][type]`, a strict prefix of
+d3-format's own order, so a specifier written for d3 means the same
+here. `~` trims after the digits are rendered and keeps any suffix
+(`1.500e+03` → `1.5e+03`, `2.00k` → `2k`, `12.50%` → `12.5%`). `g`
+without a precision keeps the shortest round-trip form. Rounding of an
+exact binary tie (`0.125` at two decimals) follows Go's
+round-half-to-even, where JavaScript's `toFixed` rounds half up.
 
 ## Supported time directives
 
@@ -52,6 +66,6 @@ reason in the error context. Empty spec → no-op (default `%g`).
 
 ## Out of scope
 
-The full d3-format grammar (fill, align, sign, symbol, width, type 'b',
-type 'r', etc.) is not ported. Add a specifier branch + test when a real
+The rest of the d3-format grammar (fill, align, symbol, zero, width,
+type 'b', type 'r', etc.) is not ported. Add a specifier branch + test when a real
 fixture needs it. The 90% subset above covers every test gate in P06.
