@@ -1,0 +1,1493 @@
+{
+  "version": "1.0",
+  "theme": {
+    "name": "light",
+    "color_axis": {
+      "r": 107,
+      "g": 114,
+      "b": 128,
+      "a": 255
+    },
+    "color_grid": {
+      "r": 229,
+      "g": 231,
+      "b": 235,
+      "a": 255
+    },
+    "color_text": {
+      "r": 17,
+      "g": 24,
+      "b": 39,
+      "a": 255
+    },
+    "background": "transparent",
+    "font_sans": "Inter, system-ui, sans-serif",
+    "font_mono": "ui-monospace, SF Mono, monospace",
+    "css": "\u003cstyle\u003e:root{--prism-color-axis:#6b7280;--prism-color-grid:#e5e7eb;--prism-color-text:#111827;--prism-color-bg:transparent;--prism-font-sans:Inter, system-ui, sans-serif;--prism-font-mono:ui-monospace, SF Mono, monospace;--prism-font-size-label:11px;--prism-font-size-title:16px;--prism-font-size-axis-title:12px;--prism-axis-domain-color:#6b7280;--prism-axis-domain-width:1px;--prism-axis-tick-color:#6b7280;--prism-axis-tick-width:1px;--prism-axis-tick-size:5px;--prism-grid-color:#e5e7eb;--prism-grid-width:1px;--prism-axis-label-color:#111827;--prism-axis-label-font-size:11px;--prism-axis-label-padding:4px;--prism-axis-title-color:#111827;--prism-axis-title-font-size:12px;--prism-axis-title-padding:8px;--prism-legend-padding:8px;--prism-legend-symbol-size:64px;--prism-legend-label-color:#111827;--prism-legend-label-font-size:11px;--prism-legend-title-color:#111827;--prism-legend-title-font-size:12px;--prism-legend-title-font-weight:600;--prism-legend-row-padding:4px;--prism-title-color:#111827;--prism-title-font-size:16px;--prism-title-font-weight:600;--prism-title-anchor:start;--prism-title-padding:12px;--prism-view-bg:transparent;--prism-view-padding:0px;--prism-mark-fill:#4c78a8;--prism-mark-stroke-width:0px;--prism-mark-opacity:1;--prism-mark-area-fill:#4c78a8;--prism-mark-area-opacity:0.7;--prism-mark-bar-fill:#4c78a8;--prism-mark-bar-corner-radius:0px;--prism-mark-line-fill:transparent;--prism-mark-line-stroke:#4c78a8;--prism-mark-line-stroke-width:1.5px;--prism-mark-point-fill:#4c78a8;--prism-mark-point-stroke-width:0px;--prism-mark-point-size:64;--prism-deselected-opacity:0.3;--prism-selected-opacity:1;}.prism-axis-domain{stroke:var(--prism-axis-domain-color,var(--prism-color-axis));stroke-width:var(--prism-axis-domain-width,1px);fill:none;}.prism-axis-tick{stroke:var(--prism-axis-tick-color,var(--prism-color-axis));stroke-width:var(--prism-axis-tick-width,1px);}.prism-axis-label{fill:var(--prism-axis-label-color,var(--prism-color-text));font-family:var(--prism-font-sans);font-size:var(--prism-axis-label-font-size,var(--prism-font-size-label,11px));font-weight:var(--prism-axis-label-font-weight,400);}.prism-axis-title{fill:var(--prism-axis-title-color,var(--prism-color-text));font-family:var(--prism-font-sans);font-size:var(--prism-axis-title-font-size,var(--prism-font-size-axis-title,12px));font-weight:var(--prism-axis-title-font-weight,600);}.prism-grid-line{stroke:var(--prism-grid-color,var(--prism-color-grid));stroke-width:var(--prism-grid-width,1px);}.prism-title{fill:var(--prism-title-color,var(--prism-color-text));font-family:var(--prism-font-sans);font-size:var(--prism-title-font-size,var(--prism-font-size-title,16px));font-weight:var(--prism-title-font-weight,600);}.prism-legend-title{fill:var(--prism-legend-title-color,var(--prism-color-text));font-family:var(--prism-font-sans);font-size:var(--prism-legend-title-font-size,12px);font-weight:var(--prism-legend-title-font-weight,600);}.prism-legend-label{fill:var(--prism-legend-label-color,var(--prism-color-text));font-family:var(--prism-font-sans);font-size:var(--prism-legend-label-font-size,11px);}.prism-legend-swatch{stroke:none;}.prism-selected{opacity:var(--prism-selected-opacity,1);}.prism-deselected{opacity:var(--prism-deselected-opacity,0.3);}\u003c/style\u003e",
+    "axis_tick_size": 5,
+    "axis_label_padding": 4,
+    "axis_title_padding": 8
+  },
+  "grid": {
+    "layout": {
+      "rows": 4,
+      "cols": 1,
+      "gap_px": 20,
+      "headers": {}
+    },
+    "cells": [
+      {
+        "row": 0,
+        "col": 0,
+        "scene": {
+          "id": "scene-0",
+          "frame": {
+            "x": 0,
+            "y": 0,
+            "w": 800,
+            "h": 135
+          },
+          "plot": {
+            "x": 40,
+            "y": 50,
+            "w": 740,
+            "h": 45
+          },
+          "title": {
+            "content": "Bar — quarterly revenue",
+            "x": 410,
+            "y": 20,
+            "style": {}
+          },
+          "axes": [
+            {
+              "id": "x-axis",
+              "channel": "x",
+              "position": "bottom",
+              "scale": {
+                "type": "band",
+                "domain": [
+                  "Q1",
+                  "Q2",
+                  "Q3",
+                  "Q4"
+                ],
+                "range": [
+                  40,
+                  780
+                ],
+                "padding": 0.1
+              },
+              "ticks": [
+                {
+                  "value": "Q1",
+                  "pixel": 132.5,
+                  "label": "Q1"
+                },
+                {
+                  "value": "Q2",
+                  "pixel": 317.5,
+                  "label": "Q2"
+                },
+                {
+                  "value": "Q3",
+                  "pixel": 502.5,
+                  "label": "Q3"
+                },
+                {
+                  "value": "Q4",
+                  "pixel": 687.5,
+                  "label": "Q4"
+                }
+              ],
+              "title": "q",
+              "domain": {
+                "x1": 40,
+                "y1": 95,
+                "x2": 780,
+                "y2": 95
+              },
+              "grid": [
+                {
+                  "x1": 132.5,
+                  "y1": 50,
+                  "x2": 132.5,
+                  "y2": 95
+                },
+                {
+                  "x1": 317.5,
+                  "y1": 50,
+                  "x2": 317.5,
+                  "y2": 95
+                },
+                {
+                  "x1": 502.5,
+                  "y1": 50,
+                  "x2": 502.5,
+                  "y2": 95
+                },
+                {
+                  "x1": 687.5,
+                  "y1": 50,
+                  "x2": 687.5,
+                  "y2": 95
+                }
+              ],
+              "label_style": {},
+              "title_style": {}
+            },
+            {
+              "id": "y-axis",
+              "channel": "y",
+              "position": "left",
+              "scale": {
+                "type": "linear",
+                "domain": [
+                  0,
+                  200
+                ],
+                "range": [
+                  95,
+                  50
+                ]
+              },
+              "ticks": [
+                {
+                  "value": 0,
+                  "pixel": 95,
+                  "label": "0"
+                },
+                {
+                  "value": 25,
+                  "pixel": 89.375,
+                  "label": "",
+                  "minor": true
+                },
+                {
+                  "value": 50,
+                  "pixel": 83.75,
+                  "label": "50",
+                  "label_hidden": true
+                },
+                {
+                  "value": 75,
+                  "pixel": 78.125,
+                  "label": "",
+                  "minor": true
+                },
+                {
+                  "value": 100,
+                  "pixel": 72.5,
+                  "label": "100"
+                },
+                {
+                  "value": 125,
+                  "pixel": 66.875,
+                  "label": "",
+                  "minor": true
+                },
+                {
+                  "value": 150,
+                  "pixel": 61.25,
+                  "label": "150",
+                  "label_hidden": true
+                },
+                {
+                  "value": 175,
+                  "pixel": 55.625,
+                  "label": "",
+                  "minor": true
+                },
+                {
+                  "value": 200,
+                  "pixel": 50,
+                  "label": "200"
+                }
+              ],
+              "title": "rev",
+              "domain": {
+                "x1": 40,
+                "y1": 50,
+                "x2": 40,
+                "y2": 95
+              },
+              "grid": [
+                {
+                  "x1": 40,
+                  "y1": 95,
+                  "x2": 780,
+                  "y2": 95
+                },
+                {
+                  "x1": 40,
+                  "y1": 83.75,
+                  "x2": 780,
+                  "y2": 83.75
+                },
+                {
+                  "x1": 40,
+                  "y1": 72.5,
+                  "x2": 780,
+                  "y2": 72.5
+                },
+                {
+                  "x1": 40,
+                  "y1": 61.25,
+                  "x2": 780,
+                  "y2": 61.25
+                },
+                {
+                  "x1": 40,
+                  "y1": 50,
+                  "x2": 780,
+                  "y2": 50
+                }
+              ],
+              "label_style": {},
+              "title_style": {}
+            }
+          ],
+          "layers": [
+            {
+              "id": "layer-0",
+              "mark": "rect",
+              "marks": [
+                {
+                  "type": "rect",
+                  "id": "bar-0",
+                  "style": {
+                    "fill": {
+                      "r": 76,
+                      "g": 120,
+                      "b": 168,
+                      "a": 255
+                    },
+                    "opacity": 1
+                  },
+                  "datum": {
+                    "layer_id": "layer-0",
+                    "row_id": 0
+                  },
+                  "rect": {
+                    "x": 49.25,
+                    "y": 68,
+                    "w": 166.5,
+                    "h": 27
+                  }
+                },
+                {
+                  "type": "rect",
+                  "id": "bar-1",
+                  "style": {
+                    "fill": {
+                      "r": 76,
+                      "g": 120,
+                      "b": 168,
+                      "a": 255
+                    },
+                    "opacity": 1
+                  },
+                  "datum": {
+                    "layer_id": "layer-0",
+                    "row_id": 1
+                  },
+                  "rect": {
+                    "x": 234.25,
+                    "y": 62.375,
+                    "w": 166.5,
+                    "h": 32.625
+                  }
+                },
+                {
+                  "type": "rect",
+                  "id": "bar-2",
+                  "style": {
+                    "fill": {
+                      "r": 76,
+                      "g": 120,
+                      "b": 168,
+                      "a": 255
+                    },
+                    "opacity": 1
+                  },
+                  "datum": {
+                    "layer_id": "layer-0",
+                    "row_id": 2
+                  },
+                  "rect": {
+                    "x": 419.25,
+                    "y": 65.3,
+                    "w": 166.5,
+                    "h": 29.700000000000003
+                  }
+                },
+                {
+                  "type": "rect",
+                  "id": "bar-3",
+                  "style": {
+                    "fill": {
+                      "r": 76,
+                      "g": 120,
+                      "b": 168,
+                      "a": 255
+                    },
+                    "opacity": 1
+                  },
+                  "datum": {
+                    "layer_id": "layer-0",
+                    "row_id": 3
+                  },
+                  "rect": {
+                    "x": 604.25,
+                    "y": 57.2,
+                    "w": 166.5,
+                    "h": 37.8
+                  }
+                }
+              ]
+            }
+          ]
+        }
+      },
+      {
+        "row": 1,
+        "col": 0,
+        "scene": {
+          "id": "scene-1",
+          "frame": {
+            "x": 0,
+            "y": 155,
+            "w": 800,
+            "h": 135
+          },
+          "plot": {
+            "x": 40,
+            "y": 205,
+            "w": 740,
+            "h": 45
+          },
+          "title": {
+            "content": "Line — weekly active users",
+            "x": 410,
+            "y": 175,
+            "style": {}
+          },
+          "axes": [
+            {
+              "id": "x-axis",
+              "channel": "x",
+              "position": "bottom",
+              "scale": {
+                "type": "linear",
+                "domain": [
+                  0,
+                  5
+                ],
+                "range": [
+                  40,
+                  780
+                ]
+              },
+              "ticks": [
+                {
+                  "value": 0,
+                  "pixel": 40,
+                  "label": "0"
+                },
+                {
+                  "value": 0.5,
+                  "pixel": 114,
+                  "label": "",
+                  "minor": true
+                },
+                {
+                  "value": 1,
+                  "pixel": 188,
+                  "label": "1"
+                },
+                {
+                  "value": 1.5,
+                  "pixel": 262,
+                  "label": "",
+                  "minor": true
+                },
+                {
+                  "value": 2,
+                  "pixel": 336,
+                  "label": "2"
+                },
+                {
+                  "value": 2.5,
+                  "pixel": 410,
+                  "label": "",
+                  "minor": true
+                },
+                {
+                  "value": 3,
+                  "pixel": 484,
+                  "label": "3"
+                },
+                {
+                  "value": 3.5,
+                  "pixel": 558,
+                  "label": "",
+                  "minor": true
+                },
+                {
+                  "value": 4,
+                  "pixel": 632,
+                  "label": "4"
+                },
+                {
+                  "value": 4.5,
+                  "pixel": 706,
+                  "label": "",
+                  "minor": true
+                },
+                {
+                  "value": 5,
+                  "pixel": 780,
+                  "label": "5"
+                }
+              ],
+              "title": "week",
+              "domain": {
+                "x1": 40,
+                "y1": 250,
+                "x2": 780,
+                "y2": 250
+              },
+              "grid": [
+                {
+                  "x1": 40,
+                  "y1": 205,
+                  "x2": 40,
+                  "y2": 250
+                },
+                {
+                  "x1": 188,
+                  "y1": 205,
+                  "x2": 188,
+                  "y2": 250
+                },
+                {
+                  "x1": 336,
+                  "y1": 205,
+                  "x2": 336,
+                  "y2": 250
+                },
+                {
+                  "x1": 484,
+                  "y1": 205,
+                  "x2": 484,
+                  "y2": 250
+                },
+                {
+                  "x1": 632,
+                  "y1": 205,
+                  "x2": 632,
+                  "y2": 250
+                },
+                {
+                  "x1": 780,
+                  "y1": 205,
+                  "x2": 780,
+                  "y2": 250
+                }
+              ],
+              "label_style": {},
+              "title_style": {}
+            },
+            {
+              "id": "y-axis",
+              "channel": "y",
+              "position": "left",
+              "scale": {
+                "type": "linear",
+                "domain": [
+                  0,
+                  500
+                ],
+                "range": [
+                  95,
+                  50
+                ]
+              },
+              "ticks": [
+                {
+                  "value": 0,
+                  "pixel": 250,
+                  "label": "0"
+                },
+                {
+                  "value": 50,
+                  "pixel": 245.5,
+                  "label": "",
+                  "minor": true
+                },
+                {
+                  "value": 100,
+                  "pixel": 241,
+                  "label": "100",
+                  "label_hidden": true
+                },
+                {
+                  "value": 150,
+                  "pixel": 236.5,
+                  "label": "",
+                  "minor": true
+                },
+                {
+                  "value": 200,
+                  "pixel": 232,
+                  "label": "200"
+                },
+                {
+                  "value": 250,
+                  "pixel": 227.5,
+                  "label": "",
+                  "minor": true
+                },
+                {
+                  "value": 300,
+                  "pixel": 223,
+                  "label": "300",
+                  "label_hidden": true
+                },
+                {
+                  "value": 350,
+                  "pixel": 218.5,
+                  "label": "",
+                  "minor": true
+                },
+                {
+                  "value": 400,
+                  "pixel": 214,
+                  "label": "400"
+                },
+                {
+                  "value": 450,
+                  "pixel": 209.5,
+                  "label": "",
+                  "minor": true
+                },
+                {
+                  "value": 500,
+                  "pixel": 205,
+                  "label": "500",
+                  "label_hidden": true
+                }
+              ],
+              "title": "wau",
+              "domain": {
+                "x1": 40,
+                "y1": 205,
+                "x2": 40,
+                "y2": 250
+              },
+              "grid": [
+                {
+                  "x1": 40,
+                  "y1": 250,
+                  "x2": 780,
+                  "y2": 250
+                },
+                {
+                  "x1": 40,
+                  "y1": 241,
+                  "x2": 780,
+                  "y2": 241
+                },
+                {
+                  "x1": 40,
+                  "y1": 232,
+                  "x2": 780,
+                  "y2": 232
+                },
+                {
+                  "x1": 40,
+                  "y1": 223,
+                  "x2": 780,
+                  "y2": 223
+                },
+                {
+                  "x1": 40,
+                  "y1": 214,
+                  "x2": 780,
+                  "y2": 214
+                },
+                {
+                  "x1": 40,
+                  "y1": 205,
+                  "x2": 780,
+                  "y2": 205
+                }
+              ],
+              "label_style": {},
+              "title_style": {}
+            }
+          ],
+          "layers": [
+            {
+              "id": "layer-0",
+              "mark": "line",
+              "marks": [
+                {
+                  "type": "line",
+                  "id": "line-0",
+                  "style": {
+                    "stroke": {
+                      "r": 76,
+                      "g": 120,
+                      "b": 168,
+                      "a": 255
+                    },
+                    "stroke_width": 1.5,
+                    "opacity": 1
+                  },
+                  "datum": {
+                    "layer_id": "layer-0",
+                    "row_id": 0
+                  },
+                  "line": {
+                    "points": [
+                      [
+                        188,
+                        221.2
+                      ],
+                      [
+                        336,
+                        215.8
+                      ],
+                      [
+                        484,
+                        213.1
+                      ],
+                      [
+                        632,
+                        213.55
+                      ],
+                      [
+                        780,
+                        208.6
+                      ]
+                    ],
+                    "curve": "linear"
+                  }
+                }
+              ]
+            }
+          ]
+        }
+      },
+      {
+        "row": 2,
+        "col": 0,
+        "scene": {
+          "id": "scene-2",
+          "frame": {
+            "x": 0,
+            "y": 310,
+            "w": 800,
+            "h": 135
+          },
+          "plot": {
+            "x": 40,
+            "y": 360,
+            "w": 740,
+            "h": 45
+          },
+          "title": {
+            "content": "Area — cumulative installs",
+            "x": 410,
+            "y": 330,
+            "style": {}
+          },
+          "axes": [
+            {
+              "id": "x-axis",
+              "channel": "x",
+              "position": "bottom",
+              "scale": {
+                "type": "linear",
+                "domain": [
+                  0,
+                  5
+                ],
+                "range": [
+                  40,
+                  780
+                ]
+              },
+              "ticks": [
+                {
+                  "value": 0,
+                  "pixel": 40,
+                  "label": "0"
+                },
+                {
+                  "value": 0.5,
+                  "pixel": 114,
+                  "label": "",
+                  "minor": true
+                },
+                {
+                  "value": 1,
+                  "pixel": 188,
+                  "label": "1"
+                },
+                {
+                  "value": 1.5,
+                  "pixel": 262,
+                  "label": "",
+                  "minor": true
+                },
+                {
+                  "value": 2,
+                  "pixel": 336,
+                  "label": "2"
+                },
+                {
+                  "value": 2.5,
+                  "pixel": 410,
+                  "label": "",
+                  "minor": true
+                },
+                {
+                  "value": 3,
+                  "pixel": 484,
+                  "label": "3"
+                },
+                {
+                  "value": 3.5,
+                  "pixel": 558,
+                  "label": "",
+                  "minor": true
+                },
+                {
+                  "value": 4,
+                  "pixel": 632,
+                  "label": "4"
+                },
+                {
+                  "value": 4.5,
+                  "pixel": 706,
+                  "label": "",
+                  "minor": true
+                },
+                {
+                  "value": 5,
+                  "pixel": 780,
+                  "label": "5"
+                }
+              ],
+              "title": "day",
+              "domain": {
+                "x1": 40,
+                "y1": 405,
+                "x2": 780,
+                "y2": 405
+              },
+              "grid": [
+                {
+                  "x1": 40,
+                  "y1": 360,
+                  "x2": 40,
+                  "y2": 405
+                },
+                {
+                  "x1": 188,
+                  "y1": 360,
+                  "x2": 188,
+                  "y2": 405
+                },
+                {
+                  "x1": 336,
+                  "y1": 360,
+                  "x2": 336,
+                  "y2": 405
+                },
+                {
+                  "x1": 484,
+                  "y1": 360,
+                  "x2": 484,
+                  "y2": 405
+                },
+                {
+                  "x1": 632,
+                  "y1": 360,
+                  "x2": 632,
+                  "y2": 405
+                },
+                {
+                  "x1": 780,
+                  "y1": 360,
+                  "x2": 780,
+                  "y2": 405
+                }
+              ],
+              "label_style": {},
+              "title_style": {}
+            },
+            {
+              "id": "y-axis",
+              "channel": "y",
+              "position": "left",
+              "scale": {
+                "type": "linear",
+                "domain": [
+                  0,
+                  300
+                ],
+                "range": [
+                  95,
+                  50
+                ]
+              },
+              "ticks": [
+                {
+                  "value": 0,
+                  "pixel": 405,
+                  "label": "0"
+                },
+                {
+                  "value": 25,
+                  "pixel": 401.25,
+                  "label": "",
+                  "minor": true
+                },
+                {
+                  "value": 50,
+                  "pixel": 397.5,
+                  "label": "50",
+                  "label_hidden": true
+                },
+                {
+                  "value": 75,
+                  "pixel": 393.75,
+                  "label": "",
+                  "minor": true
+                },
+                {
+                  "value": 100,
+                  "pixel": 390,
+                  "label": "100"
+                },
+                {
+                  "value": 125,
+                  "pixel": 386.25,
+                  "label": "",
+                  "minor": true
+                },
+                {
+                  "value": 150,
+                  "pixel": 382.5,
+                  "label": "150",
+                  "label_hidden": true
+                },
+                {
+                  "value": 175,
+                  "pixel": 378.75,
+                  "label": "",
+                  "minor": true
+                },
+                {
+                  "value": 200,
+                  "pixel": 375,
+                  "label": "200"
+                },
+                {
+                  "value": 225,
+                  "pixel": 371.25,
+                  "label": "",
+                  "minor": true
+                },
+                {
+                  "value": 250,
+                  "pixel": 367.5,
+                  "label": "250",
+                  "label_hidden": true
+                },
+                {
+                  "value": 275,
+                  "pixel": 363.75,
+                  "label": "",
+                  "minor": true
+                },
+                {
+                  "value": 300,
+                  "pixel": 360,
+                  "label": "300"
+                }
+              ],
+              "title": "n",
+              "domain": {
+                "x1": 40,
+                "y1": 360,
+                "x2": 40,
+                "y2": 405
+              },
+              "grid": [
+                {
+                  "x1": 40,
+                  "y1": 405,
+                  "x2": 780,
+                  "y2": 405
+                },
+                {
+                  "x1": 40,
+                  "y1": 397.5,
+                  "x2": 780,
+                  "y2": 397.5
+                },
+                {
+                  "x1": 40,
+                  "y1": 390,
+                  "x2": 780,
+                  "y2": 390
+                },
+                {
+                  "x1": 40,
+                  "y1": 382.5,
+                  "x2": 780,
+                  "y2": 382.5
+                },
+                {
+                  "x1": 40,
+                  "y1": 375,
+                  "x2": 780,
+                  "y2": 375
+                },
+                {
+                  "x1": 40,
+                  "y1": 367.5,
+                  "x2": 780,
+                  "y2": 367.5
+                },
+                {
+                  "x1": 40,
+                  "y1": 360,
+                  "x2": 780,
+                  "y2": 360
+                }
+              ],
+              "label_style": {},
+              "title_style": {}
+            }
+          ],
+          "layers": [
+            {
+              "id": "layer-0",
+              "mark": "area",
+              "marks": [
+                {
+                  "type": "area",
+                  "id": "area-0",
+                  "style": {
+                    "fill": {
+                      "r": 76,
+                      "g": 120,
+                      "b": 168,
+                      "a": 255
+                    },
+                    "opacity": 0.7
+                  },
+                  "datum": {
+                    "layer_id": "layer-0",
+                    "row_id": 0
+                  },
+                  "area": {
+                    "upper": [
+                      [
+                        188,
+                        397.5
+                      ],
+                      [
+                        336,
+                        391.5
+                      ],
+                      [
+                        484,
+                        384
+                      ],
+                      [
+                        632,
+                        376.5
+                      ],
+                      [
+                        780,
+                        366
+                      ]
+                    ],
+                    "lower": [
+                      [
+                        188,
+                        405
+                      ],
+                      [
+                        336,
+                        405
+                      ],
+                      [
+                        484,
+                        405
+                      ],
+                      [
+                        632,
+                        405
+                      ],
+                      [
+                        780,
+                        405
+                      ]
+                    ],
+                    "curve": "linear"
+                  }
+                }
+              ]
+            }
+          ]
+        }
+      },
+      {
+        "row": 3,
+        "col": 0,
+        "scene": {
+          "id": "scene-3",
+          "frame": {
+            "x": 0,
+            "y": 465,
+            "w": 800,
+            "h": 135
+          },
+          "plot": {
+            "x": 40,
+            "y": 515,
+            "w": 740,
+            "h": 45
+          },
+          "title": {
+            "content": "Point — latency vs throughput",
+            "x": 410,
+            "y": 485,
+            "style": {}
+          },
+          "axes": [
+            {
+              "id": "x-axis",
+              "channel": "x",
+              "position": "bottom",
+              "scale": {
+                "type": "linear",
+                "domain": [
+                  0,
+                  500
+                ],
+                "range": [
+                  40,
+                  780
+                ]
+              },
+              "ticks": [
+                {
+                  "value": 0,
+                  "pixel": 40,
+                  "label": "0"
+                },
+                {
+                  "value": 50,
+                  "pixel": 114,
+                  "label": "",
+                  "minor": true
+                },
+                {
+                  "value": 100,
+                  "pixel": 188,
+                  "label": "100"
+                },
+                {
+                  "value": 150,
+                  "pixel": 262,
+                  "label": "",
+                  "minor": true
+                },
+                {
+                  "value": 200,
+                  "pixel": 336,
+                  "label": "200"
+                },
+                {
+                  "value": 250,
+                  "pixel": 410,
+                  "label": "",
+                  "minor": true
+                },
+                {
+                  "value": 300,
+                  "pixel": 484,
+                  "label": "300"
+                },
+                {
+                  "value": 350,
+                  "pixel": 558,
+                  "label": "",
+                  "minor": true
+                },
+                {
+                  "value": 400,
+                  "pixel": 632,
+                  "label": "400"
+                },
+                {
+                  "value": 450,
+                  "pixel": 706,
+                  "label": "",
+                  "minor": true
+                },
+                {
+                  "value": 500,
+                  "pixel": 780,
+                  "label": "500"
+                }
+              ],
+              "title": "thr",
+              "domain": {
+                "x1": 40,
+                "y1": 560,
+                "x2": 780,
+                "y2": 560
+              },
+              "grid": [
+                {
+                  "x1": 40,
+                  "y1": 515,
+                  "x2": 40,
+                  "y2": 560
+                },
+                {
+                  "x1": 188,
+                  "y1": 515,
+                  "x2": 188,
+                  "y2": 560
+                },
+                {
+                  "x1": 336,
+                  "y1": 515,
+                  "x2": 336,
+                  "y2": 560
+                },
+                {
+                  "x1": 484,
+                  "y1": 515,
+                  "x2": 484,
+                  "y2": 560
+                },
+                {
+                  "x1": 632,
+                  "y1": 515,
+                  "x2": 632,
+                  "y2": 560
+                },
+                {
+                  "x1": 780,
+                  "y1": 515,
+                  "x2": 780,
+                  "y2": 560
+                }
+              ],
+              "label_style": {},
+              "title_style": {}
+            },
+            {
+              "id": "y-axis",
+              "channel": "y",
+              "position": "left",
+              "scale": {
+                "type": "linear",
+                "domain": [
+                  0,
+                  70
+                ],
+                "range": [
+                  95,
+                  50
+                ]
+              },
+              "ticks": [
+                {
+                  "value": 0,
+                  "pixel": 560,
+                  "label": "0"
+                },
+                {
+                  "value": 5,
+                  "pixel": 556.7857142857143,
+                  "label": "",
+                  "minor": true
+                },
+                {
+                  "value": 10,
+                  "pixel": 553.5714285714286,
+                  "label": "10",
+                  "label_hidden": true
+                },
+                {
+                  "value": 15,
+                  "pixel": 550.3571428571429,
+                  "label": "",
+                  "minor": true
+                },
+                {
+                  "value": 20,
+                  "pixel": 547.1428571428571,
+                  "label": "20"
+                },
+                {
+                  "value": 25,
+                  "pixel": 543.9285714285714,
+                  "label": "",
+                  "minor": true
+                },
+                {
+                  "value": 30,
+                  "pixel": 540.7142857142858,
+                  "label": "30",
+                  "label_hidden": true
+                },
+                {
+                  "value": 35,
+                  "pixel": 537.5,
+                  "label": "",
+                  "minor": true
+                },
+                {
+                  "value": 40,
+                  "pixel": 534.2857142857143,
+                  "label": "40"
+                },
+                {
+                  "value": 45,
+                  "pixel": 531.0714285714286,
+                  "label": "",
+                  "minor": true
+                },
+                {
+                  "value": 50,
+                  "pixel": 527.8571428571429,
+                  "label": "50",
+                  "label_hidden": true
+                },
+                {
+                  "value": 55,
+                  "pixel": 524.6428571428571,
+                  "label": "",
+                  "minor": true
+                },
+                {
+                  "value": 60,
+                  "pixel": 521.4285714285714,
+                  "label": "60"
+                },
+                {
+                  "value": 65,
+                  "pixel": 518.2142857142857,
+                  "label": "",
+                  "minor": true
+                },
+                {
+                  "value": 70,
+                  "pixel": 515,
+                  "label": "70",
+                  "label_hidden": true
+                }
+              ],
+              "title": "lat",
+              "domain": {
+                "x1": 40,
+                "y1": 515,
+                "x2": 40,
+                "y2": 560
+              },
+              "grid": [
+                {
+                  "x1": 40,
+                  "y1": 560,
+                  "x2": 780,
+                  "y2": 560
+                },
+                {
+                  "x1": 40,
+                  "y1": 553.5714285714286,
+                  "x2": 780,
+                  "y2": 553.5714285714286
+                },
+                {
+                  "x1": 40,
+                  "y1": 547.1428571428571,
+                  "x2": 780,
+                  "y2": 547.1428571428571
+                },
+                {
+                  "x1": 40,
+                  "y1": 540.7142857142858,
+                  "x2": 780,
+                  "y2": 540.7142857142858
+                },
+                {
+                  "x1": 40,
+                  "y1": 534.2857142857143,
+                  "x2": 780,
+                  "y2": 534.2857142857143
+                },
+                {
+                  "x1": 40,
+                  "y1": 527.8571428571429,
+                  "x2": 780,
+                  "y2": 527.8571428571429
+                },
+                {
+                  "x1": 40,
+                  "y1": 521.4285714285714,
+                  "x2": 780,
+                  "y2": 521.4285714285714
+                },
+                {
+                  "x1": 40,
+                  "y1": 515,
+                  "x2": 780,
+                  "y2": 515
+                }
+              ],
+              "label_style": {},
+              "title_style": {}
+            }
+          ],
+          "layers": [
+            {
+              "id": "layer-0",
+              "mark": "point",
+              "marks": [
+                {
+                  "type": "point",
+                  "id": "point-0",
+                  "style": {
+                    "fill": {
+                      "r": 76,
+                      "g": 120,
+                      "b": 168,
+                      "a": 255
+                    },
+                    "opacity": 1
+                  },
+                  "datum": {
+                    "layer_id": "layer-0",
+                    "row_id": 0
+                  },
+                  "point": {
+                    "cx": 188,
+                    "cy": 552.2857142857143,
+                    "r": 4,
+                    "shape": "circle"
+                  }
+                },
+                {
+                  "type": "point",
+                  "id": "point-1",
+                  "style": {
+                    "fill": {
+                      "r": 76,
+                      "g": 120,
+                      "b": 168,
+                      "a": 255
+                    },
+                    "opacity": 1
+                  },
+                  "datum": {
+                    "layer_id": "layer-0",
+                    "row_id": 1
+                  },
+                  "point": {
+                    "cx": 336,
+                    "cy": 548.4285714285714,
+                    "r": 4,
+                    "shape": "circle"
+                  }
+                },
+                {
+                  "type": "point",
+                  "id": "point-2",
+                  "style": {
+                    "fill": {
+                      "r": 76,
+                      "g": 120,
+                      "b": 168,
+                      "a": 255
+                    },
+                    "opacity": 1
+                  },
+                  "datum": {
+                    "layer_id": "layer-0",
+                    "row_id": 2
+                  },
+                  "point": {
+                    "cx": 484,
+                    "cy": 542,
+                    "r": 4,
+                    "shape": "circle"
+                  }
+                },
+                {
+                  "type": "point",
+                  "id": "point-3",
+                  "style": {
+                    "fill": {
+                      "r": 76,
+                      "g": 120,
+                      "b": 168,
+                      "a": 255
+                    },
+                    "opacity": 1
+                  },
+                  "datum": {
+                    "layer_id": "layer-0",
+                    "row_id": 3
+                  },
+                  "point": {
+                    "cx": 632,
+                    "cy": 533,
+                    "r": 4,
+                    "shape": "circle"
+                  }
+                },
+                {
+                  "type": "point",
+                  "id": "point-4",
+                  "style": {
+                    "fill": {
+                      "r": 76,
+                      "g": 120,
+                      "b": 168,
+                      "a": 255
+                    },
+                    "opacity": 1
+                  },
+                  "datum": {
+                    "layer_id": "layer-0",
+                    "row_id": 4
+                  },
+                  "point": {
+                    "cx": 780,
+                    "cy": 518.2142857142857,
+                    "r": 4,
+                    "shape": "circle"
+                  }
+                }
+              ]
+            }
+          ]
+        }
+      }
+    ],
+    "shared": {}
+  }
+}

@@ -1,0 +1,22 @@
+{
+  "$schema": "urn:prism:schema:v1:spec",
+  "title": "Dependency graph (deterministic seed)",
+  "data": {
+    "name": "deps",
+    "values": [
+      {"from": "app",    "to": "auth"},
+      {"from": "app",    "to": "ui"},
+      {"from": "app",    "to": "data"},
+      {"from": "auth",   "to": "crypto"},
+      {"from": "ui",     "to": "icons"},
+      {"from": "ui",     "to": "theme"},
+      {"from": "data",   "to": "pulse"},
+      {"from": "pulse",  "to": "crypto"}
+    ]
+  },
+  "mark": {"type": "network", "node_shape": "rect", "node_size": 8, "iterations": 300, "link_distance": 35, "seed": 42},
+  "encoding": {
+    "source": {"field": "from"},
+    "target": {"field": "to"}
+  }
+}

@@ -1,0 +1,32 @@
+{
+  "$schema": "urn:prism:schema:v1:spec",
+  "title": "Overview + detail (vconcat)",
+  "data": {
+    "name": "daily",
+    "values": [
+      {"day": "2026-01-01", "score": 0.41, "count":  12},
+      {"day": "2026-01-02", "score": 0.47, "count":  31},
+      {"day": "2026-01-03", "score": 0.55, "count":  55},
+      {"day": "2026-01-04", "score": 0.62, "count":  82},
+      {"day": "2026-01-05", "score": 0.58, "count": 121}
+    ]
+  },
+  "vconcat": [
+    {
+      "$schema": "urn:prism:schema:v1:spec",
+      "mark": {"type": "line", "stroke_width": 2},
+      "encoding": {
+        "x": {"field": "day",   "type": "temporal"},
+        "y": {"field": "score", "type": "quantitative"}
+      }
+    },
+    {
+      "$schema": "urn:prism:schema:v1:spec",
+      "mark": "area",
+      "encoding": {
+        "x": {"field": "day",   "type": "temporal"},
+        "y": {"field": "count", "type": "quantitative"}
+      }
+    }
+  ]
+}

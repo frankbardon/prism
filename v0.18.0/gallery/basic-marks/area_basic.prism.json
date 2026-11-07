@@ -1,0 +1,17 @@
+{
+  "$schema": "urn:prism:schema:v1:spec",
+  "title": "Cumulative volume",
+  "data": {
+    "name": "volume",
+    "values": [
+      {"day": "2026-01-01", "vol": 100},
+      {"day": "2026-01-02", "vol": 175},
+      {"day": "2026-01-03", "vol": 240}
+    ]
+  },
+  "mark": "area",
+  "encoding": {
+    "x": {"field": "day", "type": "temporal"},
+    "y": {"field": "vol", "type": "quantitative"}
+  }
+}

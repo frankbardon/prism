@@ -1,0 +1,997 @@
+{
+  "version": "1.0",
+  "theme": {
+    "name": "light",
+    "color_axis": {
+      "r": 107,
+      "g": 114,
+      "b": 128,
+      "a": 255
+    },
+    "color_grid": {
+      "r": 229,
+      "g": 231,
+      "b": 235,
+      "a": 255
+    },
+    "color_text": {
+      "r": 17,
+      "g": 24,
+      "b": 39,
+      "a": 255
+    },
+    "background": "transparent",
+    "font_sans": "Inter, system-ui, sans-serif",
+    "font_mono": "ui-monospace, SF Mono, monospace",
+    "css": "\u003cstyle\u003e:root{--prism-color-axis:#6b7280;--prism-color-grid:#e5e7eb;--prism-color-text:#111827;--prism-color-bg:transparent;--prism-font-sans:Inter, system-ui, sans-serif;--prism-font-mono:ui-monospace, SF Mono, monospace;--prism-font-size-label:11px;--prism-font-size-title:16px;--prism-font-size-axis-title:12px;--prism-axis-domain-color:#6b7280;--prism-axis-domain-width:1px;--prism-axis-tick-color:#6b7280;--prism-axis-tick-width:1px;--prism-axis-tick-size:5px;--prism-grid-color:#e5e7eb;--prism-grid-width:1px;--prism-axis-label-color:#111827;--prism-axis-label-font-size:11px;--prism-axis-label-padding:4px;--prism-axis-title-color:#111827;--prism-axis-title-font-size:12px;--prism-axis-title-padding:8px;--prism-legend-padding:8px;--prism-legend-symbol-size:64px;--prism-legend-label-color:#111827;--prism-legend-label-font-size:11px;--prism-legend-title-color:#111827;--prism-legend-title-font-size:12px;--prism-legend-title-font-weight:600;--prism-legend-row-padding:4px;--prism-title-color:#111827;--prism-title-font-size:16px;--prism-title-font-weight:600;--prism-title-anchor:start;--prism-title-padding:12px;--prism-view-bg:transparent;--prism-view-padding:0px;--prism-mark-fill:#4c78a8;--prism-mark-stroke-width:0px;--prism-mark-opacity:1;--prism-mark-line-fill:transparent;--prism-mark-line-stroke:#4c78a8;--prism-mark-line-stroke-width:1.5px;--prism-deselected-opacity:0.3;--prism-selected-opacity:1;}.prism-axis-domain{stroke:var(--prism-axis-domain-color,var(--prism-color-axis));stroke-width:var(--prism-axis-domain-width,1px);fill:none;}.prism-axis-tick{stroke:var(--prism-axis-tick-color,var(--prism-color-axis));stroke-width:var(--prism-axis-tick-width,1px);}.prism-axis-label{fill:var(--prism-axis-label-color,var(--prism-color-text));font-family:var(--prism-font-sans);font-size:var(--prism-axis-label-font-size,var(--prism-font-size-label,11px));font-weight:var(--prism-axis-label-font-weight,400);}.prism-axis-title{fill:var(--prism-axis-title-color,var(--prism-color-text));font-family:var(--prism-font-sans);font-size:var(--prism-axis-title-font-size,var(--prism-font-size-axis-title,12px));font-weight:var(--prism-axis-title-font-weight,600);}.prism-grid-line{stroke:var(--prism-grid-color,var(--prism-color-grid));stroke-width:var(--prism-grid-width,1px);}.prism-title{fill:var(--prism-title-color,var(--prism-color-text));font-family:var(--prism-font-sans);font-size:var(--prism-title-font-size,var(--prism-font-size-title,16px));font-weight:var(--prism-title-font-weight,600);}.prism-legend-title{fill:var(--prism-legend-title-color,var(--prism-color-text));font-family:var(--prism-font-sans);font-size:var(--prism-legend-title-font-size,12px);font-weight:var(--prism-legend-title-font-weight,600);}.prism-legend-label{fill:var(--prism-legend-label-color,var(--prism-color-text));font-family:var(--prism-font-sans);font-size:var(--prism-legend-label-font-size,11px);}.prism-legend-swatch{stroke:none;}.prism-selected{opacity:var(--prism-selected-opacity,1);}.prism-deselected{opacity:var(--prism-deselected-opacity,0.3);}\u003c/style\u003e",
+    "axis_tick_size": 5,
+    "axis_label_padding": 4,
+    "axis_title_padding": 8
+  },
+  "grid": {
+    "layout": {
+      "rows": 3,
+      "cols": 1,
+      "gap_px": 20,
+      "headers": {}
+    },
+    "cells": [
+      {
+        "row": 0,
+        "col": 0,
+        "scene": {
+          "id": "scene-0",
+          "frame": {
+            "x": 0,
+            "y": 0,
+            "w": 800,
+            "h": 186.66666666666666
+          },
+          "plot": {
+            "x": 40,
+            "y": 50,
+            "w": 740,
+            "h": 96.66666666666666
+          },
+          "title": {
+            "content": "Score",
+            "x": 410,
+            "y": 20,
+            "style": {}
+          },
+          "axes": [
+            {
+              "id": "x-axis",
+              "channel": "x",
+              "position": "bottom",
+              "scale": {
+                "type": "linear",
+                "domain": [
+                  0,
+                  4
+                ],
+                "range": [
+                  40,
+                  780
+                ]
+              },
+              "ticks": [
+                {
+                  "value": 0,
+                  "pixel": 40,
+                  "label": "0"
+                },
+                {
+                  "value": 0.5,
+                  "pixel": 132.5,
+                  "label": "",
+                  "minor": true
+                },
+                {
+                  "value": 1,
+                  "pixel": 225,
+                  "label": "1"
+                },
+                {
+                  "value": 1.5,
+                  "pixel": 317.5,
+                  "label": "",
+                  "minor": true
+                },
+                {
+                  "value": 2,
+                  "pixel": 410,
+                  "label": "2"
+                },
+                {
+                  "value": 2.5,
+                  "pixel": 502.5,
+                  "label": "",
+                  "minor": true
+                },
+                {
+                  "value": 3,
+                  "pixel": 595,
+                  "label": "3"
+                },
+                {
+                  "value": 3.5,
+                  "pixel": 687.5,
+                  "label": "",
+                  "minor": true
+                },
+                {
+                  "value": 4,
+                  "pixel": 780,
+                  "label": "4"
+                }
+              ],
+              "title": "day",
+              "domain": {
+                "x1": 40,
+                "y1": 146.66666666666666,
+                "x2": 780,
+                "y2": 146.66666666666666
+              },
+              "grid": [
+                {
+                  "x1": 40,
+                  "y1": 50,
+                  "x2": 40,
+                  "y2": 146.66666666666666
+                },
+                {
+                  "x1": 225,
+                  "y1": 50,
+                  "x2": 225,
+                  "y2": 146.66666666666666
+                },
+                {
+                  "x1": 410,
+                  "y1": 50,
+                  "x2": 410,
+                  "y2": 146.66666666666666
+                },
+                {
+                  "x1": 595,
+                  "y1": 50,
+                  "x2": 595,
+                  "y2": 146.66666666666666
+                },
+                {
+                  "x1": 780,
+                  "y1": 50,
+                  "x2": 780,
+                  "y2": 146.66666666666666
+                }
+              ],
+              "label_style": {},
+              "title_style": {}
+            },
+            {
+              "id": "y-axis",
+              "channel": "y",
+              "position": "left",
+              "scale": {
+                "type": "linear",
+                "domain": [
+                  0,
+                  0.7
+                ],
+                "range": [
+                  146.66666666666666,
+                  50
+                ]
+              },
+              "ticks": [
+                {
+                  "value": 0,
+                  "pixel": 146.66666666666666,
+                  "label": "0"
+                },
+                {
+                  "value": 0.05,
+                  "pixel": 139.76190476190476,
+                  "label": "",
+                  "minor": true
+                },
+                {
+                  "value": 0.1,
+                  "pixel": 132.85714285714283,
+                  "label": "0.1"
+                },
+                {
+                  "value": 0.15000000000000002,
+                  "pixel": 125.95238095238093,
+                  "label": "",
+                  "minor": true
+                },
+                {
+                  "value": 0.2,
+                  "pixel": 119.04761904761904,
+                  "label": "0.2"
+                },
+                {
+                  "value": 0.25,
+                  "pixel": 112.14285714285714,
+                  "label": "",
+                  "minor": true
+                },
+                {
+                  "value": 0.3,
+                  "pixel": 105.23809523809523,
+                  "label": "0.3"
+                },
+                {
+                  "value": 0.35,
+                  "pixel": 98.33333333333333,
+                  "label": "",
+                  "minor": true
+                },
+                {
+                  "value": 0.4,
+                  "pixel": 91.42857142857142,
+                  "label": "0.4"
+                },
+                {
+                  "value": 0.45,
+                  "pixel": 84.52380952380952,
+                  "label": "",
+                  "minor": true
+                },
+                {
+                  "value": 0.5,
+                  "pixel": 77.61904761904762,
+                  "label": "0.5"
+                },
+                {
+                  "value": 0.55,
+                  "pixel": 70.71428571428571,
+                  "label": "",
+                  "minor": true
+                },
+                {
+                  "value": 0.6,
+                  "pixel": 63.809523809523796,
+                  "label": "0.6"
+                },
+                {
+                  "value": 0.6499999999999999,
+                  "pixel": 56.90476190476191,
+                  "label": "",
+                  "minor": true
+                },
+                {
+                  "value": 0.7,
+                  "pixel": 50,
+                  "label": "0.7"
+                }
+              ],
+              "title": "score",
+              "domain": {
+                "x1": 40,
+                "y1": 50,
+                "x2": 40,
+                "y2": 146.66666666666666
+              },
+              "grid": [
+                {
+                  "x1": 40,
+                  "y1": 146.66666666666666,
+                  "x2": 780,
+                  "y2": 146.66666666666666
+                },
+                {
+                  "x1": 40,
+                  "y1": 132.85714285714283,
+                  "x2": 780,
+                  "y2": 132.85714285714283
+                },
+                {
+                  "x1": 40,
+                  "y1": 119.04761904761904,
+                  "x2": 780,
+                  "y2": 119.04761904761904
+                },
+                {
+                  "x1": 40,
+                  "y1": 105.23809523809523,
+                  "x2": 780,
+                  "y2": 105.23809523809523
+                },
+                {
+                  "x1": 40,
+                  "y1": 91.42857142857142,
+                  "x2": 780,
+                  "y2": 91.42857142857142
+                },
+                {
+                  "x1": 40,
+                  "y1": 77.61904761904762,
+                  "x2": 780,
+                  "y2": 77.61904761904762
+                },
+                {
+                  "x1": 40,
+                  "y1": 63.809523809523796,
+                  "x2": 780,
+                  "y2": 63.809523809523796
+                },
+                {
+                  "x1": 40,
+                  "y1": 50,
+                  "x2": 780,
+                  "y2": 50
+                }
+              ],
+              "label_style": {},
+              "title_style": {}
+            }
+          ],
+          "layers": [
+            {
+              "id": "layer-0",
+              "mark": "line",
+              "marks": [
+                {
+                  "type": "line",
+                  "id": "line-0",
+                  "style": {
+                    "stroke": {
+                      "r": 76,
+                      "g": 120,
+                      "b": 168,
+                      "a": 255
+                    },
+                    "stroke_width": 1.5,
+                    "opacity": 1
+                  },
+                  "datum": {
+                    "layer_id": "layer-0",
+                    "row_id": 0
+                  },
+                  "line": {
+                    "points": [
+                      [
+                        225,
+                        91.42857142857142
+                      ],
+                      [
+                        410,
+                        80.38095238095238
+                      ],
+                      [
+                        595,
+                        70.71428571428571
+                      ],
+                      [
+                        780,
+                        62.42857142857143
+                      ]
+                    ],
+                    "curve": "linear"
+                  }
+                }
+              ]
+            }
+          ]
+        }
+      },
+      {
+        "row": 1,
+        "col": 0,
+        "scene": {
+          "id": "scene-1",
+          "frame": {
+            "x": 0,
+            "y": 206.66666666666666,
+            "w": 800,
+            "h": 186.66666666666666
+          },
+          "plot": {
+            "x": 40,
+            "y": 256.66666666666663,
+            "w": 740,
+            "h": 96.66666666666666
+          },
+          "title": {
+            "content": "Revenue",
+            "x": 410,
+            "y": 226.66666666666666,
+            "style": {}
+          },
+          "axes": [
+            {
+              "id": "x-axis",
+              "channel": "x",
+              "position": "bottom",
+              "scale": {
+                "type": "linear",
+                "domain": [
+                  0,
+                  4
+                ],
+                "range": [
+                  40,
+                  780
+                ]
+              },
+              "ticks": [
+                {
+                  "value": 0,
+                  "pixel": 40,
+                  "label": "0"
+                },
+                {
+                  "value": 0.5,
+                  "pixel": 132.5,
+                  "label": "",
+                  "minor": true
+                },
+                {
+                  "value": 1,
+                  "pixel": 225,
+                  "label": "1"
+                },
+                {
+                  "value": 1.5,
+                  "pixel": 317.5,
+                  "label": "",
+                  "minor": true
+                },
+                {
+                  "value": 2,
+                  "pixel": 410,
+                  "label": "2"
+                },
+                {
+                  "value": 2.5,
+                  "pixel": 502.5,
+                  "label": "",
+                  "minor": true
+                },
+                {
+                  "value": 3,
+                  "pixel": 595,
+                  "label": "3"
+                },
+                {
+                  "value": 3.5,
+                  "pixel": 687.5,
+                  "label": "",
+                  "minor": true
+                },
+                {
+                  "value": 4,
+                  "pixel": 780,
+                  "label": "4"
+                }
+              ],
+              "title": "day",
+              "domain": {
+                "x1": 40,
+                "y1": 353.3333333333333,
+                "x2": 780,
+                "y2": 353.3333333333333
+              },
+              "grid": [
+                {
+                  "x1": 40,
+                  "y1": 256.66666666666663,
+                  "x2": 40,
+                  "y2": 353.3333333333333
+                },
+                {
+                  "x1": 225,
+                  "y1": 256.66666666666663,
+                  "x2": 225,
+                  "y2": 353.3333333333333
+                },
+                {
+                  "x1": 410,
+                  "y1": 256.66666666666663,
+                  "x2": 410,
+                  "y2": 353.3333333333333
+                },
+                {
+                  "x1": 595,
+                  "y1": 256.66666666666663,
+                  "x2": 595,
+                  "y2": 353.3333333333333
+                },
+                {
+                  "x1": 780,
+                  "y1": 256.66666666666663,
+                  "x2": 780,
+                  "y2": 353.3333333333333
+                }
+              ],
+              "label_style": {},
+              "title_style": {}
+            },
+            {
+              "id": "y-axis",
+              "channel": "y",
+              "position": "left",
+              "scale": {
+                "type": "linear",
+                "domain": [
+                  0,
+                  25
+                ],
+                "range": [
+                  146.66666666666666,
+                  50
+                ]
+              },
+              "ticks": [
+                {
+                  "value": 0,
+                  "pixel": 353.3333333333333,
+                  "label": "0"
+                },
+                {
+                  "value": 2.5,
+                  "pixel": 343.66666666666663,
+                  "label": "",
+                  "minor": true
+                },
+                {
+                  "value": 5,
+                  "pixel": 334,
+                  "label": "5"
+                },
+                {
+                  "value": 7.5,
+                  "pixel": 324.3333333333333,
+                  "label": "",
+                  "minor": true
+                },
+                {
+                  "value": 10,
+                  "pixel": 314.66666666666663,
+                  "label": "10"
+                },
+                {
+                  "value": 12.5,
+                  "pixel": 305,
+                  "label": "",
+                  "minor": true
+                },
+                {
+                  "value": 15,
+                  "pixel": 295.3333333333333,
+                  "label": "15"
+                },
+                {
+                  "value": 17.5,
+                  "pixel": 285.66666666666663,
+                  "label": "",
+                  "minor": true
+                },
+                {
+                  "value": 20,
+                  "pixel": 276,
+                  "label": "20"
+                },
+                {
+                  "value": 22.5,
+                  "pixel": 266.3333333333333,
+                  "label": "",
+                  "minor": true
+                },
+                {
+                  "value": 25,
+                  "pixel": 256.66666666666663,
+                  "label": "25"
+                }
+              ],
+              "title": "revenue",
+              "domain": {
+                "x1": 40,
+                "y1": 256.66666666666663,
+                "x2": 40,
+                "y2": 353.3333333333333
+              },
+              "grid": [
+                {
+                  "x1": 40,
+                  "y1": 353.3333333333333,
+                  "x2": 780,
+                  "y2": 353.3333333333333
+                },
+                {
+                  "x1": 40,
+                  "y1": 334,
+                  "x2": 780,
+                  "y2": 334
+                },
+                {
+                  "x1": 40,
+                  "y1": 314.66666666666663,
+                  "x2": 780,
+                  "y2": 314.66666666666663
+                },
+                {
+                  "x1": 40,
+                  "y1": 295.3333333333333,
+                  "x2": 780,
+                  "y2": 295.3333333333333
+                },
+                {
+                  "x1": 40,
+                  "y1": 276,
+                  "x2": 780,
+                  "y2": 276
+                },
+                {
+                  "x1": 40,
+                  "y1": 256.66666666666663,
+                  "x2": 780,
+                  "y2": 256.66666666666663
+                }
+              ],
+              "label_style": {},
+              "title_style": {}
+            }
+          ],
+          "layers": [
+            {
+              "id": "layer-0",
+              "mark": "line",
+              "marks": [
+                {
+                  "type": "line",
+                  "id": "line-0",
+                  "style": {
+                    "stroke": {
+                      "r": 76,
+                      "g": 120,
+                      "b": 168,
+                      "a": 255
+                    },
+                    "stroke_width": 1.5,
+                    "opacity": 1
+                  },
+                  "datum": {
+                    "layer_id": "layer-0",
+                    "row_id": 0
+                  },
+                  "line": {
+                    "points": [
+                      [
+                        225,
+                        306.93333333333334
+                      ],
+                      [
+                        410,
+                        295.3333333333333
+                      ],
+                      [
+                        595,
+                        283.73333333333335
+                      ],
+                      [
+                        780,
+                        268.26666666666665
+                      ]
+                    ],
+                    "curve": "linear"
+                  }
+                }
+              ]
+            }
+          ]
+        }
+      },
+      {
+        "row": 2,
+        "col": 0,
+        "scene": {
+          "id": "scene-2",
+          "frame": {
+            "x": 0,
+            "y": 413.3333333333333,
+            "w": 800,
+            "h": 186.66666666666666
+          },
+          "plot": {
+            "x": 40,
+            "y": 463.3333333333333,
+            "w": 740,
+            "h": 96.66666666666666
+          },
+          "title": {
+            "content": "Clicks",
+            "x": 410,
+            "y": 433.3333333333333,
+            "style": {}
+          },
+          "axes": [
+            {
+              "id": "x-axis",
+              "channel": "x",
+              "position": "bottom",
+              "scale": {
+                "type": "linear",
+                "domain": [
+                  0,
+                  4
+                ],
+                "range": [
+                  40,
+                  780
+                ]
+              },
+              "ticks": [
+                {
+                  "value": 0,
+                  "pixel": 40,
+                  "label": "0"
+                },
+                {
+                  "value": 0.5,
+                  "pixel": 132.5,
+                  "label": "",
+                  "minor": true
+                },
+                {
+                  "value": 1,
+                  "pixel": 225,
+                  "label": "1"
+                },
+                {
+                  "value": 1.5,
+                  "pixel": 317.5,
+                  "label": "",
+                  "minor": true
+                },
+                {
+                  "value": 2,
+                  "pixel": 410,
+                  "label": "2"
+                },
+                {
+                  "value": 2.5,
+                  "pixel": 502.5,
+                  "label": "",
+                  "minor": true
+                },
+                {
+                  "value": 3,
+                  "pixel": 595,
+                  "label": "3"
+                },
+                {
+                  "value": 3.5,
+                  "pixel": 687.5,
+                  "label": "",
+                  "minor": true
+                },
+                {
+                  "value": 4,
+                  "pixel": 780,
+                  "label": "4"
+                }
+              ],
+              "title": "day",
+              "domain": {
+                "x1": 40,
+                "y1": 560,
+                "x2": 780,
+                "y2": 560
+              },
+              "grid": [
+                {
+                  "x1": 40,
+                  "y1": 463.3333333333333,
+                  "x2": 40,
+                  "y2": 560
+                },
+                {
+                  "x1": 225,
+                  "y1": 463.3333333333333,
+                  "x2": 225,
+                  "y2": 560
+                },
+                {
+                  "x1": 410,
+                  "y1": 463.3333333333333,
+                  "x2": 410,
+                  "y2": 560
+                },
+                {
+                  "x1": 595,
+                  "y1": 463.3333333333333,
+                  "x2": 595,
+                  "y2": 560
+                },
+                {
+                  "x1": 780,
+                  "y1": 463.3333333333333,
+                  "x2": 780,
+                  "y2": 560
+                }
+              ],
+              "label_style": {},
+              "title_style": {}
+            },
+            {
+              "id": "y-axis",
+              "channel": "y",
+              "position": "left",
+              "scale": {
+                "type": "linear",
+                "domain": [
+                  0,
+                  250
+                ],
+                "range": [
+                  146.66666666666666,
+                  50
+                ]
+              },
+              "ticks": [
+                {
+                  "value": 0,
+                  "pixel": 560,
+                  "label": "0"
+                },
+                {
+                  "value": 25,
+                  "pixel": 550.3333333333333,
+                  "label": "",
+                  "minor": true
+                },
+                {
+                  "value": 50,
+                  "pixel": 540.6666666666666,
+                  "label": "50"
+                },
+                {
+                  "value": 75,
+                  "pixel": 531,
+                  "label": "",
+                  "minor": true
+                },
+                {
+                  "value": 100,
+                  "pixel": 521.3333333333333,
+                  "label": "100"
+                },
+                {
+                  "value": 125,
+                  "pixel": 511.66666666666663,
+                  "label": "",
+                  "minor": true
+                },
+                {
+                  "value": 150,
+                  "pixel": 502,
+                  "label": "150"
+                },
+                {
+                  "value": 175,
+                  "pixel": 492.3333333333333,
+                  "label": "",
+                  "minor": true
+                },
+                {
+                  "value": 200,
+                  "pixel": 482.66666666666663,
+                  "label": "200"
+                },
+                {
+                  "value": 225,
+                  "pixel": 473,
+                  "label": "",
+                  "minor": true
+                },
+                {
+                  "value": 250,
+                  "pixel": 463.3333333333333,
+                  "label": "250"
+                }
+              ],
+              "title": "clicks",
+              "domain": {
+                "x1": 40,
+                "y1": 463.3333333333333,
+                "x2": 40,
+                "y2": 560
+              },
+              "grid": [
+                {
+                  "x1": 40,
+                  "y1": 560,
+                  "x2": 780,
+                  "y2": 560
+                },
+                {
+                  "x1": 40,
+                  "y1": 540.6666666666666,
+                  "x2": 780,
+                  "y2": 540.6666666666666
+                },
+                {
+                  "x1": 40,
+                  "y1": 521.3333333333333,
+                  "x2": 780,
+                  "y2": 521.3333333333333
+                },
+                {
+                  "x1": 40,
+                  "y1": 502,
+                  "x2": 780,
+                  "y2": 502
+                },
+                {
+                  "x1": 40,
+                  "y1": 482.66666666666663,
+                  "x2": 780,
+                  "y2": 482.66666666666663
+                },
+                {
+                  "x1": 40,
+                  "y1": 463.3333333333333,
+                  "x2": 780,
+                  "y2": 463.3333333333333
+                }
+              ],
+              "label_style": {},
+              "title_style": {}
+            }
+          ],
+          "layers": [
+            {
+              "id": "layer-0",
+              "mark": "line",
+              "marks": [
+                {
+                  "type": "line",
+                  "id": "line-0",
+                  "style": {
+                    "stroke": {
+                      "r": 76,
+                      "g": 120,
+                      "b": 168,
+                      "a": 255
+                    },
+                    "stroke_width": 1.5,
+                    "opacity": 1
+                  },
+                  "datum": {
+                    "layer_id": "layer-0",
+                    "row_id": 0
+                  },
+                  "line": {
+                    "points": [
+                      [
+                        225,
+                        521.3333333333333
+                      ],
+                      [
+                        410,
+                        509.7333333333333
+                      ],
+                      [
+                        595,
+                        492.3333333333333
+                      ],
+                      [
+                        780,
+                        478.79999999999995
+                      ]
+                    ],
+                    "curve": "linear"
+                  }
+                }
+              ]
+            }
+          ]
+        }
+      }
+    ],
+    "shared": {}
+  }
+}

@@ -1,0 +1,17 @@
+{
+  "$schema": "urn:prism:schema:v1:spec",
+  "title": "Region share (pie)",
+  "data": {
+    "name": "shares",
+    "values": [
+      {"region": "NA", "value": 42},
+      {"region": "EU", "value": 31},
+      {"region": "APAC", "value": 27}
+    ]
+  },
+  "mark": "pie",
+  "encoding": {
+    "theta": {"field": "value",  "type": "quantitative"},
+    "color": {"field": "region", "type": "nominal"}
+  }
+}

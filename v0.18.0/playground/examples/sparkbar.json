@@ -1,0 +1,26 @@
+{
+  "$schema": "urn:prism:schema:v1:spec",
+  "title": "Sparkbar (12-month volume)",
+  "data": {
+    "name": "monthly",
+    "values": [
+      {"month": "Jan", "v": 12},
+      {"month": "Feb", "v": 18},
+      {"month": "Mar", "v": 9},
+      {"month": "Apr", "v": 22},
+      {"month": "May", "v": 28},
+      {"month": "Jun", "v": 14},
+      {"month": "Jul", "v": 7},
+      {"month": "Aug", "v": 19},
+      {"month": "Sep", "v": 25},
+      {"month": "Oct", "v": 31},
+      {"month": "Nov", "v": 16},
+      {"month": "Dec", "v": 23}
+    ]
+  },
+  "mark": "sparkbar",
+  "encoding": {
+    "x": {"field": "month", "type": "nominal"},
+    "y": {"field": "v", "type": "quantitative"}
+  }
+}

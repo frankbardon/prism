@@ -1,0 +1,44 @@
+{
+  "$schema": "urn:prism:schema:v1:spec",
+  "title": "Support contacts by channel (streamgraph)",
+  "mark": {"type": "area", "interpolate": "monotone", "opacity": 0.9},
+  "data": {
+    "values": [
+      {"week": 1, "channel": "email", "contacts": 120},
+      {"week": 2, "channel": "email", "contacts": 150},
+      {"week": 3, "channel": "email", "contacts": 190},
+      {"week": 4, "channel": "email", "contacts": 165},
+      {"week": 5, "channel": "email", "contacts": 130},
+      {"week": 6, "channel": "email", "contacts": 110},
+      {"week": 1, "channel": "chat", "contacts": 40},
+      {"week": 2, "channel": "chat", "contacts": 95},
+      {"week": 3, "channel": "chat", "contacts": 210},
+      {"week": 4, "channel": "chat", "contacts": 330},
+      {"week": 5, "channel": "chat", "contacts": 300},
+      {"week": 6, "channel": "chat", "contacts": 240},
+      {"week": 1, "channel": "phone", "contacts": 220},
+      {"week": 2, "channel": "phone", "contacts": 180},
+      {"week": 3, "channel": "phone", "contacts": 140},
+      {"week": 4, "channel": "phone", "contacts": 105},
+      {"week": 5, "channel": "phone", "contacts": 85},
+      {"week": 6, "channel": "phone", "contacts": 70},
+      {"week": 1, "channel": "forum", "contacts": 30},
+      {"week": 2, "channel": "forum", "contacts": 45},
+      {"week": 3, "channel": "forum", "contacts": 60},
+      {"week": 4, "channel": "forum", "contacts": 110},
+      {"week": 5, "channel": "forum", "contacts": 175},
+      {"week": 6, "channel": "forum", "contacts": 260}
+    ]
+  },
+  "encoding": {
+    "x": {"field": "week", "type": "quantitative", "axis": {"title": "week"}},
+    "y": {
+      "aggregate": "sum",
+      "field": "contacts",
+      "type": "quantitative",
+      "stack": "center",
+      "axis": {"title": "contacts (centred)"}
+    },
+    "color": {"field": "channel", "type": "nominal"}
+  }
+}

@@ -1,0 +1,401 @@
+{
+  "version": "1.0",
+  "theme": {
+    "name": "light",
+    "color_axis": {
+      "r": 107,
+      "g": 114,
+      "b": 128,
+      "a": 255
+    },
+    "color_grid": {
+      "r": 229,
+      "g": 231,
+      "b": 235,
+      "a": 255
+    },
+    "color_text": {
+      "r": 17,
+      "g": 24,
+      "b": 39,
+      "a": 255
+    },
+    "background": "transparent",
+    "font_sans": "Inter, system-ui, sans-serif",
+    "font_mono": "ui-monospace, SF Mono, monospace",
+    "css": "\u003cstyle\u003e:root{--prism-color-axis:#6b7280;--prism-color-grid:#e5e7eb;--prism-color-text:#111827;--prism-color-bg:transparent;--prism-font-sans:Inter, system-ui, sans-serif;--prism-font-mono:ui-monospace, SF Mono, monospace;--prism-font-size-label:11px;--prism-font-size-title:16px;--prism-font-size-axis-title:12px;--prism-axis-domain-color:#6b7280;--prism-axis-domain-width:1px;--prism-axis-tick-color:#6b7280;--prism-axis-tick-width:1px;--prism-axis-tick-size:5px;--prism-grid-color:#e5e7eb;--prism-grid-width:1px;--prism-axis-label-color:#111827;--prism-axis-label-font-size:11px;--prism-axis-label-padding:4px;--prism-axis-title-color:#111827;--prism-axis-title-font-size:12px;--prism-axis-title-padding:8px;--prism-legend-padding:8px;--prism-legend-symbol-size:64px;--prism-legend-label-color:#111827;--prism-legend-label-font-size:11px;--prism-legend-title-color:#111827;--prism-legend-title-font-size:12px;--prism-legend-title-font-weight:600;--prism-legend-row-padding:4px;--prism-title-color:#111827;--prism-title-font-size:16px;--prism-title-font-weight:600;--prism-title-anchor:start;--prism-title-padding:12px;--prism-view-bg:transparent;--prism-view-padding:0px;--prism-mark-fill:#4c78a8;--prism-mark-stroke-width:0px;--prism-mark-opacity:1;--prism-mark-line-fill:transparent;--prism-mark-line-stroke:#4c78a8;--prism-mark-line-stroke-width:1.5px;--prism-deselected-opacity:0.3;--prism-selected-opacity:1;}.prism-axis-domain{stroke:var(--prism-axis-domain-color,var(--prism-color-axis));stroke-width:var(--prism-axis-domain-width,1px);fill:none;}.prism-axis-tick{stroke:var(--prism-axis-tick-color,var(--prism-color-axis));stroke-width:var(--prism-axis-tick-width,1px);}.prism-axis-label{fill:var(--prism-axis-label-color,var(--prism-color-text));font-family:var(--prism-font-sans);font-size:var(--prism-axis-label-font-size,var(--prism-font-size-label,11px));font-weight:var(--prism-axis-label-font-weight,400);}.prism-axis-title{fill:var(--prism-axis-title-color,var(--prism-color-text));font-family:var(--prism-font-sans);font-size:var(--prism-axis-title-font-size,var(--prism-font-size-axis-title,12px));font-weight:var(--prism-axis-title-font-weight,600);}.prism-grid-line{stroke:var(--prism-grid-color,var(--prism-color-grid));stroke-width:var(--prism-grid-width,1px);}.prism-title{fill:var(--prism-title-color,var(--prism-color-text));font-family:var(--prism-font-sans);font-size:var(--prism-title-font-size,var(--prism-font-size-title,16px));font-weight:var(--prism-title-font-weight,600);}.prism-legend-title{fill:var(--prism-legend-title-color,var(--prism-color-text));font-family:var(--prism-font-sans);font-size:var(--prism-legend-title-font-size,12px);font-weight:var(--prism-legend-title-font-weight,600);}.prism-legend-label{fill:var(--prism-legend-label-color,var(--prism-color-text));font-family:var(--prism-font-sans);font-size:var(--prism-legend-label-font-size,11px);}.prism-legend-swatch{stroke:none;}.prism-selected{opacity:var(--prism-selected-opacity,1);}.prism-deselected{opacity:var(--prism-deselected-opacity,0.3);}\u003c/style\u003e",
+    "axis_tick_size": 5,
+    "axis_label_padding": 4,
+    "axis_title_padding": 8
+  },
+  "grid": {
+    "layout": {
+      "rows": 1,
+      "cols": 1,
+      "headers": {}
+    },
+    "cells": [
+      {
+        "row": 0,
+        "col": 0,
+        "scene": {
+          "id": "scene-0",
+          "frame": {
+            "x": 0,
+            "y": 0,
+            "w": 800,
+            "h": 600
+          },
+          "plot": {
+            "x": 40,
+            "y": 50,
+            "w": 740,
+            "h": 510
+          },
+          "title": {
+            "content": "Unmeasured period keeps its place",
+            "x": 410,
+            "y": 20,
+            "style": {}
+          },
+          "axes": [
+            {
+              "id": "x-axis",
+              "channel": "x",
+              "position": "bottom",
+              "scale": {
+                "type": "band",
+                "domain": [
+                  "FY25 Q1",
+                  "FY25 Q2",
+                  "FY25 Q3",
+                  "FY25 Q4",
+                  "FY26 Q1",
+                  "FY26 Q2"
+                ],
+                "range": [
+                  40,
+                  780
+                ],
+                "padding": 0.1
+              },
+              "ticks": [
+                {
+                  "value": "FY25 Q1",
+                  "pixel": 101.66666666666669,
+                  "label": "FY25 Q1"
+                },
+                {
+                  "value": "FY25 Q2",
+                  "pixel": 225,
+                  "label": "FY25 Q2"
+                },
+                {
+                  "value": "FY25 Q3",
+                  "pixel": 348.33333333333337,
+                  "label": "FY25 Q3"
+                },
+                {
+                  "value": "FY25 Q4",
+                  "pixel": 471.6666666666667,
+                  "label": "FY25 Q4"
+                },
+                {
+                  "value": "FY26 Q1",
+                  "pixel": 595,
+                  "label": "FY26 Q1"
+                },
+                {
+                  "value": "FY26 Q2",
+                  "pixel": 718.3333333333333,
+                  "label": "FY26 Q2"
+                }
+              ],
+              "title": "Quarter",
+              "domain": {
+                "x1": 40,
+                "y1": 560,
+                "x2": 780,
+                "y2": 560
+              },
+              "grid": [
+                {
+                  "x1": 101.66666666666669,
+                  "y1": 50,
+                  "x2": 101.66666666666669,
+                  "y2": 560
+                },
+                {
+                  "x1": 225,
+                  "y1": 50,
+                  "x2": 225,
+                  "y2": 560
+                },
+                {
+                  "x1": 348.33333333333337,
+                  "y1": 50,
+                  "x2": 348.33333333333337,
+                  "y2": 560
+                },
+                {
+                  "x1": 471.6666666666667,
+                  "y1": 50,
+                  "x2": 471.6666666666667,
+                  "y2": 560
+                },
+                {
+                  "x1": 595,
+                  "y1": 50,
+                  "x2": 595,
+                  "y2": 560
+                },
+                {
+                  "x1": 718.3333333333333,
+                  "y1": 50,
+                  "x2": 718.3333333333333,
+                  "y2": 560
+                }
+              ],
+              "label_style": {},
+              "title_style": {}
+            },
+            {
+              "id": "y-axis",
+              "channel": "y",
+              "position": "left",
+              "scale": {
+                "type": "linear",
+                "domain": [
+                  0,
+                  60
+                ],
+                "range": [
+                  560,
+                  50
+                ]
+              },
+              "ticks": [
+                {
+                  "value": 0,
+                  "pixel": 560,
+                  "label": "0"
+                },
+                {
+                  "value": 5,
+                  "pixel": 517.5,
+                  "label": "",
+                  "minor": true
+                },
+                {
+                  "value": 10,
+                  "pixel": 475,
+                  "label": "10"
+                },
+                {
+                  "value": 15,
+                  "pixel": 432.5,
+                  "label": "",
+                  "minor": true
+                },
+                {
+                  "value": 20,
+                  "pixel": 390,
+                  "label": "20"
+                },
+                {
+                  "value": 25,
+                  "pixel": 347.5,
+                  "label": "",
+                  "minor": true
+                },
+                {
+                  "value": 30,
+                  "pixel": 305,
+                  "label": "30"
+                },
+                {
+                  "value": 35,
+                  "pixel": 262.5,
+                  "label": "",
+                  "minor": true
+                },
+                {
+                  "value": 40,
+                  "pixel": 220,
+                  "label": "40"
+                },
+                {
+                  "value": 45,
+                  "pixel": 177.5,
+                  "label": "",
+                  "minor": true
+                },
+                {
+                  "value": 50,
+                  "pixel": 135,
+                  "label": "50"
+                },
+                {
+                  "value": 55,
+                  "pixel": 92.5,
+                  "label": "",
+                  "minor": true
+                },
+                {
+                  "value": 60,
+                  "pixel": 50,
+                  "label": "60"
+                }
+              ],
+              "title": "NPS",
+              "domain": {
+                "x1": 40,
+                "y1": 50,
+                "x2": 40,
+                "y2": 560
+              },
+              "grid": [
+                {
+                  "x1": 40,
+                  "y1": 560,
+                  "x2": 780,
+                  "y2": 560
+                },
+                {
+                  "x1": 40,
+                  "y1": 475,
+                  "x2": 780,
+                  "y2": 475
+                },
+                {
+                  "x1": 40,
+                  "y1": 390,
+                  "x2": 780,
+                  "y2": 390
+                },
+                {
+                  "x1": 40,
+                  "y1": 305,
+                  "x2": 780,
+                  "y2": 305
+                },
+                {
+                  "x1": 40,
+                  "y1": 220,
+                  "x2": 780,
+                  "y2": 220
+                },
+                {
+                  "x1": 40,
+                  "y1": 135,
+                  "x2": 780,
+                  "y2": 135
+                },
+                {
+                  "x1": 40,
+                  "y1": 50,
+                  "x2": 780,
+                  "y2": 50
+                }
+              ],
+              "label_style": {},
+              "title_style": {}
+            }
+          ],
+          "layers": [
+            {
+              "id": "layer-0",
+              "mark": "line",
+              "marks": [
+                {
+                  "type": "line",
+                  "id": "line-0-0",
+                  "style": {
+                    "stroke": {
+                      "r": 76,
+                      "g": 120,
+                      "b": 168,
+                      "a": 255
+                    },
+                    "stroke_width": 2,
+                    "opacity": 1
+                  },
+                  "datum": {
+                    "layer_id": "layer-0",
+                    "row_id": 0
+                  },
+                  "line": {
+                    "points": [
+                      [
+                        101.66666666666669,
+                        296.5
+                      ],
+                      [
+                        225,
+                        237
+                      ],
+                      [
+                        348.33333333333337,
+                        203
+                      ]
+                    ],
+                    "curve": "linear"
+                  }
+                },
+                {
+                  "type": "line",
+                  "id": "line-0-1",
+                  "style": {
+                    "stroke": {
+                      "r": 76,
+                      "g": 120,
+                      "b": 168,
+                      "a": 255
+                    },
+                    "stroke_width": 2,
+                    "opacity": 1
+                  },
+                  "datum": {
+                    "layer_id": "layer-0",
+                    "row_id": 1
+                  },
+                  "line": {
+                    "points": [
+                      [
+                        595,
+                        160.5
+                      ],
+                      [
+                        718.3333333333333,
+                        126.5
+                      ]
+                    ],
+                    "curve": "linear"
+                  }
+                }
+              ]
+            }
+          ]
+        }
+      }
+    ],
+    "shared": {}
+  },
+  "warnings": [
+    {
+      "code": "PRISM_WARN_NULL_DROPPED",
+      "layer": "layer-0",
+      "message": "1 rows carried null values on encoding channels y; they keep their place on the axis and paths break at the gap.",
+      "details": {
+        "channels": [
+          "y"
+        ],
+        "count": 1,
+        "fields": [
+          "nps"
+        ],
+        "invalid": "break"
+      }
+    }
+  ]
+}

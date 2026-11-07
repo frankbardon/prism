@@ -1,0 +1,19 @@
+{
+  "$schema": "urn:prism:schema:v1:spec",
+  "title": "Latency distribution",
+  "data": {
+    "name": "samples",
+    "values": [
+      {"ms":  45}, {"ms":  52}, {"ms":  61}, {"ms":  68}, {"ms":  72},
+      {"ms":  78}, {"ms":  81}, {"ms":  85}, {"ms":  90}, {"ms":  94},
+      {"ms":  98}, {"ms": 102}, {"ms": 108}, {"ms": 112}, {"ms": 118},
+      {"ms": 122}, {"ms": 128}, {"ms": 135}, {"ms": 142}, {"ms": 158},
+      {"ms": 175}, {"ms": 192}, {"ms": 210}, {"ms": 235}, {"ms": 280}
+    ]
+  },
+  "mark": "histogram",
+  "encoding": {
+    "x": {"field": "ms",    "type": "quantitative", "bin": true},
+    "y": {"aggregate": "count", "type": "quantitative"}
+  }
+}

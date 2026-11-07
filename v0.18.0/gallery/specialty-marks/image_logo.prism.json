@@ -1,0 +1,13 @@
+{
+  "$schema": "urn:prism:schema:v1:spec",
+  "data": {
+    "name": "empty",
+    "values": [{"_": 0}]
+  },
+  "mark": {
+    "type": "image",
+    "url": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYAAAAAYAAjCB0C8AAAAASUVORK5CYII=",
+    "size": 64
+  },
+  "encoding": {}
+}

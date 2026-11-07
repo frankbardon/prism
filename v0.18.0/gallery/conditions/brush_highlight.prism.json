@@ -1,0 +1,28 @@
+{
+  "$schema": "urn:prism:schema:v1:spec",
+  "title": "Highlight bars matching a brush selection",
+  "data": {
+    "name": "regional_scores",
+    "values": [
+      {"region": "west",   "score": 0.42},
+      {"region": "east",   "score": 0.91},
+      {"region": "north",  "score": 0.68},
+      {"region": "south",  "score": 0.55},
+      {"region": "central","score": 0.73}
+    ]
+  },
+  "selection": {
+    "brush": {"type": "interval", "encodings": ["x"]}
+  },
+  "mark": "bar",
+  "encoding": {
+    "x": {"field": "region", "type": "nominal"},
+    "y": {"field": "score",  "type": "quantitative"},
+    "color": {
+      "condition": [
+        {"selection": "brush", "value": "#22c55e"}
+      ],
+      "value": "#cbd5e1"
+    }
+  }
+}

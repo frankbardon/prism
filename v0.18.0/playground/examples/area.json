@@ -1,0 +1,21 @@
+{
+  "$schema": "urn:prism:schema:v1:spec",
+  "title": "Cumulative signups",
+  "data": {
+    "name": "signups",
+    "values": [
+      {"day": "2026-01-01", "count":  12},
+      {"day": "2026-01-02", "count":  31},
+      {"day": "2026-01-03", "count":  55},
+      {"day": "2026-01-04", "count":  82},
+      {"day": "2026-01-05", "count": 121},
+      {"day": "2026-01-06", "count": 168},
+      {"day": "2026-01-07", "count": 220}
+    ]
+  },
+  "mark": {"type": "area", "fill_opacity": 0.4, "stroke_width": 2},
+  "encoding": {
+    "x": {"field": "day",   "type": "temporal"},
+    "y": {"field": "count", "type": "quantitative"}
+  }
+}

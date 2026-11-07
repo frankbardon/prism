@@ -1,0 +1,89 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 600" overflow="hidden">
+  <style>:root{--prism-color-axis:#6b7280;--prism-color-grid:#e5e7eb;--prism-color-text:#111827;--prism-color-bg:transparent;--prism-font-sans:Inter, system-ui, sans-serif;--prism-font-mono:ui-monospace, SF Mono, monospace;--prism-font-size-label:11px;--prism-font-size-title:16px;--prism-font-size-axis-title:12px;--prism-axis-domain-color:#6b7280;--prism-axis-domain-width:1px;--prism-axis-tick-color:#6b7280;--prism-axis-tick-width:1px;--prism-axis-tick-size:5px;--prism-grid-color:#e5e7eb;--prism-grid-width:1px;--prism-axis-label-color:#111827;--prism-axis-label-font-size:11px;--prism-axis-label-padding:4px;--prism-axis-title-color:#111827;--prism-axis-title-font-size:12px;--prism-axis-title-padding:8px;--prism-legend-padding:8px;--prism-legend-symbol-size:64px;--prism-legend-label-color:#111827;--prism-legend-label-font-size:11px;--prism-legend-title-color:#111827;--prism-legend-title-font-size:12px;--prism-legend-title-font-weight:600;--prism-legend-row-padding:4px;--prism-title-color:#111827;--prism-title-font-size:16px;--prism-title-font-weight:600;--prism-title-anchor:start;--prism-title-padding:12px;--prism-view-bg:transparent;--prism-view-padding:0px;--prism-mark-fill:#4c78a8;--prism-mark-stroke-width:0px;--prism-mark-opacity:1;--prism-mark-bar-fill:#4c78a8;--prism-mark-bar-corner-radius:0px;--prism-deselected-opacity:0.3;--prism-selected-opacity:1;}.prism-axis-domain{stroke:var(--prism-axis-domain-color,var(--prism-color-axis));stroke-width:var(--prism-axis-domain-width,1px);fill:none;}.prism-axis-tick{stroke:var(--prism-axis-tick-color,var(--prism-color-axis));stroke-width:var(--prism-axis-tick-width,1px);}.prism-axis-label{fill:var(--prism-axis-label-color,var(--prism-color-text));font-family:var(--prism-font-sans);font-size:var(--prism-axis-label-font-size,var(--prism-font-size-label,11px));font-weight:var(--prism-axis-label-font-weight,400);}.prism-axis-title{fill:var(--prism-axis-title-color,var(--prism-color-text));font-family:var(--prism-font-sans);font-size:var(--prism-axis-title-font-size,var(--prism-font-size-axis-title,12px));font-weight:var(--prism-axis-title-font-weight,600);}.prism-grid-line{stroke:var(--prism-grid-color,var(--prism-color-grid));stroke-width:var(--prism-grid-width,1px);}.prism-title{fill:var(--prism-title-color,var(--prism-color-text));font-family:var(--prism-font-sans);font-size:var(--prism-title-font-size,var(--prism-font-size-title,16px));font-weight:var(--prism-title-font-weight,600);}.prism-legend-title{fill:var(--prism-legend-title-color,var(--prism-color-text));font-family:var(--prism-font-sans);font-size:var(--prism-legend-title-font-size,12px);font-weight:var(--prism-legend-title-font-weight,600);}.prism-legend-label{fill:var(--prism-legend-label-color,var(--prism-color-text));font-family:var(--prism-font-sans);font-size:var(--prism-legend-label-font-size,11px);}.prism-legend-swatch{stroke:none;}.prism-selected{opacity:var(--prism-selected-opacity,1);}.prism-deselected{opacity:var(--prism-deselected-opacity,0.3);}</style>
+
+  <g class="prism-scene" data-scene-id="scene-r0-c0-0">
+    <g class="prism-plot">
+      <g class="prism-layer" data-layer-id="layer-0" data-prism-layer="layer-0">
+        <rect class="prism-mark-bar" data-prism-id="bar-0" data-prism-datum-row="0" x="102.889" y="77.8" width="52" height="83.533" fill="#4c78a8"/>
+      </g>
+    </g>
+  </g>
+
+  <g class="prism-scene" data-scene-id="scene-r0-c1-0">
+    <g class="prism-plot">
+      <g class="prism-layer" data-layer-id="layer-0" data-prism-layer="layer-0">
+        <rect class="prism-mark-bar" data-prism-id="bar-0" data-prism-datum-row="0" x="414" y="51.944" width="52" height="109.389" fill="#4c78a8"/>
+      </g>
+    </g>
+  </g>
+
+  <g class="prism-scene" data-scene-id="scene-r0-c2-0">
+    <g class="prism-plot">
+      <g class="prism-layer" data-layer-id="layer-0" data-prism-layer="layer-0">
+        <rect class="prism-mark-bar" data-prism-id="bar-0" data-prism-datum-row="0" x="725.111" y="65.867" width="52" height="95.467" fill="#4c78a8"/>
+      </g>
+    </g>
+  </g>
+
+  <g class="prism-scene" data-scene-id="scene-r1-c0-0">
+    <g class="prism-plot">
+      <g class="prism-layer" data-layer-id="layer-0" data-prism-layer="layer-0">
+        <rect class="prism-mark-bar" data-prism-id="bar-0" data-prism-datum-row="0" x="102.889" y="299.011" width="52" height="61.656" fill="#4c78a8"/>
+      </g>
+    </g>
+  </g>
+
+  <g class="prism-scene" data-scene-id="scene-r1-c1-0">
+    <g class="prism-plot">
+      <g class="prism-layer" data-layer-id="layer-0" data-prism-layer="layer-0">
+        <rect class="prism-mark-bar" data-prism-id="bar-0" data-prism-datum-row="0" x="414" y="263.211" width="52" height="97.456" fill="#4c78a8"/>
+      </g>
+    </g>
+  </g>
+
+  <g class="prism-scene" data-scene-id="scene-r1-c2-0">
+    <g class="prism-plot">
+      <g class="prism-layer" data-layer-id="layer-0" data-prism-layer="layer-0">
+        <rect class="prism-mark-bar" data-prism-id="bar-0" data-prism-datum-row="0" x="725.111" y="287.078" width="52" height="73.589" fill="#4c78a8"/>
+      </g>
+    </g>
+  </g>
+
+  <g class="prism-scene" data-scene-id="scene-r2-c0-0">
+    <g class="prism-plot">
+      <g class="prism-layer" data-layer-id="layer-0" data-prism-layer="layer-0">
+        <rect class="prism-mark-bar" data-prism-id="bar-0" data-prism-datum-row="0" x="102.889" y="458.567" width="52" height="101.433" fill="#4c78a8"/>
+      </g>
+    </g>
+  </g>
+
+  <g class="prism-scene" data-scene-id="scene-r2-c1-0">
+    <g class="prism-plot">
+      <g class="prism-layer" data-layer-id="layer-0" data-prism-layer="layer-0">
+        <rect class="prism-mark-bar" data-prism-id="bar-0" data-prism-datum-row="0" x="414" y="470.5" width="52" height="89.5" fill="#4c78a8"/>
+      </g>
+    </g>
+  </g>
+
+  <g class="prism-scene" data-scene-id="scene-r2-c2-0">
+    <g class="prism-plot">
+      <g class="prism-layer" data-layer-id="layer-0" data-prism-layer="layer-0">
+        <rect class="prism-mark-bar" data-prism-id="bar-0" data-prism-datum-row="0" x="725.111" y="482.433" width="52" height="77.567" fill="#4c78a8"/>
+      </g>
+    </g>
+  </g>
+
+  <g class="prism-axes" data-shared="true">
+    <g class="prism-axis prism-axis-x" data-prism-axis-id="x-axis"><line class="prism-grid-line" x1="68.889" y1="440.667" x2="68.889" y2="560"/><line class="prism-grid-line" x1="126.667" y1="440.667" x2="126.667" y2="560"/><line class="prism-grid-line" x1="184.444" y1="440.667" x2="184.444" y2="560"/><line class="prism-axis-domain" x1="606.667" y1="560" x2="780" y2="560"/><line class="prism-axis-tick" x1="68.889" y1="161.333" x2="68.889" y2="166.333"/><text class="prism-axis-label" x="68.889" y="179.333" text-anchor="middle">alpha</text><line class="prism-axis-tick" x1="126.667" y1="161.333" x2="126.667" y2="166.333"/><text class="prism-axis-label" x="126.667" y="179.333" text-anchor="middle">beta</text><line class="prism-axis-tick" x1="184.444" y1="161.333" x2="184.444" y2="166.333"/><text class="prism-axis-label" x="184.444" y="179.333" text-anchor="middle">gamma</text><text class="prism-axis-title" x="186.667" y="195.333" text-anchor="middle">brand</text></g>
+    <g class="prism-axis prism-axis-y" data-prism-axis-id="y-axis"><line class="prism-grid-line" x1="100" y1="139.333" x2="273.333" y2="139.333"/><line class="prism-grid-line" x1="100" y1="119.444" x2="273.333" y2="119.444"/><line class="prism-grid-line" x1="100" y1="99.556" x2="273.333" y2="99.556"/><line class="prism-grid-line" x1="100" y1="79.667" x2="273.333" y2="79.667"/><line class="prism-grid-line" x1="100" y1="59.778" x2="273.333" y2="59.778"/><line class="prism-grid-line" x1="100" y1="39.889" x2="273.333" y2="39.889"/><line class="prism-grid-line" x1="100" y1="20" x2="273.333" y2="20"/><line class="prism-axis-domain" x1="100" y1="42" x2="100" y2="161.333"/><line class="prism-axis-tick" x1="100" y1="139.333" x2="95" y2="139.333"/><text class="prism-axis-label" x="92" y="143.333" text-anchor="end">0</text><line class="prism-axis-tick" x1="100" y1="129.389" x2="97" y2="129.389"/><line class="prism-axis-tick" x1="100" y1="119.444" x2="95" y2="119.444"/><text class="prism-axis-label" x="92" y="123.444" text-anchor="end">0.1</text><line class="prism-axis-tick" x1="100" y1="109.5" x2="97" y2="109.5"/><line class="prism-axis-tick" x1="100" y1="99.556" x2="95" y2="99.556"/><text class="prism-axis-label" x="92" y="103.556" text-anchor="end">0.2</text><line class="prism-axis-tick" x1="100" y1="89.611" x2="97" y2="89.611"/><line class="prism-axis-tick" x1="100" y1="79.667" x2="95" y2="79.667"/><text class="prism-axis-label" x="92" y="83.667" text-anchor="end">0.3</text><line class="prism-axis-tick" x1="100" y1="69.722" x2="97" y2="69.722"/><line class="prism-axis-tick" x1="100" y1="59.778" x2="95" y2="59.778"/><text class="prism-axis-label" x="92" y="63.778" text-anchor="end">0.4</text><line class="prism-axis-tick" x1="100" y1="49.833" x2="97" y2="49.833"/><line class="prism-axis-tick" x1="100" y1="39.889" x2="95" y2="39.889"/><text class="prism-axis-label" x="92" y="43.889" text-anchor="end">0.5</text><line class="prism-axis-tick" x1="100" y1="29.944" x2="97" y2="29.944"/><line class="prism-axis-tick" x1="100" y1="20" x2="95" y2="20"/><text class="prism-axis-label" x="92" y="24" text-anchor="end">0.6</text><text class="prism-axis-title" x="70" y="101.667" text-anchor="middle" transform="rotate(-90 70 101.667)">score</text></g>
+  </g>
+
+  <g class="prism-grid-headers">
+    <text class="prism-facet-header prism-facet-header-top" x="176.667" y="14" text-anchor="middle">brand = alpha</text>
+    <text class="prism-facet-header prism-facet-header-top" x="430" y="14" text-anchor="middle">brand = beta</text>
+    <text class="prism-facet-header prism-facet-header-top" x="683.333" y="14" text-anchor="middle">brand = gamma</text>
+    <text class="prism-facet-header prism-facet-header-left" x="6" y="111.667" text-anchor="start">region = NA</text>
+    <text class="prism-facet-header prism-facet-header-left" x="6" y="311" text-anchor="start">region = EU</text>
+    <text class="prism-facet-header prism-facet-header-left" x="6" y="510.333" text-anchor="start">region = APAC</text>
+  </g>
+</svg>

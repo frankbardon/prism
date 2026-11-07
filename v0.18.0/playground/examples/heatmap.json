@@ -1,0 +1,30 @@
+{
+  "$schema": "urn:prism:schema:v1:spec",
+  "title": "Activity heatmap (day x hour)",
+  "data": {
+    "name": "activity",
+    "values": [
+      {"day": "Mon", "hour": "09:00", "count":  3},
+      {"day": "Mon", "hour": "12:00", "count": 12},
+      {"day": "Mon", "hour": "17:00", "count":  8},
+      {"day": "Tue", "hour": "09:00", "count":  5},
+      {"day": "Tue", "hour": "12:00", "count": 18},
+      {"day": "Tue", "hour": "17:00", "count": 11},
+      {"day": "Wed", "hour": "09:00", "count":  4},
+      {"day": "Wed", "hour": "12:00", "count": 22},
+      {"day": "Wed", "hour": "17:00", "count": 14},
+      {"day": "Thu", "hour": "09:00", "count":  6},
+      {"day": "Thu", "hour": "12:00", "count": 19},
+      {"day": "Thu", "hour": "17:00", "count": 13},
+      {"day": "Fri", "hour": "09:00", "count":  4},
+      {"day": "Fri", "hour": "12:00", "count": 16},
+      {"day": "Fri", "hour": "17:00", "count":  7}
+    ]
+  },
+  "mark": "heatmap",
+  "encoding": {
+    "x":     {"field": "day",   "type": "nominal"},
+    "y":     {"field": "hour",  "type": "nominal"},
+    "color": {"field": "count", "type": "quantitative"}
+  }
+}

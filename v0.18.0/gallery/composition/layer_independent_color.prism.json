@@ -1,0 +1,37 @@
+{
+  "$schema": "urn:prism:schema:v1:spec",
+  "title": "Independent color legends per layer",
+  "resolve": {"scale": {"color": "independent"}},
+  "layer": [
+    {
+      "$schema": "urn:prism:schema:v1:spec",
+      "data": {"values": [
+        {"x": "north", "y": 30, "team": "alpha"},
+        {"x": "east",  "y": 45, "team": "beta"},
+        {"x": "south", "y": 60, "team": "alpha"},
+        {"x": "west",  "y": 75, "team": "beta"}
+      ]},
+      "mark": "bar",
+      "encoding": {
+        "x":     {"field": "x",    "type": "nominal"},
+        "y":     {"field": "y",    "type": "quantitative"},
+        "color": {"field": "team", "type": "nominal"}
+      }
+    },
+    {
+      "$schema": "urn:prism:schema:v1:spec",
+      "data": {"values": [
+        {"x": "north", "y": 22, "category": "premium"},
+        {"x": "east",  "y": 18, "category": "premium"},
+        {"x": "south", "y": 9,  "category": "standard"},
+        {"x": "west",  "y": 14, "category": "standard"}
+      ]},
+      "mark": "point",
+      "encoding": {
+        "x":     {"field": "x",        "type": "nominal"},
+        "y":     {"field": "y",        "type": "quantitative"},
+        "color": {"field": "category", "type": "nominal"}
+      }
+    }
+  ]
+}

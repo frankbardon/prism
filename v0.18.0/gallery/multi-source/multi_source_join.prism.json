@@ -1,0 +1,27 @@
+{
+  "$schema": "urn:prism:schema:v1:spec",
+  "title": "Join two named datasets",
+  "datasets": {
+    "scores": {
+      "values": [
+        {"brand_id": "alpha", "score": 0.42},
+        {"brand_id": "beta",  "score": 0.71}
+      ]
+    },
+    "labels": {
+      "values": [
+        {"brand_id": "alpha", "label": "Alpha Inc"},
+        {"brand_id": "beta",  "label": "Beta LLC"}
+      ]
+    }
+  },
+  "data": {"name": "scores"},
+  "transform": [
+    {"join": "inner", "with": "labels", "on": "brand_id", "data": "scores", "as": "joined"}
+  ],
+  "mark": "bar",
+  "encoding": {
+    "x": {"field": "brand_id", "type": "nominal"},
+    "y": {"field": "score",    "type": "quantitative"}
+  }
+}

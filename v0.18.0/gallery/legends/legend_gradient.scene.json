@@ -1,0 +1,464 @@
+{
+  "version": "1.0",
+  "theme": {
+    "name": "light",
+    "color_axis": {
+      "r": 107,
+      "g": 114,
+      "b": 128,
+      "a": 255
+    },
+    "color_grid": {
+      "r": 229,
+      "g": 231,
+      "b": 235,
+      "a": 255
+    },
+    "color_text": {
+      "r": 17,
+      "g": 24,
+      "b": 39,
+      "a": 255
+    },
+    "background": "transparent",
+    "font_sans": "Inter, system-ui, sans-serif",
+    "font_mono": "ui-monospace, SF Mono, monospace",
+    "css": "\u003cstyle\u003e:root{--prism-color-axis:#6b7280;--prism-color-grid:#e5e7eb;--prism-color-text:#111827;--prism-color-bg:transparent;--prism-font-sans:Inter, system-ui, sans-serif;--prism-font-mono:ui-monospace, SF Mono, monospace;--prism-font-size-label:11px;--prism-font-size-title:16px;--prism-font-size-axis-title:12px;--prism-axis-domain-color:#6b7280;--prism-axis-domain-width:1px;--prism-axis-tick-color:#6b7280;--prism-axis-tick-width:1px;--prism-axis-tick-size:5px;--prism-grid-color:#e5e7eb;--prism-grid-width:1px;--prism-axis-label-color:#111827;--prism-axis-label-font-size:11px;--prism-axis-label-padding:4px;--prism-axis-title-color:#111827;--prism-axis-title-font-size:12px;--prism-axis-title-padding:8px;--prism-legend-padding:8px;--prism-legend-symbol-size:64px;--prism-legend-label-color:#111827;--prism-legend-label-font-size:11px;--prism-legend-title-color:#111827;--prism-legend-title-font-size:12px;--prism-legend-title-font-weight:600;--prism-legend-row-padding:4px;--prism-title-color:#111827;--prism-title-font-size:16px;--prism-title-font-weight:600;--prism-title-anchor:start;--prism-title-padding:12px;--prism-view-bg:transparent;--prism-view-padding:0px;--prism-mark-fill:#4c78a8;--prism-mark-stroke-width:0px;--prism-mark-opacity:1;--prism-deselected-opacity:0.3;--prism-selected-opacity:1;}.prism-axis-domain{stroke:var(--prism-axis-domain-color,var(--prism-color-axis));stroke-width:var(--prism-axis-domain-width,1px);fill:none;}.prism-axis-tick{stroke:var(--prism-axis-tick-color,var(--prism-color-axis));stroke-width:var(--prism-axis-tick-width,1px);}.prism-axis-label{fill:var(--prism-axis-label-color,var(--prism-color-text));font-family:var(--prism-font-sans);font-size:var(--prism-axis-label-font-size,var(--prism-font-size-label,11px));font-weight:var(--prism-axis-label-font-weight,400);}.prism-axis-title{fill:var(--prism-axis-title-color,var(--prism-color-text));font-family:var(--prism-font-sans);font-size:var(--prism-axis-title-font-size,var(--prism-font-size-axis-title,12px));font-weight:var(--prism-axis-title-font-weight,600);}.prism-grid-line{stroke:var(--prism-grid-color,var(--prism-color-grid));stroke-width:var(--prism-grid-width,1px);}.prism-title{fill:var(--prism-title-color,var(--prism-color-text));font-family:var(--prism-font-sans);font-size:var(--prism-title-font-size,var(--prism-font-size-title,16px));font-weight:var(--prism-title-font-weight,600);}.prism-legend-title{fill:var(--prism-legend-title-color,var(--prism-color-text));font-family:var(--prism-font-sans);font-size:var(--prism-legend-title-font-size,12px);font-weight:var(--prism-legend-title-font-weight,600);}.prism-legend-label{fill:var(--prism-legend-label-color,var(--prism-color-text));font-family:var(--prism-font-sans);font-size:var(--prism-legend-label-font-size,11px);}.prism-legend-swatch{stroke:none;}.prism-selected{opacity:var(--prism-selected-opacity,1);}.prism-deselected{opacity:var(--prism-deselected-opacity,0.3);}\u003c/style\u003e",
+    "axis_tick_size": 5,
+    "axis_label_padding": 4,
+    "axis_title_padding": 8
+  },
+  "grid": {
+    "layout": {
+      "rows": 1,
+      "cols": 1,
+      "headers": {}
+    },
+    "cells": [
+      {
+        "row": 0,
+        "col": 0,
+        "scene": {
+          "id": "scene-0",
+          "frame": {
+            "x": 0,
+            "y": 0,
+            "w": 800,
+            "h": 600
+          },
+          "plot": {
+            "x": 40,
+            "y": 50,
+            "w": 626,
+            "h": 510
+          },
+          "title": {
+            "content": "Gradient legend — continuous colour",
+            "x": 353,
+            "y": 20,
+            "style": {}
+          },
+          "axes": [
+            {
+              "id": "x-axis",
+              "channel": "x",
+              "position": "bottom",
+              "scale": {
+                "type": "band",
+                "domain": [
+                  "Q1",
+                  "Q2"
+                ],
+                "range": [
+                  40,
+                  666
+                ],
+                "padding": 0.1
+              },
+              "ticks": [
+                {
+                  "value": "Q1",
+                  "pixel": 196.50000000000003,
+                  "label": "Q1"
+                },
+                {
+                  "value": "Q2",
+                  "pixel": 509.5,
+                  "label": "Q2"
+                }
+              ],
+              "title": "col",
+              "domain": {
+                "x1": 40,
+                "y1": 560,
+                "x2": 666,
+                "y2": 560
+              },
+              "grid": [
+                {
+                  "x1": 196.50000000000003,
+                  "y1": 50,
+                  "x2": 196.50000000000003,
+                  "y2": 560
+                },
+                {
+                  "x1": 509.5,
+                  "y1": 50,
+                  "x2": 509.5,
+                  "y2": 560
+                }
+              ],
+              "label_style": {},
+              "title_style": {}
+            },
+            {
+              "id": "y-axis",
+              "channel": "y",
+              "position": "left",
+              "scale": {
+                "type": "band",
+                "domain": [
+                  "North",
+                  "South",
+                  "East"
+                ],
+                "range": [
+                  560,
+                  50
+                ],
+                "padding": 0.1
+              },
+              "ticks": [
+                {
+                  "value": "North",
+                  "pixel": 475,
+                  "label": "North"
+                },
+                {
+                  "value": "South",
+                  "pixel": 305,
+                  "label": "South"
+                },
+                {
+                  "value": "East",
+                  "pixel": 135,
+                  "label": "East"
+                }
+              ],
+              "title": "row",
+              "domain": {
+                "x1": 40,
+                "y1": 50,
+                "x2": 40,
+                "y2": 560
+              },
+              "grid": [
+                {
+                  "x1": 40,
+                  "y1": 475,
+                  "x2": 666,
+                  "y2": 475
+                },
+                {
+                  "x1": 40,
+                  "y1": 305,
+                  "x2": 666,
+                  "y2": 305
+                },
+                {
+                  "x1": 40,
+                  "y1": 135,
+                  "x2": 666,
+                  "y2": 135
+                }
+              ],
+              "label_style": {},
+              "title_style": {}
+            }
+          ],
+          "legends": [
+            {
+              "id": "legend-color",
+              "channel": "color",
+              "position": "right",
+              "title": "Value",
+              "entries": [
+                {
+                  "label": "8–31",
+                  "swatch": {
+                    "type": "gradient",
+                    "gradient_id": "gradient-scene-0-color"
+                  },
+                  "ticks": [
+                    {
+                      "offset": 0,
+                      "label": "8"
+                    },
+                    {
+                      "offset": 0.3333333333333333,
+                      "label": "16"
+                    },
+                    {
+                      "offset": 0.6666666666666666,
+                      "label": "23"
+                    },
+                    {
+                      "offset": 1,
+                      "label": "31"
+                    }
+                  ]
+                }
+              ],
+              "frame": {
+                "x": 676,
+                "y": 50,
+                "w": 104,
+                "h": 138
+              },
+              "title_style": {},
+              "label_style": {}
+            }
+          ],
+          "layers": [
+            {
+              "id": "layer-0",
+              "mark": "heatmap",
+              "marks": [
+                {
+                  "type": "rect",
+                  "id": "heatmap-0",
+                  "style": {
+                    "fill": {
+                      "r": 68,
+                      "g": 53,
+                      "b": 126,
+                      "a": 255
+                    },
+                    "opacity": 1
+                  },
+                  "datum": {
+                    "layer_id": "layer-0",
+                    "row_id": 0
+                  },
+                  "rect": {
+                    "x": 55.650000000000034,
+                    "y": 398.5,
+                    "w": 281.7,
+                    "h": 153
+                  }
+                },
+                {
+                  "type": "rect",
+                  "id": "heatmap-1",
+                  "style": {
+                    "fill": {
+                      "r": 67,
+                      "g": 188,
+                      "b": 112,
+                      "a": 255
+                    },
+                    "opacity": 1
+                  },
+                  "datum": {
+                    "layer_id": "layer-0",
+                    "row_id": 1
+                  },
+                  "rect": {
+                    "x": 368.65000000000003,
+                    "y": 398.5,
+                    "w": 281.7,
+                    "h": 153
+                  }
+                },
+                {
+                  "type": "rect",
+                  "id": "heatmap-2",
+                  "style": {
+                    "fill": {
+                      "r": 39,
+                      "g": 125,
+                      "b": 142,
+                      "a": 255
+                    },
+                    "opacity": 1
+                  },
+                  "datum": {
+                    "layer_id": "layer-0",
+                    "row_id": 2
+                  },
+                  "rect": {
+                    "x": 55.650000000000034,
+                    "y": 228.5,
+                    "w": 281.7,
+                    "h": 153
+                  }
+                },
+                {
+                  "type": "rect",
+                  "id": "heatmap-3",
+                  "style": {
+                    "fill": {
+                      "r": 68,
+                      "g": 1,
+                      "b": 84,
+                      "a": 255
+                    },
+                    "opacity": 1
+                  },
+                  "datum": {
+                    "layer_id": "layer-0",
+                    "row_id": 3
+                  },
+                  "rect": {
+                    "x": 368.65000000000003,
+                    "y": 228.5,
+                    "w": 281.7,
+                    "h": 153
+                  }
+                },
+                {
+                  "type": "rect",
+                  "id": "heatmap-4",
+                  "style": {
+                    "fill": {
+                      "r": 253,
+                      "g": 231,
+                      "b": 37,
+                      "a": 255
+                    },
+                    "opacity": 1
+                  },
+                  "datum": {
+                    "layer_id": "layer-0",
+                    "row_id": 4
+                  },
+                  "rect": {
+                    "x": 55.650000000000034,
+                    "y": 58.5,
+                    "w": 281.7,
+                    "h": 153
+                  }
+                },
+                {
+                  "type": "rect",
+                  "id": "heatmap-5",
+                  "style": {
+                    "fill": {
+                      "r": 31,
+                      "g": 154,
+                      "b": 137,
+                      "a": 255
+                    },
+                    "opacity": 1
+                  },
+                  "datum": {
+                    "layer_id": "layer-0",
+                    "row_id": 5
+                  },
+                  "rect": {
+                    "x": 368.65000000000003,
+                    "y": 58.5,
+                    "w": 281.7,
+                    "h": 153
+                  }
+                }
+              ]
+            }
+          ],
+          "defs": {
+            "gradients": {
+              "gradient-scene-0-color": {
+                "type": "linear",
+                "stops": [
+                  {
+                    "offset": 0,
+                    "color": {
+                      "r": 68,
+                      "g": 1,
+                      "b": 84,
+                      "a": 255
+                    }
+                  },
+                  {
+                    "offset": 0.125,
+                    "color": {
+                      "r": 72,
+                      "g": 40,
+                      "b": 120,
+                      "a": 255
+                    }
+                  },
+                  {
+                    "offset": 0.25,
+                    "color": {
+                      "r": 62,
+                      "g": 74,
+                      "b": 137,
+                      "a": 255
+                    }
+                  },
+                  {
+                    "offset": 0.375,
+                    "color": {
+                      "r": 49,
+                      "g": 104,
+                      "b": 142,
+                      "a": 255
+                    }
+                  },
+                  {
+                    "offset": 0.5,
+                    "color": {
+                      "r": 38,
+                      "g": 130,
+                      "b": 142,
+                      "a": 255
+                    }
+                  },
+                  {
+                    "offset": 0.625,
+                    "color": {
+                      "r": 31,
+                      "g": 158,
+                      "b": 137,
+                      "a": 255
+                    }
+                  },
+                  {
+                    "offset": 0.75,
+                    "color": {
+                      "r": 53,
+                      "g": 183,
+                      "b": 121,
+                      "a": 255
+                    }
+                  },
+                  {
+                    "offset": 0.875,
+                    "color": {
+                      "r": 109,
+                      "g": 205,
+                      "b": 89,
+                      "a": 255
+                    }
+                  },
+                  {
+                    "offset": 1,
+                    "color": {
+                      "r": 253,
+                      "g": 231,
+                      "b": 37,
+                      "a": 255
+                    }
+                  }
+                ],
+                "y2": 1
+              }
+            }
+          }
+        }
+      }
+    ],
+    "shared": {}
+  }
+}
