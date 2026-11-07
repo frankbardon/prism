@@ -555,5 +555,17 @@
       }
     ],
     "shared": {}
-  }
+  },
+  "warnings": [
+    {
+      "code": "PRISM_WARN_CHANNEL_INERT",
+      "message": "encoding.x.sort: a channel-level sort is read on x / y and color as a category list or a direction (ascending / descending); sorting by another channel or field is not implemented — list the categories in order, or pin scale.domain.",
+      "details": {
+        "Channel": "x",
+        "Mark": "",
+        "Path": "encoding.x.sort",
+        "Reason": "a channel-level sort is read on x / y and color as a category list or a direction (ascending / descending); sorting by another channel or field is not implemented — list the categories in order, or pin scale.domain"
+      }
+    }
+  ]
 }

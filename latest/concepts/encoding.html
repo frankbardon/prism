@@ -36,10 +36,10 @@
             const path_to_root = "../";
             const default_light_theme = "navy";
             const default_dark_theme = "navy";
-            window.path_to_searchindex_js = "../searchindex-587554bb.js";
+            window.path_to_searchindex_js = "../searchindex-9453dc17.js";
         </script>
         <!-- Start loading toc.js asap -->
-        <script src="../toc-a4924ec0.js"></script>
+        <script src="../toc-522f32d0.js"></script>
     </head>
     <body>
     <div id="mdbook-help-container">
@@ -224,7 +224,8 @@
 <tr><td><code>axis</code></td><td>Axis config (<code>orient</code>, <code>title</code>, <code>format</code>, <code>grid</code>, <code>tick_count</code>, <code>label_angle</code>, …) — see <a href="#axis-placement">Axis placement</a> — or <code>null</code> to <a href="#hiding-an-axis-or-legend">hide the axis</a>.</td></tr>
 <tr><td><code>legend</code></td><td>Legend config — placement (<code>orient</code>, <code>padding</code>, <code>offset</code>; see <a href="#legend-placement">Legend placement</a>), content (<code>title</code>, <code>values</code>, <code>format</code>, <code>tick_count</code>, <code>label_limit</code>; see <a href="#legend-content">Legend content</a>) and layout (<code>type</code>, <code>direction</code>, <code>symbol_type</code>, <code>symbol_size</code>; see <a href="#symbol-or-gradient--type">Symbol or gradient</a>) — or <code>null</code> to <a href="#hiding-an-axis-or-legend">hide the legend</a>.</td></tr>
 <tr><td><code>format</code></td><td>d3-format string for label formatting. Read on the <a href="#text-channel"><code>text</code></a> and <a href="#tooltip-channel"><code>tooltip</code></a> channels and on a <a href="#table-columns">table column</a>; on any other channel it is validated and then unread — put it on <code>axis.format</code> / <code>legend.format</code> instead, and see <a href="spec.html#warnings--and-the-fields-that-do-nothing">Spec › Warnings</a> for the diagnostic that says so.</td></tr>
-<tr><td><code>sort</code></td><td><code>"ascending"</code> / <code>"descending"</code> / <code>"-y"</code> / <code>[explicit, order, ...]</code>.</td></tr>
+<tr><td><code>title</code></td><td>On <code>x</code> / <code>y</code>, the axis title; on <code>color</code>, the legend title. Precedence: <code>axis.title</code> / <code>legend.title</code> &gt; the channel <code>title</code> &gt; the field name. On any other channel it is reported as <code>PRISM_WARN_CHANNEL_INERT</code>.</td></tr>
+<tr><td><code>sort</code></td><td>Category order on <code>x</code> / <code>y</code> (a discrete scale) and <code>color</code>: an array naming the categories in order (unlisted data categories follow, first-seen), or a direction — <code>"ascending"</code> / <code>"descending"</code> (<code>"asc"</code> / <code>"desc"</code>) — ordering them by value. An explicit <code>scale.domain</code> outranks it. Sorting by another channel (<code>"-y"</code>) or by a field object is not implemented and is reported as <code>PRISM_WARN_CHANNEL_INERT</code>.</td></tr>
 <tr><td><code>stack</code></td><td>Position channels only. <code>"zero"</code> / <code>"normalize"</code> / <code>"center"</code> / <code>true</code> to stack, <code>null</code> / <code>false</code> to opt out — see <a href="#stacking">Stacking</a>.</td></tr>
 <tr><td><code>key</code></td><td><code>true</code> to mark this channel as the animation join key — see <a href="spec.html#animation">Spec › Animation</a>. At most one channel per encoding may set this; only valid on position channels (<code>x</code>, <code>y</code>, <code>x2</code>, <code>y2</code>, <code>theta</code>, <code>radius</code>) and mark channels (<code>color</code>, <code>fill</code>, <code>stroke</code>, <code>opacity</code>, <code>size</code>, <code>shape</code>, sankey <code>source</code>/<code>target</code>/<code>value</code>, geo <code>longitude</code>/<code>latitude</code>/<code>feature</code>).</td></tr>
 </tbody>
@@ -368,6 +369,12 @@ epoch-millisecond number. A discrete scale (<code>band</code>, <code>point</code
   "scale": {"domain": ["small", "medium", "large"]}
 }
 </code></pre>
+<p><strong>On the color channel.</strong> A categorical <code>color</code> reads its <code>domain</code> the
+same way: the listed categories take the palette’s first slots (and
+the legend’s first entries) in that order, so a category keeps its
+colour whichever row it first appears in. A quantitative <code>color</code> on a
+<code>heatmap</code> reads <code>domain</code> as the <code>[lo, hi]</code> its ramp spans and
+<code>reverse</code> as a flip of the ramp; see <a href="marks.html">Marks</a>.</p>
 <p>A discrete <code>domain</code> pins the <strong>leading</strong> order; any data category the
 list omits is appended after it in first-seen order, so a partial
 domain reorders without dropping rows. This is Prism’s one intentional
@@ -1015,7 +1022,7 @@ slimmer channel shape: <code>field</code>, <code>type</code>, <code>aggregate</c
 <tbody>
 <tr><td><code>field</code></td><td>The column whose value becomes the label.</td></tr>
 <tr><td><code>value</code></td><td>A literal label, repeated on every row. Used when no <code>field</code> is set.</td></tr>
-<tr><td><code>format</code></td><td>d3-format specifier applied to the label — <code>.1f</code> renders <code>80.04</code> as <code>80.0</code>, <code>.0%</code> renders <code>0.42</code> as <code>42%</code>. Invalid specifiers are rejected at validate time with <code>PRISM_SPEC_011</code>.</td></tr>
+<tr><td><code>format</code></td><td>d3-format specifier applied to the label — <code>.1f</code> renders <code>80.04</code> as <code>80.0</code>, <code>.0%</code> renders <code>0.42</code> as <code>42%</code>, <code>.3~g</code> renders <code>1.50</code> as <code>1.5</code> (<code>~</code> trims trailing zeros), <code>+.1f</code> renders <code>2</code> as <code>+2.0</code>. The grammar is <code>[sign][,][.precision][~][type]</code> with types <code>f % d e s g</code> (<code>encode/format/README.md</code>). Invalid specifiers are rejected at validate time with <code>PRISM_SPEC_011</code>.</td></tr>
 <tr><td><code>aggregate</code></td><td>Honoured exactly like a position channel’s: it injects the same synthetic group-aggregate node, and a non-aggregated <code>text</code> field joins the group-by.</td></tr>
 </tbody>
 </table>
@@ -1081,8 +1088,18 @@ symbol in the <code>title</code>, or precompute the string upstream.</p>
   {"field": "score", "format": ".2f"}
 ]
 </code></pre>
-<p>Materialized in the Scene IR as pre-formatted <code>TooltipLine</code> lists.
-SVG emits <code>&lt;title&gt;</code> per mark; the JS port renders rich HTML tooltips
+<p>Materialized in the Scene IR as pre-formatted <code>TooltipLine</code> lists,
+one <code>&lt;label&gt;: &lt;value&gt;</code> line per entry. The label is the entry’s
+<code>title</code>, else its field name; the value goes through the entry’s
+<code>format</code> (see <a href="#text-channel">Text channel</a>), and a null cell reads
+<code>–</code>. So a numeric column can position a mark and still read well in
+its tooltip, with no pre-formatted string copy:</p>
+<pre><code class="language-json">"tooltip": [
+  {"field": "test", "title": "Test"},
+  {"field": "diff", "title": "Difference", "format": ".3~g"}
+]
+</code></pre>
+<p>SVG emits <code>&lt;title&gt;</code> per mark; the JS port renders rich HTML tooltips
 in P12+.</p>
 <h2 id="detail-channel"><a class="header" href="#detail-channel">Detail channel</a></h2>
 <p><code>detail</code> is a <strong>pure grouping channel</strong>. It splits a mark into one

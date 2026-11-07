@@ -36,10 +36,10 @@
             const path_to_root = "../";
             const default_light_theme = "navy";
             const default_dark_theme = "navy";
-            window.path_to_searchindex_js = "../searchindex-587554bb.js";
+            window.path_to_searchindex_js = "../searchindex-9453dc17.js";
         </script>
         <!-- Start loading toc.js asap -->
-        <script src="../toc-a4924ec0.js"></script>
+        <script src="../toc-522f32d0.js"></script>
     </head>
     <body>
     <div id="mdbook-help-container">
@@ -200,7 +200,7 @@ arcs, etc. Specify via top-level <code>mark</code> (shorthand string) or
 <tr><td><code>circle</code>, <code>square</code></td><td>Convenience aliases for <code>point</code> with shape preset.</td></tr>
 <tr><td><code>tick</code></td><td>Strip plots, ranking dot plots. Honours <a href="#orientation-markorient"><code>orient</code></a>.</td></tr>
 <tr><td><code>rect</code></td><td>Heatmap cells, custom rectangular layouts.</td></tr>
-<tr><td><code>rule</code></td><td>Reference lines, benchmarks, ranges.</td></tr>
+<tr><td><code>rule</code></td><td>Reference lines, benchmarks, ranges. A categorical <code>color</code> channel strokes each rule in its row’s category colour (the colour a point or bar of that category fills with), so an interval rule matches the dot it brackets.</td></tr>
 <tr><td><code>text</code></td><td>Inline labels, annotations. Content comes from the <code>text</code> channel — see <a href="#text">Text</a>.</td></tr>
 <tr><td><code>arc</code></td><td>Primitive for <code>pie</code> / <code>donut</code> / sankey links.</td></tr>
 </tbody>
@@ -214,7 +214,7 @@ arcs, etc. Specify via top-level <code>mark</code> (shorthand string) or
 </thead>
 <tbody>
 <tr><td><code>histogram</code></td><td><code>bar</code> + auto-bin transform.</td></tr>
-<tr><td><code>heatmap</code></td><td><code>rect</code> + 2D bin + sequential color scale. Binds an optional field-driven <code>opacity</code> channel for per-cell shading — pair it with a crosstab <code>zscore_vs_margin</code> overlay column to fade insignificant cells (significance shading). Opacity maps the field linearly over <code>[min, max]</code> to <code>[0.15, 1.0]</code>.</td></tr>
+<tr><td><code>heatmap</code></td><td><code>rect</code> + 2D bin + sequential color scale. The ramp spans the color channel’s <code>scale.domain</code> when it pins one (<code>[-1, 1]</code> puts 0 on a diverging ramp’s midpoint; values outside take the nearer end), else the data’s <code>[min, max]</code>; <code>scale.reverse</code> flips the ramp. The gradient legend labels the same span. Binds an optional field-driven <code>opacity</code> channel for per-cell shading — pair it with a crosstab <code>zscore_vs_margin</code> overlay column to fade insignificant cells (significance shading). Opacity maps the field linearly over <code>[min, max]</code> to <code>[0.15, 1.0]</code>.</td></tr>
 <tr><td><code>boxplot</code></td><td><code>rect</code> (IQR) + <code>rule</code> (median, whiskers, caps) + <code>point</code> (outliers). Honours <a href="#orientation-markorient"><code>orient</code></a>. The whiskers take the box colour; the median is drawn <em>on</em> the box, so it takes the theme’s <a href="themes.html#multi-element-marks"><code>boxplot_median</code></a> key and carries its own <code>prism-mark-boxplot-median</code> class.</td></tr>
 <tr><td><code>violin</code></td><td><code>area</code> symmetric around centerline (Epanechnikov KDE). Honours <a href="#orientation-markorient"><code>orient</code></a>.</td></tr>
 <tr><td><code>pie</code></td><td><code>arc</code> with theta computed from share.</td></tr>

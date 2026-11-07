@@ -36,10 +36,10 @@
             const path_to_root = "../";
             const default_light_theme = "navy";
             const default_dark_theme = "navy";
-            window.path_to_searchindex_js = "../searchindex-587554bb.js";
+            window.path_to_searchindex_js = "../searchindex-9453dc17.js";
         </script>
         <!-- Start loading toc.js asap -->
-        <script src="../toc-a4924ec0.js"></script>
+        <script src="../toc-522f32d0.js"></script>
     </head>
     <body>
     <div id="mdbook-help-container">
@@ -260,8 +260,41 @@ below.</p>
 }
 </code></pre>
 <p><code>hconcat</code> lays out left-to-right. <code>vconcat</code> top-to-bottom. <code>concat</code>
-is a flat array; today it behaves like <code>hconcat</code> (the <code>columns</code> wrap
-parameter is post-v1).</p>
+is a flat array that behaves like <code>hconcat</code> unless it sets <code>columns</code>,
+which wraps it into rows of at most that many cells, filled left to
+right (the last row may be short):</p>
+<pre><code class="language-json">{"columns": 3, "concat": [ ... seven panels ... ]}
+</code></pre>
+<p><code>columns</code> is read on <code>concat</code> only: the schema rejects it on a spec
+without <code>concat</code> (<code>hconcat</code> is always one row, <code>vconcat</code> one column).</p>
+<h3 id="panel-sizes"><a class="header" href="#panel-sizes">Panel sizes</a></h3>
+<p>A panel’s own numeric <code>width</code> / <code>height</code> is the size it asks for. A
+column asks for the widest width among its panels, a row for the
+tallest height. When the concat itself has no size — no <code>width</code> /
+<code>height</code> on the root spec and none from the caller — and every column
+(or row) asks for one, the panels get exactly what they asked for and
+the chart is their sum plus a 20 px gap between cells. Otherwise the
+concat’s size (800 × 600 by default) is shared out in proportion to
+the asked-for sizes, a panel that asks for nothing counting as the
+mean of the others; with no sizes at all that is an equal split.</p>
+<pre><code class="language-json">{"vconcat": [
+  {"height": 120, "layer": [ ... ]},
+  {"height": 300, "mark": "bar", "encoding": { ... }}
+]}
+</code></pre>
+<p>draws a 440 px tall chart: a 120 px panel, the gap, a 300 px panel.</p>
+<h3 id="nesting"><a class="header" href="#nesting">Nesting</a></h3>
+<p>A <code>concat</code> / <code>hconcat</code> / <code>vconcat</code> panel may itself be a <code>layer</code> or
+another concat — a column of layered panels (a forest plot split by
+unit), a wrapped grid of layered small multiples. The nested
+composition is encoded at its panel’s size, and a layer’s shared axes
+are drawn inside its panel. A <code>layer</code>’s children must still be flat,
+and a <code>facet</code> / <code>repeat</code> cannot sit under a concat (<code>PRISM_PLAN_002</code>,
+<code>Kind: composition:nested</code>); facet and repeat take composite <code>spec</code>
+children as described below. In the plan, every leaf of a nested panel
+is staged on that panel’s one DAG under its own id namespace
+(<code>0/inline:1</code>, <code>1/inline:1</code>, …), so executing the panel’s DAG yields
+every table it draws.</p>
 <h2 id="facet"><a class="header" href="#facet">Facet</a></h2>
 <pre><code class="language-json">{
   "facet": {"column": {"field": "region"}},

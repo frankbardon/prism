@@ -37,10 +37,10 @@
             const path_to_root = "";
             const default_light_theme = "navy";
             const default_dark_theme = "navy";
-            window.path_to_searchindex_js = "searchindex-587554bb.js";
+            window.path_to_searchindex_js = "searchindex-9453dc17.js";
         </script>
         <!-- Start loading toc.js asap -->
-        <script src="toc-a4924ec0.js"></script>
+        <script src="toc-522f32d0.js"></script>
     </head>
     <body>
     <div id="mdbook-help-container">
@@ -566,14 +566,22 @@ contract between authors (humans / agents) and the Prism pipeline.</p>
 <h2 id="full-top-level-field-list"><a class="header" href="#full-top-level-field-list">Full top-level field list</a></h2>
 <pre><code>$schema       data            datasets        transform
 mark          encoding        layer           concat
-hconcat       vconcat         facet           repeat
-spec          selection       resolve         theme
-width         height          padding         background
-title         subtitle        description     projection
-animation
+hconcat       vconcat         columns         facet
+repeat        spec            selection       resolve
+theme         width           height          padding
+background    title           subtitle        description
+projection    animation
 </code></pre>
 <p>Exactly one of <code>mark | layer | concat | hconcat | vconcat | facet | repeat</code>
 must be present. The validator enforces this with <code>PRISM_SPEC_*</code> codes.</p>
+<h3 id="frame-size"><a class="header" href="#frame-size">Frame size</a></h3>
+<p>A numeric top-level <code>width</code> / <code>height</code> sizes the chart frame in pixels.
+The caller’s own size wins when it gives one (<code>EncodeOpts.Width</code> /
+<code>Height</code>, the CLI’s <code>--width</code> / <code>--height</code>); otherwise the spec’s is
+used; otherwise the encoder’s default of 800 × 600 — or, for a concat
+whose panels all declare sizes, their sum (see
+<a href="#panel-sizes">Composition › Panel sizes</a>). A token such
+as <code>"container"</code> leaves the size to the caller.</p>
 <h2 id="animation"><a class="header" href="#animation">Animation</a></h2>
 <p>The optional <code>animation</code> block requests a client-side tween whenever the
 spec swaps. Static SVG output is unaffected — the renderer
@@ -1343,7 +1351,7 @@ arcs, etc. Specify via top-level <code>mark</code> (shorthand string) or
 <tr><td><code>circle</code>, <code>square</code></td><td>Convenience aliases for <code>point</code> with shape preset.</td></tr>
 <tr><td><code>tick</code></td><td>Strip plots, ranking dot plots. Honours <a href="#orientation-markorient"><code>orient</code></a>.</td></tr>
 <tr><td><code>rect</code></td><td>Heatmap cells, custom rectangular layouts.</td></tr>
-<tr><td><code>rule</code></td><td>Reference lines, benchmarks, ranges.</td></tr>
+<tr><td><code>rule</code></td><td>Reference lines, benchmarks, ranges. A categorical <code>color</code> channel strokes each rule in its row’s category colour (the colour a point or bar of that category fills with), so an interval rule matches the dot it brackets.</td></tr>
 <tr><td><code>text</code></td><td>Inline labels, annotations. Content comes from the <code>text</code> channel — see <a href="#text">Text</a>.</td></tr>
 <tr><td><code>arc</code></td><td>Primitive for <code>pie</code> / <code>donut</code> / sankey links.</td></tr>
 </tbody>
@@ -1357,7 +1365,7 @@ arcs, etc. Specify via top-level <code>mark</code> (shorthand string) or
 </thead>
 <tbody>
 <tr><td><code>histogram</code></td><td><code>bar</code> + auto-bin transform.</td></tr>
-<tr><td><code>heatmap</code></td><td><code>rect</code> + 2D bin + sequential color scale. Binds an optional field-driven <code>opacity</code> channel for per-cell shading — pair it with a crosstab <code>zscore_vs_margin</code> overlay column to fade insignificant cells (significance shading). Opacity maps the field linearly over <code>[min, max]</code> to <code>[0.15, 1.0]</code>.</td></tr>
+<tr><td><code>heatmap</code></td><td><code>rect</code> + 2D bin + sequential color scale. The ramp spans the color channel’s <code>scale.domain</code> when it pins one (<code>[-1, 1]</code> puts 0 on a diverging ramp’s midpoint; values outside take the nearer end), else the data’s <code>[min, max]</code>; <code>scale.reverse</code> flips the ramp. The gradient legend labels the same span. Binds an optional field-driven <code>opacity</code> channel for per-cell shading — pair it with a crosstab <code>zscore_vs_margin</code> overlay column to fade insignificant cells (significance shading). Opacity maps the field linearly over <code>[min, max]</code> to <code>[0.15, 1.0]</code>.</td></tr>
 <tr><td><code>boxplot</code></td><td><code>rect</code> (IQR) + <code>rule</code> (median, whiskers, caps) + <code>point</code> (outliers). Honours <a href="#orientation-markorient"><code>orient</code></a>. The whiskers take the box colour; the median is drawn <em>on</em> the box, so it takes the theme’s <a href="#multi-element-marks"><code>boxplot_median</code></a> key and carries its own <code>prism-mark-boxplot-median</code> class.</td></tr>
 <tr><td><code>violin</code></td><td><code>area</code> symmetric around centerline (Epanechnikov KDE). Honours <a href="#orientation-markorient"><code>orient</code></a>.</td></tr>
 <tr><td><code>pie</code></td><td><code>arc</code> with theta computed from share.</td></tr>
@@ -2333,7 +2341,8 @@ instead. Start the gallery tour with:</p>
 <tr><td><code>axis</code></td><td>Axis config (<code>orient</code>, <code>title</code>, <code>format</code>, <code>grid</code>, <code>tick_count</code>, <code>label_angle</code>, …) — see <a href="#axis-placement">Axis placement</a> — or <code>null</code> to <a href="#hiding-an-axis-or-legend">hide the axis</a>.</td></tr>
 <tr><td><code>legend</code></td><td>Legend config — placement (<code>orient</code>, <code>padding</code>, <code>offset</code>; see <a href="#legend-placement">Legend placement</a>), content (<code>title</code>, <code>values</code>, <code>format</code>, <code>tick_count</code>, <code>label_limit</code>; see <a href="#legend-content">Legend content</a>) and layout (<code>type</code>, <code>direction</code>, <code>symbol_type</code>, <code>symbol_size</code>; see <a href="#symbol-or-gradient--type">Symbol or gradient</a>) — or <code>null</code> to <a href="#hiding-an-axis-or-legend">hide the legend</a>.</td></tr>
 <tr><td><code>format</code></td><td>d3-format string for label formatting. Read on the <a href="#text-channel"><code>text</code></a> and <a href="#tooltip-channel"><code>tooltip</code></a> channels and on a <a href="#table-columns">table column</a>; on any other channel it is validated and then unread — put it on <code>axis.format</code> / <code>legend.format</code> instead, and see <a href="#warnings--and-the-fields-that-do-nothing">Spec › Warnings</a> for the diagnostic that says so.</td></tr>
-<tr><td><code>sort</code></td><td><code>"ascending"</code> / <code>"descending"</code> / <code>"-y"</code> / <code>[explicit, order, ...]</code>.</td></tr>
+<tr><td><code>title</code></td><td>On <code>x</code> / <code>y</code>, the axis title; on <code>color</code>, the legend title. Precedence: <code>axis.title</code> / <code>legend.title</code> &gt; the channel <code>title</code> &gt; the field name. On any other channel it is reported as <code>PRISM_WARN_CHANNEL_INERT</code>.</td></tr>
+<tr><td><code>sort</code></td><td>Category order on <code>x</code> / <code>y</code> (a discrete scale) and <code>color</code>: an array naming the categories in order (unlisted data categories follow, first-seen), or a direction — <code>"ascending"</code> / <code>"descending"</code> (<code>"asc"</code> / <code>"desc"</code>) — ordering them by value. An explicit <code>scale.domain</code> outranks it. Sorting by another channel (<code>"-y"</code>) or by a field object is not implemented and is reported as <code>PRISM_WARN_CHANNEL_INERT</code>.</td></tr>
 <tr><td><code>stack</code></td><td>Position channels only. <code>"zero"</code> / <code>"normalize"</code> / <code>"center"</code> / <code>true</code> to stack, <code>null</code> / <code>false</code> to opt out — see <a href="#stacking">Stacking</a>.</td></tr>
 <tr><td><code>key</code></td><td><code>true</code> to mark this channel as the animation join key — see <a href="#animation">Spec › Animation</a>. At most one channel per encoding may set this; only valid on position channels (<code>x</code>, <code>y</code>, <code>x2</code>, <code>y2</code>, <code>theta</code>, <code>radius</code>) and mark channels (<code>color</code>, <code>fill</code>, <code>stroke</code>, <code>opacity</code>, <code>size</code>, <code>shape</code>, sankey <code>source</code>/<code>target</code>/<code>value</code>, geo <code>longitude</code>/<code>latitude</code>/<code>feature</code>).</td></tr>
 </tbody>
@@ -2477,6 +2486,12 @@ epoch-millisecond number. A discrete scale (<code>band</code>, <code>point</code
   "scale": {"domain": ["small", "medium", "large"]}
 }
 </code></pre>
+<p><strong>On the color channel.</strong> A categorical <code>color</code> reads its <code>domain</code> the
+same way: the listed categories take the palette’s first slots (and
+the legend’s first entries) in that order, so a category keeps its
+colour whichever row it first appears in. A quantitative <code>color</code> on a
+<code>heatmap</code> reads <code>domain</code> as the <code>[lo, hi]</code> its ramp spans and
+<code>reverse</code> as a flip of the ramp; see <a href="#marks">Marks</a>.</p>
 <p>A discrete <code>domain</code> pins the <strong>leading</strong> order; any data category the
 list omits is appended after it in first-seen order, so a partial
 domain reorders without dropping rows. This is Prism’s one intentional
@@ -3124,7 +3139,7 @@ slimmer channel shape: <code>field</code>, <code>type</code>, <code>aggregate</c
 <tbody>
 <tr><td><code>field</code></td><td>The column whose value becomes the label.</td></tr>
 <tr><td><code>value</code></td><td>A literal label, repeated on every row. Used when no <code>field</code> is set.</td></tr>
-<tr><td><code>format</code></td><td>d3-format specifier applied to the label — <code>.1f</code> renders <code>80.04</code> as <code>80.0</code>, <code>.0%</code> renders <code>0.42</code> as <code>42%</code>. Invalid specifiers are rejected at validate time with <code>PRISM_SPEC_011</code>.</td></tr>
+<tr><td><code>format</code></td><td>d3-format specifier applied to the label — <code>.1f</code> renders <code>80.04</code> as <code>80.0</code>, <code>.0%</code> renders <code>0.42</code> as <code>42%</code>, <code>.3~g</code> renders <code>1.50</code> as <code>1.5</code> (<code>~</code> trims trailing zeros), <code>+.1f</code> renders <code>2</code> as <code>+2.0</code>. The grammar is <code>[sign][,][.precision][~][type]</code> with types <code>f % d e s g</code> (<code>encode/format/README.md</code>). Invalid specifiers are rejected at validate time with <code>PRISM_SPEC_011</code>.</td></tr>
 <tr><td><code>aggregate</code></td><td>Honoured exactly like a position channel’s: it injects the same synthetic group-aggregate node, and a non-aggregated <code>text</code> field joins the group-by.</td></tr>
 </tbody>
 </table>
@@ -3190,8 +3205,18 @@ symbol in the <code>title</code>, or precompute the string upstream.</p>
   {"field": "score", "format": ".2f"}
 ]
 </code></pre>
-<p>Materialized in the Scene IR as pre-formatted <code>TooltipLine</code> lists.
-SVG emits <code>&lt;title&gt;</code> per mark; the JS port renders rich HTML tooltips
+<p>Materialized in the Scene IR as pre-formatted <code>TooltipLine</code> lists,
+one <code>&lt;label&gt;: &lt;value&gt;</code> line per entry. The label is the entry’s
+<code>title</code>, else its field name; the value goes through the entry’s
+<code>format</code> (see <a href="#text-channel">Text channel</a>), and a null cell reads
+<code>–</code>. So a numeric column can position a mark and still read well in
+its tooltip, with no pre-formatted string copy:</p>
+<pre><code class="language-json">"tooltip": [
+  {"field": "test", "title": "Test"},
+  {"field": "diff", "title": "Difference", "format": ".3~g"}
+]
+</code></pre>
+<p>SVG emits <code>&lt;title&gt;</code> per mark; the JS port renders rich HTML tooltips
 in P12+.</p>
 <h2 id="detail-channel"><a class="header" href="#detail-channel">Detail channel</a></h2>
 <p><code>detail</code> is a <strong>pure grouping channel</strong>. It splits a mark into one
@@ -3742,8 +3767,41 @@ below.</p>
 }
 </code></pre>
 <p><code>hconcat</code> lays out left-to-right. <code>vconcat</code> top-to-bottom. <code>concat</code>
-is a flat array; today it behaves like <code>hconcat</code> (the <code>columns</code> wrap
-parameter is post-v1).</p>
+is a flat array that behaves like <code>hconcat</code> unless it sets <code>columns</code>,
+which wraps it into rows of at most that many cells, filled left to
+right (the last row may be short):</p>
+<pre><code class="language-json">{"columns": 3, "concat": [ ... seven panels ... ]}
+</code></pre>
+<p><code>columns</code> is read on <code>concat</code> only: the schema rejects it on a spec
+without <code>concat</code> (<code>hconcat</code> is always one row, <code>vconcat</code> one column).</p>
+<h3 id="panel-sizes"><a class="header" href="#panel-sizes">Panel sizes</a></h3>
+<p>A panel’s own numeric <code>width</code> / <code>height</code> is the size it asks for. A
+column asks for the widest width among its panels, a row for the
+tallest height. When the concat itself has no size — no <code>width</code> /
+<code>height</code> on the root spec and none from the caller — and every column
+(or row) asks for one, the panels get exactly what they asked for and
+the chart is their sum plus a 20 px gap between cells. Otherwise the
+concat’s size (800 × 600 by default) is shared out in proportion to
+the asked-for sizes, a panel that asks for nothing counting as the
+mean of the others; with no sizes at all that is an equal split.</p>
+<pre><code class="language-json">{"vconcat": [
+  {"height": 120, "layer": [ ... ]},
+  {"height": 300, "mark": "bar", "encoding": { ... }}
+]}
+</code></pre>
+<p>draws a 440 px tall chart: a 120 px panel, the gap, a 300 px panel.</p>
+<h3 id="nesting"><a class="header" href="#nesting">Nesting</a></h3>
+<p>A <code>concat</code> / <code>hconcat</code> / <code>vconcat</code> panel may itself be a <code>layer</code> or
+another concat — a column of layered panels (a forest plot split by
+unit), a wrapped grid of layered small multiples. The nested
+composition is encoded at its panel’s size, and a layer’s shared axes
+are drawn inside its panel. A <code>layer</code>’s children must still be flat,
+and a <code>facet</code> / <code>repeat</code> cannot sit under a concat (<code>PRISM_PLAN_002</code>,
+<code>Kind: composition:nested</code>); facet and repeat take composite <code>spec</code>
+children as described below. In the plan, every leaf of a nested panel
+is staged on that panel’s one DAG under its own id namespace
+(<code>0/inline:1</code>, <code>1/inline:1</code>, …), so executing the panel’s DAG yields
+every table it draws.</p>
 <h2 id="facet"><a class="header" href="#facet">Facet</a></h2>
 <pre><code class="language-json">{
   "facet": {"column": {"field": "region"}},
@@ -4697,19 +4755,23 @@ theme with no <code>dark_variant</code> at all.</p>
 static per-mark-type theme colors (<code>theme.MarkStyle.Fill</code>/<code>Stroke</code> via
 <code>applyThemeMarkStyle</code>) — against <strong>both</strong> the active theme and its
 <code>dark_variant</code> counterpart. Each distinct <code>(light, dark)</code> pair
-encountered gets a stable variable name in first-encounter order:
-<code>--prism-resolved-0</code>, <code>--prism-resolved-1</code>, … (same input spec + theme
-pairing → same names every render, so golden fixtures stay stable).
-Both values land in the <code>&lt;style&gt;</code> block — light under the base
-<code>:root{...}</code>, dark under the <code>@media</code> rule above — and the mark
-element emits <code>fill="var(--prism-resolved-N)"</code> /
-<code>stroke="var(--prism-resolved-N)"</code> instead of a baked hex literal:</p>
-<pre><code class="language-css">:root { --prism-resolved-0: #4c78a8; }
+encountered gets a variable named after its two values —
+<code>--prism-resolved-&lt;light hex&gt;-&lt;dark hex&gt;</code>, e.g.
+<code>--prism-resolved-4c78a8-4269d0</code> (a colour that is not opaque hex is
+named by a hash of the pair instead). Because the name depends only on
+the values, several Prism SVGs can sit inline in one HTML document:
+every <code>&lt;style&gt;</code> block that declares a name declares it with the same
+pair, so no chart picks up another chart’s colours whichever block
+the page applies last. Both values land in the <code>&lt;style&gt;</code> block — light
+under the base <code>:root{...}</code>, dark under the <code>@media</code> rule above — and
+the mark element emits <code>fill="var(--prism-resolved-…)"</code> /
+<code>stroke="var(--prism-resolved-…)"</code> instead of a baked hex literal:</p>
+<pre><code class="language-css">:root { --prism-resolved-4c78a8-4269d0: #4c78a8; }
 @media (prefers-color-scheme: dark) {
-  :root { --prism-resolved-0: #4269d0; }
+  :root { --prism-resolved-4c78a8-4269d0: #4269d0; }
 }
 </code></pre>
-<pre><code class="language-xml">&lt;rect class="prism-mark-bar" fill="var(--prism-resolved-0)" .../&gt;
+<pre><code class="language-xml">&lt;rect class="prism-mark-bar" fill="var(--prism-resolved-4c78a8-4269d0)" .../&gt;
 </code></pre>
 <p>This is carried on the scene IR by <code>scene.Style.FillVar</code>/<code>StrokeVar</code>
 (a CSS custom-property name, additive alongside the existing
@@ -4717,9 +4779,17 @@ element emits <code>fill="var(--prism-resolved-N)"</code> /
 over the baked value” precedent as the gradient/pattern <code>FillRef</code>).
 <code>render/html/</code> inherits this automatically, same as every other
 <code>render/svg</code> emission. When <code>dark_variant</code> is unset, none of this
-runs: every mark keeps baking a literal hex exactly as before E4-S3.
-Legend swatches are not yet re-plumbed onto resolved vars — they still
-bake the light-theme hex, a known gap for a future story.</p>
+runs: every mark keeps baking a literal hex exactly as before E4-S3.</p>
+<p><strong>Every composition and every legend pairs too (v0.18).</strong> One registry
+serves the whole document: the top-of-tree encoder creates it and
+hands it to every <code>layer</code>, <code>concat</code> / <code>hconcat</code> / <code>vconcat</code> cell,
+<code>facet</code> cell and <code>repeat</code> cell (<code>encode/autodark.go</code>), then emits the
+pairs once. Symbol-legend swatches paint with the same variable as the
+marks of their category (<code>scene.SwatchSpec.ColorVar</code>), and a gradient
+legend’s stops pair with the dark ramp (<code>scene.GradientStop.ColorVar</code>),
+so a legend flips with the marks it describes. A per-cell theme
+override (<code>cell_overrides</code>) still pairs against the root theme’s
+<code>dark_variant</code>.</p>
 <p><strong>Validation:</strong> a non-empty <code>dark_variant</code> must name a theme already
 present in the registry — checked at the same fail-loud entry points
 as the filter/gradient/pattern escape hatches (<code>Register</code>,
@@ -4878,7 +4948,7 @@ subset of these variables (axis/grid/legend/title/view/selection-state
 time, inside an <code>@media (prefers-color-scheme: dark) { :root { ... } }</code>
 rule appended after the base block in the same <code>&lt;style&gt;</code> element.
 Resolved per-instance mark colors ride a separate
-<code>--prism-resolved-N</code> family (E4-S3, see
+<code>--prism-resolved-*</code> family (E4-S3, see
 <a href="#dark-variant-pairing">Dark variant pairing</a>) that IS doubled the
 same way — light value in the base block, dark value in the media
 rule — since those are the actual colors marks paint with once
@@ -7110,6 +7180,108 @@ The envelope’s <code>Details</code> carries:</p>
 </table>
 </div>
 <div style="break-before: page; page-break-before: always;"></div>
+<h1 id="cookbook-chart-recipes-go"><a class="header" href="#cookbook-chart-recipes-go">Cookbook: chart recipes (Go)</a></h1>
+<p>The <code>recipes</code> package (<code>github.com/frankbardon/prism/recipes</code>) builds
+Prism specs for common analysis charts from tidy rows. A recipe takes
+<code>[]recipes.Row</code> (one <code>map[string]any</code> per observation) plus an options
+struct naming the columns, and returns a <code>*spec.Spec</code> with the rows
+inlined in <code>data.values</code>. The result is a plain spec: validate, compile
+and render it like any other, patch it, or marshal it to JSON for the
+browser bundle.</p>
+<p>Recipes hold no state and know nothing about where the rows came from.
+Anything domain-specific — which column is an estimate, what counts as
+significant, how a value is labelled — is the caller’s and arrives as a
+column or an option.</p>
+<h2 id="vocabulary"><a class="header" href="#vocabulary">Vocabulary</a></h2>
+<div class="table-wrapper">
+<table>
+<thead>
+<tr><th>Type</th><th>Meaning</th></tr>
+</thead>
+<tbody>
+<tr><td><code>Field{Name, Title, Format}</code></td><td>A column. <code>Title</code> labels its axis, legend or tooltip line (empty reads as <code>Name</code>); <code>Format</code> is a d3-format specifier (<code>.3~g</code>, <code>,.0f</code>, <code>.1%</code>) for its tooltip line and any printed label. <code>recipes.F(name)</code> is the bare form.</td></tr>
+<tr><td><code>Frame{Title, Width, Height}</code></td><td>Chart title and size. A zero size leaves the choice to the recipe (the renderer’s width; the recipe’s height).</td></tr>
+<tr><td><code>Color{Field, Domain, Scheme, Range, HideLegend}</code></td><td>A colour-by column. <code>Domain</code> fixes category order (palette and legend follow it), <code>Scheme</code> names a palette, <code>Range</code> lists explicit colours.</td></tr>
+<tr><td><code>BandHeight(n)</code></td><td>Default height for <code>n</code> category bands (<code>n·RowHeight + PanelChrome</code>).</td></tr>
+<tr><td><code>Extent(rows, cols...)</code></td><td>Shared <code>[lo, hi]</code> over columns — pin it as <code>Domain</code> on every small multiple.</td></tr>
+</tbody>
+</table>
+</div>
+<p>Category columns are drawn in the given order (first at the left, or at
+the top of a vertical list), else in first-seen row order, and are
+stringified so numeric keys still form bands. A recipe returns
+<code>recipes.ErrNoRows</code> when there is nothing to draw and an error naming
+the option when a required column is unset.</p>
+<h2 id="recipes"><a class="header" href="#recipes">Recipes</a></h2>
+<div class="table-wrapper">
+<table>
+<thead>
+<tr><th>Recipe</th><th>Draws</th></tr>
+</thead>
+<tbody>
+<tr><td><code>Forest(rows, ForestOptions)</code></td><td>One row per label: interval rule <code>Low</code>→<code>High</code>, point at <code>Estimate</code>, dashed <code>References</code> (e.g. 0 or 1). Optional <code>Color</code> by a category.</td></tr>
+<tr><td><code>Bar(rows, BarOptions)</code></td><td>One bar per category, optional <code>Low</code>/<code>High</code> interval rule, <code>Horizontal</code>.</td></tr>
+<tr><td><code>GroupedBar(rows, GroupedBarOptions)</code></td><td>Bars dodged by <code>Group</code> within each <code>Category</code> (<code>x_offset</code> / <code>y_offset</code>), coloured and legended by group.</td></tr>
+<tr><td><code>Line(rows, LineOptions)</code></td><td>Lines over <code>X</code> (<code>XType</code> temporal / quantitative / ordinal), one per <code>Series</code>, optional <code>Points</code>.</td></tr>
+<tr><td><code>Scatter(rows, ScatterOptions)</code></td><td>Points with optional <code>Color</code>, pinned domains, and <code>References</code>: <code>RuleX</code>, <code>RuleY</code>, <code>Polyline</code> (a fitted or reference curve).</td></tr>
+<tr><td><code>Heatmap(rows, HeatmapOptions)</code></td><td>One cell per (<code>X</code>, <code>Y</code>) shaded by <code>Value</code>; <code>Domain</code> pins the ramp (<code>[-1, 1]</code> for a correlation), <code>Reverse</code> flips it, <code>Labels</code> prints each value.</td></tr>
+<tr><td><code>Box(rows, BoxOptions)</code></td><td>Horizontal summary boxes from <strong>precomputed</strong> statistics: whisker rule, interquartile bar, centre dot.</td></tr>
+<tr><td><code>Tiles(rows, TilesOptions)</code></td><td>One big number per row, labelled above it.</td></tr>
+</tbody>
+</table>
+</div>
+<h2 id="composition-1"><a class="header" href="#composition-1">Composition</a></h2>
+<div class="table-wrapper">
+<table>
+<thead>
+<tr><th>Helper</th><th>Builds</th></tr>
+</thead>
+<tbody>
+<tr><td><code>Stack(panels...)</code></td><td>A <code>vconcat</code>; each panel keeps its height, the stack is their sum.</td></tr>
+<tr><td><code>Grid(columns, cells...)</code></td><td>A <code>concat</code> wrapped at <code>columns</code> (see <a href="#composition">Composition</a>).</td></tr>
+<tr><td><code>SmallMultiples(rows, by, order, columns, cell)</code></td><td>Splits rows by a column and lays one cell per value out in a <code>Grid</code>; each cell is titled with its key unless <code>cell</code> set a title.</td></tr>
+<tr><td><code>Split(rows, col, order)</code></td><td>The grouping <code>SmallMultiples</code> uses, for callers building cells themselves.</td></tr>
+</tbody>
+</table>
+</div>
+<p>Recipes compose through concat rather than <code>facet</code>, so each cell may be
+a layered recipe (a forest is three layers) and keeps its own scales;
+pin a shared domain with <code>Extent</code> when cells should compare at a glance.</p>
+<h2 id="quantile-helpers"><a class="header" href="#quantile-helpers">Quantile helpers</a></h2>
+<p><code>NormalQuantile(p)</code> (Φ⁻¹, AS241), <code>PPoints(n)</code> (R’s <code>ppoints</code>),
+<code>Quantile(sorted, p)</code> (type 7) and <code>NormalQQ(sample)</code> give the geometry
+of a normal QQ plot: the theoretical quantile for each sorted value, the
+index of each in the input (so tooltips can carry other columns), and
+the quartile line’s intercept and slope for a <code>Polyline</code>. Model
+statistics — residuals, leverage, influence contours, which points to
+thin — stay with the caller.</p>
+<h2 id="example"><a class="header" href="#example">Example</a></h2>
+<pre><code class="language-go">rows := []recipes.Row{
+	{"term": "Age", "est": 0.42, "lo": 0.10, "hi": 0.74},
+	{"term": "Income", "est": -0.18, "lo": -0.40, "hi": 0.04},
+}
+s, err := recipes.Forest(rows, recipes.ForestOptions{
+	Label:      recipes.Field{Name: "term", Title: "Term"},
+	Estimate:   recipes.Field{Name: "est", Title: "Estimate", Format: ".3~g"},
+	Low:        "lo",
+	High:       "hi",
+	References: []float64{0},
+	Tooltip:    []recipes.Field{{Name: "term"}, {Name: "est", Format: ".3~g"}},
+	Frame:      recipes.Frame{Title: "Coefficients"},
+})
+if err != nil {
+	return err
+}
+raw, _ := json.Marshal(s)
+plan, err := prism.CompileJSON(ctx, raw, prism.CompileOptions{})
+</code></pre>
+<p>Set <code>s.Theme = &amp;spec.ThemeOverride{DarkVariant: "dark"}</code> on the root to
+render one SVG that follows the page’s colour scheme; layered and
+concatenated recipes pair their marks and legends like a single chart
+(see <a href="#themes-1">Themes</a>).</p>
+<p>Goldens for every recipe live in <code>recipes/testdata/</code> (<code>&lt;name&gt;.spec.json</code>
+plus <code>&lt;name&gt;.svg</code>; regenerate with <code>UPDATE_GOLDENS=1 go test ./recipes/</code>).</p>
+<div style="break-before: page; page-break-before: always;"></div>
 <h1 id="playground"><a class="header" href="#playground">Playground</a></h1>
 <p>Prism ships an <a href="playground/index.html">interactive playground</a> that runs the
 full spec → validate → plan → compile → encode → render pipeline in
@@ -7530,7 +7702,7 @@ directly) — the axes, grid, legend, and bar colors all swap without
 a re-render.</li>
 <li>View source on <code>themes/bar_dark_variant.svg</code> and look for the
 <code>@media (prefers-color-scheme: dark)</code> block inside the <code>&lt;style&gt;</code>
-element, plus <code>fill="var(--prism-resolved-N)"</code> on the <code>&lt;rect&gt;</code>
+element, plus <code>fill="var(--prism-resolved-&lt;light&gt;-&lt;dark&gt;)"</code> on the <code>&lt;rect&gt;</code>
 elements — those are the doubled CSS custom properties described in
 the docs.</li>
 </ul>

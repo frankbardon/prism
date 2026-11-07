@@ -36,10 +36,10 @@
             const path_to_root = "../";
             const default_light_theme = "navy";
             const default_dark_theme = "navy";
-            window.path_to_searchindex_js = "../searchindex-587554bb.js";
+            window.path_to_searchindex_js = "../searchindex-9453dc17.js";
         </script>
         <!-- Start loading toc.js asap -->
-        <script src="../toc-a4924ec0.js"></script>
+        <script src="../toc-522f32d0.js"></script>
     </head>
     <body>
     <div id="mdbook-help-container">
@@ -219,14 +219,22 @@ contract between authors (humans / agents) and the Prism pipeline.</p>
 <h2 id="full-top-level-field-list"><a class="header" href="#full-top-level-field-list">Full top-level field list</a></h2>
 <pre><code>$schema       data            datasets        transform
 mark          encoding        layer           concat
-hconcat       vconcat         facet           repeat
-spec          selection       resolve         theme
-width         height          padding         background
-title         subtitle        description     projection
-animation
+hconcat       vconcat         columns         facet
+repeat        spec            selection       resolve
+theme         width           height          padding
+background    title           subtitle        description
+projection    animation
 </code></pre>
 <p>Exactly one of <code>mark | layer | concat | hconcat | vconcat | facet | repeat</code>
 must be present. The validator enforces this with <code>PRISM_SPEC_*</code> codes.</p>
+<h3 id="frame-size"><a class="header" href="#frame-size">Frame size</a></h3>
+<p>A numeric top-level <code>width</code> / <code>height</code> sizes the chart frame in pixels.
+The caller’s own size wins when it gives one (<code>EncodeOpts.Width</code> /
+<code>Height</code>, the CLI’s <code>--width</code> / <code>--height</code>); otherwise the spec’s is
+used; otherwise the encoder’s default of 800 × 600 — or, for a concat
+whose panels all declare sizes, their sum (see
+<a href="composition.html#panel-sizes">Composition › Panel sizes</a>). A token such
+as <code>"container"</code> leaves the size to the caller.</p>
 <h2 id="animation"><a class="header" href="#animation">Animation</a></h2>
 <p>The optional <code>animation</code> block requests a client-side tween whenever the
 spec swaps. Static SVG output is unaffected — the renderer

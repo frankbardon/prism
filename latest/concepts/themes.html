@@ -36,10 +36,10 @@
             const path_to_root = "../";
             const default_light_theme = "navy";
             const default_dark_theme = "navy";
-            window.path_to_searchindex_js = "../searchindex-587554bb.js";
+            window.path_to_searchindex_js = "../searchindex-9453dc17.js";
         </script>
         <!-- Start loading toc.js asap -->
-        <script src="../toc-a4924ec0.js"></script>
+        <script src="../toc-522f32d0.js"></script>
     </head>
     <body>
     <div id="mdbook-help-container">
@@ -826,19 +826,23 @@ theme with no <code>dark_variant</code> at all.</p>
 static per-mark-type theme colors (<code>theme.MarkStyle.Fill</code>/<code>Stroke</code> via
 <code>applyThemeMarkStyle</code>) — against <strong>both</strong> the active theme and its
 <code>dark_variant</code> counterpart. Each distinct <code>(light, dark)</code> pair
-encountered gets a stable variable name in first-encounter order:
-<code>--prism-resolved-0</code>, <code>--prism-resolved-1</code>, … (same input spec + theme
-pairing → same names every render, so golden fixtures stay stable).
-Both values land in the <code>&lt;style&gt;</code> block — light under the base
-<code>:root{...}</code>, dark under the <code>@media</code> rule above — and the mark
-element emits <code>fill="var(--prism-resolved-N)"</code> /
-<code>stroke="var(--prism-resolved-N)"</code> instead of a baked hex literal:</p>
-<pre><code class="language-css">:root { --prism-resolved-0: #4c78a8; }
+encountered gets a variable named after its two values —
+<code>--prism-resolved-&lt;light hex&gt;-&lt;dark hex&gt;</code>, e.g.
+<code>--prism-resolved-4c78a8-4269d0</code> (a colour that is not opaque hex is
+named by a hash of the pair instead). Because the name depends only on
+the values, several Prism SVGs can sit inline in one HTML document:
+every <code>&lt;style&gt;</code> block that declares a name declares it with the same
+pair, so no chart picks up another chart’s colours whichever block
+the page applies last. Both values land in the <code>&lt;style&gt;</code> block — light
+under the base <code>:root{...}</code>, dark under the <code>@media</code> rule above — and
+the mark element emits <code>fill="var(--prism-resolved-…)"</code> /
+<code>stroke="var(--prism-resolved-…)"</code> instead of a baked hex literal:</p>
+<pre><code class="language-css">:root { --prism-resolved-4c78a8-4269d0: #4c78a8; }
 @media (prefers-color-scheme: dark) {
-  :root { --prism-resolved-0: #4269d0; }
+  :root { --prism-resolved-4c78a8-4269d0: #4269d0; }
 }
 </code></pre>
-<pre><code class="language-xml">&lt;rect class="prism-mark-bar" fill="var(--prism-resolved-0)" .../&gt;
+<pre><code class="language-xml">&lt;rect class="prism-mark-bar" fill="var(--prism-resolved-4c78a8-4269d0)" .../&gt;
 </code></pre>
 <p>This is carried on the scene IR by <code>scene.Style.FillVar</code>/<code>StrokeVar</code>
 (a CSS custom-property name, additive alongside the existing
@@ -846,9 +850,17 @@ element emits <code>fill="var(--prism-resolved-N)"</code> /
 over the baked value” precedent as the gradient/pattern <code>FillRef</code>).
 <code>render/html/</code> inherits this automatically, same as every other
 <code>render/svg</code> emission. When <code>dark_variant</code> is unset, none of this
-runs: every mark keeps baking a literal hex exactly as before E4-S3.
-Legend swatches are not yet re-plumbed onto resolved vars — they still
-bake the light-theme hex, a known gap for a future story.</p>
+runs: every mark keeps baking a literal hex exactly as before E4-S3.</p>
+<p><strong>Every composition and every legend pairs too (v0.18).</strong> One registry
+serves the whole document: the top-of-tree encoder creates it and
+hands it to every <code>layer</code>, <code>concat</code> / <code>hconcat</code> / <code>vconcat</code> cell,
+<code>facet</code> cell and <code>repeat</code> cell (<code>encode/autodark.go</code>), then emits the
+pairs once. Symbol-legend swatches paint with the same variable as the
+marks of their category (<code>scene.SwatchSpec.ColorVar</code>), and a gradient
+legend’s stops pair with the dark ramp (<code>scene.GradientStop.ColorVar</code>),
+so a legend flips with the marks it describes. A per-cell theme
+override (<code>cell_overrides</code>) still pairs against the root theme’s
+<code>dark_variant</code>.</p>
 <p><strong>Validation:</strong> a non-empty <code>dark_variant</code> must name a theme already
 present in the registry — checked at the same fail-loud entry points
 as the filter/gradient/pattern escape hatches (<code>Register</code>,
@@ -1007,7 +1019,7 @@ subset of these variables (axis/grid/legend/title/view/selection-state
 time, inside an <code>@media (prefers-color-scheme: dark) { :root { ... } }</code>
 rule appended after the base block in the same <code>&lt;style&gt;</code> element.
 Resolved per-instance mark colors ride a separate
-<code>--prism-resolved-N</code> family (E4-S3, see
+<code>--prism-resolved-*</code> family (E4-S3, see
 <a href="#dark-variant-pairing">Dark variant pairing</a>) that IS doubled the
 same way — light value in the base block, dark value in the media
 rule — since those are the actual colors marks paint with once
