@@ -1,6 +1,10 @@
 package encode
 
-import "github.com/frankbardon/prism/encode/scene"
+import (
+	"math"
+
+	"github.com/frankbardon/prism/encode/scene"
+)
 
 // Padding carries the per-side pixel padding around the plot region.
 // It is derived, never hand-written: LayoutOpts.Padding computes it
@@ -73,6 +77,16 @@ type SideChrome struct {
 	// included. Zero with Legend set falls back to
 	// layoutLegendReserve.
 	LegendExtent float64
+	// AxisMinDepth is the least depth, measured from the plot edge to
+	// the frame edge, the axis on this side needs: the room a left /
+	// right axis's measured tick labels and rotated title take (see
+	// FitSideAxis). It widens the axis share of reserve() — base
+	// margin included, so it is comparable with the historical fixed
+	// padding — and a side legend still stacks outside it. Zero, the
+	// default, and any value under the fixed reservation change
+	// nothing, so only a band wider than the historical allowance moves
+	// the plot rect.
+	AxisMinDepth float64
 }
 
 // reserve returns the extra pixels this side needs beyond the base
@@ -80,7 +94,7 @@ type SideChrome struct {
 func (c SideChrome) reserve() float64 {
 	r := 0.0
 	if c.Axis {
-		r += c.AxisReserve
+		r += math.Max(c.AxisReserve, c.AxisMinDepth-layoutMargin)
 	}
 	if c.Legend {
 		if c.LegendExtent > 0 {
@@ -343,4 +357,82 @@ func layoutFrom(width, height float64, pad Padding) Layout {
 		H: height - pad.Top - pad.Bottom,
 	}
 	return Layout{Frame: frame, Plot: plot, Padding: pad}
+}
+
+// Side-axis metrics the label-band reservation is measured with. They
+// mirror render/svg/axes.go's built-in values — baselineDropOther +
+// defaultLabelPadding, defaultTitlePadding, titleDropSide — which is
+// what the renderer places a left / right axis's labels and title with
+// when neither the spec nor the theme states otherwise. A spec-level
+// `label_padding` / `title_padding` is carried on the axis and read
+// below; a theme token larger than the default draws into the outer
+// margin, the same fixed-pixel deferral the reserves above record.
+const (
+	sideLabelDrop     = 4.0
+	sideLabelPadding  = 4.0
+	sideTitlePadding  = 8.0
+	sideTitleDrop     = 22.0
+	sideLabelOuterGap = 4.0
+)
+
+// SideAxisDepth is the depth, from the plot edge to the frame edge,
+// that a left or right axis's tick labels and rotated title need: the
+// labels' offset, their measured band (scene.AxisLabelBand), then the
+// title clear of the band (scene.SideAxisTitleOffset) plus its
+// ascent, or a small outer gap past the labels when there is no title.
+// The title never sits nearer the plot than its historical offset, so
+// an axis whose labels fit the fixed reservation keeps its old
+// geometry. Positions other than left / right, and an axis drawing
+// neither labels nor a title, need nothing here.
+func SideAxisDepth(a scene.Axis) float64 {
+	if a.Position != scene.AxisPositionLeft && a.Position != scene.AxisPositionRight {
+		return 0
+	}
+	labelPad, titlePad := sideLabelPadding, sideTitlePadding
+	if a.LabelPadding != nil {
+		labelPad = *a.LabelPadding
+	}
+	if a.TitlePadding != nil {
+		titlePad = *a.TitlePadding
+	}
+	labelOffset := sideLabelDrop + labelPad
+	band := scene.AxisLabelBand(a)
+	if a.Title != "" {
+		offset := math.Max(sideTitleDrop+titlePad, scene.SideAxisTitleOffset(labelOffset, band, titlePad))
+		return offset + scene.AxisTitleAscent
+	}
+	if band == 0 {
+		return 0
+	}
+	return labelOffset + band + sideLabelOuterGap
+}
+
+// sideAxisMaxShare caps how much of the frame width one side axis may
+// claim, so a pathological label cannot squeeze the plot to nothing;
+// past it the label runs into the frame edge as it always did.
+const sideAxisMaxShare = 1.0 / 3.0
+
+// FitSideAxis widens the reservation on the side a built left / right
+// axis occupies so its labels and title fit inside a frame frameWidth
+// wide (see SideAxisDepth). It reports whether anything changed, which
+// is when the caller must recompute its layout and re-resolve the
+// scale running across that width. The axis's own pixel range runs
+// along the side, so widening the side never moves its ticks: the
+// labels measured here are exactly the labels the final axis draws.
+func (s *LayoutSides) FitSideAxis(a scene.Axis, frameWidth float64) bool {
+	need := math.Min(SideAxisDepth(a), float64(frameWidth*sideAxisMaxShare))
+	var side *SideChrome
+	switch a.Position {
+	case scene.AxisPositionLeft:
+		side = &s.Left
+	case scene.AxisPositionRight:
+		side = &s.Right
+	default:
+		return false
+	}
+	if !side.Axis || need <= layoutMargin+side.AxisReserve || need <= side.AxisMinDepth {
+		return false
+	}
+	side.AxisMinDepth = need
+	return true
 }

@@ -140,3 +140,69 @@ func TestPrismLayoutSparkline(t *testing.T) {
 		t.Errorf("sparkline Plot = %+v, want {4,4,112,32}", l.Plot)
 	}
 }
+
+// sideAxis is a left y axis over the given category labels.
+func sideAxis(title string, labels ...string) scene.Axis {
+	a := scene.Axis{Channel: scene.ChannelY, Position: scene.AxisPositionLeft, Title: title}
+	for i, l := range labels {
+		a.Ticks = append(a.Ticks, scene.Tick{Value: l, Pixel: float64(i * 40), Label: l})
+	}
+	return a
+}
+
+// Short labels fit the fixed reservation: the fit changes nothing and
+// the plot rect stays on the historical {Left: 40}.
+func TestPrismLayoutFitSideAxisShortLabelsUnchanged(t *testing.T) {
+	sides := DefaultAxisPlacement().Sides()
+	if sides.FitSideAxis(sideAxis("", "0", "50", "100"), 800) {
+		t.Error("untitled 3-digit labels widened the side")
+	}
+	if sides.FitSideAxis(sideAxis("Arm", "a", "b"), 800) {
+		t.Error("titled one-letter labels widened the side")
+	}
+	if p := (LayoutOpts{Width: 800, Height: 600, Sides: sides}).Padding(); p.Left != 40 {
+		t.Errorf("Left = %v, want the historical 40", p.Left)
+	}
+}
+
+// A long category name widens the side so the label and the rotated
+// title both land inside the frame, the title clear of the label.
+func TestPrismLayoutFitSideAxisLongLabels(t *testing.T) {
+	long := "z (std. residual)"
+	band := scene.EstimateTextWidth(long, scene.AxisLabelFontSize)
+
+	sides := DefaultAxisPlacement().Sides()
+	if !sides.FitSideAxis(sideAxis("", "age", long), 800) {
+		t.Fatal("long label did not widen the side")
+	}
+	p := (LayoutOpts{Width: 800, Height: 600, Sides: sides}).Padding()
+	if want := 8 + band + 4; p.Left != want {
+		t.Errorf("untitled Left = %v, want labels' offset + band + gap = %v", p.Left, want)
+	}
+
+	sides = DefaultAxisPlacement().Sides()
+	sides.FitSideAxis(sideAxis("Variable", "age", long), 800)
+	p = (LayoutOpts{Width: 800, Height: 600, Sides: sides}).Padding()
+	titleX := p.Left - scene.SideAxisTitleOffset(8, band, 8)
+	if titleX-scene.AxisTitleAscent < 0 {
+		t.Errorf("title baseline at x=%v reaches past the frame edge", titleX)
+	}
+	if labelLeft := p.Left - 8 - band; titleX+scene.AxisTitleDescent+8 > labelLeft {
+		t.Errorf("title (x=%v) not clear of the labels starting at x=%v", titleX, labelLeft)
+	}
+
+	// A side legend stacks outside the widened axis band.
+	sides.MarkLegend(scene.LegendLeft, 100)
+	if q := (LayoutOpts{Width: 800, Height: 600, Sides: sides}).Padding(); q.Left != p.Left+100 {
+		t.Errorf("Left with a left legend = %v, want %v", q.Left, p.Left+100)
+	}
+}
+
+// One pathological label cannot take more than a third of the frame.
+func TestPrismLayoutFitSideAxisCapped(t *testing.T) {
+	sides := DefaultAxisPlacement().Sides()
+	sides.FitSideAxis(sideAxis("", "an extraordinarily long category name that goes on and on"), 300)
+	if p := (LayoutOpts{Width: 300, Height: 200, Sides: sides}).Padding(); p.Left != 100 {
+		t.Errorf("Left = %v, want the 300/3 cap", p.Left)
+	}
+}

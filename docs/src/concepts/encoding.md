@@ -538,6 +538,18 @@ pixel metrics rather than measured text: a `tick_size`,
 `label_padding` or `title_padding` far larger than the default draws
 into the outer margin instead of growing the reservation.
 
+**A left or right axis grows to fit its labels.** The one measured
+exception is the band a `y` axis's tick labels occupy: Prism estimates
+the widest shown label's width (a conservative per-glyph estimate for
+the default sans stack, not font metrics) and, when the labels and the
+rotated title would not fit the fixed reservation, widens that side of
+the plot so both land inside the frame, with the title placed
+`title_padding` clear of the labels rather than over them. Short
+labels — a few digits, a one-word category — fit the fixed reservation
+and move nothing. One side axis never takes more than a third of the
+frame width; past that a label runs into the frame edge (use
+`label_limit` to shorten it).
+
 **`zindex` and clipping.** An above-marks axis is emitted as a sibling
 of the mark container, not a child, so it is never subject to the
 [plot-region clip](#rows-outside-the-domain--overflow-and-clip) that

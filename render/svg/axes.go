@@ -1,6 +1,10 @@
 package svg
 
-import "github.com/frankbardon/prism/encode/scene"
+import (
+	"math"
+
+	"github.com/frankbardon/prism/encode/scene"
+)
 
 // renderAxis emits the axis domain line, tick lines + labels, grid
 // lines, and (optional) title for one resolved scene.Axis. Geometry
@@ -127,7 +131,9 @@ func renderAxis(w *Writer, a scene.Axis, plot scene.Rect, theme *scene.Theme) {
 	// (--prism-axis-title-padding) > the built-in 8 px. The per-side
 	// titleDrop* constants are the fixed text allowance the padding is
 	// added to, chosen so the built-in padding reproduces the
-	// historical 34 / 28 / 30 px offsets exactly.
+	// historical 34 / 28 / 30 px offsets exactly. A left / right title
+	// additionally clears its axis's measured label band
+	// (sideTitleOffset), the band the encoder reserved padding for.
 	if a.Title != "" {
 		titlePad := resolveAxisMetric(a.TitlePadding, themeTitlePadding(theme, a.Channel), defaultTitlePadding)
 		w.OpenTag("text")
@@ -142,13 +148,13 @@ func renderAxis(w *Writer, a scene.Axis, plot scene.Rect, theme *scene.Theme) {
 			w.AttrFloat("y", plot.Y-titleDropTop-titlePad)
 			w.Attr("text-anchor", "middle")
 		case scene.AxisPositionLeft:
-			x := plot.X - titleDropSide - titlePad
+			x := plot.X - sideTitleOffset(a, pad, titlePad)
 			w.AttrFloat("x", x)
 			w.AttrFloat("y", plot.CenterY())
 			w.Attr("text-anchor", "middle")
 			w.Attr("transform", rotateAttr(x, plot.CenterY()))
 		case scene.AxisPositionRight:
-			x := plot.Right() + titleDropSide + titlePad
+			x := plot.Right() + sideTitleOffset(a, pad, titlePad)
 			w.AttrFloat("x", x)
 			w.AttrFloat("y", plot.CenterY())
 			w.Attr("text-anchor", "middle")
@@ -161,6 +167,17 @@ func renderAxis(w *Writer, a scene.Axis, plot scene.Rect, theme *scene.Theme) {
 	}
 
 	w.EndTag("g")
+}
+
+// sideTitleOffset is the distance from the plot edge to a left or
+// right axis title's baseline: the historical titleDropSide + titlePad,
+// pushed out past the axis's widest tick label when that label would
+// otherwise run under the title. labelPad is the resolved label
+// padding, so the band is measured from where the labels really end.
+// encode.SideAxisDepth reserves the frame room for this same offset.
+func sideTitleOffset(a scene.Axis, labelPad, titlePad float64) float64 {
+	band := scene.AxisLabelBand(a)
+	return math.Max(titleDropSide+titlePad, scene.SideAxisTitleOffset(baselineDropOther+labelPad, band, titlePad))
 }
 
 // Built-in axis metrics — the values that apply when neither the

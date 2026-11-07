@@ -205,14 +205,10 @@ func encodeLayerComposite(s *spec.Spec, composite *plan.CompositeDAG, childTable
 		xSharedTitle string
 		ySharedTitle string
 	)
-	if resolution[scene.ChannelX].Scale == encresolve.ModeShared && len(xLayerDomains) > 0 {
-		xSharedScale, err = resolveSharedScale(xLayerDomains, live, scene.ChannelX,
-			layout.Plot.X, layout.Plot.Right())
-		if err != nil {
-			return nil, err
-		}
-		xSharedTitle = firstFieldName(live, scene.ChannelX)
-	}
+	// Y resolves first: its range runs along the side the y axis
+	// occupies, so it does not depend on that side's depth, and the
+	// shared y axis's measured labels may widen the side (the fit
+	// below) before x is resolved across the plot width.
 	if resolution[scene.ChannelY].Scale == encresolve.ModeShared && len(yLayerDomains) > 0 {
 		// Y axis is pixel-inverted: pass (bottom, top).
 		ySharedScale, err = resolveSharedScale(yLayerDomains, live, scene.ChannelY,
@@ -221,6 +217,60 @@ func encodeLayerComposite(s *spec.Spec, composite *plan.CompositeDAG, childTable
 			return nil, err
 		}
 		ySharedTitle = firstFieldName(live, scene.ChannelY)
+	}
+	// Fit the y axis's labels and title, as the flat path does, before
+	// x is resolved across the plot width. The probe is built from the
+	// same scale and options as the axis drawn below — the shared one,
+	// or else the first layer binding y, which is the one per-cell y
+	// axis the layer loop emits (seenIndependentY) — and its warnings
+	// are raised there, once.
+	if !placement.YHidden {
+		var probe *scene.Axis
+		if ySharedScale != nil && resolution[scene.ChannelY].Axis == encresolve.ModeShared {
+			probeOpts, _ := sharedAxisOpts(scene.ChannelY,
+				sharedAxisBlocksFrom(scene.ChannelY, layerEncodings(live)), ySharedTitle)
+			ax := BuildAxisWithOpts(ySharedScale, scene.ChannelY, placement.Y, layout.Plot, probeOpts)
+			probe = &ax
+		} else {
+			for _, lc := range live {
+				childEnc := lc.child.Spec.Encoding
+				if childEnc == nil || childEnc.Y == nil || childEnc.Y.Field == "" {
+					continue
+				}
+				// The layer loop resolves this scale for real, after its
+				// null-row policy; a probe that cannot resolve here
+				// leaves the side unfitted rather than failing early.
+				sc := ySharedScale
+				if sc == nil {
+					if rs, _, rerr := resolveChannel(childEnc.Y, lc.tbl, layout.Plot.Bottom(), layout.Plot.Y,
+						spanDomainValues(childEnc.Y2, lc.tbl)...); rerr == nil {
+						sc = rs
+					}
+				}
+				if sc != nil {
+					ax := BuildAxisWithOpts(sc, scene.ChannelY, placement.Y, layout.Plot, axisOptsFor(childEnc.Y))
+					probe = &ax
+				}
+				break
+			}
+		}
+		if probe != nil && sides.FitSideAxis(*probe, width) {
+			layout = Compute(LayoutOpts{Width: width, Height: height, Title: hasTitle, Sides: sides})
+			for i, ll := range legendPls {
+				if ll.reserved {
+					ll.placement.Reserve = layout.Padding.LegendBand(ll.placement.Position, hasTitle)
+					legendPls[i] = ll
+				}
+			}
+		}
+	}
+	if resolution[scene.ChannelX].Scale == encresolve.ModeShared && len(xLayerDomains) > 0 {
+		xSharedScale, err = resolveSharedScale(xLayerDomains, live, scene.ChannelX,
+			layout.Plot.X, layout.Plot.Right())
+		if err != nil {
+			return nil, err
+		}
+		xSharedTitle = firstFieldName(live, scene.ChannelX)
 	}
 
 	// Offset scales fold across children exactly as x / y do (E3-S1):
