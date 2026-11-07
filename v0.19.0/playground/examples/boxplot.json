@@ -1,0 +1,29 @@
+{
+  "$schema": "urn:prism:schema:v1:spec",
+  "title": "Score distribution by tier",
+  "data": {
+    "name": "samples",
+    "values": [
+      {"tier": "free",    "score": 0.21},
+      {"tier": "free",    "score": 0.28},
+      {"tier": "free",    "score": 0.34},
+      {"tier": "free",    "score": 0.41},
+      {"tier": "free",    "score": 0.47},
+      {"tier": "pro",     "score": 0.45},
+      {"tier": "pro",     "score": 0.52},
+      {"tier": "pro",     "score": 0.58},
+      {"tier": "pro",     "score": 0.61},
+      {"tier": "pro",     "score": 0.69},
+      {"tier": "enterprise", "score": 0.62},
+      {"tier": "enterprise", "score": 0.71},
+      {"tier": "enterprise", "score": 0.78},
+      {"tier": "enterprise", "score": 0.82},
+      {"tier": "enterprise", "score": 0.89}
+    ]
+  },
+  "mark": "boxplot",
+  "encoding": {
+    "x": {"field": "tier",  "type": "nominal"},
+    "y": {"field": "score", "type": "quantitative"}
+  }
+}

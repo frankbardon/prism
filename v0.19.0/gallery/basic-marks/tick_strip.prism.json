@@ -1,0 +1,19 @@
+{
+  "$schema": "urn:prism:schema:v1:spec",
+  "title": "Tick strip",
+  "data": {
+    "name": "samples",
+    "values": [
+      {"group": "a", "value": 0.3},
+      {"group": "a", "value": 0.5},
+      {"group": "a", "value": 0.6},
+      {"group": "b", "value": 0.2},
+      {"group": "b", "value": 0.8}
+    ]
+  },
+  "mark": "tick",
+  "encoding": {
+    "x": {"field": "group", "type": "nominal"},
+    "y": {"field": "value", "type": "quantitative"}
+  }
+}

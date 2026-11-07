@@ -1,0 +1,20 @@
+{
+  "$schema": "urn:prism:schema:v1:spec",
+  "title": "Revenue vs target",
+  "data": {
+    "name": "kpi",
+    "values": [
+      {"metric": "Revenue (k$)", "actual": 275}
+    ]
+  },
+  "mark": {
+    "type": "bullet",
+    "bands": [150, 225, 300],
+    "comparative": 240,
+    "target": 260
+  },
+  "encoding": {
+    "x": {"field": "actual", "type": "quantitative"},
+    "y": {"field": "metric", "type": "nominal"}
+  }
+}

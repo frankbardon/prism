@@ -1,0 +1,34 @@
+/* Prism docs version dropdown. Pinned to match the mdBook navy
+   header without depending on theme tokens. */
+
+.prism-version-dropdown {
+  margin-left: auto;
+  margin-right: 1rem;
+  display: inline-flex;
+  align-items: center;
+}
+
+.prism-version-dropdown select {
+  appearance: none;
+  -webkit-appearance: none;
+  background: rgba(255, 255, 255, 0.08);
+  color: #d6deeb;
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  padding: 0.25rem 1.75rem 0.25rem 0.6rem;
+  border-radius: 4px;
+  font-family: inherit;
+  font-size: 0.9rem;
+  cursor: pointer;
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'><path fill='%23d6deeb' d='M2 4l4 4 4-4'/></svg>");
+  background-repeat: no-repeat;
+  background-position: right 0.5rem center;
+}
+
+.prism-version-dropdown select:hover {
+  background-color: rgba(255, 255, 255, 0.14);
+}
+
+.prism-version-dropdown select:focus {
+  outline: 2px solid #88d2ff;
+  outline-offset: 1px;
+}

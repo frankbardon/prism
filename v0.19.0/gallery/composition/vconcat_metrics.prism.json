@@ -1,0 +1,51 @@
+{
+  "$schema": "urn:prism:schema:v1:spec",
+  "title": "Metric stack (vconcat)",
+  "vconcat": [
+    {
+      "$schema": "urn:prism:schema:v1:spec",
+      "title": "Score",
+      "data": {"values": [
+        {"day": 1, "score": 0.40, "revenue": 12.0, "clicks": 100},
+        {"day": 2, "score": 0.48, "revenue": 15.0, "clicks": 130},
+        {"day": 3, "score": 0.55, "revenue": 18.0, "clicks": 175},
+        {"day": 4, "score": 0.61, "revenue": 22.0, "clicks": 210}
+      ]},
+      "mark": "line",
+      "encoding": {
+        "x": {"field": "day",   "type": "quantitative"},
+        "y": {"field": "score", "type": "quantitative"}
+      }
+    },
+    {
+      "$schema": "urn:prism:schema:v1:spec",
+      "title": "Revenue",
+      "data": {"values": [
+        {"day": 1, "score": 0.40, "revenue": 12.0, "clicks": 100},
+        {"day": 2, "score": 0.48, "revenue": 15.0, "clicks": 130},
+        {"day": 3, "score": 0.55, "revenue": 18.0, "clicks": 175},
+        {"day": 4, "score": 0.61, "revenue": 22.0, "clicks": 210}
+      ]},
+      "mark": "line",
+      "encoding": {
+        "x": {"field": "day",     "type": "quantitative"},
+        "y": {"field": "revenue", "type": "quantitative"}
+      }
+    },
+    {
+      "$schema": "urn:prism:schema:v1:spec",
+      "title": "Clicks",
+      "data": {"values": [
+        {"day": 1, "score": 0.40, "revenue": 12.0, "clicks": 100},
+        {"day": 2, "score": 0.48, "revenue": 15.0, "clicks": 130},
+        {"day": 3, "score": 0.55, "revenue": 18.0, "clicks": 175},
+        {"day": 4, "score": 0.61, "revenue": 22.0, "clicks": 210}
+      ]},
+      "mark": "line",
+      "encoding": {
+        "x": {"field": "day",    "type": "quantitative"},
+        "y": {"field": "clicks", "type": "quantitative"}
+      }
+    }
+  ]
+}

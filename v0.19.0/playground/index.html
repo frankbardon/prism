@@ -1,0 +1,91 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Prism Playground</title>
+  <meta name="description" content="Interactive Prism playground — edit a JSON spec and render it live, entirely in your browser via WASM.">
+  <link rel="stylesheet" href="playground.css">
+  <link rel="preload" as="fetch" type="application/wasm" href="../static/prism/prism.wasm" crossorigin>
+  <script src="../static/prism/wasm_exec.js"></script>
+</head>
+<body>
+
+<div class="pg-app">
+  <header class="pg-header">
+    <h1>Prism Playground <span class="pg-version" id="pg-version">loading…</span></h1>
+    <span class="pg-status working" id="pg-status">booting</span>
+    <span class="pg-spacer"></span>
+    <select id="pg-theme" title="Chart theme">
+      <option value="light">Light theme</option>
+      <option value="dark">Dark theme</option>
+      <option value="print">Print theme</option>
+    </select>
+    <button id="pg-format"   title="Pretty-print JSON (Ctrl/Cmd+S)">Format</button>
+    <button id="pg-share"    title="Copy a shareable URL (spec encoded in fragment)">Share</button>
+    <button id="pg-reset"    title="Reload the current example">Reset</button>
+    <button id="pg-dl-svg"   title="Download rendered SVG">↓ SVG</button>
+    <button id="pg-dl-scene" title="Download Scene IR JSON">↓ Scene</button>
+    <button id="pg-ui-theme" class="icon" title="Toggle playground UI theme">☾</button>
+    <span class="pg-doclinks">
+      <a href="../concepts/spec.html" title="Spec reference">Spec ↗</a>
+      <a href="../concepts/marks.html" title="Marks reference">Marks ↗</a>
+      <a href="../gallery/index.html" title="Gallery">Gallery ↗</a>
+    </span>
+  </header>
+
+  <div class="pg-body">
+
+    <aside class="pg-sidebar" id="pg-sidebar"></aside>
+
+    <section class="pg-pane">
+      <div class="pg-pane-header">
+        <span class="pg-pane-title">Spec</span>
+        <span class="pg-spacer"></span>
+        <span style="font-size:11px; color:var(--pg-text-faint);">
+          <kbd>Tab</kbd> indent · <kbd>Ctrl</kbd>+<kbd>S</kbd> format · <kbd>Ctrl</kbd>+<kbd>↵</kbd> run
+        </span>
+      </div>
+      <div class="pg-editor-wrap">
+        <div class="pg-editor-gutter" id="pg-gutter" aria-hidden="true">1</div>
+        <textarea id="pg-editor" class="pg-editor" spellcheck="false" autocomplete="off" autocorrect="off" autocapitalize="off"></textarea>
+      </div>
+      <div class="pg-error-bar ok" id="pg-error-bar">✓ rendered</div>
+    </section>
+
+    <section class="pg-pane">
+      <div class="pg-pane-header">
+        <span class="pg-pane-title">Preview</span>
+        <span class="pg-spacer"></span>
+        <span style="font-size:11px; color:var(--pg-text-faint);">SVG renders in WASM — every pixel is Go</span>
+      </div>
+      <div class="pg-preview-wrap" id="pg-preview-wrap" data-chart-theme="light">
+        <div class="pg-preview" id="pg-preview">
+          <div class="pg-preview-placeholder">Choose an example or edit the spec to render.</div>
+        </div>
+      </div>
+      <div class="pg-inspector">
+        <div class="pg-inspector-tabs" id="pg-inspector-tabs">
+          <button data-tab="svg"   class="active">SVG</button>
+          <button data-tab="scene">Scene IR</button>
+          <button data-tab="plan">Plan</button>
+          <button data-tab="spec">Raw spec</button>
+        </div>
+        <pre class="pg-inspector-body empty" id="pg-inspector-body">Compiling…</pre>
+      </div>
+    </section>
+
+  </div>
+</div>
+
+<div class="pg-loading-overlay" id="pg-loading">
+  <div class="pg-spinner"></div>
+  <div class="pg-loading-text" id="pg-loading-text">Loading Prism WASM runtime…</div>
+</div>
+
+<div class="pg-toast" id="pg-toast"></div>
+
+<script type="module" src="playground.js"></script>
+
+</body>
+</html>

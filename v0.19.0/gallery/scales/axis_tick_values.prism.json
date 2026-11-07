@@ -1,0 +1,20 @@
+{
+  "$schema": "urn:prism:schema:v1:spec",
+  "title": "Pinned gridlines",
+  "data": {"name": "d", "values": [
+    {"quarter": "Q1", "revenue": 18.4},
+    {"quarter": "Q2", "revenue": 31.7},
+    {"quarter": "Q3", "revenue": 44.2},
+    {"quarter": "Q4", "revenue": 62.9}
+  ]},
+  "mark": "bar",
+  "encoding": {
+    "x": {"field": "quarter", "type": "nominal", "axis": {"grid": false}},
+    "y": {
+      "field": "revenue",
+      "type": "quantitative",
+      "scale": {"domain": [0, 80]},
+      "axis": {"values": [0, 25, 50, 75], "title": "Revenue ($M)"}
+    }
+  }
+}

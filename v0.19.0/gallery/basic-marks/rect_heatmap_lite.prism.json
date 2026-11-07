@@ -1,0 +1,18 @@
+{
+  "$schema": "urn:prism:schema:v1:spec",
+  "title": "Heatmap lite",
+  "data": {
+    "name": "cells",
+    "values": [
+      {"row": "r1", "col": "c1", "value": 0.1},
+      {"row": "r1", "col": "c2", "value": 0.4},
+      {"row": "r2", "col": "c1", "value": 0.7},
+      {"row": "r2", "col": "c2", "value": 0.9}
+    ]
+  },
+  "mark": "rect",
+  "encoding": {
+    "x": {"field": "col", "type": "nominal"},
+    "y": {"field": "row", "type": "nominal"}
+  }
+}

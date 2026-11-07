@@ -1,0 +1,22 @@
+{
+  "$schema": "urn:prism:schema:v1:spec",
+  "title": "Brand overview (click to focus detail)",
+  "data": {
+    "name": "brands",
+    "values": [
+      {"brand_id": "alpha",   "score": 0.42},
+      {"brand_id": "beta",    "score": 0.71},
+      {"brand_id": "gamma",   "score": 0.58},
+      {"brand_id": "delta",   "score": 0.34},
+      {"brand_id": "epsilon", "score": 0.66}
+    ]
+  },
+  "selection": {
+    "brand_focus": {"type": "point", "fields": ["brand_id"], "toggle": true}
+  },
+  "mark": "bar",
+  "encoding": {
+    "x": {"field": "brand_id", "type": "nominal"},
+    "y": {"field": "score",    "type": "quantitative"}
+  }
+}

@@ -1,0 +1,24 @@
+{
+  "$schema": "urn:prism:schema:v1:spec",
+  "title": "Quarterly revenue — drop-shadow filter",
+  "data": {
+    "values": [
+      {"quarter": "Q1", "revenue": 120},
+      {"quarter": "Q2", "revenue": 145},
+      {"quarter": "Q3", "revenue": 138},
+      {"quarter": "Q4", "revenue": 172}
+    ]
+  },
+  "mark": "bar",
+  "encoding": {
+    "x": {"field": "quarter", "type": "nominal"},
+    "y": {"field": "revenue", "type": "quantitative"}
+  },
+  "theme": {
+    "name": "light",
+    "mark": {"filter": "drop-shadow"},
+    "filters": {
+      "drop-shadow": "<feDropShadow dx=\"1\" dy=\"2\" stdDeviation=\"2\" flood-opacity=\"0.4\"/>"
+    }
+  }
+}

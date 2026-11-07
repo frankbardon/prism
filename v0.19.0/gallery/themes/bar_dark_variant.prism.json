@@ -1,0 +1,23 @@
+{
+  "$schema": "urn:prism:schema:v1:spec",
+  "title": "Quarterly revenue by region — auto light/dark (dark_variant)",
+  "data": {
+    "values": [
+      {"quarter": "Q1", "region": "East", "revenue": 62},
+      {"quarter": "Q1", "region": "West", "revenue": 58},
+      {"quarter": "Q2", "region": "East", "revenue": 71},
+      {"quarter": "Q2", "region": "West", "revenue": 74},
+      {"quarter": "Q3", "region": "East", "revenue": 66},
+      {"quarter": "Q3", "region": "West", "revenue": 72},
+      {"quarter": "Q4", "region": "East", "revenue": 88},
+      {"quarter": "Q4", "region": "West", "revenue": 84}
+    ]
+  },
+  "mark": "bar",
+  "encoding": {
+    "x": {"field": "quarter", "type": "nominal"},
+    "y": {"field": "revenue", "type": "quantitative"},
+    "color": {"field": "region", "type": "nominal"}
+  },
+  "theme": {"dark_variant": "dark"}
+}

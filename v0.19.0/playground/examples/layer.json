@@ -1,0 +1,48 @@
+{
+  "$schema": "urn:prism:schema:v1:spec",
+  "title": "Actual vs benchmark",
+  "datasets": {
+    "actual": {
+      "values": [
+        {"day": "2026-01-01", "score": 0.41},
+        {"day": "2026-01-02", "score": 0.47},
+        {"day": "2026-01-03", "score": 0.39},
+        {"day": "2026-01-04", "score": 0.55},
+        {"day": "2026-01-05", "score": 0.62},
+        {"day": "2026-01-06", "score": 0.58},
+        {"day": "2026-01-07", "score": 0.71}
+      ]
+    },
+    "benchmark": {
+      "values": [
+        {"day": "2026-01-01", "score": 0.50},
+        {"day": "2026-01-02", "score": 0.50},
+        {"day": "2026-01-03", "score": 0.50},
+        {"day": "2026-01-04", "score": 0.50},
+        {"day": "2026-01-05", "score": 0.50},
+        {"day": "2026-01-06", "score": 0.50},
+        {"day": "2026-01-07", "score": 0.50}
+      ]
+    }
+  },
+  "layer": [
+    {
+      "$schema": "urn:prism:schema:v1:spec",
+      "data": {"name": "actual"},
+      "mark": {"type": "line", "stroke": "#3366cc", "stroke_width": 2},
+      "encoding": {
+        "x": {"field": "day",   "type": "temporal"},
+        "y": {"field": "score", "type": "quantitative"}
+      }
+    },
+    {
+      "$schema": "urn:prism:schema:v1:spec",
+      "data": {"name": "benchmark"},
+      "mark": {"type": "line", "stroke": "#999", "stroke_dash": [4, 2]},
+      "encoding": {
+        "x": {"field": "day",   "type": "temporal"},
+        "y": {"field": "score", "type": "quantitative"}
+      }
+    }
+  ]
+}

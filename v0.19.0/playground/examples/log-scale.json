@@ -1,0 +1,19 @@
+{
+  "$schema": "urn:prism:schema:v1:spec",
+  "title": "Revenue by tier (log scale)",
+  "data": {
+    "name": "tiers",
+    "values": [
+      {"tier": "starter",    "revenue":     800},
+      {"tier": "pro",        "revenue":    9400},
+      {"tier": "business",   "revenue":   46000},
+      {"tier": "enterprise", "revenue":  280000}
+    ]
+  },
+  "mark": {"type": "bar", "corner_radius": 4},
+  "encoding": {
+    "x":     {"field": "tier",    "type": "nominal"},
+    "y":     {"field": "revenue", "type": "quantitative", "scale": {"type": "log"}},
+    "color": {"field": "tier",    "type": "nominal"}
+  }
+}

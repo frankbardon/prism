@@ -1,0 +1,18 @@
+{
+  "$schema": "urn:prism:schema:v1:spec",
+  "title": "Quota attainment",
+  "data": {
+    "values": [
+      {"rep": "Ada", "closed": 148, "quota": 200},
+      {"rep": "Grace", "closed": 176, "quota": 160},
+      {"rep": "Alan", "closed": 61, "quota": 120},
+      {"rep": "Edsger", "closed": 94, "quota": 180}
+    ]
+  },
+  "mark": {"type": "progress", "total": "quota", "corner_radius": 4, "thickness": 0.6},
+  "encoding": {
+    "x": {"field": "closed", "type": "quantitative", "axis": {"title": "Closed"}},
+    "y": {"field": "rep", "type": "nominal"},
+    "color": {"field": "rep", "type": "nominal", "legend": null}
+  }
+}

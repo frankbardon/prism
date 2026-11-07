@@ -1,0 +1,19 @@
+{
+  "$schema": "urn:prism:schema:v1:spec",
+  "title": "Signup funnel",
+  "data": {
+    "name": "stages",
+    "values": [
+      {"stage": "Visit",    "count": 1000},
+      {"stage": "Signup",   "count":  400},
+      {"stage": "Activate", "count":  200},
+      {"stage": "Purchase", "count":  100}
+    ]
+  },
+  "mark": "funnel",
+  "encoding": {
+    "x":     {"field": "stage", "type": "nominal"},
+    "y":     {"field": "count", "type": "quantitative"},
+    "color": {"field": "stage", "type": "nominal"}
+  }
+}

@@ -1,0 +1,21 @@
+{
+  "$schema": "urn:prism:schema:v1:spec",
+  "title": "Seats in use (step interpolation)",
+  "data": {
+    "name": "seats_in_use",
+    "values": [
+      {"day": "2026-01-01", "seats": 12},
+      {"day": "2026-01-02", "seats": 12},
+      {"day": "2026-01-03", "seats": 19},
+      {"day": "2026-01-04", "seats": 19},
+      {"day": "2026-01-05", "seats": 31},
+      {"day": "2026-01-06", "seats": 28},
+      {"day": "2026-01-07", "seats": 40}
+    ]
+  },
+  "mark": {"type": "area", "interpolate": "step", "fill_opacity": 0.7},
+  "encoding": {
+    "x": {"field": "day",   "type": "temporal"},
+    "y": {"field": "seats", "type": "quantitative"}
+  }
+}
