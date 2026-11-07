@@ -1,0 +1,109 @@
+{
+  "$schema": "urn:prism:schema:v1:spec",
+  "data": {
+    "values": [
+      {
+        "g": "A",
+        "med": 3,
+        "q1": 2,
+        "q3": 4,
+        "wh": 6,
+        "wl": 1
+      },
+      {
+        "g": "B",
+        "med": 4,
+        "q1": 3.5,
+        "q3": 5,
+        "wh": 7,
+        "wl": 2
+      }
+    ]
+  },
+  "layer": [
+    {
+      "$schema": "urn:prism:schema:v1:spec",
+      "mark": {
+        "type": "rule"
+      },
+      "encoding": {
+        "x": {
+          "field": "wl",
+          "type": "quantitative",
+          "title": "Score"
+        },
+        "y": {
+          "field": "g",
+          "type": "nominal",
+          "scale": {
+            "reverse": true
+          },
+          "title": "Group",
+          "sort": [
+            "A",
+            "B"
+          ]
+        },
+        "x2": {
+          "field": "wh"
+        }
+      }
+    },
+    {
+      "$schema": "urn:prism:schema:v1:spec",
+      "mark": {
+        "type": "bar",
+        "fill_opacity": 0.35
+      },
+      "encoding": {
+        "x": {
+          "field": "q1",
+          "type": "quantitative",
+          "title": "Score"
+        },
+        "y": {
+          "field": "g",
+          "type": "nominal",
+          "scale": {
+            "reverse": true
+          },
+          "title": "Group",
+          "sort": [
+            "A",
+            "B"
+          ]
+        },
+        "x2": {
+          "field": "q3"
+        }
+      }
+    },
+    {
+      "$schema": "urn:prism:schema:v1:spec",
+      "mark": {
+        "type": "point",
+        "size": 64
+      },
+      "encoding": {
+        "x": {
+          "field": "med",
+          "type": "quantitative",
+          "title": "Score"
+        },
+        "y": {
+          "field": "g",
+          "type": "nominal",
+          "scale": {
+            "reverse": true
+          },
+          "title": "Group",
+          "sort": [
+            "A",
+            "B"
+          ]
+        }
+      }
+    }
+  ],
+  "height": 168
+}

@@ -1,0 +1,153 @@
+{
+  "$schema": "urn:prism:schema:v1:spec",
+  "data": {
+    "values": [
+      {
+        "col": "a",
+        "r": 1,
+        "row": "a"
+      },
+      {
+        "col": "b",
+        "r": 0.6,
+        "row": "a"
+      },
+      {
+        "col": "c",
+        "r": -0.3,
+        "row": "a"
+      },
+      {
+        "col": "a",
+        "r": 0.6,
+        "row": "b"
+      },
+      {
+        "col": "b",
+        "r": 1,
+        "row": "b"
+      },
+      {
+        "col": "c",
+        "r": 0.1,
+        "row": "b"
+      },
+      {
+        "col": "a",
+        "r": -0.3,
+        "row": "c"
+      },
+      {
+        "col": "b",
+        "r": 0.1,
+        "row": "c"
+      },
+      {
+        "col": "c",
+        "r": 1,
+        "row": "c"
+      }
+    ]
+  },
+  "layer": [
+    {
+      "$schema": "urn:prism:schema:v1:spec",
+      "mark": {
+        "type": "heatmap",
+        "fill_opacity": 0.6
+      },
+      "encoding": {
+        "x": {
+          "field": "col",
+          "type": "nominal",
+          "axis": {
+            "orient": "top",
+            "grid": false
+          }
+        },
+        "y": {
+          "field": "row",
+          "type": "nominal",
+          "scale": {
+            "reverse": true
+          },
+          "axis": {
+            "grid": false
+          }
+        },
+        "color": {
+          "field": "r",
+          "type": "quantitative",
+          "scale": {
+            "domain": [
+              -1,
+              1
+            ],
+            "scheme": "rdbu"
+          },
+          "title": "Correlation",
+          "legend": {
+            "orient": "right"
+          }
+        },
+        "tooltip": [
+          {
+            "field": "row"
+          },
+          {
+            "field": "col"
+          },
+          {
+            "field": "r",
+            "format": ".2f"
+          }
+        ]
+      }
+    },
+    {
+      "$schema": "urn:prism:schema:v1:spec",
+      "mark": {
+        "type": "text",
+        "font_size": 11
+      },
+      "encoding": {
+        "x": {
+          "field": "col",
+          "type": "nominal",
+          "axis": {
+            "orient": "top",
+            "grid": false
+          }
+        },
+        "y": {
+          "field": "row",
+          "type": "nominal",
+          "scale": {
+            "reverse": true
+          },
+          "axis": {
+            "grid": false
+          }
+        },
+        "text": {
+          "field": "r",
+          "format": ".2f"
+        },
+        "tooltip": [
+          {
+            "field": "row"
+          },
+          {
+            "field": "col"
+          },
+          {
+            "field": "r",
+            "format": ".2f"
+          }
+        ]
+      }
+    }
+  ],
+  "height": 230,
+  "title": "Correlation"
+}

@@ -1,0 +1,110 @@
+{
+  "$schema": "urn:prism:schema:v1:spec",
+  "data": {
+    "values": [
+      {
+        "hi": 140,
+        "lo": 100,
+        "region": "North",
+        "sales": 120
+      },
+      {
+        "hi": 95,
+        "lo": 60,
+        "region": "South",
+        "sales": 80
+      },
+      {
+        "region": "East",
+        "sales": 150
+      }
+    ]
+  },
+  "layer": [
+    {
+      "$schema": "urn:prism:schema:v1:spec",
+      "mark": "bar",
+      "encoding": {
+        "x": {
+          "field": "region",
+          "type": "nominal",
+          "title": "Region",
+          "sort": [
+            "East",
+            "North",
+            "South"
+          ]
+        },
+        "y": {
+          "field": "sales",
+          "type": "quantitative",
+          "title": "Sales"
+        },
+        "tooltip": [
+          {
+            "field": "region",
+            "title": "Region"
+          },
+          {
+            "field": "sales",
+            "format": ",.0f",
+            "title": "Sales"
+          }
+        ]
+      }
+    },
+    {
+      "$schema": "urn:prism:schema:v1:spec",
+      "data": {
+        "values": [
+          {
+            "hi": 140,
+            "lo": 100,
+            "region": "North",
+            "sales": 120
+          },
+          {
+            "hi": 95,
+            "lo": 60,
+            "region": "South",
+            "sales": 80
+          }
+        ]
+      },
+      "mark": {
+        "type": "rule",
+        "stroke_width": 2
+      },
+      "encoding": {
+        "x": {
+          "field": "region",
+          "type": "nominal",
+          "title": "Region",
+          "sort": [
+            "East",
+            "North",
+            "South"
+          ]
+        },
+        "y": {
+          "field": "lo",
+          "type": "quantitative"
+        },
+        "y2": {
+          "field": "hi"
+        },
+        "tooltip": [
+          {
+            "field": "region",
+            "title": "Region"
+          },
+          {
+            "field": "sales",
+            "format": ",.0f",
+            "title": "Sales"
+          }
+        ]
+      }
+    }
+  ]
+}

@@ -1,0 +1,224 @@
+{
+  "$schema": "urn:prism:schema:v1:spec",
+  "data": {
+    "values": [
+      {
+        "diff": 1.8,
+        "high": 3.2,
+        "low": 0.4,
+        "p": 0.012,
+        "state": "significant",
+        "test": "Conversion"
+      },
+      {
+        "diff": -0.6,
+        "high": 0.9,
+        "low": -2.1,
+        "p": 0.43,
+        "state": "not significant",
+        "test": "Retention"
+      },
+      {
+        "diff": 0.9,
+        "high": null,
+        "low": null,
+        "p": 0.08,
+        "state": "not significant",
+        "test": "Revenue"
+      }
+    ]
+  },
+  "layer": [
+    {
+      "$schema": "urn:prism:schema:v1:spec",
+      "data": {
+        "values": [
+          {
+            "value": 0
+          }
+        ]
+      },
+      "mark": {
+        "type": "rule",
+        "stroke_dash": [
+          4,
+          3
+        ]
+      },
+      "encoding": {
+        "x": {
+          "field": "value",
+          "type": "quantitative"
+        }
+      }
+    },
+    {
+      "$schema": "urn:prism:schema:v1:spec",
+      "data": {
+        "values": [
+          {
+            "diff": 1.8,
+            "high": 3.2,
+            "low": 0.4,
+            "p": 0.012,
+            "state": "significant",
+            "test": "Conversion"
+          },
+          {
+            "diff": -0.6,
+            "high": 0.9,
+            "low": -2.1,
+            "p": 0.43,
+            "state": "not significant",
+            "test": "Retention"
+          }
+        ]
+      },
+      "mark": "rule",
+      "encoding": {
+        "x": {
+          "field": "low",
+          "type": "quantitative",
+          "title": "Difference (pp)"
+        },
+        "y": {
+          "field": "test",
+          "type": "nominal",
+          "scale": {
+            "reverse": true
+          },
+          "title": "Test",
+          "sort": [
+            "Conversion",
+            "Retention",
+            "Revenue"
+          ],
+          "axis": {
+            "title": ""
+          }
+        },
+        "x2": {
+          "field": "high"
+        },
+        "color": {
+          "field": "state",
+          "type": "nominal",
+          "scale": {
+            "domain": [
+              "significant",
+              "not significant"
+            ]
+          },
+          "title": "Significance",
+          "legend": null
+        },
+        "tooltip": [
+          {
+            "field": "test",
+            "title": "Test"
+          },
+          {
+            "field": "diff",
+            "format": ".3~g",
+            "title": "Difference"
+          },
+          {
+            "field": "p",
+            "format": ".2~g",
+            "title": "p-value"
+          }
+        ]
+      }
+    },
+    {
+      "$schema": "urn:prism:schema:v1:spec",
+      "data": {
+        "values": [
+          {
+            "diff": 1.8,
+            "high": 3.2,
+            "low": 0.4,
+            "p": 0.012,
+            "state": "significant",
+            "test": "Conversion"
+          },
+          {
+            "diff": -0.6,
+            "high": 0.9,
+            "low": -2.1,
+            "p": 0.43,
+            "state": "not significant",
+            "test": "Retention"
+          },
+          {
+            "diff": 0.9,
+            "high": null,
+            "low": null,
+            "p": 0.08,
+            "state": "not significant",
+            "test": "Revenue"
+          }
+        ]
+      },
+      "mark": {
+        "type": "point",
+        "size": 64
+      },
+      "encoding": {
+        "x": {
+          "field": "diff",
+          "type": "quantitative",
+          "title": "Difference (pp)"
+        },
+        "y": {
+          "field": "test",
+          "type": "nominal",
+          "scale": {
+            "reverse": true
+          },
+          "title": "Test",
+          "sort": [
+            "Conversion",
+            "Retention",
+            "Revenue"
+          ],
+          "axis": {
+            "title": ""
+          }
+        },
+        "color": {
+          "field": "state",
+          "type": "nominal",
+          "scale": {
+            "domain": [
+              "significant",
+              "not significant"
+            ]
+          },
+          "title": "Significance",
+          "legend": {
+            "orient": "right"
+          }
+        },
+        "tooltip": [
+          {
+            "field": "test",
+            "title": "Test"
+          },
+          {
+            "field": "diff",
+            "format": ".3~g",
+            "title": "Difference"
+          },
+          {
+            "field": "p",
+            "format": ".2~g",
+            "title": "p-value"
+          }
+        ]
+      }
+    }
+  ],
+  "height": 204,
+  "title": "Proportion tests"
+}

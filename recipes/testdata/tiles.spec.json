@@ -1,0 +1,41 @@
+{
+  "$schema": "urn:prism:schema:v1:spec",
+  "data": {
+    "values": [
+      {
+        "m": "Revenue",
+        "v": 1234567
+      },
+      {
+        "m": "Orders",
+        "v": 4521
+      }
+    ]
+  },
+  "mark": {
+    "type": "text",
+    "font_size": 28
+  },
+  "encoding": {
+    "x": {
+      "field": "m",
+      "type": "nominal",
+      "sort": [
+        "Revenue",
+        "Orders"
+      ],
+      "axis": {
+        "orient": "top",
+        "title": "",
+        "grid": false,
+        "domain": false,
+        "ticks": false
+      }
+    },
+    "text": {
+      "field": "v",
+      "format": ",.0f"
+    }
+  },
+  "height": 160
+}

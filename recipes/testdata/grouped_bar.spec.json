@@ -1,0 +1,74 @@
+{
+  "$schema": "urn:prism:schema:v1:spec",
+  "data": {
+    "values": [
+      {
+        "q": "Q1",
+        "region": "East",
+        "v": 62
+      },
+      {
+        "q": "Q1",
+        "region": "West",
+        "v": 58
+      },
+      {
+        "q": "Q2",
+        "region": "East",
+        "v": 71
+      },
+      {
+        "q": "Q2",
+        "region": "West",
+        "v": 74
+      },
+      {
+        "q": "3",
+        "region": "East",
+        "v": 66
+      }
+    ]
+  },
+  "mark": "bar",
+  "encoding": {
+    "x": {
+      "field": "q",
+      "type": "nominal",
+      "title": "Quarter"
+    },
+    "y": {
+      "field": "v",
+      "type": "quantitative",
+      "title": "Revenue"
+    },
+    "x_offset": {
+      "field": "region",
+      "type": "nominal"
+    },
+    "color": {
+      "field": "region",
+      "type": "nominal",
+      "scale": {
+        "domain": [
+          "East",
+          "West"
+        ]
+      },
+      "title": "Region",
+      "legend": {
+        "orient": "right"
+      }
+    },
+    "tooltip": [
+      {
+        "field": "q"
+      },
+      {
+        "field": "region"
+      },
+      {
+        "field": "v"
+      }
+    ]
+  }
+}

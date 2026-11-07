@@ -49,6 +49,14 @@ var reporterFiles = map[string]bool{
 	filepath.Join("encode", "inert.go"): true,
 }
 
+// producerPkgs build specs rather than consume them: recipes/ sets
+// MarkDef.Type and friends when it writes a spec, which says nothing about
+// whether the pipeline reads them. Counting its references would let a
+// recipe keep a dead field alive.
+var producerPkgs = map[string]bool{
+	prismModePath + "/recipes": true,
+}
+
 // specField is one exported, JSON-tagged field on a spec/ struct.
 type specField struct {
 	Struct string // Go type name, e.g. "MarkDef"
@@ -170,7 +178,7 @@ func analyzeSpecConsumers(t *testing.T) *specConsumers {
 		fieldsLoaded = true
 
 		for path, p := range pkgs {
-			if !strings.HasPrefix(path, prismModePath) || path == specPkgPath || len(p.GoFiles) == 0 {
+			if !strings.HasPrefix(path, prismModePath) || path == specPkgPath || producerPkgs[path] || len(p.GoFiles) == 0 {
 				continue
 			}
 			files := make([]*ast.File, 0, len(p.GoFiles))
