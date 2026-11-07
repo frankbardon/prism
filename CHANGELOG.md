@@ -1,5 +1,29 @@
 # Changelog
 
+## v0.19.0 — unreleased
+
+Additive recipes release: what report series panels, goodness-of-fit
+bullets and partly lettered heatmaps needed. Every spec a v0.18 recipe
+call built is unchanged; the new options are off when left zero.
+
+### Recipes (`github.com/frankbardon/prism/recipes`)
+
+- **`Bar` value labels**: `Labels` letters each bar at its end with
+  `Value` through its `Format`, or with the `LabelField` column (a
+  value with a significance star, say).
+- **`Bar` bands**: `Bands []Band` (`Band{Low, High, Opacity}`, opacity
+  0.15 when zero) shade a span of the value axis behind every category,
+  ordered ones without rows included.
+- **`Bar` references**: `References []float64` draw dashed rules across
+  the value axis over the bars, as `Forest` and `Scatter` do.
+- **Span bars**: `BarOptions.Start` draws each bar from the `Start`
+  column to `Value` (`x`→`x2`, or `y`→`y2`) instead of from zero. With a
+  series `Color` it draws a bullet: an observed bar from 0 and a narrow
+  expected span per category, one mark, one legend.
+- **`Heatmap` `LabelRows`**: letters only the cells in the named `Y`
+  rows (a key row under a grid too large to letter); the other cells
+  stay plain, and the grid draws opaque unless `CellOpacity` is set.
+
 ## v0.18.0 — unreleased
 
 Feature release for building report charts from Go: a `recipes`
