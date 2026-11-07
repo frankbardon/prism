@@ -1,0 +1,18 @@
+{
+  "$schema": "urn:prism:schema:v1:spec",
+  "title": "Quarterly revenue — dark theme",
+  "data": {
+    "values": [
+      {"quarter": "Q1", "revenue": 120},
+      {"quarter": "Q2", "revenue": 145},
+      {"quarter": "Q3", "revenue": 138},
+      {"quarter": "Q4", "revenue": 172}
+    ]
+  },
+  "mark": "bar",
+  "encoding": {
+    "x": {"field": "quarter", "type": "nominal"},
+    "y": {"field": "revenue", "type": "quantitative"}
+  },
+  "theme": {"name": "dark"}
+}

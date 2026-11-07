@@ -1,0 +1,33 @@
+{
+  "$schema": "urn:prism:schema:v1:spec",
+  "title": "Labelled points",
+  "datasets": {
+    "scores": {"values": [
+      {"brand_id": "alpha", "score": 0.42},
+      {"brand_id": "beta", "score": 0.71},
+      {"brand_id": "gamma", "score": 0.58},
+      {"brand_id": "delta", "score": 0.66}
+    ]}
+  },
+  "layer": [
+    {
+      "$schema": "urn:prism:schema:v1:spec",
+      "data": {"name": "scores"},
+      "mark": {"type": "point", "size": 90},
+      "encoding": {
+        "x": {"field": "brand_id", "type": "nominal"},
+        "y": {"field": "score", "type": "quantitative"}
+      }
+    },
+    {
+      "$schema": "urn:prism:schema:v1:spec",
+      "data": {"name": "scores"},
+      "mark": {"type": "text", "font_size": 12, "baseline": "bottom"},
+      "encoding": {
+        "x": {"field": "brand_id", "type": "nominal"},
+        "y": {"field": "score", "type": "quantitative"},
+        "text": {"field": "score", "type": "quantitative", "format": ".0%"}
+      }
+    }
+  ]
+}

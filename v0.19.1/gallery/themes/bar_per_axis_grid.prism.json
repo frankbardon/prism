@@ -1,0 +1,23 @@
+{
+  "$schema": "urn:prism:schema:v1:spec",
+  "title": "Quarterly revenue — vertical and horizontal grid lines themed apart (axis_x / axis_y)",
+  "data": {
+    "values": [
+      {"quarter": "Q1", "revenue": 62},
+      {"quarter": "Q2", "revenue": 71},
+      {"quarter": "Q3", "revenue": 66},
+      {"quarter": "Q4", "revenue": 88}
+    ]
+  },
+  "mark": "bar",
+  "encoding": {
+    "x": {"field": "quarter", "type": "nominal", "axis": {"grid": true, "title": "Quarter"}},
+    "y": {"field": "revenue", "type": "quantitative", "axis": {"grid": true, "title": "Revenue", "title_padding": 16}}
+  },
+  "theme": {
+    "name": "light",
+    "axis": {"grid_color": "#cbd5e1", "grid_width": 1},
+    "axis_x": {"grid_color": "#f59e0b", "grid_dash": [4, 3]},
+    "axis_y": {"grid_color": "#94a3b8", "title_padding": 2}
+  }
+}

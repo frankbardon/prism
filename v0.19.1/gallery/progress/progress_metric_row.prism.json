@@ -1,0 +1,31 @@
+{
+  "$schema": "urn:prism:schema:v1:spec",
+  "title": "Onboarding funnel — metric rows",
+  "data": {
+    "values": [
+      {"step": "Visited", "users": 4820, "goal": 5000},
+      {"step": "Signed up", "users": 3150, "goal": 5000},
+      {"step": "Activated", "users": 1940, "goal": 5000},
+      {"step": "Retained", "users": 1120, "goal": 5000}
+    ]
+  },
+  "layer": [
+    {
+      "$schema": "urn:prism:schema:v1:spec",
+      "mark": {"type": "progress", "total": "goal", "corner_radius": 3, "thickness": 0.55},
+      "encoding": {
+        "x": {"field": "users", "type": "quantitative", "axis": {"title": "Users", "format": ",.0f"}},
+        "y": {"field": "step", "type": "nominal", "axis": {"title": false}}
+      }
+    },
+    {
+      "$schema": "urn:prism:schema:v1:spec",
+      "mark": {"type": "text", "align": "left", "dx": 6, "font_size": 11, "font_weight": "bold"},
+      "encoding": {
+        "x": {"field": "users", "type": "quantitative"},
+        "y": {"field": "step", "type": "nominal"},
+        "text": {"field": "users", "type": "quantitative", "format": ",.0f"}
+      }
+    }
+  ]
+}

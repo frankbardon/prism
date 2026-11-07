@@ -1,0 +1,17 @@
+{
+  "$schema": "urn:prism:schema:v1:spec",
+  "title": "Score over time",
+  "data": {
+    "name": "score_history",
+    "values": [
+      {"day": "2026-01-01", "score": 0.42},
+      {"day": "2026-01-02", "score": 0.55},
+      {"day": "2026-01-03", "score": 0.61}
+    ]
+  },
+  "mark": "line",
+  "encoding": {
+    "x": {"field": "day",   "type": "temporal"},
+    "y": {"field": "score", "type": "quantitative"}
+  }
+}

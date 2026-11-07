@@ -1,0 +1,17 @@
+{
+  "$schema": "urn:prism:schema:v1:spec",
+  "title": "Cluster capacity used",
+  "data": {
+    "values": [
+      {"cluster": "eu-west", "used": 62},
+      {"cluster": "us-east", "used": 88},
+      {"cluster": "ap-south", "used": 41},
+      {"cluster": "sa-east", "used": 17}
+    ]
+  },
+  "mark": {"type": "progress", "orient": "vertical", "total": 100, "corner_radius": 2, "thickness": 0.5},
+  "encoding": {
+    "x": {"field": "cluster", "type": "nominal"},
+    "y": {"field": "used", "type": "quantitative", "axis": {"title": "% capacity"}}
+  }
+}

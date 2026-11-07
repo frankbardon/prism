@@ -1,0 +1,21 @@
+{
+  "$schema": "urn:prism:schema:v1:spec",
+  "title": "Conversion funnel flow",
+  "data": {
+    "name": "flow",
+    "values": [
+      {"src": "Visit",  "tgt": "Signup",   "v": 600},
+      {"src": "Visit",  "tgt": "Bounce",   "v": 400},
+      {"src": "Signup", "tgt": "Trial",    "v": 380},
+      {"src": "Signup", "tgt": "Abandon",  "v": 220},
+      {"src": "Trial",  "tgt": "Purchase", "v": 150},
+      {"src": "Trial",  "tgt": "Cancel",   "v": 230}
+    ]
+  },
+  "mark": "sankey",
+  "encoding": {
+    "source": {"field": "src", "type": "nominal"},
+    "target": {"field": "tgt", "type": "nominal"},
+    "value":  {"field": "v",   "type": "quantitative"}
+  }
+}

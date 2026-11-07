@@ -1,0 +1,474 @@
+{
+  "version": "1.0",
+  "theme": {
+    "name": "light",
+    "color_axis": {
+      "r": 107,
+      "g": 114,
+      "b": 128,
+      "a": 255
+    },
+    "color_grid": {
+      "r": 229,
+      "g": 231,
+      "b": 235,
+      "a": 255
+    },
+    "color_text": {
+      "r": 17,
+      "g": 24,
+      "b": 39,
+      "a": 255
+    },
+    "background": "transparent",
+    "font_sans": "Inter, system-ui, sans-serif",
+    "font_mono": "ui-monospace, SF Mono, monospace",
+    "css": "\u003cstyle\u003e:root{--prism-color-axis:#6b7280;--prism-color-grid:#e5e7eb;--prism-color-text:#111827;--prism-color-bg:transparent;--prism-font-sans:Inter, system-ui, sans-serif;--prism-font-mono:ui-monospace, SF Mono, monospace;--prism-font-size-label:11px;--prism-font-size-title:16px;--prism-font-size-axis-title:12px;--prism-axis-domain-color:#6b7280;--prism-axis-domain-width:1px;--prism-axis-tick-color:#6b7280;--prism-axis-tick-width:1px;--prism-axis-tick-size:5px;--prism-grid-color:#e5e7eb;--prism-grid-width:1px;--prism-axis-label-color:#111827;--prism-axis-label-font-size:11px;--prism-axis-label-padding:4px;--prism-axis-title-color:#111827;--prism-axis-title-font-size:12px;--prism-axis-title-padding:8px;--prism-legend-padding:8px;--prism-legend-symbol-size:64px;--prism-legend-label-color:#111827;--prism-legend-label-font-size:11px;--prism-legend-title-color:#111827;--prism-legend-title-font-size:12px;--prism-legend-title-font-weight:600;--prism-legend-row-padding:4px;--prism-title-color:#111827;--prism-title-font-size:16px;--prism-title-font-weight:600;--prism-title-anchor:start;--prism-title-padding:12px;--prism-view-bg:transparent;--prism-view-padding:0px;--prism-mark-fill:#4c78a8;--prism-mark-stroke-width:0px;--prism-mark-opacity:1;--prism-mark-area-fill:#4c78a8;--prism-mark-area-opacity:0.7;--prism-deselected-opacity:0.3;--prism-selected-opacity:1;}.prism-axis-domain{stroke:var(--prism-axis-domain-color,var(--prism-color-axis));stroke-width:var(--prism-axis-domain-width,1px);fill:none;}.prism-axis-tick{stroke:var(--prism-axis-tick-color,var(--prism-color-axis));stroke-width:var(--prism-axis-tick-width,1px);}.prism-axis-label{fill:var(--prism-axis-label-color,var(--prism-color-text));font-family:var(--prism-font-sans);font-size:var(--prism-axis-label-font-size,var(--prism-font-size-label,11px));font-weight:var(--prism-axis-label-font-weight,400);}.prism-axis-title{fill:var(--prism-axis-title-color,var(--prism-color-text));font-family:var(--prism-font-sans);font-size:var(--prism-axis-title-font-size,var(--prism-font-size-axis-title,12px));font-weight:var(--prism-axis-title-font-weight,600);}.prism-grid-line{stroke:var(--prism-grid-color,var(--prism-color-grid));stroke-width:var(--prism-grid-width,1px);}.prism-title{fill:var(--prism-title-color,var(--prism-color-text));font-family:var(--prism-font-sans);font-size:var(--prism-title-font-size,var(--prism-font-size-title,16px));font-weight:var(--prism-title-font-weight,600);}.prism-legend-title{fill:var(--prism-legend-title-color,var(--prism-color-text));font-family:var(--prism-font-sans);font-size:var(--prism-legend-title-font-size,12px);font-weight:var(--prism-legend-title-font-weight,600);}.prism-legend-label{fill:var(--prism-legend-label-color,var(--prism-color-text));font-family:var(--prism-font-sans);font-size:var(--prism-legend-label-font-size,11px);}.prism-legend-swatch{stroke:none;}.prism-selected{opacity:var(--prism-selected-opacity,1);}.prism-deselected{opacity:var(--prism-deselected-opacity,0.3);}\u003c/style\u003e",
+    "axis_tick_size": 5,
+    "axis_label_padding": 4,
+    "axis_title_padding": 8
+  },
+  "grid": {
+    "layout": {
+      "rows": 1,
+      "cols": 1,
+      "headers": {}
+    },
+    "cells": [
+      {
+        "row": 0,
+        "col": 0,
+        "scene": {
+          "id": "scene-0",
+          "frame": {
+            "x": 0,
+            "y": 0,
+            "w": 800,
+            "h": 600
+          },
+          "plot": {
+            "x": 47.92,
+            "y": 50,
+            "w": 732.08,
+            "h": 510
+          },
+          "title": {
+            "content": "Net daily P\u0026L",
+            "x": 413.96000000000004,
+            "y": 20,
+            "style": {}
+          },
+          "axes": [
+            {
+              "id": "x-axis",
+              "channel": "x",
+              "position": "bottom",
+              "scale": {
+                "type": "linear",
+                "domain": [
+                  0,
+                  7
+                ],
+                "range": [
+                  47.92,
+                  780
+                ]
+              },
+              "ticks": [
+                {
+                  "value": 0,
+                  "pixel": 47.92,
+                  "label": "0"
+                },
+                {
+                  "value": 0.5,
+                  "pixel": 100.21142857142857,
+                  "label": "",
+                  "minor": true
+                },
+                {
+                  "value": 1,
+                  "pixel": 152.50285714285712,
+                  "label": "1"
+                },
+                {
+                  "value": 1.5,
+                  "pixel": 204.7942857142857,
+                  "label": "",
+                  "minor": true
+                },
+                {
+                  "value": 2,
+                  "pixel": 257.0857142857143,
+                  "label": "2"
+                },
+                {
+                  "value": 2.5,
+                  "pixel": 309.37714285714287,
+                  "label": "",
+                  "minor": true
+                },
+                {
+                  "value": 3,
+                  "pixel": 361.66857142857145,
+                  "label": "3"
+                },
+                {
+                  "value": 3.5,
+                  "pixel": 413.96000000000004,
+                  "label": "",
+                  "minor": true
+                },
+                {
+                  "value": 4,
+                  "pixel": 466.25142857142856,
+                  "label": "4"
+                },
+                {
+                  "value": 4.5,
+                  "pixel": 518.5428571428572,
+                  "label": "",
+                  "minor": true
+                },
+                {
+                  "value": 5,
+                  "pixel": 570.8342857142857,
+                  "label": "5"
+                },
+                {
+                  "value": 5.5,
+                  "pixel": 623.1257142857143,
+                  "label": "",
+                  "minor": true
+                },
+                {
+                  "value": 6,
+                  "pixel": 675.4171428571428,
+                  "label": "6"
+                },
+                {
+                  "value": 6.5,
+                  "pixel": 727.7085714285714,
+                  "label": "",
+                  "minor": true
+                },
+                {
+                  "value": 7,
+                  "pixel": 780,
+                  "label": "7"
+                }
+              ],
+              "title": "day",
+              "domain": {
+                "x1": 47.92,
+                "y1": 560,
+                "x2": 780,
+                "y2": 560
+              },
+              "grid": [
+                {
+                  "x1": 47.92,
+                  "y1": 50,
+                  "x2": 47.92,
+                  "y2": 560
+                },
+                {
+                  "x1": 152.50285714285712,
+                  "y1": 50,
+                  "x2": 152.50285714285712,
+                  "y2": 560
+                },
+                {
+                  "x1": 257.0857142857143,
+                  "y1": 50,
+                  "x2": 257.0857142857143,
+                  "y2": 560
+                },
+                {
+                  "x1": 361.66857142857145,
+                  "y1": 50,
+                  "x2": 361.66857142857145,
+                  "y2": 560
+                },
+                {
+                  "x1": 466.25142857142856,
+                  "y1": 50,
+                  "x2": 466.25142857142856,
+                  "y2": 560
+                },
+                {
+                  "x1": 570.8342857142857,
+                  "y1": 50,
+                  "x2": 570.8342857142857,
+                  "y2": 560
+                },
+                {
+                  "x1": 675.4171428571428,
+                  "y1": 50,
+                  "x2": 675.4171428571428,
+                  "y2": 560
+                },
+                {
+                  "x1": 780,
+                  "y1": 50,
+                  "x2": 780,
+                  "y2": 560
+                }
+              ],
+              "label_style": {},
+              "title_style": {}
+            },
+            {
+              "id": "y-axis",
+              "channel": "y",
+              "position": "left",
+              "scale": {
+                "type": "linear",
+                "domain": [
+                  -15,
+                  20
+                ],
+                "range": [
+                  560,
+                  50
+                ]
+              },
+              "ticks": [
+                {
+                  "value": -15,
+                  "pixel": 560,
+                  "label": "-15"
+                },
+                {
+                  "value": -12.5,
+                  "pixel": 523.5714285714286,
+                  "label": "",
+                  "minor": true
+                },
+                {
+                  "value": -10,
+                  "pixel": 487.14285714285717,
+                  "label": "-10"
+                },
+                {
+                  "value": -7.5,
+                  "pixel": 450.7142857142857,
+                  "label": "",
+                  "minor": true
+                },
+                {
+                  "value": -5,
+                  "pixel": 414.28571428571433,
+                  "label": "-5"
+                },
+                {
+                  "value": -2.5,
+                  "pixel": 377.8571428571429,
+                  "label": "",
+                  "minor": true
+                },
+                {
+                  "value": 0,
+                  "pixel": 341.42857142857144,
+                  "label": "0"
+                },
+                {
+                  "value": 2.5,
+                  "pixel": 305,
+                  "label": "",
+                  "minor": true
+                },
+                {
+                  "value": 5,
+                  "pixel": 268.5714285714286,
+                  "label": "5"
+                },
+                {
+                  "value": 7.5,
+                  "pixel": 232.1428571428571,
+                  "label": "",
+                  "minor": true
+                },
+                {
+                  "value": 10,
+                  "pixel": 195.71428571428572,
+                  "label": "10"
+                },
+                {
+                  "value": 12.5,
+                  "pixel": 159.28571428571428,
+                  "label": "",
+                  "minor": true
+                },
+                {
+                  "value": 15,
+                  "pixel": 122.85714285714289,
+                  "label": "15"
+                },
+                {
+                  "value": 17.5,
+                  "pixel": 86.42857142857139,
+                  "label": "",
+                  "minor": true
+                },
+                {
+                  "value": 20,
+                  "pixel": 50,
+                  "label": "20"
+                }
+              ],
+              "title": "pnl",
+              "domain": {
+                "x1": 47.92,
+                "y1": 50,
+                "x2": 47.92,
+                "y2": 560
+              },
+              "grid": [
+                {
+                  "x1": 47.92,
+                  "y1": 560,
+                  "x2": 780,
+                  "y2": 560
+                },
+                {
+                  "x1": 47.92,
+                  "y1": 487.14285714285717,
+                  "x2": 780,
+                  "y2": 487.14285714285717
+                },
+                {
+                  "x1": 47.92,
+                  "y1": 414.28571428571433,
+                  "x2": 780,
+                  "y2": 414.28571428571433
+                },
+                {
+                  "x1": 47.92,
+                  "y1": 341.42857142857144,
+                  "x2": 780,
+                  "y2": 341.42857142857144
+                },
+                {
+                  "x1": 47.92,
+                  "y1": 268.5714285714286,
+                  "x2": 780,
+                  "y2": 268.5714285714286
+                },
+                {
+                  "x1": 47.92,
+                  "y1": 195.71428571428572,
+                  "x2": 780,
+                  "y2": 195.71428571428572
+                },
+                {
+                  "x1": 47.92,
+                  "y1": 122.85714285714289,
+                  "x2": 780,
+                  "y2": 122.85714285714289
+                },
+                {
+                  "x1": 47.92,
+                  "y1": 50,
+                  "x2": 780,
+                  "y2": 50
+                }
+              ],
+              "label_style": {},
+              "title_style": {}
+            }
+          ],
+          "layers": [
+            {
+              "id": "layer-0",
+              "mark": "area",
+              "marks": [
+                {
+                  "type": "area",
+                  "id": "area-0",
+                  "style": {
+                    "fill": {
+                      "r": 76,
+                      "g": 120,
+                      "b": 168,
+                      "a": 255
+                    },
+                    "opacity": 0.7
+                  },
+                  "datum": {
+                    "layer_id": "layer-0",
+                    "row_id": 0
+                  },
+                  "area": {
+                    "upper": [
+                      [
+                        152.50285714285712,
+                        160.7428571428572
+                      ],
+                      [
+                        257.0857142857143,
+                        459.45714285714286
+                      ],
+                      [
+                        361.66857142857145,
+                        272.9428571428572
+                      ],
+                      [
+                        466.25142857142856,
+                        549.8
+                      ],
+                      [
+                        570.8342857142857,
+                        61.657142857142844
+                      ],
+                      [
+                        675.4171428571428,
+                        290.42857142857144
+                      ],
+                      [
+                        780,
+                        370.57142857142856
+                      ]
+                    ],
+                    "lower": [
+                      [
+                        152.50285714285712,
+                        341.42857142857144
+                      ],
+                      [
+                        257.0857142857143,
+                        341.42857142857144
+                      ],
+                      [
+                        361.66857142857145,
+                        341.42857142857144
+                      ],
+                      [
+                        466.25142857142856,
+                        341.42857142857144
+                      ],
+                      [
+                        570.8342857142857,
+                        341.42857142857144
+                      ],
+                      [
+                        675.4171428571428,
+                        341.42857142857144
+                      ],
+                      [
+                        780,
+                        341.42857142857144
+                      ]
+                    ],
+                    "curve": "linear"
+                  }
+                }
+              ]
+            }
+          ]
+        }
+      }
+    ],
+    "shared": {}
+  }
+}

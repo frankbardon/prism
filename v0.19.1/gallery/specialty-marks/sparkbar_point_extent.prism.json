@@ -1,0 +1,19 @@
+{
+  "$schema": "urn:prism:schema:v1:spec",
+  "data": {
+    "name": "trend",
+    "values": [
+      {"t": "a", "v": 12},
+      {"t": "b", "v": 18},
+      {"t": "c", "v": 15},
+      {"t": "d", "v": 22},
+      {"t": "e", "v": 28},
+      {"t": "f", "v": 24}
+    ]
+  },
+  "mark": {"type": "sparkbar", "point_extent": true},
+  "encoding": {
+    "x": {"field": "t", "type": "nominal"},
+    "y": {"field": "v", "type": "quantitative"}
+  }
+}

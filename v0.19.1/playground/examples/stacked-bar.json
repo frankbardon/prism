@@ -1,0 +1,24 @@
+{
+  "$schema": "urn:prism:schema:v1:spec",
+  "title": "Signups by region & plan",
+  "data": {
+    "name": "signups",
+    "values": [
+      {"region": "NA",   "plan": "free", "count": 320},
+      {"region": "NA",   "plan": "pro",  "count": 180},
+      {"region": "NA",   "plan": "ent",  "count":  60},
+      {"region": "EU",   "plan": "free", "count": 240},
+      {"region": "EU",   "plan": "pro",  "count": 150},
+      {"region": "EU",   "plan": "ent",  "count":  45},
+      {"region": "APAC", "plan": "free", "count": 410},
+      {"region": "APAC", "plan": "pro",  "count": 130},
+      {"region": "APAC", "plan": "ent",  "count":  30}
+    ]
+  },
+  "mark": "bar",
+  "encoding": {
+    "x":     {"field": "region", "type": "nominal"},
+    "y":     {"field": "count",  "type": "quantitative", "aggregate": "sum", "stack": "zero"},
+    "color": {"field": "plan",   "type": "nominal"}
+  }
+}

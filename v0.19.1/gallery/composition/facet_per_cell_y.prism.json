@@ -1,0 +1,23 @@
+{
+  "$schema": "urn:prism:schema:v1:spec",
+  "title": "Region facets with independent y-domains",
+  "data": {
+    "name": "samples",
+    "values": [
+      {"region": "NA", "brand": "alpha", "score": 0.42},
+      {"region": "NA", "brand": "beta",  "score": 0.55},
+      {"region": "EU", "brand": "alpha", "score": 9.8},
+      {"region": "EU", "brand": "beta",  "score": 12.4}
+    ]
+  },
+  "facet":   {"column": {"field": "region", "type": "nominal"}},
+  "resolve": {"scale": {"y": "independent"}},
+  "spec": {
+    "$schema": "urn:prism:schema:v1:spec",
+    "mark": "bar",
+    "encoding": {
+      "x": {"field": "brand", "type": "nominal"},
+      "y": {"field": "score", "type": "quantitative"}
+    }
+  }
+}
