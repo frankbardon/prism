@@ -3,6 +3,7 @@ package encode
 import (
 	"fmt"
 	"math"
+	"sort"
 
 	"github.com/frankbardon/prism/encode/scale"
 	"github.com/frankbardon/prism/encode/scene"
@@ -209,6 +210,12 @@ type ScaleOpts struct {
 	// the bands are laid out sits. 0 packs them against the range
 	// start, 1 against the end, 0.5 (the default) centres them.
 	Align *float64
+
+	// SortDescending is a position channel's `sort` direction
+	// (positionScaleOpts): with no explicit domain, a discrete scale
+	// orders its categories by value, descending when true, ascending
+	// when false. Nil keeps first-seen data order.
+	SortDescending *bool
 }
 
 // Band and point geometry defaults. The band trio matches Vega-Lite
@@ -264,6 +271,43 @@ func ScaleOptsFromSpec(sc *spec.Scale) ScaleOpts {
 	opts.PaddingOuter = copyFloat(sc.PaddingOuter)
 	opts.Align = copyFloat(sc.Align)
 	return opts
+}
+
+// positionScaleOpts is ScaleOptsFromSpec for a position channel, with
+// the channel-level `sort` folded in. A `sort` naming the categories
+// outright pins their order exactly as `scale.domain` does (and an
+// explicit `scale.domain` outranks it); a direction — `ascending` /
+// `descending` and their `asc` / `desc` aliases — orders a discrete
+// scale's categories by value. Both apply to discrete scales only.
+// Sorting by another channel ("-y", {"field": …}) is not read
+// (encode/inert.go reports it).
+func positionScaleOpts(ch *spec.PositionChannel) ScaleOpts {
+	if ch == nil {
+		return ScaleOpts{}
+	}
+	opts := ScaleOptsFromSpec(ch.Scale)
+	if len(opts.Domain) > 0 {
+		return opts
+	}
+	if list, ok := offsetSortList(ch.Sort); ok {
+		opts.Domain = list
+		return opts
+	}
+	if dir, ok := ch.Sort.(string); ok && spec.SortDirectionValid(dir) {
+		d := spec.SortDirectionDescending(dir)
+		opts.SortDescending = &d
+	}
+	return opts
+}
+
+// positionSortRead reports whether a position channel's `sort` is a
+// form positionScaleOpts reads (a category list or a direction).
+func positionSortRead(v any) bool {
+	if _, ok := offsetSortList(v); ok {
+		return true
+	}
+	dir, ok := v.(string)
+	return ok && spec.SortDirectionValid(dir)
 }
 
 // copyBool detaches an optional flag from the spec block so a later
@@ -492,7 +536,16 @@ func (o ScaleOpts) temporalDomain() (float64, float64, bool, error) {
 // no row is silently dropped.
 func (o ScaleOpts) categoryDomain(values []any) ([]string, error) {
 	if len(o.Domain) == 0 {
-		return nil, nil
+		if o.SortDescending == nil {
+			return nil, nil
+		}
+		cats := uniqueStrings(values)
+		if *o.SortDescending {
+			sort.Sort(sort.Reverse(sort.StringSlice(cats)))
+		} else {
+			sort.Strings(cats)
+		}
+		return cats, nil
 	}
 	cats := make([]string, 0, len(o.Domain))
 	seen := map[string]bool{}

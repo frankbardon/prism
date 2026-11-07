@@ -495,7 +495,7 @@ func buildSharedScaleForFacet(childSpec *spec.Spec, parts *facetPartitions, chan
 	if len(allValues) == 0 || firstCol == nil {
 		return nil, nil
 	}
-	opts := ScaleOptsFromSpec(ch.Scale)
+	opts := positionScaleOpts(ch)
 	if ch.Scale != nil && ch.Scale.Type != "" {
 		sc, _, err := ResolveScaleTyped(scene.ScaleType(ch.Scale.Type), allValues, rmin, rmax, opts)
 		return sc, err

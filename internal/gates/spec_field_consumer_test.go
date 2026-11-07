@@ -86,12 +86,8 @@ var knownInertSpecFields = map[string]string{
 	// --- Channel-level keys ----------------------------------------------
 	"ChannelCommon.Bin": "channel-level binning is not implemented — no synthetic bin node is injected. Use " +
 		"the `bin` transform, or mark_def.maxbins on a histogram.",
-	"ChannelCommon.Sort": "channel-level sorting is not implemented. A discrete scale's category order " +
-		"follows the data (or an explicit scale.domain); use the `sort` transform or the `order` channel.",
 	"TextChannel.Type": "a text / tooltip channel formats the raw cell value and resolves no scale, so its " +
 		"declared type is not read. (The `type` on a position / mark channel is read.)",
-	"TextChannel.Title": "a text / tooltip channel has no axis or legend to title. A *table column* title IS " +
-		"honoured — that is ChannelCommon.Title reached through spec.TableColumn, a different field.",
 	"OrderChannelEntry.Type": "the order channel sorts on the column's own table kind; the declared type is " +
 		"not read.",
 	"DetailChannelEntry.Type": "the detail channel only partitions rows on the tuple of its field values " +

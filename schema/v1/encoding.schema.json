@@ -36,7 +36,7 @@
         "type":      {"$ref": "shared.schema.json#/$defs/measure_type", "description": "Logical measure type."},
         "aggregate": {"$ref": "transform.schema.json#/$defs/aggregate_op", "description": "Optional inline aggregate over the field."},
         "scale":     {"$ref": "scale.schema.json#/$defs/scale", "description": "Optional scale override."},
-        "title":     {"type": "string", "description": "Axis or legend title override."},
+        "title":     {"type": "string", "description": "Axis title on x / y, legend title on color (axis.title / legend.title outrank it). Not read on other channels."},
         "format":    {"type": "string", "description": "Numeric or date format string."},
         "bin":       {"type": ["boolean", "object"], "description": "Inline bin configuration; true for defaults."},
         "sort":      {
@@ -45,7 +45,7 @@
             {"type": "array", "items": {"type": ["string", "number"]}, "description": "Explicit ordered value list."},
             {"type": "null", "description": "Disable sorting."}
           ],
-          "description": "Sort spec for the channel domain."
+          "description": "Category order on x / y (discrete scale) and color: a direction or an explicit list. A channel reference like \"-y\" is not implemented (reported inert); scale.domain outranks it."
         },
         "value":     {"description": "Constant literal value; alternative to field for a constant encoding."},
         "condition": {"$ref": "encoding.schema.json#/$defs/condition"}
@@ -110,8 +110,8 @@
         "field":     {"$ref": "shared.schema.json#/$defs/field_ref"},
         "type":      {"$ref": "shared.schema.json#/$defs/measure_type"},
         "aggregate": {"$ref": "transform.schema.json#/$defs/aggregate_op"},
-        "format":    {"type": "string"},
-        "title":     {"type": "string"},
+        "format":    {"type": "string", "description": "d3-format specifier applied to the value."},
+        "title":     {"type": "string", "description": "Tooltip line label (the field name when absent). Not read on a text mark's text channel."},
         "value":     {}
       }
     },

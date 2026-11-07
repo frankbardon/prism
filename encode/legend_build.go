@@ -294,6 +294,39 @@ func distinctStringValues(col table.Column) []string {
 	return out
 }
 
+// colorCategories is a categorical color channel's category order —
+// the order palette slots and symbol-legend entries are handed out in.
+// The channel's `scale.domain` pins the leading order (unlisted data
+// categories follow in first-seen order, the rule every discrete
+// domain follows), else a `sort` list or direction orders them, else
+// first appearance in the data stands.
+func colorCategories(col table.Column, ch *spec.MarkChannel) []string {
+	seen := distinctStringValues(col)
+	if ch == nil {
+		return seen
+	}
+	opts := ScaleOptsFromSpec(ch.Scale)
+	if len(opts.Domain) == 0 {
+		if list, ok := offsetSortList(ch.Sort); ok {
+			opts.Domain = list
+		} else if dir, ok := ch.Sort.(string); ok && spec.SortDirectionValid(dir) {
+			d := spec.SortDirectionDescending(dir)
+			opts.SortDescending = &d
+		}
+	}
+	values := make([]any, len(seen))
+	for i, v := range seen {
+		values[i] = v
+	}
+	cats, err := opts.categoryDomain(values)
+	if err != nil || len(cats) == 0 {
+		// A malformed domain is PRISM_SPEC_042 at validate; the
+		// encoder keeps data order rather than failing the chart.
+		return seen
+	}
+	return cats
+}
+
 // legendEntryCount reports how many symbol-legend entries the color
 // channel of enc would produce over tbl. The layout needs the count
 // before the color channel is resolved, because a top/bottom legend's
@@ -306,7 +339,7 @@ func legendEntryCount(enc *spec.Encoding, tbl *table.Table) int {
 	if !ok {
 		return 0
 	}
-	cats := distinctStringValues(col)
+	cats := colorCategories(col, enc.Color)
 	// Fewer than two categories builds no legend at all, so nothing
 	// is reserved. Above that the count is the *shown* entry count:
 	// legend.values filters entries, and the reserved band has to
@@ -516,7 +549,20 @@ func colorLegendTitle(enc *spec.Encoding) string {
 	if enc == nil || enc.Color == nil {
 		return ""
 	}
-	return enc.Color.Field
+	return markChannelTitle(enc.Color)
+}
+
+// markChannelTitle is a mark channel's derived legend title: its
+// channel-level `title`, else its field name. legend.title still
+// overrides it (legendTitle).
+func markChannelTitle(ch *spec.MarkChannel) string {
+	if ch == nil {
+		return ""
+	}
+	if ch.Title != "" {
+		return ch.Title
+	}
+	return ch.Field
 }
 
 // colorChannelFormat is the color channel's own `format` specifier,

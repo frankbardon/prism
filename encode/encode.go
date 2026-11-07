@@ -417,7 +417,7 @@ func encodeLeaf(s *spec.Spec, tables map[plan.NodeID]*table.Table, tipID plan.No
 				map[string]any{"Field": enc.Color.Field, "Source": "<table>", "Available": joinTableFields(tbl)},
 			)
 		}
-		cats := distinctStringValues(col)
+		cats := colorCategories(col, enc.Color)
 		colorChannel = &marks.ColorChannel{
 			Field:             enc.Color.Field,
 			Categories:        cats,
@@ -650,7 +650,7 @@ func encodeLeaf(s *spec.Spec, tables map[plan.NodeID]*table.Table, tipID plan.No
 		// as the legend title in that case.
 		title := colorChannel.Field
 		if enc.Color != nil && enc.Color.Field != "" {
-			title = enc.Color.Field
+			title = colorLegendTitle(enc)
 		}
 		legendGradientKey = LegendGradientID(flatSceneID, scene.ChannelColor)
 		legend, grad := buildColorLegend(colorLegendInputs{
@@ -733,7 +733,7 @@ func buildSceneDoc(
 			Kind:       legendKind,
 			SceneID:    flatSceneID,
 			Channel:    scene.ChannelColor,
-			Title:      enc.Color.Field,
+			Title:      colorLegendTitle(enc),
 			Field:      colorChannel.Field,
 			Format:     colorChannelFormat(enc),
 			Categories: colorChannel.Categories,
@@ -807,7 +807,7 @@ func resolveChannel(ch *spec.PositionChannel, tbl *table.Table, rmin, rmax float
 	// extra carries mark-supplied domain values (bullet bands / target /
 	// comparative) that must widen the data-derived domain.
 	values = append(values, extra...)
-	opts := ScaleOptsFromSpec(ch.Scale)
+	opts := positionScaleOpts(ch)
 	if ch.Scale != nil && ch.Scale.Type != "" {
 		return ResolveScaleTyped(scene.ScaleType(ch.Scale.Type), values, rmin, rmax, opts)
 	}
@@ -1565,9 +1565,14 @@ func layerAxisHidden(specs []*spec.Spec, ch scene.Channel) bool {
 // format}. Defaults match DefaultAxisOpts; the spec selectively
 // overrides.
 func axisOptsFor(ch *spec.PositionChannel) AxisOpts {
+	// Title precedence: axis.title > the channel-level title > the
+	// field name.
 	title := ""
 	if ch != nil {
 		title = ch.Field
+		if ch.Title != "" {
+			title = ch.Title
+		}
 	}
 	opts := DefaultAxisOpts(title)
 	if ch == nil {

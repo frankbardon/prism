@@ -386,7 +386,7 @@ func encodeLayerComposite(s *spec.Spec, composite *plan.CompositeDAG, childTable
 					map[string]any{"Field": childEnc.Color.Field, "Source": "<layer-table>", "Available": joinTableFields(lc.tbl)},
 				)
 			}
-			cats := distinctStringValues(col)
+			cats := colorCategories(col, childEnc.Color)
 			colorChannel = &marks.ColorChannel{
 				Field:      childEnc.Color.Field,
 				Categories: cats,
@@ -404,7 +404,7 @@ func encodeLayerComposite(s *spec.Spec, composite *plan.CompositeDAG, childTable
 					Kind:       ll.kind,
 					SceneID:    flatSceneID,
 					Channel:    scene.ChannelColor,
-					Title:      fmt.Sprintf("layer-%d: %s", lc.idx, childEnc.Color.Field),
+					Title:      layerLegendTitle(lc.idx, childEnc.Color),
 					Field:      childEnc.Color.Field,
 					Format:     childEnc.Color.Format,
 					Categories: cats,
@@ -787,9 +787,25 @@ func layerEncodings(live []liveChild) []labelledEncoding {
 	return out
 }
 
-// firstFieldName returns the field name on the first live layer that
-// declares the given channel. Used as the shared axis title.
+// layerLegendTitle is a layer's derived legend title: the color
+// channel's own `title` verbatim, else the field name tagged with the
+// layer index.
+func layerLegendTitle(idx int, ch *spec.MarkChannel) string {
+	if ch.Title != "" {
+		return ch.Title
+	}
+	return fmt.Sprintf("layer-%d: %s", idx, ch.Field)
+}
+
+// firstFieldName returns the shared axis title: the first channel-level
+// `title` any live layer declares on the channel, else the field name
+// on the first live layer that declares the channel.
 func firstFieldName(live []liveChild, channel scene.Channel) string {
+	for _, lc := range live {
+		if ch := layerPositionChannel(lc, channel); ch != nil && ch.Title != "" {
+			return ch.Title
+		}
+	}
 	for _, lc := range live {
 		enc := lc.child.Spec.Encoding
 		if enc == nil {
@@ -807,6 +823,22 @@ func firstFieldName(live []liveChild, channel scene.Channel) string {
 		}
 	}
 	return ""
+}
+
+// layerPositionChannel is a live layer's x or y binding, nil when it
+// declares none.
+func layerPositionChannel(lc liveChild, channel scene.Channel) *spec.PositionChannel {
+	enc := lc.child.Spec.Encoding
+	if enc == nil {
+		return nil
+	}
+	switch channel {
+	case scene.ChannelX:
+		return enc.X
+	case scene.ChannelY:
+		return enc.Y
+	}
+	return nil
 }
 
 // layerSourceLabel returns a debug-friendly label for a layer's
@@ -947,10 +979,10 @@ func sharedScaleOpts(live []liveChild, channel scene.Channel) ScaleOpts {
 		case scene.ChannelY:
 			ch = enc.Y
 		}
-		if ch == nil || ch.Scale == nil {
+		if ch == nil || (ch.Scale == nil && !positionSortRead(ch.Sort)) {
 			continue
 		}
-		return ScaleOptsFromSpec(ch.Scale)
+		return positionScaleOpts(ch)
 	}
 	return ScaleOpts{}
 }
