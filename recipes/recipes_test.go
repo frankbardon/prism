@@ -172,6 +172,101 @@ func TestBar(t *testing.T) {
 	})))
 }
 
+// TestBarLabelsBandsReferences: a series panel — bars over a shaded
+// ±1.96 band, a dashed baseline over them, each bar lettered from a
+// label column, the value axis pinned with headroom.
+func TestBarLabelsBandsReferences(t *testing.T) {
+	rows := []recipes.Row{
+		{"g": "A", "z": 2.4, "label": "2.4 *"},
+		{"g": "B", "z": -0.8, "label": "-0.8"},
+		{"g": "C", "z": 1.1, "label": "1.1"},
+	}
+	s := must(t)(recipes.Bar(rows, recipes.BarOptions{
+		Category:   recipes.Field{Name: "g", Title: "Group"},
+		Value:      recipes.Field{Name: "z", Title: "z-score"},
+		Order:      []string{"A", "B", "C", "D"},
+		Bands:      []recipes.Band{{Low: -1.96, High: 1.96}},
+		References: []float64{0},
+		Labels:     true,
+		LabelField: "label",
+		Domain:     []float64{-2.5, 3},
+		Tooltip:    []recipes.Field{recipes.F("g"), {Name: "z", Format: ".2f"}},
+		Frame:      recipes.Frame{Title: "z-scores", Height: 220},
+	}))
+	if got := len(s.Layer); got != 4 {
+		t.Fatalf("layers = %d, want band, bar, reference, labels", got)
+	}
+	if band := s.Layer[0]; band.Mark.Def.Type != "bar" || *band.Mark.Def.FillOpacity != 0.15 || len(band.Data.Values) != 4 {
+		t.Errorf("band layer %+v, want a 0.15 bar on every ordered category", band.Mark.Def)
+	}
+	svg := golden(t, "bar_series", s)
+	if got := strings.Count(svg, `class="prism-mark-text"`); got != 3 {
+		t.Errorf("labels = %d, want one per bar", got)
+	}
+	if !strings.Contains(svg, ">2.4 *<") {
+		t.Error("label column not printed")
+	}
+	if got := strings.Count(svg, `stroke-dasharray="4 3"`); got != 1 {
+		t.Errorf("dashed rules = %d, want the baseline", got)
+	}
+	if got := strings.Count(svg, `fill-opacity="0.15"`); got != 4 {
+		t.Errorf("band spans = %d, want one per category", got)
+	}
+
+	// Labels from the value column through its format, horizontal.
+	h := must(t)(recipes.Bar(rows, recipes.BarOptions{
+		Category: recipes.F("g"), Value: recipes.Field{Name: "z", Format: ".1f"}, Horizontal: true,
+		Labels: true, References: []float64{0},
+	}))
+	hsvg := golden(t, "bar_labels_horizontal", h)
+	if !strings.Contains(hsvg, ">-0.8<") || strings.Count(hsvg, `class="prism-mark-text"`) != 3 {
+		t.Error("horizontal value labels missing")
+	}
+}
+
+// TestBarSpan: a bullet — per category an observed bar from 0 and a
+// narrow expected span, one bar mark coloured by series with a legend.
+func TestBarSpan(t *testing.T) {
+	type cell struct {
+		v             string
+		obs, expected float64
+	}
+	cells := []cell{{"control", 5120, 5000}, {"variant", 4880, 5000}}
+	const half = 12.8 // 0.5% of the 5120 span, halved
+	var rows []recipes.Row
+	for _, c := range cells {
+		rows = append(rows, recipes.Row{"value": c.v, "lo": 0.0, "hi": c.obs, "series": "Observed", "obs": c.obs, "exp": c.expected})
+	}
+	for _, c := range cells {
+		rows = append(rows, recipes.Row{"value": c.v, "lo": c.expected - half, "hi": c.expected + half, "series": "Expected", "obs": c.obs, "exp": c.expected})
+	}
+	s := must(t)(recipes.Bar(rows, recipes.BarOptions{
+		Category:   recipes.Field{Name: "value", Title: "Arm"},
+		Value:      recipes.Field{Name: "hi", Title: "Count"},
+		Start:      "lo",
+		Horizontal: true,
+		Color:      &recipes.Color{Field: recipes.Field{Name: "series", Title: "Series"}, Domain: []string{"Observed", "Expected"}},
+		Tooltip:    []recipes.Field{{Name: "value", Title: "Arm"}, {Name: "obs", Title: "Observed", Format: ",.0f"}, {Name: "exp", Title: "Expected", Format: ",.0f"}},
+		Frame:      recipes.Frame{Title: "Sample ratio"},
+	}))
+	if s.Encoding.X.Field != "lo" || s.Encoding.X2.Field != "hi" || s.Encoding.X.Title != "Count" {
+		t.Errorf("span channels x=%+v x2=%+v", s.Encoding.X, s.Encoding.X2)
+	}
+	svg := golden(t, "bar_span", s)
+	if got := strings.Count(svg, `class="prism-mark-bar"`); got != 4 {
+		t.Errorf("bars = %d, want 4 spans (never stacked)", got)
+	}
+	if !strings.Contains(svg, ">Observed<") || !strings.Contains(svg, ">Expected<") {
+		t.Error("series legend missing")
+	}
+
+	// Vertical spans bind y / y2.
+	v := must(t)(recipes.Bar(rows[:2], recipes.BarOptions{Category: recipes.F("value"), Value: recipes.F("hi"), Start: "lo"}))
+	if v.Encoding.Y.Field != "lo" || v.Encoding.Y2.Field != "hi" {
+		t.Errorf("vertical span y=%+v y2=%+v", v.Encoding.Y, v.Encoding.Y2)
+	}
+}
+
 func TestGroupedBar(t *testing.T) {
 	rows := []recipes.Row{
 		{"q": "Q1", "region": "East", "v": 62.0}, {"q": "Q1", "region": "West", "v": 58.0},
@@ -240,6 +335,55 @@ func TestHeatmap(t *testing.T) {
 		Tooltip: []recipes.Field{recipes.F("row"), recipes.F("col"), {Name: "r", Format: ".2f"}},
 		Frame:   recipes.Frame{Title: "Correlation"},
 	})))
+}
+
+// TestHeatmapLabelRows: a grid too large to letter keeps its key row
+// lettered; the unlettered cells stay plain and every cell opaque.
+func TestHeatmapLabelRows(t *testing.T) {
+	var rows []recipes.Row
+	cols := []string{"x", "y", "z"}
+	grid := [][]float64{{0.4, -0.2, 0.1}, {-0.5, 0.3, 0.0}}
+	for i, r := range []string{"r1", "r2"} {
+		for j, c := range cols {
+			rows = append(rows, recipes.Row{"row": r, "col": c, "v": grid[i][j], "text": ftoa(grid[i][j])})
+		}
+	}
+	for j, c := range cols {
+		k := []float64{-0.5, 0, 0.5}[j]
+		rows = append(rows, recipes.Row{"row": "Key", "col": c, "v": k, "text": ftoa(k)})
+	}
+	s := must(t)(recipes.Heatmap(rows, recipes.HeatmapOptions{
+		X: recipes.F("col"), Y: recipes.F("row"), Value: recipes.F("v"),
+		YOrder: []string{"r1", "r2", "Key"}, Scheme: "rdbu", XAxisTop: true,
+		LabelField: "text", LabelRows: []string{"Key"},
+		Frame: recipes.Frame{Title: "Residuals"},
+	}))
+	if len(s.Layer) != 2 || s.Layer[0].Mark.Def.FillOpacity != nil || len(s.Layer[1].Data.Values) != 3 {
+		t.Fatalf("want opaque cells under a key-row text layer, got %+v", s.Layer)
+	}
+	svg := golden(t, "heatmap_key_row", s)
+	if got := strings.Count(svg, `class="prism-mark-text"`); got != 3 {
+		t.Errorf("letters = %d, want the key row's 3", got)
+	}
+	if strings.Contains(svg, `fill-opacity="0.6"`) {
+		t.Error("partly lettered cells drawn translucent")
+	}
+
+	// Labels with LabelRows still letters only those rows; an explicit
+	// CellOpacity applies; rows naming nothing draw plain cells.
+	both := must(t)(recipes.Heatmap(rows, recipes.HeatmapOptions{
+		X: recipes.F("col"), Y: recipes.F("row"), Value: recipes.F("v"),
+		Labels: true, LabelRows: []string{"r1"}, CellOpacity: 0.8,
+	}))
+	if len(both.Layer[1].Data.Values) != 3 || *both.Layer[0].Mark.Def.FillOpacity != 0.8 {
+		t.Errorf("Labels + LabelRows: %+v", both.Layer)
+	}
+	none := must(t)(recipes.Heatmap(rows, recipes.HeatmapOptions{
+		X: recipes.F("col"), Y: recipes.F("row"), Value: recipes.F("v"), LabelRows: []string{"missing"},
+	}))
+	if none.Layer != nil || none.Mark.Def.FillOpacity != nil {
+		t.Errorf("no matching row: want a plain heatmap, got %+v", none)
+	}
 }
 
 func TestBoxAndTiles(t *testing.T) {

@@ -25,6 +25,12 @@ type HeatmapOptions struct {
 	Labels      bool
 	LabelField  string
 	CellOpacity float64
+	// LabelRows, when set, letters only the cells in these Y rows (a
+	// key row under a grid too large to letter, say), with or without
+	// Labels; the other cells stay plain. A partly lettered grid draws
+	// its cells opaque unless CellOpacity is set, so the shades read
+	// the same lettered or not.
+	LabelRows []string
 	// Legend shows the gradient legend right of the plot.
 	Legend bool
 	// XAxisTop puts the column labels above the grid.
@@ -84,9 +90,20 @@ func Heatmap(rows []Row, o HeatmapOptions) (*spec.Spec, error) {
 	}
 	tips := tooltip(o.Tooltip)
 
+	lettered := rows
+	if len(o.LabelRows) > 0 {
+		lettered = inRows(rows, o.Y.Name, o.LabelRows)
+	} else if !o.Labels {
+		lettered = nil
+	}
+	partial := len(o.LabelRows) > 0
+
 	cells := newSpec()
 	md := spec.MarkDef{Type: "heatmap"}
-	if o.Labels {
+	switch {
+	case partial && o.CellOpacity > 0:
+		md.FillOpacity = num(o.CellOpacity)
+	case !partial && len(lettered) > 0:
 		op := o.CellOpacity
 		if op <= 0 {
 			op = 0.6
@@ -102,7 +119,7 @@ func Heatmap(rows []Row, o HeatmapOptions) (*spec.Spec, error) {
 		// would clip its lower labels.
 		height = heatmapLegendHeight
 	}
-	if !o.Labels {
+	if len(lettered) == 0 {
 		cells.Data = data(rows)
 		applyFrame(cells, o.Frame, height)
 		return cells, nil
@@ -112,9 +129,27 @@ func Heatmap(rows []Row, o HeatmapOptions) (*spec.Spec, error) {
 		text = &spec.TextChannel{Field: o.LabelField}
 	}
 	labels := newSpec()
+	if partial {
+		labels.Data = data(lettered)
+	}
 	labels.Mark = markDef(spec.MarkDef{Type: "text", FontSize: num(11)})
 	labels.Encoding = &spec.Encoding{X: x(), Y: y(), Text: text, Tooltip: tips}
 	s := layer(rows, cells, labels)
 	applyFrame(s, o.Frame, height)
 	return s, nil
+}
+
+// inRows keeps the rows whose col value is one of keys.
+func inRows(rows []Row, col string, keys []string) []Row {
+	want := make(map[string]bool, len(keys))
+	for _, k := range keys {
+		want[k] = true
+	}
+	var out []Row
+	for _, r := range rows {
+		if v, ok := r[col].(string); ok && want[v] {
+			out = append(out, r)
+		}
+	}
+	return out
 }

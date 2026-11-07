@@ -1,0 +1,161 @@
+{
+  "$schema": "urn:prism:schema:v1:spec",
+  "data": {
+    "values": [
+      {
+        "col": "x",
+        "row": "r1",
+        "text": "0.4",
+        "v": 0.4
+      },
+      {
+        "col": "y",
+        "row": "r1",
+        "text": "-0.2",
+        "v": -0.2
+      },
+      {
+        "col": "z",
+        "row": "r1",
+        "text": "0.1",
+        "v": 0.1
+      },
+      {
+        "col": "x",
+        "row": "r2",
+        "text": "-0.5",
+        "v": -0.5
+      },
+      {
+        "col": "y",
+        "row": "r2",
+        "text": "0.3",
+        "v": 0.3
+      },
+      {
+        "col": "z",
+        "row": "r2",
+        "text": "0",
+        "v": 0
+      },
+      {
+        "col": "x",
+        "row": "Key",
+        "text": "-0.5",
+        "v": -0.5
+      },
+      {
+        "col": "y",
+        "row": "Key",
+        "text": "0",
+        "v": 0
+      },
+      {
+        "col": "z",
+        "row": "Key",
+        "text": "0.5",
+        "v": 0.5
+      }
+    ]
+  },
+  "layer": [
+    {
+      "$schema": "urn:prism:schema:v1:spec",
+      "mark": {
+        "type": "heatmap"
+      },
+      "encoding": {
+        "x": {
+          "field": "col",
+          "type": "nominal",
+          "axis": {
+            "orient": "top",
+            "grid": false
+          }
+        },
+        "y": {
+          "field": "row",
+          "type": "nominal",
+          "scale": {
+            "reverse": true
+          },
+          "sort": [
+            "r1",
+            "r2",
+            "Key"
+          ],
+          "axis": {
+            "grid": false
+          }
+        },
+        "color": {
+          "field": "v",
+          "type": "quantitative",
+          "scale": {
+            "scheme": "rdbu"
+          },
+          "legend": null
+        }
+      }
+    },
+    {
+      "$schema": "urn:prism:schema:v1:spec",
+      "data": {
+        "values": [
+          {
+            "col": "x",
+            "row": "Key",
+            "text": "-0.5",
+            "v": -0.5
+          },
+          {
+            "col": "y",
+            "row": "Key",
+            "text": "0",
+            "v": 0
+          },
+          {
+            "col": "z",
+            "row": "Key",
+            "text": "0.5",
+            "v": 0.5
+          }
+        ]
+      },
+      "mark": {
+        "type": "text",
+        "font_size": 11
+      },
+      "encoding": {
+        "x": {
+          "field": "col",
+          "type": "nominal",
+          "axis": {
+            "orient": "top",
+            "grid": false
+          }
+        },
+        "y": {
+          "field": "row",
+          "type": "nominal",
+          "scale": {
+            "reverse": true
+          },
+          "sort": [
+            "r1",
+            "r2",
+            "Key"
+          ],
+          "axis": {
+            "grid": false
+          }
+        },
+        "text": {
+          "field": "text"
+        }
+      }
+    }
+  ],
+  "height": 180,
+  "title": "Residuals"
+}
