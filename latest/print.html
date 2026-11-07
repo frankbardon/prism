@@ -37,7 +37,7 @@
             const path_to_root = "";
             const default_light_theme = "navy";
             const default_dark_theme = "navy";
-            window.path_to_searchindex_js = "searchindex-0233bf35.js";
+            window.path_to_searchindex_js = "searchindex-1ce5158f.js";
         </script>
         <!-- Start loading toc.js asap -->
         <script src="toc-522f32d0.js"></script>
@@ -2797,6 +2797,17 @@ reserves nothing, so hiding it moves nothing. Reservations are fixed
 pixel metrics rather than measured text: a <code>tick_size</code>,
 <code>label_padding</code> or <code>title_padding</code> far larger than the default draws
 into the outer margin instead of growing the reservation.</p>
+<p><strong>A left or right axis grows to fit its labels.</strong> The one measured
+exception is the band a <code>y</code> axis’s tick labels occupy: Prism estimates
+the widest shown label’s width (a conservative per-glyph estimate for
+the default sans stack, not font metrics) and, when the labels and the
+rotated title would not fit the fixed reservation, widens that side of
+the plot so both land inside the frame, with the title placed
+<code>title_padding</code> clear of the labels rather than over them. Short
+labels — a few digits, a one-word category — fit the fixed reservation
+and move nothing. One side axis never takes more than a third of the
+frame width; past that a label runs into the frame edge (use
+<code>label_limit</code> to shorten it).</p>
 <p><strong><code>zindex</code> and clipping.</strong> An above-marks axis is emitted as a sibling
 of the mark container, not a child, so it is never subject to the
 <a href="#rows-outside-the-domain--overflow-and-clip">plot-region clip</a> that
@@ -4489,8 +4500,11 @@ nothing — takes both theme values.</p>
 <p><strong><code>title_padding</code> is measured from the tick labels, not from the plot
 edge</strong>, and it is added to a fixed per-side text allowance rather than
 replacing it, so the 8 px every built-in theme states reproduces the
-title position Prism has always drawn. Note that a padding larger than
-the default draws into the outer margin: the layout reserves a fixed
+title position Prism has always drawn. A left / right axis whose
+labels are wider than that allowance pushes its title out past them,
+and the layout widens the side to hold both (see
+<a href="#encoding">encoding</a>). Note that a theme padding larger than the
+default draws into the outer margin: the layout reserves a fixed
 depth per side and does not grow it to follow a token, the same
 text-metric deferral <code>tick_size</code> and <code>label_padding</code> are subject to.</p>
 <p>Minor ticks are not separately tokenised; they render at 0.6× whatever

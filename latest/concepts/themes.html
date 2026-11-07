@@ -36,7 +36,7 @@
             const path_to_root = "../";
             const default_light_theme = "navy";
             const default_dark_theme = "navy";
-            window.path_to_searchindex_js = "../searchindex-0233bf35.js";
+            window.path_to_searchindex_js = "../searchindex-1ce5158f.js";
         </script>
         <!-- Start loading toc.js asap -->
         <script src="../toc-522f32d0.js"></script>
@@ -560,8 +560,11 @@ nothing — takes both theme values.</p>
 <p><strong><code>title_padding</code> is measured from the tick labels, not from the plot
 edge</strong>, and it is added to a fixed per-side text allowance rather than
 replacing it, so the 8 px every built-in theme states reproduces the
-title position Prism has always drawn. Note that a padding larger than
-the default draws into the outer margin: the layout reserves a fixed
+title position Prism has always drawn. A left / right axis whose
+labels are wider than that allowance pushes its title out past them,
+and the layout widens the side to hold both (see
+<a href="encoding.html">encoding</a>). Note that a theme padding larger than the
+default draws into the outer margin: the layout reserves a fixed
 depth per side and does not grow it to follow a token, the same
 text-metric deferral <code>tick_size</code> and <code>label_padding</code> are subject to.</p>
 <p>Minor ticks are not separately tokenised; they render at 0.6× whatever
